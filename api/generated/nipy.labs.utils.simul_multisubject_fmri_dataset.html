@@ -1,0 +1,457 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.utils.simul_multisubject_fmri_dataset.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-utils-simul-multisubject-fmri-dataset">
+<h1>labs.utils.simul_multisubject_fmri_dataset<a class="headerlink" href="#labs-utils-simul-multisubject-fmri-dataset" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.labs.utils.simul_multisubject_fmri_dataset">
+<span id="module-labs-utils-simul-multisubject-fmri-dataset"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.utils.simul_multisubject_fmri_dataset</span></code><a class="headerlink" href="#module-nipy.labs.utils.simul_multisubject_fmri_dataset" title="Permalink to this headline">¶</a></h2>
+<p>This module conatins a function to produce a dataset which simulates
+a collection of 2D images This dataset is saved as a 3D image
+(each slice being a subject) and a 3D array</p>
+<p>Author : Bertrand Thirion, 2008-2010</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_2d_dataset">
+<code class="sig-prename descclassname">nipy.labs.utils.simul_multisubject_fmri_dataset.</code><code class="sig-name descname">surrogate_2d_dataset</code><span class="sig-paren">(</span><em class="sig-param">n_subj=10, shape=(30, 30), sk=1.0, noise_level=1.0, pos=array([[ 6,  7],        [10, 10],        [15, 10]]), ampli=array([3, 4, 4]), spatial_jitter=1.0, signal_jitter=1.0, width=5.0, width_jitter=0, out_text_file=None, out_image_file=None, seed=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/simul_multisubject_fmri_dataset.html#surrogate_2d_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_2d_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create surrogate (simulated) 2D activation data with spatial noise</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_subj: integer, optionnal</strong></p>
+<blockquote>
+<div><p>The number of subjects, ie the number of different maps
+generated.</p>
+</div></blockquote>
+<p><strong>shape=(30,30): tuple of integers,</strong></p>
+<blockquote>
+<div><p>the shape of each image</p>
+</div></blockquote>
+<p><strong>sk: float, optionnal</strong></p>
+<blockquote>
+<div><p>Amount of spatial noise smoothness.</p>
+</div></blockquote>
+<p><strong>noise_level: float, optionnal</strong></p>
+<blockquote>
+<div><p>Amplitude of the spatial noise.
+amplitude=noise_level)</p>
+</div></blockquote>
+<p><strong>pos: 2D ndarray of integers, optionnal</strong></p>
+<blockquote>
+<div><p>x, y positions of the various simulated activations.</p>
+</div></blockquote>
+<p><strong>ampli: 1D ndarray of floats, optionnal</strong></p>
+<blockquote>
+<div><p>Respective amplitude of each activation</p>
+</div></blockquote>
+<p><strong>spatial_jitter: float, optionnal</strong></p>
+<blockquote>
+<div><p>Random spatial jitter added to the position of each activation,
+in pixel.</p>
+</div></blockquote>
+<p><strong>signal_jitter: float, optionnal</strong></p>
+<blockquote>
+<div><p>Random amplitude fluctuation for each activation, added to the
+amplitude specified by <cite>ampli</cite></p>
+</div></blockquote>
+<p><strong>width: float or ndarray, optionnal</strong></p>
+<blockquote>
+<div><p>Width of the activations</p>
+</div></blockquote>
+<p><strong>width_jitter: float</strong></p>
+<blockquote>
+<div><p>Relative width jitter of the blobs</p>
+</div></blockquote>
+<p><strong>out_text_file: string or None, optionnal</strong></p>
+<blockquote>
+<div><p>If not None, the resulting array is saved as a text file with the
+given file name</p>
+</div></blockquote>
+<p><strong>out_image_file: string or None, optionnal</strong></p>
+<blockquote>
+<div><p>If not None, the resulting is saved as a nifti file with the
+given file name.</p>
+</div></blockquote>
+<p><strong>seed=False:  int, optionnal</strong></p>
+<blockquote>
+<div><p>If seed is not False, the random number generator is initialized
+at a certain value</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dataset: 3D ndarray</p>
+<blockquote>
+<div><p>The surrogate activation map, with dimensions <code class="docutils literal notranslate"><span class="pre">(n_subj,)</span> <span class="pre">+</span> <span class="pre">shape</span></code></p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_3d_dataset">
+<code class="sig-prename descclassname">nipy.labs.utils.simul_multisubject_fmri_dataset.</code><code class="sig-name descname">surrogate_3d_dataset</code><span class="sig-paren">(</span><em class="sig-param">n_subj=1</em>, <em class="sig-param">shape=(20</em>, <em class="sig-param">20</em>, <em class="sig-param">20)</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">sk=1.0</em>, <em class="sig-param">noise_level=1.0</em>, <em class="sig-param">pos=None</em>, <em class="sig-param">ampli=None</em>, <em class="sig-param">spatial_jitter=1.0</em>, <em class="sig-param">signal_jitter=1.0</em>, <em class="sig-param">width=5.0</em>, <em class="sig-param">out_text_file=None</em>, <em class="sig-param">out_image_file=None</em>, <em class="sig-param">seed=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/simul_multisubject_fmri_dataset.html#surrogate_3d_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_3d_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create surrogate (simulated) 3D activation data with spatial noise.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_subj: integer, optionnal</strong></p>
+<blockquote>
+<div><p>The number of subjects, ie the number of different maps
+generated.</p>
+</div></blockquote>
+<p><strong>shape=(20,20,20): tuple of 3 integers,</strong></p>
+<blockquote>
+<div><p>the shape of each image</p>
+</div></blockquote>
+<p><strong>mask=None: Nifti1Image instance,</strong></p>
+<blockquote>
+<div><p>referential- and mask- defining image (overrides shape)</p>
+</div></blockquote>
+<p><strong>sk: float, optionnal</strong></p>
+<blockquote>
+<div><p>Amount of spatial noise smoothness.</p>
+</div></blockquote>
+<p><strong>noise_level: float, optionnal</strong></p>
+<blockquote>
+<div><p>Amplitude of the spatial noise.
+amplitude=noise_level)</p>
+</div></blockquote>
+<p><strong>pos: 2D ndarray of integers, optionnal</strong></p>
+<blockquote>
+<div><p>x, y positions of the various simulated activations.</p>
+</div></blockquote>
+<p><strong>ampli: 1D ndarray of floats, optionnal</strong></p>
+<blockquote>
+<div><p>Respective amplitude of each activation</p>
+</div></blockquote>
+<p><strong>spatial_jitter: float, optionnal</strong></p>
+<blockquote>
+<div><p>Random spatial jitter added to the position of each activation,
+in pixel.</p>
+</div></blockquote>
+<p><strong>signal_jitter: float, optionnal</strong></p>
+<blockquote>
+<div><p>Random amplitude fluctuation for each activation, added to the
+amplitude specified by ampli</p>
+</div></blockquote>
+<p><strong>width: float or ndarray, optionnal</strong></p>
+<blockquote>
+<div><p>Width of the activations</p>
+</div></blockquote>
+<p><strong>out_text_file: string or None, optionnal</strong></p>
+<blockquote>
+<div><p>If not None, the resulting array is saved as a text file with the
+given file name</p>
+</div></blockquote>
+<p><strong>out_image_file: string or None, optionnal</strong></p>
+<blockquote>
+<div><p>If not None, the resulting is saved as a nifti file with the
+given file name.</p>
+</div></blockquote>
+<p><strong>seed=False:  int, optionnal</strong></p>
+<blockquote>
+<div><p>If seed is not False, the random number generator is initialized
+at a certain value</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dataset: 3D ndarray</p>
+<blockquote>
+<div><p>The surrogate activation map, with dimensions <code class="docutils literal notranslate"><span class="pre">(n_subj,)</span> <span class="pre">+</span> <span class="pre">shape</span></code></p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_4d_dataset">
+<code class="sig-prename descclassname">nipy.labs.utils.simul_multisubject_fmri_dataset.</code><code class="sig-name descname">surrogate_4d_dataset</code><span class="sig-paren">(</span><em class="sig-param">shape=(20</em>, <em class="sig-param">20</em>, <em class="sig-param">20)</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">n_scans=1</em>, <em class="sig-param">n_sess=1</em>, <em class="sig-param">dmtx=None</em>, <em class="sig-param">sk=1.0</em>, <em class="sig-param">noise_level=1.0</em>, <em class="sig-param">signal_level=1.0</em>, <em class="sig-param">out_image_file=None</em>, <em class="sig-param">seed=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/simul_multisubject_fmri_dataset.html#surrogate_4d_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_4d_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create surrogate (simulated) 3D activation data with spatial noise.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape = (20, 20, 20): tuple of integers,</strong></p>
+<blockquote>
+<div><p>the shape of each image</p>
+</div></blockquote>
+<p><strong>mask=None: brifti image instance,</strong></p>
+<blockquote>
+<div><p>referential- and mask- defining image (overrides shape)</p>
+</div></blockquote>
+<p><strong>n_scans: int, optional,</strong></p>
+<blockquote>
+<div><p>number of scans to be simlulated
+overrided by the design matrix</p>
+</div></blockquote>
+<p><strong>n_sess: int, optional,</strong></p>
+<blockquote>
+<div><p>the number of simulated sessions</p>
+</div></blockquote>
+<p><strong>dmtx: array of shape(n_scans, n_rows),</strong></p>
+<blockquote>
+<div><p>the design matrix</p>
+</div></blockquote>
+<p><strong>sk: float, optionnal</strong></p>
+<blockquote>
+<div><p>Amount of spatial noise smoothness.</p>
+</div></blockquote>
+<p><strong>noise_level: float, optionnal</strong></p>
+<blockquote>
+<div><p>Amplitude of the spatial noise.
+amplitude=noise_level)</p>
+</div></blockquote>
+<p><strong>signal_level: float, optional,</strong></p>
+<blockquote>
+<div><p>Amplitude of the signal</p>
+</div></blockquote>
+<p><strong>out_image_file: string or list of strings or None, optionnal</strong></p>
+<blockquote>
+<div><p>If not None, the resulting is saved as (set of) nifti file(s) with the
+given file path(s)</p>
+</div></blockquote>
+<p><strong>seed=False:  int, optionnal</strong></p>
+<blockquote>
+<div><p>If seed is not False, the random number generator is initialized
+at a certain value</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dataset: a list of n_sess ndarray of shape</p>
+<blockquote>
+<div><p>(shape[0], shape[1], shape[2], n_scans)
+The surrogate activation map</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

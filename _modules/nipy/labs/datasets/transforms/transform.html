@@ -1,0 +1,399 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.datasets.transforms.transform</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The base Transform class.</span>
+
+<span class="sd">This class defines the Transform interface and can be subclassed to</span>
+<span class="sd">define more clever composition logic.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1">################################################################################</span>
+<div class="viewcode-block" id="CompositionError"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.transforms.transform.html#nipy.labs.datasets.transforms.transform.CompositionError">[docs]</a><span class="k">class</span> <span class="nc">CompositionError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The Exception raised when composing transforms with non matching</span>
+<span class="sd">        respective input and output word spaces.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+
+<span class="c1">################################################################################</span>
+<span class="c1"># Class `Transform`</span>
+<span class="c1">################################################################################</span>
+<div class="viewcode-block" id="Transform"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.transforms.transform.html#nipy.labs.datasets.transforms.transform.Transform">[docs]</a><span class="k">class</span> <span class="nc">Transform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A transform is a representation of a transformation from one 3D space to</span>
+<span class="sd">    another. It is composed of a coordinate mapping, or its inverse, as well </span>
+<span class="sd">    as the name of the input and output spaces.</span>
+
+<span class="sd">    The Transform class is the base class for transformations and defines </span>
+<span class="sd">    the transform object API.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># The name of the input space</span>
+    <span class="n">input_space</span>     <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="c1"># The name of the output space</span>
+    <span class="n">output_space</span>    <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="c1"># The coordinate mapping from input space to output space</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># The inverse coordinate mapping from output space to input space</span>
+    <span class="n">inverse_mapping</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Transform.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.transforms.transform.html#nipy.labs.datasets.transforms.transform.Transform.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_space</span><span class="p">,</span> <span class="n">output_space</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                       <span class="n">inverse_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create a new transform object.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+
+<span class="sd">            mapping: callable f(x, y, z)</span>
+<span class="sd">                Callable mapping coordinates from the input space to</span>
+<span class="sd">                the output space. It should take 3 numbers or arrays, </span>
+<span class="sd">                and return 3 numbers or arrays of the same shape.</span>
+<span class="sd">            inverse_mapping: callable f(x, y, z)</span>
+<span class="sd">                Callable mapping coordinates from the output space to</span>
+<span class="sd">                the input space. It should take 3 numbers or arrays, </span>
+<span class="sd">                and return 3 numbers or arrays of the same shape.</span>
+<span class="sd">            input_space: string</span>
+<span class="sd">                Name of the input space</span>
+<span class="sd">            output_space: string</span>
+<span class="sd">                Name of the output space</span>
+
+<span class="sd">            Notes</span>
+<span class="sd">            ------</span>
+
+<span class="sd">            You need to supply either the mapping or the inverse mapping.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">inverse_mapping</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;You need to supply either the coordinate mapping or &#39;</span>
+                    <span class="s1">&#39;the inverse coordinate mapping&#39;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="n">mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">mapping</span><span class="p">),</span> \
+                <span class="s1">&#39;The mapping argument of a Transform must be callable&#39;</span>
+        <span class="k">if</span> <span class="n">inverse_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">inverse_mapping</span><span class="p">),</span> \
+                <span class="s1">&#39;The inverse_mapping argument of a Transform must be callable&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span>         <span class="o">=</span> <span class="n">mapping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inverse_mapping</span> <span class="o">=</span> <span class="n">inverse_mapping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_space</span>     <span class="o">=</span> <span class="n">input_space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_space</span>    <span class="o">=</span> <span class="n">output_space</span></div>
+
+    <span class="c1">#-------------------------------------------------------------------------</span>
+    <span class="c1"># Transform Interface</span>
+    <span class="c1">#-------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Transform.composed_with"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.transforms.transform.html#nipy.labs.datasets.transforms.transform.Transform.composed_with">[docs]</a>    <span class="k">def</span> <span class="nf">composed_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a new transform obtained by composing this transform</span>
+<span class="sd">            with the one provided.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            -----------</span>
+<span class="sd">            transform: nipy.core.transforms.transform object</span>
+<span class="sd">                The transform to compose with.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_composition</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="c1"># We don&#39;t want to keep references on the transforms, in the</span>
+        <span class="c1"># closure of the new mapping so we extract their mapping</span>
+        <span class="c1"># outside of the definition of the new mapping</span>
+        <span class="n">first_mapping</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span>
+        <span class="n">second_mapping</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">mapping</span>
+        <span class="k">if</span> <span class="n">first_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">second_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">new_mapping</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot; Coordinate mapping from %s to %s.</span>
+<span class="sd">                &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">,</span> <span class="n">transform</span><span class="o">.</span><span class="n">output_space</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">second_mapping</span><span class="p">(</span><span class="o">*</span><span class="n">first_mapping</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_mapping</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="n">first_inverse_mapping</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_mapping</span>
+        <span class="n">second_inverse_mapping</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">inverse_mapping</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">first_inverse_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> 
+             <span class="ow">and</span> <span class="n">second_inverse_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">new_inverse_mapping</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot; Coordinate mapping from %s to %s.</span>
+<span class="sd">                &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">transform</span><span class="o">.</span><span class="n">output_space</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">first_inverse_mapping</span><span class="p">(</span><span class="o">*</span><span class="n">second_inverse_mapping</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_inverse_mapping</span> <span class="o">=</span> <span class="kc">None</span>
+ 
+        <span class="k">if</span> <span class="n">new_mapping</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">new_inverse_mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CompositionError</span><span class="p">(</span>
+                <span class="sd">&quot;&quot;&quot;Composing two transforms with no chainable mapping:</span>
+<span class="sd">                %s</span>
+<span class="sd">                and</span>
+<span class="sd">                %s&quot;&quot;&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">,</span> 
+                         <span class="n">transform</span><span class="o">.</span><span class="n">output_space</span><span class="p">,</span>
+                         <span class="n">mapping</span><span class="o">=</span><span class="n">new_mapping</span><span class="p">,</span>
+                         <span class="n">inverse_mapping</span><span class="o">=</span><span class="n">new_inverse_mapping</span><span class="p">,</span>
+                         <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Transform.get_inverse"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.transforms.transform.html#nipy.labs.datasets.transforms.transform.Transform.get_inverse">[docs]</a>    <span class="k">def</span> <span class="nf">get_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return the inverse transform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+                                <span class="n">input_space</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_space</span><span class="p">,</span>
+                                <span class="n">output_space</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">,</span>
+                                <span class="n">mapping</span>         <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_mapping</span><span class="p">,</span>
+                                <span class="n">inverse_mapping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span><span class="p">,</span>
+                             <span class="p">)</span></div>
+
+    <span class="c1">#-------------------------------------------------------------------------</span>
+    <span class="c1"># Private methods</span>
+    <span class="c1">#-------------------------------------------------------------------------</span>
+    <span class="k">def</span> <span class="nf">_check_composition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Check that the given transform can be composed with this</span>
+<span class="sd">            one.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">transform</span><span class="o">.</span><span class="n">input_space</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_space</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CompositionError</span><span class="p">(</span><span class="s2">&quot;The input space of the &quot;</span>
+                <span class="s2">&quot;second transform (</span><span class="si">%s</span><span class="s2">) does not match the input space &quot;</span>
+                <span class="s2">&quot;of first transform (</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> 
+                    <span class="p">(</span><span class="n">transform</span><span class="o">.</span><span class="n">input_space</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_space</span><span class="p">)</span>
+                <span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">representation</span> <span class="o">=</span> \
+                <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(</span><span class="se">\n</span><span class="s1">  input_space=</span><span class="si">%s</span><span class="s1">,</span><span class="se">\n</span><span class="s1">  output_space=</span><span class="si">%s</span><span class="s1">,</span><span class="se">\n</span><span class="s1">  mapping=</span><span class="si">%s</span><span class="s1">,</span><span class="se">\n</span><span class="s1">  inverse_mapping=</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">output_space</span><span class="p">,</span> 
+                <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">         &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mapping</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)),</span>
+                <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">         &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inverse_mapping</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)),</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">representation</span>
+
+
+    <span class="k">def</span> <span class="nf">__copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Copy the transform </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">input_space</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">,</span>
+                              <span class="n">output_space</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_space</span><span class="p">,</span>
+                              <span class="n">mapping</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mapping</span><span class="p">,</span> 
+                              <span class="n">inverse_mapping</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inverse_mapping</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_space</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">input_space</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_space</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">output_space</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">mapping</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_mapping</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">inverse_mapping</span>
+                <span class="p">)</span></div>
+
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

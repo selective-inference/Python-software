@@ -1,0 +1,2286 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="algorithms.pca" href="selectinf.algorithms.pca.html" />
+    <link rel="prev" title="algorithms.forward_step" href="selectinf.algorithms.forward_step.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">algorithms.lasso</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-algorithms-lasso">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.lasso</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.algorithms.lasso.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-lasso">
+<h1>algorithms.lasso<a class="headerlink" href="#algorithms-lasso" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-lasso">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.lasso</span></code><a class="headerlink" href="#module-algorithms-lasso" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.algorithms.lasso</span></code>:</p>
+digraph inheritancefaadcc8f6e {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;algorithms.lasso.ROSI&quot; [URL=&quot;#selectinf.algorithms.lasso.ROSI&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A class for the LASSO for post-selection inference.&quot;];
+  &quot;algorithms.lasso.lasso&quot; -&gt; &quot;algorithms.lasso.ROSI&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;algorithms.lasso.ROSI_modelQ&quot; [URL=&quot;#selectinf.algorithms.lasso.ROSI_modelQ&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A class for the LASSO for post-selection inference&quot;];
+  &quot;algorithms.lasso.lasso&quot; -&gt; &quot;algorithms.lasso.ROSI_modelQ&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;algorithms.lasso.data_carving&quot; [URL=&quot;#selectinf.algorithms.lasso.data_carving&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Notes&quot;];
+  &quot;algorithms.lasso.lasso&quot; -&gt; &quot;algorithms.lasso.data_carving&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;algorithms.lasso.data_splitting&quot; [URL=&quot;#selectinf.algorithms.lasso.data_splitting&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;algorithms.lasso.data_carving&quot; -&gt; &quot;algorithms.lasso.data_splitting&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;algorithms.lasso.lasso&quot; [URL=&quot;#selectinf.algorithms.lasso.lasso&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A class for the LASSO for post-selection inference.&quot;];
+}
+<span class="target" id="module-selectinf.algorithms.lasso"></span><p>This module contains a class <a class="reference internal" href="#lasso">lasso</a> that implements
+post selection for the lasso
+as described in <a href="#id51"><span class="problematic" id="id52">`post selection LASSO`_</span></a>.
+.. _covTest: <a class="reference external" href="http://arxiv.org/abs/1301.7161">http://arxiv.org/abs/1301.7161</a>
+.. _Kac Rice: <a class="reference external" href="http://arxiv.org/abs/1308.3020">http://arxiv.org/abs/1308.3020</a>
+.. _Spacings: <a class="reference external" href="http://arxiv.org/abs/1401.3889">http://arxiv.org/abs/1401.3889</a>
+.. _post selection LASSO: <a class="reference external" href="http://arxiv.org/abs/1311.6238">http://arxiv.org/abs/1311.6238</a>
+.. _sample carving: <a class="reference external" href="http://arxiv.org/abs/1410.2597">http://arxiv.org/abs/1410.2597</a></p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="rosi">
+<h3><a class="reference internal" href="#selectinf.algorithms.lasso.ROSI" title="selectinf.algorithms.lasso.ROSI"><code class="xref py py-class docutils literal notranslate"><span class="pre">ROSI</span></code></a><a class="headerlink" href="#rosi" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.algorithms.lasso.ROSI">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">ROSI</code><span class="sig-paren">(</span><em class="sig-param">loglike</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">approximate_inverse='BN'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.algorithms.lasso.lasso" title="selectinf.algorithms.lasso.lasso"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.algorithms.lasso.lasso</span></code></a></p>
+<p>A class for the LASSO for post-selection inference.
+The problem solved is
+.. math:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\<span class="n">text</span><span class="p">{</span><span class="n">minimize</span><span class="p">}</span><span class="n">_</span><span class="p">{</span>\<span class="n">beta</span><span class="p">}</span> \<span class="n">frac</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">2</span><span class="n">n</span><span class="p">}</span> \<span class="o">|</span><span class="n">y</span><span class="o">-</span><span class="n">X</span>\<span class="n">beta</span>\<span class="o">|^</span><span class="mi">2_2</span> <span class="o">+</span>
+    \<span class="k">lambda</span> \<span class="o">|</span>\<span class="n">beta</span>\<span class="o">|</span><span class="n">_1</span>
+</pre></div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>lam</cite>.
+Notes
+—–
+In solving the debiasing problem to approximate the inverse
+of (X^TWX) in a GLM, this class makes the implicit assumption
+that the scaling of X is such that diag(X^TWX) is O(n)
+with n=X.shape[0]. That is, X’s are similar to IID samples
+from a population that does not depend on n.</p>
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">loglike</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">approximate_inverse='BN'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new post-selection for the LASSO problem
+Parameters
+———-
+loglike : <cite>regreg.smooth.glm.glm</cite></p>
+<blockquote>
+<div><p>A (negative) log-likelihood as implemented in <cite>regreg</cite>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>feature_weights<span class="classifier">np.ndarray</span></dt><dd><p>Feature weights for L-1 penalty. If a float,
+it is brodcast to all features.</p>
+</dd>
+<dt>approximate_inverse<span class="classifier">str (optional)</span></dt><dd><p>One of “JM” (Javanmard, Montanari) or “BN” (Boot, Niedderling) or None.
+A form of approximate inverse when p is close to (or larger) than n.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">lasso_solution=None</em>, <em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-12}</em>, <em class="sig-param">debiasing_args={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the lasso using <cite>regreg</cite>.
+This sets the attributes <cite>soln</cite>, <cite>onestep</cite> and
+forms the constraints necessary for post-selection inference
+by calling <cite>form_constraints()</cite>.
+Parameters
+———-
+lasso_solution : optional</p>
+<blockquote>
+<div><p>If not None, this is taken to be the solution
+of the optimization problem. No checks
+are done, though the implied affine
+constraints will generally not be satisfied.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>solve_args<span class="classifier">keyword args</span></dt><dd><p>Passed to <cite>regreg.problems.simple_problem.solve</cite>.</p>
+</dd>
+<dt>debiasing_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to <cite>.debiased_lasso.debiasing_matrix</cite>
+or <cite>.debiased_lasso.pseudoinverse_debiasing_matrix</cite> depending
+on <cite>self.approximate_inverse</cite>.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>soln<span class="classifier">np.float</span></dt><dd><p>Solution to lasso.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If <cite>self</cite> already has an attribute <cite>lasso_solution</cite>
+this will be taken to be the solution and
+no optimization problem will be solved. Supplying
+the optional argument <cite>lasso_solution</cite> will
+overwrite <cite>self</cite>’s <cite>lasso_solution</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">level=0.95</em>, <em class="sig-param">compute_intervals=False</em>, <em class="sig-param">dispersion=None</em>, <em class="sig-param">truth=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI.summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary table for inference adjusted for selection.
+Parameters
+———-
+level : float</p>
+<blockquote>
+<div><p>Form level*100% selective confidence intervals.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>compute_intervals<span class="classifier">bool</span></dt><dd><p>Should we compute confidence intervals?</p>
+</dd>
+<dt>dispersion<span class="classifier">float</span></dt><dd><p>Estimate of dispersion. Defaults to a Pearson’s X^2 estimate in the relaxed model.</p>
+</dd>
+<dt>truth<span class="classifier">np.array</span></dt><dd><p>True values of each beta for selected variables. If not None, a column ‘pval’ are p-values
+computed under these corresponding null hypotheses.</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>pval_summary</strong> : np.recarray</p>
+<blockquote>
+<div><p>Array with one entry per active variable.
+Columns are ‘variable’, ‘pval’, ‘lasso’, ‘onestep’, ‘lower_trunc’, ‘upper_trunc’, ‘sd’.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.soln">
+<em class="property">property </em><code class="sig-name descname">soln</code><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.soln" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solution to the lasso problem, set by <cite>fit</cite> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.gaussian">
+<em class="property">classmethod </em><code class="sig-name descname">gaussian</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">approximate_inverse=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI.gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Squared-error LASSO with feature weights.
+Objective function is
+$$
+beta mapsto frac{1}{2} |Y-Xbeta|^2_2 + sum_{i=1}^p lambda_i <a href="#id1"><span class="problematic" id="id2">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>sigma<span class="classifier">float (optional)</span></dt><dd><p>Noise variance. Set to 1 if <cite>covariance_estimator</cite> is not None.
+This scales the loglikelihood by <cite>sigma**(-2)</cite>.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">callable (optional)</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of some of the
+rows and columns of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.logistic">
+<em class="property">classmethod </em><code class="sig-name descname">logistic</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">successes</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">trials=None</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">approximate_inverse=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI.logistic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.logistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logistic LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell(Xbeta) + sum_{i=1}^p lambda_i <a href="#id3"><span class="problematic" id="id4">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell\)</span> is the negative of the logistic
+log-likelihood (half the logistic deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>successes<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – response vector. An integer number of successes.
+For data that is proportions, multiply the proportions
+by the number of trials first.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>trials<span class="classifier">ndarray (optional)</span></dt><dd><p>Number of trials per response, defaults to
+ones the same shape as Y.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.poisson">
+<em class="property">classmethod </em><code class="sig-name descname">poisson</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">counts</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">approximate_inverse=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI.poisson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Poisson log-linear LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Poisson}}(beta) + sum_{i=1}^p lambda_i <a href="#id5"><span class="problematic" id="id6">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Poisson}}\)</span> is the negative
+of the log of the Poisson likelihood (half the deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>counts<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.constraints">
+<em class="property">property </em><code class="sig-name descname">constraints</code><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affine constraints for this LASSO problem.
+These are the constraints determined only
+by the active block.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.coxph">
+<em class="property">classmethod </em><code class="sig-name descname">coxph</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">times</em>, <em class="sig-param">status</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.coxph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cox proportional hazards LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Cox}}(beta) + sum_{i=1}^p lambda_i <a href="#id7"><span class="problematic" id="id8">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Cox}}\)</span> is the
+negative of the log of the Cox partial
+likelihood and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Uses Efron’s tie breaking method.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>times<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the survival times.</p>
+</dd>
+<dt>status<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the censoring status.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI.sqrt_lasso">
+<em class="property">classmethod </em><code class="sig-name descname">sqrt_lasso</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">covariance='parametric'</em>, <em class="sig-param">sigma_estimate='truncated'</em>, <em class="sig-param">solve_args={'min_its': 200}</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI.sqrt_lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use sqrt-LASSO to choose variables.
+Objective function is
+$$
+beta mapsto |Y-Xbeta|_2 + sum_{i=1}^p lambda_i <a href="#id9"><span class="problematic" id="id10">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>. After solving the problem
+treat as if <cite>gaussian</cite> with implied variance and choice of
+multiplier. See arxiv.org/abs/1504.08031 for details.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+<dt>covariance<span class="classifier">str</span></dt><dd><p>One of ‘parametric’ or ‘sandwich’. Method
+used to estimate covariance for inference
+in second stage.</p>
+</dd>
+<dt>sigma_estimate<span class="classifier">str</span></dt><dd><p>One of ‘truncated’ or ‘OLS’. Method
+used to estimate <span class="math notranslate nohighlight">\(\sigma\)</span> when using
+parametric covariance.</p>
+</dd>
+<dt>solve_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to solver.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>Unlike other variants of LASSO, this
+solves the problem on construction as the active
+set is needed to find equivalent gaussian LASSO.
+Assumes parametric model is correct for inference,
+i.e. does not accept a covariance estimator.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="rosi-modelq">
+<h3><a class="reference internal" href="#selectinf.algorithms.lasso.ROSI_modelQ" title="selectinf.algorithms.lasso.ROSI_modelQ"><code class="xref py py-class docutils literal notranslate"><span class="pre">ROSI_modelQ</span></code></a><a class="headerlink" href="#rosi-modelq" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">ROSI_modelQ</code><span class="sig-paren">(</span><em class="sig-param">Q</em>, <em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">feature_weights</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI_modelQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.algorithms.lasso.lasso" title="selectinf.algorithms.lasso.lasso"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.algorithms.lasso.lasso</span></code></a></p>
+<p>A class for the LASSO for post-selection inference
+in which
+The problem solved is
+.. math:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\<span class="n">text</span><span class="p">{</span><span class="n">minimize</span><span class="p">}</span><span class="n">_</span><span class="p">{</span>\<span class="n">beta</span><span class="p">}</span> <span class="o">-</span><span class="p">(</span><span class="n">X</span>\<span class="n">beta</span><span class="p">)</span><span class="o">^</span><span class="n">Ty</span> <span class="o">+</span> \<span class="n">frac</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">2</span><span class="p">}</span> \<span class="n">beta</span><span class="o">^</span><span class="n">TQ</span>\<span class="n">beta</span> <span class="o">+</span>
+    \<span class="n">sum_i</span> \<span class="n">lambda_i</span> <span class="o">|</span>\<span class="n">beta_i</span><span class="o">|</span>
+</pre></div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Notes
+—–
+In solving the debiasing problem to approximate the inverse
+of (X^TWX) in a GLM, this class makes the implicit assumption
+that the scaling of X is such that diag(X^TWX) is O(n)
+with n=X.shape[0]. That is, X’s are similar to IID samples
+from a population that does not depend on n.</p>
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">Q</em>, <em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">feature_weights</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI_modelQ.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new post-selection for the LASSO problem
+Parameters
+———-
+Q : np.ndarray((p,p))
+X : np.ndarray((n, p))
+y : np.ndarray(n)
+feature_weights : np.ndarray</p>
+<blockquote>
+<div><p>Feature weights for L-1 penalty. If a float,
+it is brodcast to all features.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-12}</em>, <em class="sig-param">debiasing_args={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI_modelQ.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the lasso using <cite>regreg</cite>.
+This sets the attributes <cite>soln</cite>, <cite>onestep</cite> and
+forms the constraints necessary for post-selection inference
+by calling <cite>form_constraints()</cite>.
+Parameters
+———-
+lasso_solution : optional</p>
+<blockquote>
+<div><p>If not None, this is taken to be the solution
+of the optimization problem. No checks
+are done, though the implied affine
+constraints will generally not be satisfied.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>solve_args<span class="classifier">keyword args</span></dt><dd><p>Passed to <cite>regreg.problems.simple_problem.solve</cite>.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>soln<span class="classifier">np.float</span></dt><dd><p>Solution to lasso.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If <cite>self</cite> already has an attribute <cite>lasso_solution</cite>
+this will be taken to be the solution and
+no optimization problem will be solved. Supplying
+the optional argument <cite>lasso_solution</cite> will
+overwrite <cite>self</cite>’s <cite>lasso_solution</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">level=0.05</em>, <em class="sig-param">compute_intervals=False</em>, <em class="sig-param">dispersion=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#ROSI_modelQ.summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary table for inference adjusted for selection.
+Parameters
+———-
+level : float</p>
+<blockquote>
+<div><p>Form level*100% selective confidence intervals.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>compute_intervals<span class="classifier">bool</span></dt><dd><p>Should we compute confidence intervals?</p>
+</dd>
+<dt>dispersion<span class="classifier">float</span></dt><dd><p>Estimate of dispersion. Defaults to a Pearson’s X^2 estimate in the relaxed model.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>pval_summary<span class="classifier">np.recarray</span></dt><dd><p>Array with one entry per active variable.
+Columns are ‘variable’, ‘pval’, ‘lasso’, ‘onestep’, ‘lower_trunc’, ‘upper_trunc’, ‘sd’.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.constraints">
+<em class="property">property </em><code class="sig-name descname">constraints</code><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affine constraints for this LASSO problem.
+These are the constraints determined only
+by the active block.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.coxph">
+<em class="property">classmethod </em><code class="sig-name descname">coxph</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">times</em>, <em class="sig-param">status</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.coxph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cox proportional hazards LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Cox}}(beta) + sum_{i=1}^p lambda_i <a href="#id11"><span class="problematic" id="id12">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Cox}}\)</span> is the
+negative of the log of the Cox partial
+likelihood and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Uses Efron’s tie breaking method.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>times<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the survival times.</p>
+</dd>
+<dt>status<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the censoring status.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.gaussian">
+<em class="property">classmethod </em><code class="sig-name descname">gaussian</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Squared-error LASSO with feature weights.
+Objective function is
+$$
+beta mapsto frac{1}{2} |Y-Xbeta|^2_2 + sum_{i=1}^p lambda_i <a href="#id13"><span class="problematic" id="id14">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>sigma<span class="classifier">float (optional)</span></dt><dd><p>Noise variance. Set to 1 if <cite>covariance_estimator</cite> is not None.
+This scales the loglikelihood by <cite>sigma**(-2)</cite>.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">callable (optional)</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of some of the
+rows and columns of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.logistic">
+<em class="property">classmethod </em><code class="sig-name descname">logistic</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">successes</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">trials=None</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.logistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logistic LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell(Xbeta) + sum_{i=1}^p lambda_i <a href="#id15"><span class="problematic" id="id16">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell\)</span> is the negative of the logistic
+log-likelihood (half the logistic deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>successes<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – response vector. An integer number of successes.
+For data that is proportions, multiply the proportions
+by the number of trials first.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>trials<span class="classifier">ndarray (optional)</span></dt><dd><p>Number of trials per response, defaults to
+ones the same shape as Y.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.poisson">
+<em class="property">classmethod </em><code class="sig-name descname">poisson</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">counts</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Poisson log-linear LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Poisson}}(beta) + sum_{i=1}^p lambda_i <a href="#id17"><span class="problematic" id="id18">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Poisson}}\)</span> is the negative
+of the log of the Poisson likelihood (half the deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>counts<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.soln">
+<em class="property">property </em><code class="sig-name descname">soln</code><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.soln" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solution to the lasso problem, set by <cite>fit</cite> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.ROSI_modelQ.sqrt_lasso">
+<em class="property">classmethod </em><code class="sig-name descname">sqrt_lasso</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">covariance='parametric'</em>, <em class="sig-param">sigma_estimate='truncated'</em>, <em class="sig-param">solve_args={'min_its': 200}</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.ROSI_modelQ.sqrt_lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use sqrt-LASSO to choose variables.
+Objective function is
+$$
+beta mapsto |Y-Xbeta|_2 + sum_{i=1}^p lambda_i <a href="#id19"><span class="problematic" id="id20">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>. After solving the problem
+treat as if <cite>gaussian</cite> with implied variance and choice of
+multiplier. See arxiv.org/abs/1504.08031 for details.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+<dt>covariance<span class="classifier">str</span></dt><dd><p>One of ‘parametric’ or ‘sandwich’. Method
+used to estimate covariance for inference
+in second stage.</p>
+</dd>
+<dt>sigma_estimate<span class="classifier">str</span></dt><dd><p>One of ‘truncated’ or ‘OLS’. Method
+used to estimate <span class="math notranslate nohighlight">\(\sigma\)</span> when using
+parametric covariance.</p>
+</dd>
+<dt>solve_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to solver.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>Unlike other variants of LASSO, this
+solves the problem on construction as the active
+set is needed to find equivalent gaussian LASSO.
+Assumes parametric model is correct for inference,
+i.e. does not accept a covariance estimator.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="data-carving">
+<h3><a class="reference internal" href="#selectinf.algorithms.lasso.data_carving" title="selectinf.algorithms.lasso.data_carving"><code class="xref py py-class docutils literal notranslate"><span class="pre">data_carving</span></code></a><a class="headerlink" href="#data-carving" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.algorithms.lasso.data_carving">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">data_carving</code><span class="sig-paren">(</span><em class="sig-param">loglike_select</em>, <em class="sig-param">loglike_inference</em>, <em class="sig-param">loglike_full</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.algorithms.lasso.lasso" title="selectinf.algorithms.lasso.lasso"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.algorithms.lasso.lasso</span></code></a></p>
+<p class="rubric">Notes</p>
+<p>Even if a covariance estimator is supplied,
+we assume that we can drop inactive constraints,
+i.e. the same (asymptotic) independence that
+holds for parametric model is assumed to hold here
+as well.</p>
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">loglike_select</em>, <em class="sig-param">loglike_inference</em>, <em class="sig-param">loglike_full</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new post-selection dor the LASSO problem
+Parameters
+———-
+loglike : <cite>regreg.smooth.glm.glm</cite></p>
+<blockquote>
+<div><p>A (negative) log-likelihood as implemented in <cite>regreg</cite>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>feature_weights<span class="classifier">np.ndarray</span></dt><dd><p>Feature weights for L-1 penalty. If a float,
+it is brodcast to all features.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">callable (optional)</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+</dl>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.gaussian">
+<em class="property">classmethod </em><code class="sig-name descname">gaussian</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving.gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Squared-error LASSO with feature weights.
+Objective function is
+$$
+beta mapsto frac{1}{2} |Y-Xbeta|^2_2 + sum_{i=1}^p lambda_i <a href="#id21"><span class="problematic" id="id22">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>sigma<span class="classifier">float (optional)</span></dt><dd><p>Noise variance. Set to 1 if <cite>covariance_estimator</cite> is not None.
+This scales the loglikelihood by <cite>sigma**(-2)</cite>.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">callable (optional)</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of some of the
+rows and columns of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.logistic">
+<em class="property">classmethod </em><code class="sig-name descname">logistic</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">successes</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">trials=None</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving.logistic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.logistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logistic LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell(Xbeta) + sum_{i=1}^p lambda_i <a href="#id23"><span class="problematic" id="id24">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell\)</span> is the negative of the logistic
+log-likelihood (half the logistic deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>successes<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – response vector. An integer number of successes.
+For data that is proportions, multiply the proportions
+by the number of trials first.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>trials<span class="classifier">ndarray (optional)</span></dt><dd><p>Number of trials per response, defaults to
+ones the same shape as Y.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.poisson">
+<em class="property">classmethod </em><code class="sig-name descname">poisson</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">counts</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving.poisson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Poisson log-linear LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Poisson}}(beta) + sum_{i=1}^p lambda_i <a href="#id25"><span class="problematic" id="id26">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Poisson}}\)</span> is the negative
+of the log of the Poisson likelihood (half the deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>counts<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.coxph">
+<em class="property">classmethod </em><code class="sig-name descname">coxph</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">times</em>, <em class="sig-param">status</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving.coxph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.coxph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cox proportional hazards LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Cox}}(beta) + sum_{i=1}^p lambda_i <a href="#id27"><span class="problematic" id="id28">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Cox}}\)</span> is the
+negative of the log of the Cox partial
+likelihood and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Uses Efron’s tie breaking method.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>times<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the survival times.</p>
+</dd>
+<dt>status<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the censoring status.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.sqrt_lasso">
+<em class="property">classmethod </em><code class="sig-name descname">sqrt_lasso</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">stage_one=None</em>, <em class="sig-param">solve_args={'min_its': 200}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving.sqrt_lasso"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.sqrt_lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use sqrt-LASSO to choose variables.
+Objective function is
+$$
+beta mapsto |Y-Xbeta|_2 + sum_{i=1}^p lambda_i <a href="#id29"><span class="problematic" id="id30">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>. After solving the problem
+treat as if <cite>gaussian</cite> with implied variance and choice of
+multiplier. See arxiv.org/abs/1504.08031 for details.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+<dt>covariance<span class="classifier">str</span></dt><dd><p>One of ‘parametric’ or ‘sandwich’. Method
+used to estimate covariance for inference
+in second stage.</p>
+</dd>
+<dt>sigma_estimate<span class="classifier">str</span></dt><dd><p>One of ‘truncated’ or ‘OLS’. Method
+used to estimate <span class="math notranslate nohighlight">\(\sigma\)</span> when using
+parametric covariance.</p>
+</dd>
+<dt>solve_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to solver.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>Unlike other variants of LASSO, this
+solves the problem on construction as the active
+set is needed to find equivalent gaussian LASSO.
+Assumes parametric model is correct for inference,
+i.e. does not accept a covariance estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-12}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the lasso using <cite>regreg</cite>.
+This sets the attributes <cite>soln</cite>, <cite>onestep</cite> and
+forms the constraints necessary for post-selection inference
+by calling <cite>form_constraints()</cite>.
+Parameters
+———-
+lasso_solution : optional</p>
+<blockquote>
+<div><p>If not None, this is taken to be the solution
+of the optimization problem. No checks
+are done, though the implied affine
+constraints will generally not be satisfied.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>solve_args<span class="classifier">keyword args</span></dt><dd><p>Passed to <cite>regreg.problems.simple_problem.solve</cite>.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>soln<span class="classifier">np.float</span></dt><dd><p>Solution to lasso.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If <cite>self</cite> already has an attribute <cite>lasso_solution</cite>
+this will be taken to be the solution and
+no optimization problem will be solved. Supplying
+the optional argument <cite>lasso_solution</cite> will
+overwrite <cite>self</cite>’s <cite>lasso_solution</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.hypothesis_test">
+<code class="sig-name descname">hypothesis_test</code><span class="sig-paren">(</span><em class="sig-param">variable</em>, <em class="sig-param">burnin=2000</em>, <em class="sig-param">ndraw=8000</em>, <em class="sig-param">compute_intervals=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_carving.hypothesis_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.hypothesis_test" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.constraints">
+<em class="property">property </em><code class="sig-name descname">constraints</code><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affine constraints for this LASSO problem.
+These are the constraints determined only
+by the active block.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.soln">
+<em class="property">property </em><code class="sig-name descname">soln</code><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.soln" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solution to the lasso problem, set by <cite>fit</cite> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_carving.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">alternative='twosided'</em>, <em class="sig-param">level=0.95</em>, <em class="sig-param">compute_intervals=False</em>, <em class="sig-param">truth=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.data_carving.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary table for inference adjusted for selection.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>alternative</strong> : str</p>
+<blockquote>
+<div><p>One of [“twosided”,”onesided”]</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Form level*100% selective confidence intervals.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Should we compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>truth</strong> : np.array</p>
+<blockquote>
+<div><p>True values of each beta for selected variables. If not None, a column ‘pval’ are p-values
+computed under these corresponding null hypotheses.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pval_summary</strong> : np.recarray</p>
+<blockquote>
+<div><p>Array with one entry per active variable.
+Columns are ‘variable’, ‘pval’, ‘lasso’, ‘onestep’, ‘lower_trunc’, ‘upper_trunc’, ‘sd’.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="data-splitting">
+<h3><a class="reference internal" href="#selectinf.algorithms.lasso.data_splitting" title="selectinf.algorithms.lasso.data_splitting"><code class="xref py py-class docutils literal notranslate"><span class="pre">data_splitting</span></code></a><a class="headerlink" href="#data-splitting" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.algorithms.lasso.data_splitting">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">data_splitting</code><span class="sig-paren">(</span><em class="sig-param">loglike_select</em>, <em class="sig-param">loglike_inference</em>, <em class="sig-param">loglike_full</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_splitting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.algorithms.lasso.data_carving" title="selectinf.algorithms.lasso.data_carving"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.algorithms.lasso.data_carving</span></code></a></p>
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">loglike_select</em>, <em class="sig-param">loglike_inference</em>, <em class="sig-param">loglike_full</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new post-selection dor the LASSO problem
+Parameters
+———-
+loglike : <cite>regreg.smooth.glm.glm</cite></p>
+<blockquote>
+<div><p>A (negative) log-likelihood as implemented in <cite>regreg</cite>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>feature_weights<span class="classifier">np.ndarray</span></dt><dd><p>Feature weights for L-1 penalty. If a float,
+it is brodcast to all features.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">callable (optional)</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+</dl>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">solve_args={'min_its': 500</em>, <em class="sig-param">'tol': 1e-12}</em>, <em class="sig-param">use_full_cov=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_splitting.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the lasso using <cite>regreg</cite>.
+This sets the attributes <cite>soln</cite>, <cite>onestep</cite> and
+forms the constraints necessary for post-selection inference
+by calling <cite>form_constraints()</cite>.
+Parameters
+———-
+lasso_solution : optional</p>
+<blockquote>
+<div><p>If not None, this is taken to be the solution
+of the optimization problem. No checks
+are done, though the implied affine
+constraints will generally not be satisfied.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>solve_args<span class="classifier">keyword args</span></dt><dd><p>Passed to <cite>regreg.problems.simple_problem.solve</cite>.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>soln<span class="classifier">np.float</span></dt><dd><p>Solution to lasso.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If <cite>self</cite> already has an attribute <cite>lasso_solution</cite>
+this will be taken to be the solution and
+no optimization problem will be solved. Supplying
+the optional argument <cite>lasso_solution</cite> will
+overwrite <cite>self</cite>’s <cite>lasso_solution</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.hypothesis_test">
+<code class="sig-name descname">hypothesis_test</code><span class="sig-paren">(</span><em class="sig-param">variable</em>, <em class="sig-param">df=inf</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#data_splitting.hypothesis_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.hypothesis_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wald test for an active variable.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.constraints">
+<em class="property">property </em><code class="sig-name descname">constraints</code><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affine constraints for this LASSO problem.
+These are the constraints determined only
+by the active block.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.coxph">
+<em class="property">classmethod </em><code class="sig-name descname">coxph</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">times</em>, <em class="sig-param">status</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.coxph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cox proportional hazards LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Cox}}(beta) + sum_{i=1}^p lambda_i <a href="#id31"><span class="problematic" id="id32">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Cox}}\)</span> is the
+negative of the log of the Cox partial
+likelihood and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Uses Efron’s tie breaking method.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>times<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the survival times.</p>
+</dd>
+<dt>status<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the censoring status.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.gaussian">
+<em class="property">classmethod </em><code class="sig-name descname">gaussian</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Squared-error LASSO with feature weights.
+Objective function is
+$$
+beta mapsto frac{1}{2} |Y-Xbeta|^2_2 + sum_{i=1}^p lambda_i <a href="#id33"><span class="problematic" id="id34">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>sigma<span class="classifier">float (optional)</span></dt><dd><p>Noise variance. Set to 1 if <cite>covariance_estimator</cite> is not None.
+This scales the loglikelihood by <cite>sigma**(-2)</cite>.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">callable (optional)</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of some of the
+rows and columns of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.logistic">
+<em class="property">classmethod </em><code class="sig-name descname">logistic</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">successes</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">trials=None</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.logistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logistic LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell(Xbeta) + sum_{i=1}^p lambda_i <a href="#id35"><span class="problematic" id="id36">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell\)</span> is the negative of the logistic
+log-likelihood (half the logistic deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>successes<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – response vector. An integer number of successes.
+For data that is proportions, multiply the proportions
+by the number of trials first.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>trials<span class="classifier">ndarray (optional)</span></dt><dd><p>Number of trials per response, defaults to
+ones the same shape as Y.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.poisson">
+<em class="property">classmethod </em><code class="sig-name descname">poisson</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">counts</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Poisson log-linear LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Poisson}}(beta) + sum_{i=1}^p lambda_i <a href="#id37"><span class="problematic" id="id38">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Poisson}}\)</span> is the negative
+of the log of the Poisson likelihood (half the deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>counts<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.soln">
+<em class="property">property </em><code class="sig-name descname">soln</code><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.soln" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solution to the lasso problem, set by <cite>fit</cite> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.sqrt_lasso">
+<em class="property">classmethod </em><code class="sig-name descname">sqrt_lasso</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">stage_one=None</em>, <em class="sig-param">solve_args={'min_its': 200}</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.sqrt_lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use sqrt-LASSO to choose variables.
+Objective function is
+$$
+beta mapsto |Y-Xbeta|_2 + sum_{i=1}^p lambda_i <a href="#id39"><span class="problematic" id="id40">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>. After solving the problem
+treat as if <cite>gaussian</cite> with implied variance and choice of
+multiplier. See arxiv.org/abs/1504.08031 for details.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+<dt>covariance<span class="classifier">str</span></dt><dd><p>One of ‘parametric’ or ‘sandwich’. Method
+used to estimate covariance for inference
+in second stage.</p>
+</dd>
+<dt>sigma_estimate<span class="classifier">str</span></dt><dd><p>One of ‘truncated’ or ‘OLS’. Method
+used to estimate <span class="math notranslate nohighlight">\(\sigma\)</span> when using
+parametric covariance.</p>
+</dd>
+<dt>solve_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to solver.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>Unlike other variants of LASSO, this
+solves the problem on construction as the active
+set is needed to find equivalent gaussian LASSO.
+Assumes parametric model is correct for inference,
+i.e. does not accept a covariance estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.data_splitting.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">alternative='twosided'</em>, <em class="sig-param">level=0.95</em>, <em class="sig-param">compute_intervals=False</em>, <em class="sig-param">truth=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.lasso.data_splitting.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary table for inference adjusted for selection.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>alternative</strong> : str</p>
+<blockquote>
+<div><p>One of [“twosided”,”onesided”]</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Form level*100% selective confidence intervals.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Should we compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>truth</strong> : np.array</p>
+<blockquote>
+<div><p>True values of each beta for selected variables. If not None, a column ‘pval’ are p-values
+computed under these corresponding null hypotheses.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pval_summary</strong> : np.recarray</p>
+<blockquote>
+<div><p>Array with one entry per active variable.
+Columns are ‘variable’, ‘pval’, ‘lasso’, ‘onestep’, ‘lower_trunc’, ‘upper_trunc’, ‘sd’.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="lasso">
+<h3><a class="reference internal" href="#selectinf.algorithms.lasso.lasso" title="selectinf.algorithms.lasso.lasso"><code class="xref py py-class docutils literal notranslate"><span class="pre">lasso</span></code></a><a class="headerlink" href="#lasso" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.algorithms.lasso.lasso">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">lasso</code><span class="sig-paren">(</span><em class="sig-param">loglike</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">ignore_inactive_constraints=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class for the LASSO for post-selection inference.
+The problem solved is
+.. math:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\<span class="n">text</span><span class="p">{</span><span class="n">minimize</span><span class="p">}</span><span class="n">_</span><span class="p">{</span>\<span class="n">beta</span><span class="p">}</span> \<span class="n">frac</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">2</span><span class="n">n</span><span class="p">}</span> \<span class="o">|</span><span class="n">y</span><span class="o">-</span><span class="n">X</span>\<span class="n">beta</span>\<span class="o">|^</span><span class="mi">2_2</span> <span class="o">+</span>
+    \<span class="k">lambda</span> \<span class="o">|</span>\<span class="n">beta</span>\<span class="o">|</span><span class="n">_1</span>
+</pre></div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>lam</cite>.</p>
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">loglike</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">ignore_inactive_constraints=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new post-selection dor the LASSO problem
+Parameters
+———-
+loglike : <cite>regreg.smooth.glm.glm</cite></p>
+<blockquote>
+<div><p>A (negative) log-likelihood as implemented in <cite>regreg</cite>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>feature_weights<span class="classifier">np.ndarray</span></dt><dd><p>Feature weights for L-1 penalty. If a float,
+it is brodcast to all features.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">callable (optional)</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+</dl>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">lasso_solution=None</em>, <em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-12}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the lasso using <cite>regreg</cite>.
+This sets the attributes <cite>soln</cite>, <cite>onestep</cite> and
+forms the constraints necessary for post-selection inference
+by calling <cite>form_constraints()</cite>.
+Parameters
+———-
+lasso_solution : optional</p>
+<blockquote>
+<div><p>If not None, this is taken to be the solution
+of the optimization problem. No checks
+are done, though the implied affine
+constraints will generally not be satisfied.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>solve_args<span class="classifier">keyword args</span></dt><dd><p>Passed to <cite>regreg.problems.simple_problem.solve</cite>.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>soln<span class="classifier">np.float</span></dt><dd><p>Solution to lasso.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If <cite>self</cite> already has an attribute <cite>lasso_solution</cite>
+this will be taken to be the solution and
+no optimization problem will be solved. Supplying
+the optional argument <cite>lasso_solution</cite> will
+overwrite <cite>self</cite>’s <cite>lasso_solution</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">alternative='twosided'</em>, <em class="sig-param">level=0.95</em>, <em class="sig-param">compute_intervals=False</em>, <em class="sig-param">truth=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso.summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary table for inference adjusted for selection.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>alternative</strong> : str</p>
+<blockquote>
+<div><p>One of [“twosided”,”onesided”]</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Form level*100% selective confidence intervals.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Should we compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>truth</strong> : np.array</p>
+<blockquote>
+<div><p>True values of each beta for selected variables. If not None, a column ‘pval’ are p-values
+computed under these corresponding null hypotheses.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pval_summary</strong> : np.recarray</p>
+<blockquote>
+<div><p>Array with one entry per active variable.
+Columns are ‘variable’, ‘pval’, ‘lasso’, ‘onestep’, ‘lower_trunc’, ‘upper_trunc’, ‘sd’.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.soln">
+<em class="property">property </em><code class="sig-name descname">soln</code><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.soln" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solution to the lasso problem, set by <cite>fit</cite> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.constraints">
+<em class="property">property </em><code class="sig-name descname">constraints</code><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affine constraints for this LASSO problem.
+These are the constraints determined only
+by the active block.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.gaussian">
+<em class="property">classmethod </em><code class="sig-name descname">gaussian</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso.gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Squared-error LASSO with feature weights.
+Objective function is
+$$
+beta mapsto frac{1}{2} |Y-Xbeta|^2_2 + sum_{i=1}^p lambda_i <a href="#id41"><span class="problematic" id="id42">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>sigma<span class="classifier">float (optional)</span></dt><dd><p>Noise variance. Set to 1 if <cite>covariance_estimator</cite> is not None.
+This scales the loglikelihood by <cite>sigma**(-2)</cite>.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">callable (optional)</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of some of the
+rows and columns of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.logistic">
+<em class="property">classmethod </em><code class="sig-name descname">logistic</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">successes</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">trials=None</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso.logistic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.logistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logistic LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell(Xbeta) + sum_{i=1}^p lambda_i <a href="#id43"><span class="problematic" id="id44">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell\)</span> is the negative of the logistic
+log-likelihood (half the logistic deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>successes<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – response vector. An integer number of successes.
+For data that is proportions, multiply the proportions
+by the number of trials first.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>trials<span class="classifier">ndarray (optional)</span></dt><dd><p>Number of trials per response, defaults to
+ones the same shape as Y.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.coxph">
+<em class="property">classmethod </em><code class="sig-name descname">coxph</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">times</em>, <em class="sig-param">status</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso.coxph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.coxph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cox proportional hazards LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Cox}}(beta) + sum_{i=1}^p lambda_i <a href="#id45"><span class="problematic" id="id46">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Cox}}\)</span> is the
+negative of the log of the Cox partial
+likelihood and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Uses Efron’s tie breaking method.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>times<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the survival times.</p>
+</dd>
+<dt>status<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the censoring status.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.poisson">
+<em class="property">classmethod </em><code class="sig-name descname">poisson</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">counts</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">covariance_estimator=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso.poisson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.poisson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Poisson log-linear LASSO with feature weights.
+Objective function is
+$$
+beta mapsto ell^{text{Poisson}}(beta) + sum_{i=1}^p lambda_i <a href="#id47"><span class="problematic" id="id48">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\ell^{\text{Poisson}}\)</span> is the negative
+of the log of the Poisson likelihood (half the deviance)
+and <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>counts<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>covariance_estimator<span class="classifier">optional</span></dt><dd><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>If not None, <cite>covariance_estimator</cite> should
+take arguments (beta, active, inactive)
+and return an estimate of the covariance of
+<span class="math notranslate nohighlight">\((\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})\)</span>,
+the unpenalized estimator and the inactive
+coordinates of the gradient of the likelihood at
+the unpenalized estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.lasso.lasso.sqrt_lasso">
+<em class="property">classmethod </em><code class="sig-name descname">sqrt_lasso</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">covariance='parametric'</em>, <em class="sig-param">sigma_estimate='truncated'</em>, <em class="sig-param">solve_args={'min_its': 200}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#lasso.sqrt_lasso"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.lasso.sqrt_lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use sqrt-LASSO to choose variables.
+Objective function is
+$$
+beta mapsto |Y-Xbeta|_2 + sum_{i=1}^p lambda_i <a href="#id49"><span class="problematic" id="id50">|\beta_i|</span></a>
+$$
+where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>feature_weights</cite>. After solving the problem
+treat as if <cite>gaussian</cite> with implied variance and choice of
+multiplier. See arxiv.org/abs/1504.08031 for details.
+Parameters
+———-
+X : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<dl>
+<dt>Y<span class="classifier">ndarray</span></dt><dd><p>Shape (n,) – the response.</p>
+</dd>
+<dt>feature_weights: [float, sequence]</dt><dd><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</dd>
+<dt>quadratic<span class="classifier"><cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</span></dt><dd><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</dd>
+<dt>covariance<span class="classifier">str</span></dt><dd><p>One of ‘parametric’ or ‘sandwich’. Method
+used to estimate covariance for inference
+in second stage.</p>
+</dd>
+<dt>sigma_estimate<span class="classifier">str</span></dt><dd><p>One of ‘truncated’ or ‘OLS’. Method
+used to estimate <span class="math notranslate nohighlight">\(\sigma\)</span> when using
+parametric covariance.</p>
+</dd>
+<dt>solve_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to solver.</p>
+</dd>
+</dl>
+<p>L : <cite>selection.algorithms.lasso.lasso</cite></p>
+<p class="rubric">Notes</p>
+<p>Unlike other variants of LASSO, this
+solves the problem on construction as the active
+set is needed to find equivalent gaussian LASSO.
+Assumes parametric model is correct for inference,
+i.e. does not accept a covariance estimator.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.algorithms.lasso.additive_noise">
+<code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">additive_noise</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">sigma</em>, <em class="sig-param">lam_frac=1.0</em>, <em class="sig-param">perturb_frac=0.2</em>, <em class="sig-param">y_star=None</em>, <em class="sig-param">coverage=0.95</em>, <em class="sig-param">ndraw=8000</em>, <em class="sig-param">compute_intervals=True</em>, <em class="sig-param">burnin=2000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#additive_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.additive_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Additive noise LASSO.
+Parameters
+———-
+y : np.float</p>
+<blockquote>
+<div><p>Response vector</p>
+</div></blockquote>
+<dl class="simple">
+<dt>X<span class="classifier">np.float</span></dt><dd><p>Design matrix</p>
+</dd>
+<dt>sigma<span class="classifier">np.float</span></dt><dd><p>Noise variance</p>
+</dd>
+<dt>lam_frac<span class="classifier">float (optional)</span></dt><dd><p>Multiplier for choice of <span class="math notranslate nohighlight">\(\lambda\)</span>. Defaults to 2.</p>
+</dd>
+<dt>perturb_frac<span class="classifier">float (optional)</span></dt><dd><p>How much noise to add? Noise added has variance
+proportional to existing variance.</p>
+</dd>
+<dt>coverage<span class="classifier">float</span></dt><dd><p>Coverage for selective intervals. Defaults to 0.95.</p>
+</dd>
+<dt>ndraw<span class="classifier">int (optional)</span></dt><dd><p>How many draws to keep from Gibbs hit-and-run sampler.
+Defaults to 8000.</p>
+</dd>
+<dt>burnin<span class="classifier">int (optional)</span></dt><dd><p>Defaults to 2000.</p>
+</dd>
+<dt>compute_intervals<span class="classifier">bool (optional)</span></dt><dd><p>Compute selective intervals?</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>results</strong> : [(variable, pvalue, interval)</p>
+<blockquote>
+<div><p>Indices of active variables,
+selected (twosided) pvalue and selective interval.
+If splitting, then each entry also includes
+a (split_pvalue, split_interval) using stage_two
+for inference.</p>
+</div></blockquote>
+<p><strong>randomized_lasso</strong> : <cite>lasso</cite></p>
+<blockquote>
+<div><p>Results of fitting LASSO to randomized data.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.lasso.glm_parametric_estimator">
+<code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">glm_parametric_estimator</code><span class="sig-paren">(</span><em class="sig-param">loglike</em>, <em class="sig-param">dispersion=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#glm_parametric_estimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.glm_parametric_estimator" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Parametric estimator of covariance of</p>
+<div class="math notranslate nohighlight">
+\[(ar{eta}_E, X_{-E}^T(y-\]</div>
+</div></blockquote>
+<dl>
+<dt>abla ell(X_Ear{eta}_E))</dt><dd><p>the OLS estimator of population regression
+coefficients and inactive correlation with the
+OLS residuals.
+If <cite>sigma</cite> is None, it computes usual unbiased estimate
+of variance in Gaussian model and plugs it in,
+assuming parametric form is correct.
+Returns
+——-
+estimator : callable</p>
+<blockquote>
+<div><p>Takes arguments (beta, active, inactive)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.lasso.glm_sandwich_estimator">
+<code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">glm_sandwich_estimator</code><span class="sig-paren">(</span><em class="sig-param">loss</em>, <em class="sig-param">B=1000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#glm_sandwich_estimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.glm_sandwich_estimator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bootstrap estimator of covariance of</p>
+<div class="math notranslate nohighlight">
+\[(ar{eta}_E, X_{-E}^T(y-X_Ear{eta}_E)\]</div>
+<p>the OLS estimator of population regression
+coefficients and inactive correlation with the
+OLS residuals.
+Returns
+——-
+estimator : callable</p>
+<blockquote>
+<div><p>Takes arguments (beta, active, inactive)</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.lasso.nominal_intervals">
+<code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">nominal_intervals</code><span class="sig-paren">(</span><em class="sig-param">lasso_obj</em>, <em class="sig-param">level=0.95</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#nominal_intervals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.nominal_intervals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intervals for OLS parameters of active variables
+that have not been adjusted for selection.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.lasso.split_model">
+<code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">split_model</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">sigma=1</em>, <em class="sig-param">lam_frac=1.0</em>, <em class="sig-param">split_frac=0.9</em>, <em class="sig-param">stage_one=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#split_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.split_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a LASSO with a default choice of Lagrange parameter
+equal to <cite>lam_frac</cite> times <span class="math notranslate nohighlight">\(\sigma \cdot E(|X^T\epsilon|)\)</span>
+with <span class="math notranslate nohighlight">\(\epsilon\)</span> IID N(0,1) on a proportion (<cite>split_frac</cite>) of
+the data.
+Parameters
+———-
+y : np.float</p>
+<blockquote>
+<div><p>Response vector</p>
+</div></blockquote>
+<dl class="simple">
+<dt>X<span class="classifier">np.float</span></dt><dd><p>Design matrix</p>
+</dd>
+<dt>sigma<span class="classifier">np.float</span></dt><dd><p>Noise variance</p>
+</dd>
+<dt>lam_frac<span class="classifier">float (optional)</span></dt><dd><p>Multiplier for choice of <span class="math notranslate nohighlight">\(\lambda\)</span>. Defaults to 2.</p>
+</dd>
+<dt>split_frac<span class="classifier">float (optional)</span></dt><dd><p>What proportion of the data to use in the first stage?
+Defaults to 0.9.</p>
+</dd>
+<dt>stage_one<span class="classifier">[np.array(np.int), None] (optional)</span></dt><dd><p>Index of data points to be used in  first stage.
+If None, a randomly chosen set of entries is used based on
+<cite>split_frac</cite>.</p>
+</dd>
+</dl>
+<dl>
+<dt>first_stage<span class="classifier"><cite>lasso</cite></span></dt><dd><p>Lasso object from stage one.</p>
+</dd>
+<dt>stage_one<span class="classifier">np.array(int)</span></dt><dd><p>Indices used for stage one.</p>
+</dd>
+<dt>stage_two<span class="classifier">np.array(int)</span></dt><dd><p>Indices used for stage two.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.lasso.standard_lasso">
+<code class="sig-prename descclassname">selectinf.algorithms.lasso.</code><code class="sig-name descname">standard_lasso</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">sigma=1</em>, <em class="sig-param">lam_frac=1.0</em>, <em class="sig-param">**solve_args</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/lasso.html#standard_lasso"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.lasso.standard_lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a LASSO with a default choice of Lagrange parameter
+equal to <cite>lam_frac</cite> times <span class="math notranslate nohighlight">\(\sigma \cdot E(|X^T\epsilon|)\)</span>
+with <span class="math notranslate nohighlight">\(\epsilon\)</span> IID N(0,1).
+Parameters
+———-
+y : np.float</p>
+<blockquote>
+<div><p>Response vector</p>
+</div></blockquote>
+<dl class="simple">
+<dt>X<span class="classifier">np.float</span></dt><dd><p>Design matrix</p>
+</dd>
+<dt>sigma<span class="classifier">np.float</span></dt><dd><p>Noise variance</p>
+</dd>
+<dt>lam_frac<span class="classifier">float</span></dt><dd><p>Multiplier for choice of <span class="math notranslate nohighlight">\(\lambda\)</span></p>
+</dd>
+<dt>solve_args<span class="classifier">keyword args</span></dt><dd><p>Passed to <cite>regreg.problems.simple_problem.solve</cite>.</p>
+</dd>
+</dl>
+<dl>
+<dt>lasso_selection<span class="classifier"><cite>lasso</cite></span></dt><dd><p>Instance of <cite>lasso</cite> after fitting.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.algorithms.pca.html" class="btn btn-neutral float-right" title="algorithms.pca" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.algorithms.forward_step.html" class="btn btn-neutral float-left" title="algorithms.forward_step" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

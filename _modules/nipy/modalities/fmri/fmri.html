@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.modalities.fmri.fmri</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">...core.api</span> <span class="k">import</span> <span class="n">ImageList</span>
+
+
+<div class="viewcode-block" id="FmriImageList"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.fmri.html#nipy.modalities.fmri.fmri.FmriImageList">[docs]</a><span class="k">class</span> <span class="nc">FmriImageList</span><span class="p">(</span><span class="n">ImageList</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Class to implement image list interface for FMRI time series</span>
+
+<span class="sd">    Allows metadata such as volume and slice times</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FmriImageList.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.fmri.html#nipy.modalities.fmri.fmri.FmriImageList.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">volume_start_times</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slice_times</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        An implementation of an fMRI image as in ImageList</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        images : iterable</span>
+<span class="sd">           an iterable object whose items are meant to be images; this is</span>
+<span class="sd">           checked by asserting that each has a `coordmap` attribute and a</span>
+<span class="sd">           ``get_data`` method.  Note that Image objects are not iterable by</span>
+<span class="sd">           default; use the ``from_image`` classmethod or ``iter_axis`` function</span>
+<span class="sd">           to convert images to image lists - see examples below for the latter.</span>
+<span class="sd">        volume_start_times: None or float or (N,) ndarray</span>
+<span class="sd">            start time of each frame. It can be specified either as an ndarray</span>
+<span class="sd">            with ``N=len(images)`` elements or as a single float, the TR. None</span>
+<span class="sd">            results in ``np.arange(len(images)).astype(np.float)``</span>
+<span class="sd">        slice_times: None or (N,) ndarray</span>
+<span class="sd">            specifying offset for each slice of each frame, from the frame start</span>
+<span class="sd">            time.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        nipy.core.image_list.ImageList</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.testing import funcfile</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.core.api import iter_axis</span>
+<span class="sd">        &gt;&gt;&gt; funcim = load_image(funcfile)</span>
+<span class="sd">        &gt;&gt;&gt; iterable_img = iter_axis(funcim, &#39;t&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; fmrilist = FmriImageList(iterable_img)</span>
+<span class="sd">        &gt;&gt;&gt; print(fmrilist.get_list_data(axis=0).shape)</span>
+<span class="sd">        (20, 17, 21, 3)</span>
+<span class="sd">        &gt;&gt;&gt; print(fmrilist[4].shape)</span>
+<span class="sd">        (17, 21, 3)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ImageList</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="n">images</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">volume_start_times</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">volume_start_times</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">volume_start_times</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">length</span><span class="p">,):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span> <span class="o">=</span> <span class="n">volume_start_times</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">volume_start_times</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="o">*</span> <span class="n">v</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slice_times</span> <span class="o">=</span> <span class="n">slice_times</span></div>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If index is an index, return self.list[index], an Image</span>
+<span class="sd">        else return an FmriImageList with images=self.list[index].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="n">images</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">[</span><span class="n">index</span><span class="p">],</span>
+            <span class="n">volume_start_times</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span><span class="p">[</span><span class="n">index</span><span class="p">],</span>
+            <span class="n">slice_times</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">slice_times</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FmriImageList.from_image"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.fmri.html#nipy.modalities.fmri.fmri.FmriImageList.from_image">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_image</span><span class="p">(</span><span class="n">klass</span><span class="p">,</span> <span class="n">fourdimage</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span>
+                   <span class="n">volume_start_times</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slice_times</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an FmriImageList from a 4D Image</span>
+
+<span class="sd">        Get images by extracting 3d images along the &#39;t&#39; axis.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fourdimage : ``Image`` instance</span>
+<span class="sd">            A 4D Image</span>
+<span class="sd">        volume_start_times: None or float or (N,) ndarray</span>
+<span class="sd">            start time of each frame. It can be specified either as an ndarray</span>
+<span class="sd">            with ``N=len(images)`` elements or as a single float, the TR. None</span>
+<span class="sd">            results in ``np.arange(len(images)).astype(np.float)``</span>
+<span class="sd">        slice_times: None or (N,) ndarray</span>
+<span class="sd">            specifying offset for each slice of each frame, from the frame start</span>
+<span class="sd">            time.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        filist : ``FmriImageList`` instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">fourdimage</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting a 4-dimensional Image&#39;</span><span class="p">)</span>
+        <span class="n">image_list</span> <span class="o">=</span> <span class="n">ImageList</span><span class="o">.</span><span class="n">from_image</span><span class="p">(</span><span class="n">fourdimage</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">klass</span><span class="p">(</span><span class="n">images</span><span class="o">=</span><span class="n">image_list</span><span class="o">.</span><span class="n">list</span><span class="p">,</span>
+                     <span class="n">volume_start_times</span><span class="o">=</span><span class="n">volume_start_times</span><span class="p">,</span>
+                     <span class="n">slice_times</span><span class="o">=</span><span class="n">slice_times</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="axis0_generator"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.fmri.html#nipy.modalities.fmri.fmri.axis0_generator">[docs]</a><span class="k">def</span> <span class="nf">axis0_generator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">slicers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Takes array-like `data`, returning slices over axes &gt; 0</span>
+
+<span class="sd">    This function takes an array-like object `data` and yields tuples of slicing</span>
+<span class="sd">    thing and slices like::</span>
+
+<span class="sd">        [slicer, np.asarray(data)[:,slicer] for slicer in slicer]</span>
+
+<span class="sd">    which in the default (`slicers` is None) case, boils down to::</span>
+
+<span class="sd">        [i, np.asarray(data)[:,i] for i in range(data.shape[1])]</span>
+
+<span class="sd">    This can be used to get arrays of time series out of an array if the time</span>
+<span class="sd">    axis is axis 0.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : array-like</span>
+<span class="sd">       object such that ``arr = np.asarray(data)`` returns an array of</span>
+<span class="sd">       at least 2 dimensions.</span>
+<span class="sd">    slicers : None or sequence</span>
+<span class="sd">       sequence of objects that can be used to slice into array ``arr``</span>
+<span class="sd">       returned from data.  If None, default is ``range(data.shape[1])``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">slicers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">slicers</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">slicer</span> <span class="ow">in</span> <span class="n">slicers</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">slicer</span><span class="p">,</span> <span class="n">arr</span><span class="p">[:,</span><span class="n">slicer</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

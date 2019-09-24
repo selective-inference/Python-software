@@ -1,0 +1,466 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.slicetiming.timefuncs</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Utility functions for returning slice times from number of slices and TR</span>
+
+<span class="sd">Slice timing routines in nipy need a vector of slice times.</span>
+
+<span class="sd">Slice times are vectors $t_i$ with $i = 0 ... N$ of times, one for each slice, where</span>
+<span class="sd">$t_i$ gives the time at which slice number $i$ was acquired, relative to the</span>
+<span class="sd">beginning of the volume acquisition.</span>
+
+<span class="sd">We like these vectors because they are unambiguous; the indices $i$ refer to</span>
+<span class="sd">positions in space, and the values $t_i$ refer to times.</span>
+
+<span class="sd">But, there are many common slice timing regimes for which it&#39;s easy to get the</span>
+<span class="sd">slice times once you know the volume acquisition time (the TR) and the number of</span>
+<span class="sd">slices.</span>
+
+<span class="sd">For example, if you acquired the slices in a simple ascending order, and you</span>
+<span class="sd">have 10 slices and the TR was 2.0, then the slice times are:</span>
+
+<span class="sd">&gt;&gt;&gt; import numpy as np</span>
+<span class="sd">&gt;&gt;&gt; np.arange(10) / 10.  * 2.0</span>
+<span class="sd">array([ 0. ,  0.2,  0.4,  0.6,  0.8,  1. ,  1.2,  1.4,  1.6,  1.8])</span>
+
+<span class="sd">These are small convenience functions that accept the number of slices and the</span>
+<span class="sd">TR as input, and return a vector of slice times:</span>
+
+<span class="sd">&gt;&gt;&gt; ascending(10, 2.)</span>
+<span class="sd">array([ 0. ,  0.2,  0.4,  0.6,  0.8,  1. ,  1.2,  1.4,  1.6,  1.8])</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Legacy repr printing from numpy.</span>
+<span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">legacy_printing</span> <span class="k">as</span> <span class="n">setup_module</span>  <span class="c1"># noqa</span>
+
+<span class="c1"># Dictionary (key, value) == (name, function) for slice timing functions</span>
+<span class="n">SLICETIME_FUNCTIONS</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">def</span> <span class="nf">_dec_filldoc</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Fill docstring of slice time function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">func</span><span class="o">.</span><span class="n">_doc_template</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="o">**</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="n">pstr</span><span class="o">=</span>
+<span class="sd">&quot;&quot;&quot;Note: slice 0 is the first slice in the voxel data block</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_slices : int</span>
+<span class="sd">        Number of slices in volume</span>
+<span class="sd">    TR : float</span>
+<span class="sd">        Time to acquire one full volume</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    slice_times : (n_slices,) ndarray</span>
+<span class="sd">        Vectors $t_i i = 0 ... N$ of times, one for each slice, where $t_i$</span>
+<span class="sd">        gives the time at which slice number $i$ was acquired, relative to the</span>
+<span class="sd">        beginning of the volume acquisition.</span>
+<span class="sd">    &quot;&quot;&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">func</span>
+
+
+<span class="k">def</span> <span class="nf">_dec_register_stf</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Register slice time function in module dictionary &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="n">SLICETIME_FUNCTIONS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span>
+    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;st_&#39;</span><span class="p">):</span>
+        <span class="n">short_name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">short_name</span> <span class="ow">in</span> <span class="n">SLICETIME_FUNCTIONS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Duplicate short / long function name </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">short_name</span><span class="p">))</span>
+        <span class="n">SLICETIME_FUNCTIONS</span><span class="p">[</span><span class="n">short_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span>
+    <span class="k">return</span> <span class="n">func</span>
+
+
+<span class="k">def</span> <span class="nf">_dec_stfunc</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_dec_register_stf</span><span class="p">(</span><span class="n">_dec_filldoc</span><span class="p">(</span><span class="n">func</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_derived_func</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">derived</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">)</span>
+    <span class="n">derived</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">name</span>
+    <span class="n">derived</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">_doc_template</span>
+    <span class="k">return</span> <span class="n">_dec_stfunc</span><span class="p">(</span><span class="n">derived</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="st_01234"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.slicetiming.timefuncs.html#nipy.algorithms.slicetiming.timefuncs.st_01234">[docs]</a><span class="nd">@_dec_stfunc</span>
+<span class="k">def</span> <span class="nf">st_01234</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Simple ascending slice sequence</span>
+
+<span class="sd">    slice 0 first, slice 1 second etc.</span>
+
+<span class="sd">    For example, for 5 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(5, 1.)</span>
+<span class="sd">    array([ 0. ,  0.2,  0.4,  0.6,  0.8])</span>
+
+<span class="sd">    {pstr}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_slices</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_slices</span> <span class="o">*</span> <span class="n">TR</span></div>
+
+<span class="n">ascending</span> <span class="o">=</span> <span class="n">_derived_func</span><span class="p">(</span><span class="s1">&#39;ascending&#39;</span><span class="p">,</span> <span class="n">st_01234</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="st_43210"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.slicetiming.timefuncs.html#nipy.algorithms.slicetiming.timefuncs.st_43210">[docs]</a><span class="nd">@_dec_stfunc</span>
+<span class="k">def</span> <span class="nf">st_43210</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Simple descending slice sequence</span>
+
+<span class="sd">    slice ``n_slices-1`` first, slice ``n_slices - 2`` second etc.</span>
+
+<span class="sd">    For example, for 5 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(5, 1.)</span>
+<span class="sd">    array([ 0.8,  0.6,  0.4,  0.2,  0. ])</span>
+
+<span class="sd">    {pstr}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_slices</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">n_slices</span> <span class="o">*</span> <span class="n">TR</span></div>
+
+<span class="n">descending</span> <span class="o">=</span> <span class="n">_derived_func</span><span class="p">(</span><span class="s1">&#39;descending&#39;</span><span class="p">,</span> <span class="n">st_43210</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="st_02413"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.slicetiming.timefuncs.html#nipy.algorithms.slicetiming.timefuncs.st_02413">[docs]</a><span class="nd">@_dec_stfunc</span>
+<span class="k">def</span> <span class="nf">st_02413</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Ascend alternate every second slice, starting at first slice</span>
+
+<span class="sd">    Collect slice 0 first, slice 2 second up to top.  Then return to collect</span>
+<span class="sd">    slice 1, slice 3 etc.</span>
+
+<span class="sd">    For example, for 5 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(5, 1.)</span>
+<span class="sd">    array([ 0. ,  0.6,  0.2,  0.8,  0.4])</span>
+
+<span class="sd">    {pstr}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">one_slice</span> <span class="o">=</span> <span class="n">TR</span> <span class="o">/</span> <span class="n">n_slices</span>
+    <span class="n">time_to_space</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_slices</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_slices</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">space_to_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">time_to_space</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">space_to_time</span> <span class="o">*</span> <span class="n">one_slice</span></div>
+
+<span class="n">asc_alt_2</span> <span class="o">=</span> <span class="n">_derived_func</span><span class="p">(</span><span class="s1">&#39;asc_alt_2&#39;</span><span class="p">,</span> <span class="n">st_02413</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="st_13024"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.slicetiming.timefuncs.html#nipy.algorithms.slicetiming.timefuncs.st_13024">[docs]</a><span class="nd">@_dec_stfunc</span>
+<span class="k">def</span> <span class="nf">st_13024</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Ascend alternate every second slice, starting at second slice</span>
+
+<span class="sd">    Collect slice 1 first, slice 3 second up to top (highest numbered slice).</span>
+<span class="sd">    Then return to collect slice 0, slice 2 etc.  This order is rare except on</span>
+<span class="sd">    Siemens acquisitions with an even number of slices.  See</span>
+<span class="sd">    :func:`st_odd0_even1` for this logic.</span>
+
+<span class="sd">    For example, for 5 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(5, 1.)</span>
+<span class="sd">    array([ 0.4,  0. ,  0.6,  0.2,  0.8])</span>
+
+<span class="sd">    {pstr}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">one_slice</span> <span class="o">=</span> <span class="n">TR</span> <span class="o">/</span> <span class="n">n_slices</span>
+    <span class="n">time_to_space</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_slices</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_slices</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">space_to_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">time_to_space</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">space_to_time</span> <span class="o">*</span> <span class="n">one_slice</span></div>
+
+<span class="n">asc_alt_2_1</span> <span class="o">=</span> <span class="n">_derived_func</span><span class="p">(</span><span class="s1">&#39;asc_alt_2_1&#39;</span><span class="p">,</span> <span class="n">st_13024</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="st_42031"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.slicetiming.timefuncs.html#nipy.algorithms.slicetiming.timefuncs.st_42031">[docs]</a><span class="nd">@_dec_stfunc</span>
+<span class="k">def</span> <span class="nf">st_42031</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Descend alternate every second slice, starting at last slice</span>
+
+<span class="sd">    Collect slice (`n_slices` - 1) first, slice (`nslices` - 3) second down to</span>
+<span class="sd">    bottom (lowest numbered slice).  Then return to collect slice (`n_slices`</span>
+<span class="sd">    -2), slice (`n_slices` - 4) etc.</span>
+
+<span class="sd">    For example, for 5 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(5, 1.)</span>
+<span class="sd">    array([ 0.4,  0.8,  0.2,  0.6,  0. ])</span>
+
+<span class="sd">    {pstr}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">st_02413</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+<span class="n">desc_alt_2</span> <span class="o">=</span> <span class="n">_derived_func</span><span class="p">(</span><span class="s1">&#39;desc_alt_2&#39;</span><span class="p">,</span> <span class="n">st_42031</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="st_odd0_even1"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.slicetiming.timefuncs.html#nipy.algorithms.slicetiming.timefuncs.st_odd0_even1">[docs]</a><span class="nd">@_dec_stfunc</span>
+<span class="k">def</span> <span class="nf">st_odd0_even1</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Ascend alternate starting at slice 0 for odd, slice 1 for even `n_slices`</span>
+
+<span class="sd">    Acquisitions with alternating ascending slices from Siemens scanners often</span>
+<span class="sd">    seem to have this behavior as default - see:</span>
+<span class="sd">        https://mri.radiology.uiowa.edu/fmri_images.html</span>
+
+<span class="sd">    This means we use the :func:`st_02413` algorithm if `n_slices` is odd, and</span>
+<span class="sd">    the :func:`st_13024` algorithm if `n_slices` is even.</span>
+
+<span class="sd">    For example, for 4 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(4, 1.)</span>
+<span class="sd">    array([ 0.5 ,  0.  ,  0.75,  0.25])</span>
+
+<span class="sd">    5 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(5, 1.)</span>
+<span class="sd">    array([ 0. ,  0.6,  0.2,  0.8,  0.4])</span>
+
+<span class="sd">    {pstr}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n_slices</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">st_13024</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">st_02413</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">)</span></div>
+
+<span class="n">asc_alt_siemens</span> <span class="o">=</span> <span class="n">_derived_func</span><span class="p">(</span><span class="s1">&#39;asc_alt_siemens&#39;</span><span class="p">,</span> <span class="n">st_odd0_even1</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="st_03142"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.slicetiming.timefuncs.html#nipy.algorithms.slicetiming.timefuncs.st_03142">[docs]</a><span class="nd">@_dec_stfunc</span>
+<span class="k">def</span> <span class="nf">st_03142</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Ascend alternate, where alternation is by half the volume</span>
+
+<span class="sd">    Collect slice 0 then slice ``ceil(n_slices / 2.)`` then slice 1 then slice</span>
+<span class="sd">    ``ceil(nslices / 2.) + 1`` etc.</span>
+
+<span class="sd">    For example, for 5 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(5, 1.)</span>
+<span class="sd">    array([ 0. ,  0.4,  0.8,  0.2,  0.6])</span>
+
+<span class="sd">    {pstr}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">one_slice</span> <span class="o">=</span> <span class="n">TR</span> <span class="o">/</span> <span class="n">n_slices</span>
+    <span class="n">space_to_time</span> <span class="o">=</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_slices</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span>
+                     <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_slices</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">space_to_time</span><span class="p">)</span> <span class="o">*</span> <span class="n">one_slice</span></div>
+
+<span class="n">asc_alt_half</span> <span class="o">=</span> <span class="n">_derived_func</span><span class="p">(</span><span class="s1">&#39;asc_alt_half&#39;</span><span class="p">,</span> <span class="n">st_03142</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="st_41302"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.slicetiming.timefuncs.html#nipy.algorithms.slicetiming.timefuncs.st_41302">[docs]</a><span class="nd">@_dec_stfunc</span>
+<span class="k">def</span> <span class="nf">st_41302</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Descend alternate, where alternation is by half the volume</span>
+
+<span class="sd">    Collect slice ``(n_slices - 1)`` then slice ``floor(nslices / 2.) - 1``</span>
+<span class="sd">    then slice ``(n_slices - 2)`` then slice ``floor(nslices / 2.) - 2`` etc.</span>
+
+<span class="sd">    For example, for 5 slices and a TR of 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; {name}(5, 1.)</span>
+<span class="sd">    array([ 0.6,  0.2,  0.8,  0.4,  0. ])</span>
+
+<span class="sd">    {pstr}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">st_03142</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">TR</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+<span class="n">desc_alt_half</span> <span class="o">=</span> <span class="n">_derived_func</span><span class="p">(</span><span class="s1">&#39;desc_alt_half&#39;</span><span class="p">,</span> <span class="n">st_41302</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

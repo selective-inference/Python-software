@@ -1,0 +1,755 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.constraints.quadratic</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">mpmath</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">norm</span>
+
+<span class="kn">from</span> <span class="nn">..truncated.api</span> <span class="k">import</span> <span class="n">truncated_chi</span><span class="p">,</span> <span class="n">truncated_chi2</span><span class="p">,</span> <span class="n">truncated_F</span>
+<span class="kn">from</span> <span class="nn">.intervals</span> <span class="k">import</span> <span class="n">intervals</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="n">constraints</span> <span class="k">as</span> <span class="n">base_constraints</span>
+
+<div class="viewcode-block" id="constraints"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints">[docs]</a><span class="k">class</span> <span class="nc">constraints</span><span class="p">(</span><span class="n">base_constraints</span><span class="p">):</span>
+
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Object solving the problems of slices for quadratic and linear </span>
+<span class="sd">    inequalities</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">    </span>
+<span class="sd">          \forall i, y^T Q_i y + a_i^t &lt; b_i</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="constraints.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">quad_part</span><span class="p">,</span> 
+                 <span class="n">lin_part</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                 <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">covariance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">mean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">rank</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Create a new object for quadratic constraints</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        quad_part : np.float(l, p, p)</span>
+<span class="sd">              3-dimensions array. The lines are some quadratic forms</span>
+<span class="sd"> </span>
+<span class="sd">        lin_part : np.float(l, p)</span>
+<span class="sd">              The lines are the vector of the linear forms in the inquality       </span>
+<span class="sd">              Default to np.zeros(l, p)</span>
+
+<span class="sd">        offset : np.float(l)</span>
+<span class="sd">              The offsets of all inequalities</span>
+<span class="sd">              Defaults to np.zeros(l)</span>
+
+<span class="sd">        covariance : np.float((p,p))</span>
+<span class="sd">            Covariance matrix of Gaussian distribution to be </span>
+<span class="sd">            truncated. Defaults to `np.identity(self.dim)`.</span>
+
+<span class="sd">        mean : np.float(p)</span>
+<span class="sd">            Mean vector of Gaussian distribution to be </span>
+<span class="sd">            truncated. Defaults to `np.zeros(self.dim)`.</span>
+
+<span class="sd">        rank : int</span>
+<span class="sd">            If not None, this should specify</span>
+<span class="sd">            the rank of the covariance matrix. Defaults</span>
+<span class="sd">            to self.dim.</span>
+
+<span class="sd">        WARNING : The shapes of the three parameters must fit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+              
+        <span class="c1"># Check the inputs are aligned</span>
+        <span class="n">p</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">quad_part</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">quad_part</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lin_part</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lin_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lin_part</span><span class="p">)</span> <span class="o">!=</span> <span class="n">l</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span> <span class="o">!=</span> <span class="n">l</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Not the same number of quadratics, linear and offset&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">quad_part</span> <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">)]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The quadratics must have the same shape&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">lin_part</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">p</span><span class="p">,)]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The linear don&#39;t fit&quot;</span><span class="p">)</span>
+                
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">quad_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">quad_part</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lin_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lin_part</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+
+        <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="n">rank</span>
+
+        <span class="k">if</span> <span class="n">covariance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span>
+
+        <span class="k">if</span> <span class="n">mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean</span> <span class="o">=</span> <span class="n">mean</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-10</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check wether y satisfies the quadratic inequality constraints</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        y : np.float(p, 1)</span>
+<span class="sd">              the vector tested</span>
+
+<span class="sd">        tol : float</span>
+<span class="sd">              tolerance for the inequlity. </span>
+<span class="sd">              Default to 1.e-3</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        bool:</span>
+<span class="sd">              True if y satisfies the inequalities, else, False</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        The constraints are : </span>
+<span class="sd">        (x + 1)^2 + y ^ 2    &lt; 4</span>
+<span class="sd">        10 * x^2  - 10 * y^2 &lt; -1</span>
+<span class="sd">        (x - 1)^2 + y ^ 2    &lt; 4</span>
+
+<span class="sd">        &gt;&gt;&gt; q1, lin1, off1 = np.identity(2), np.array([2., 0.]), 3.</span>
+<span class="sd">        &gt;&gt;&gt; q2, lin2, off2 = np.array([[10., 0], [0, -10.]]), np.zeros(2), -1.</span>
+<span class="sd">        &gt;&gt;&gt; q3, lin3, off3 = np.identity(2), np.array([-2., 0.]), 3.</span>
+<span class="sd">        &gt;&gt;&gt; cons = constraints(np.array([q1, q2, q3]), \</span>
+<span class="sd">                               np.array([lin1, lin2, lin3]), \</span>
+<span class="sd">                               np.array([off1, off2, off3]))</span>
+
+<span class="sd">        &gt;&gt;&gt; y1 = np.array([[0. , 1. ]]).T</span>
+<span class="sd">        &gt;&gt;&gt; y2 = np.array([[0. , -1.]]).T</span>
+<span class="sd">        &gt;&gt;&gt; y3 = np.array([[.5 , 1. ]]).T</span>
+<span class="sd">        &gt;&gt;&gt; y4 = np.array([[0. , 0. ]]).T</span>
+<span class="sd">        &gt;&gt;&gt; y5 = np.array([[.5 , 1.5]]).T</span>
+<span class="sd">        &gt;&gt;&gt; y6 = np.array([[2.,  0. ]]).T</span>
+<span class="sd">        &gt;&gt;&gt; cons(y1), cons(y2), cons(y3), cons(y4), cons(y5), cons(y6)</span>
+<span class="sd">        (True, True, True, False, False, False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">V1</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bi, abc, cj -&gt; aij&#39;</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quad_part</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> \
+              <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lin_part</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> \
+              <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">V1</span> <span class="o">&lt;</span> <span class="n">tol</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">V1</span><span class="p">,</span> <span class="nb">ord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
+
+
+
+    <span class="c1"># def append(self, q, lin, off):</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     Add an inequality to the set of constraints : </span>
+    <span class="c1">#     y.T * q * y + lin * y &lt; off</span>
+
+
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     p = self.quad_part.shape[1]</span>
+    <span class="c1">#     if q.shape[0] != p:</span>
+    <span class="c1">#         raise ValueError(&quot;Matrix are not aligned&quot;)</span>
+        
+    <span class="c1">#     self.quad_part = np.vstack((self.quad_part, q.reshape((1, p, p)) ))</span>
+    <span class="c1">#     self.lin_part  = np.vstack((self.lin_part , lin.reshape((1, p)) ))</span>
+    <span class="c1">#     self.offset    = np.hstack((self.offset   , off  ))</span>
+
+        
+    <span class="c1"># def pop(self):</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     Delete the last inequality</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     q = self.quad_part[-1]</span>
+    <span class="c1">#     lin = self.lin_part[-1]</span>
+    <span class="c1">#     off = self.offset[-1]</span>
+
+    <span class="c1">#     self.quad_part = self.quad_part[:-1]</span>
+    <span class="c1">#     self.lin_part  = self.lin_part[:-1]</span>
+    <span class="c1">#     self.offset    = self.offset[:-1]</span>
+
+    <span class="c1">#     return q, lin, off</span>
+
+
+        
+<div class="viewcode-block" id="constraints.bounds"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.bounds">[docs]</a>    <span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the intervals of the slice in a direction nu, which </span>
+<span class="sd">        respects the inequality</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        </span>
+<span class="sd">        nu : np.float(p)</span>
+<span class="sd">              The direction of the slice</span>
+
+<span class="sd">        y : np.float(p)</span>
+<span class="sd">              A point on the affine slice</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        intervals : array of couples</span>
+<span class="sd">              Array of (a, b), which means that the set is the union</span>
+<span class="sd">              of [a, b]</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        The constraints are : </span>
+<span class="sd">        (x - 1)^2 + y ^ 2    &lt; 4</span>
+<span class="sd">        10 * x^2  - 10 * y^2 &lt; -1</span>
+<span class="sd">        (x + 1)^2 + y ^ 2    &lt; 4</span>
+
+<span class="sd">        &gt;&gt;&gt; q1, lin1, off1 = np.identity(2), np.array([2., 0.]), 3.</span>
+<span class="sd">        &gt;&gt;&gt; q2, lin2, off2 = np.array([[10., 0], [0, -10.]]), np.zeros(2), -1.</span>
+<span class="sd">        &gt;&gt;&gt; q3, lin3, off3 = np.identity(2), np.array([-2., 0.]), 3.</span>
+<span class="sd">        &gt;&gt;&gt; cons = constraints(np.array([q1, q2, q3]), \</span>
+<span class="sd">                               np.array([lin1, lin2, lin3]), \</span>
+<span class="sd">                               np.array([off1, off2, off3]))</span>
+
+<span class="sd">        &gt;&gt;&gt; y = np.array([[0., -1.]]).T</span>
+
+<span class="sd">        &gt;&gt;&gt; nu1 = np.array([[0., 1.]]).T</span>
+<span class="sd">        &gt;&gt;&gt; I1 = np.array(cons.bounds(nu1, y).intersection())</span>
+<span class="sd">        &gt;&gt;&gt; I1_expected = np.array([[- np.sqrt(3) + 1, 1. -1./np.sqrt(10)], \</span>
+<span class="sd">                                     [1. + 1./np.sqrt(10), 1. + np.sqrt(3)]])</span>
+<span class="sd">        &gt;&gt;&gt; #np.all(np.fabs(I1 - I1_expected) &lt; 1.e-10)</span>
+
+<span class="sd">        &gt;&gt;&gt; nu2 = 2*nu1             ## Try with a nu not unitary</span>
+<span class="sd">        &gt;&gt;&gt; I2 = np.array(cons.bounds(nu2, y).intersection())</span>
+<span class="sd">        &gt;&gt;&gt; I2_expected = I1_expected /2</span>
+<span class="sd">        &gt;&gt;&gt; #np.all(np.fabs(I2 - I2_expected) &lt; 1.e-10)</span>
+
+<span class="sd">        &gt;&gt;&gt; nu3 = np.array([[1., 0]]).T</span>
+<span class="sd">        &gt;&gt;&gt; I3 = np.array(cons.bounds(nu3, y).intersection())</span>
+<span class="sd">        &gt;&gt;&gt; I3_expected = np.array([[1. - np.sqrt(3), -1. + np.sqrt(3)]])</span>
+<span class="sd">        &gt;&gt;&gt; #np.all(np.fabs(I3 - I3_expected) &lt; 1.e-10)</span>
+<span class="sd">        </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;y does not respect the constraints&#39;</span><span class="p">)</span>
+
+        <span class="n">interv_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">M</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">off</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quad_part</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin_part</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">):</span>
+
+            <span class="n">mp</span><span class="o">.</span><span class="n">dps</span> <span class="o">=</span> <span class="mi">15</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>  <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">nu</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">nu</span><span class="p">))</span>  <span class="p">)</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>  <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">nu</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">nu</span><span class="p">)</span>  <span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="n">off</span> <span class="p">)</span>
+            
+            
+            <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;c should be negative : &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+
+            <span class="n">disc</span> <span class="o">=</span> <span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">c</span>
+            
+            <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">disc</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+
+                <span class="n">r</span> <span class="o">=</span> <span class="n">roots_poly2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+                
+                <span class="n">I</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">))))</span>
+                <span class="n">interv_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">I</span> <span class="k">if</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">~</span><span class="n">I</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">b</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">I</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">((</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">))</span>
+                <span class="n">interv_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">I</span> <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">~</span><span class="n">I</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="p">(</span><span class="n">disc</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">a</span><span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">b</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">interv_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">](</span><span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;0 is not in the interval&quot;</span><span class="p">)</span>
+         
+        <span class="n">interv</span> <span class="o">=</span> <span class="n">intervals</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="o">*</span><span class="n">interv_list</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">interv</span></div>
+
+<div class="viewcode-block" id="constraints.bounds_unknownSigma"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.bounds_unknownSigma">[docs]</a>    <span class="k">def</span> <span class="nf">bounds_unknownSigma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">U1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">U2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">I</span><span class="o">-</span><span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">U1</span> <span class="o">=</span> <span class="n">U1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">U1</span><span class="p">)</span>
+        <span class="n">U2</span> <span class="o">=</span> <span class="n">U2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">U2</span><span class="p">)</span>
+
+        <span class="n">interv_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">M</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">off</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quad_part</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin_part</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">):</span>
+
+            <span class="n">a</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>  <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">U1</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">U1</span><span class="p">))</span>  <span class="p">)</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>  <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">U2</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">U1</span><span class="p">))</span> <span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>  <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">U2</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">U2</span><span class="p">))</span>  <span class="p">)</span>
+            
+            <span class="n">disc</span> <span class="o">=</span> <span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">c</span>
+            
+            <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">disc</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+
+                <span class="n">r</span> <span class="o">=</span> <span class="n">roots_poly2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+                
+                <span class="n">I</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">))))</span>
+                <span class="n">interv_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">I</span> <span class="k">if</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">~</span><span class="n">I</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">b</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">I</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">((</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">))</span>
+                <span class="n">interv_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">I</span> <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">~</span><span class="n">I</span><span class="p">)</span>
+            
+         
+        <span class="n">interv</span> <span class="o">=</span> <span class="n">intervals</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="o">*</span><span class="n">interv_list</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">interv</span></div>
+        
+
+
+    
+
+<div class="viewcode-block" id="constraints.sample"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_sample</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">):</span>
+        <span class="n">initial_point</span> <span class="o">=</span> <span class="n">initial_point</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">quad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quad_part</span>
+        <span class="n">quad_lin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin_part</span>
+        <span class="n">offset_quad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">lin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">offset_lin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="c1"># this import does not exist</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">quad_sampler</span><span class="p">(</span><span class="n">n_sample</span><span class="p">,</span>
+                               <span class="n">initial_point</span><span class="p">,</span>
+                               <span class="n">quad</span><span class="p">,</span>
+                               <span class="n">quad_lin</span><span class="p">,</span>
+                               <span class="n">lin</span><span class="p">,</span>
+                               <span class="n">offset_quad</span><span class="p">,</span>
+                               <span class="n">offset_lin</span><span class="p">)</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The samples are not correct&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">samples</span></div>
+
+<div class="viewcode-block" id="constraints.sample_dum"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.sample_dum">[docs]</a>    <span class="k">def</span> <span class="nf">sample_dum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_sample</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quad_part</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n_sample</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> \
+                                              <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">p</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+                <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples</span></div>
+
+
+<div class="viewcode-block" id="constraints.gen_p_value"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.gen_p_value">[docs]</a>    <span class="k">def</span> <span class="nf">gen_p_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        f : z -&gt; x</span>
+<span class="sd">            observed value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">observed_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">([</span><span class="n">f</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">])</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span> <span class="k">if</span> <span class="n">observed_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">obs</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">/</span><span class="n">n_samples</span></div>
+        
+<div class="viewcode-block" id="constraints.distr_norm_unknownSigma"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.distr_norm_unknownSigma">[docs]</a>    <span class="k">def</span> <span class="nf">distr_norm_unknownSigma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+
+        <span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds_unknownSigma</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> 
+
+
+        <span class="c1"># Computation of theta</span>
+        <span class="n">theta_s</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">distr</span> <span class="o">=</span> <span class="n">truncated_F</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">_U</span><span class="p">,</span> <span class="n">n</span><span class="o">*</span><span class="n">p</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="n">theta_s</span><span class="p">)</span>  
+
+        <span class="k">return</span> <span class="n">distr</span></div>
+
+<div class="viewcode-block" id="constraints.p_value_unknownSigma"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.p_value_unknownSigma">[docs]</a>    <span class="k">def</span> <span class="nf">p_value_unknownSigma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">distr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distr_norm_unknownSigma</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span><span class="o">/</span> \
+             <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">)))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="k">return</span> <span class="n">distr</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="constraints.distr_norm"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.distr_norm">[docs]</a>    <span class="k">def</span> <span class="nf">distr_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_s</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the value of the norm of X_s.T*y and an instance of truncated : </span>
+<span class="sd">        the distribution of X_s.T*y</span>
+<span class="sd">        This is implementing the forward stepwise paper in the general case</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X_s : np.float(p, k):</span>
+<span class="sd">            X_s is a full ranked matrix</span>
+
+<span class="sd">        y : np.float(p):</span>
+<span class="sd">            y is the data, and satisfies the constraints</span>
+
+<span class="sd">        sigma: float</span>
+<span class="sd">            sigma is the variance of the normal distribution under wich</span>
+<span class="sd">            y is chosen</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        distr : truncated_chi</span>
+<span class="sd">            distr is an object used to study the distribution of</span>
+<span class="sd">            np.linalg.norm(np.dot(X_s.T, y)), when y is a gaussian vector,</span>
+<span class="sd">            chosen under the constraints and on the slice given by nu</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">p</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span> 
+        <span class="c1"># P_s = projection(X_s)</span>
+
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">X_s</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X_s</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">z_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+        <span class="n">eta</span> <span class="o">=</span> <span class="n">z</span> <span class="o">/</span> <span class="n">z_norm</span>
+
+        <span class="n">nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">X_s</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+        <span class="c1"># print &quot;nu : &quot;, nu</span>
+        <span class="c1"># Computation of the intervals</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+        <span class="n">lin</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">nu</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+        <span class="n">off</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span> \
+                               <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">nu</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> \
+                               <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">z_norm</span><span class="p">)</span> \
+                    <span class="p">])</span>
+
+        <span class="n">cons_eta</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">lin</span><span class="p">,</span> <span class="n">off</span><span class="p">)</span>
+
+        <span class="n">cons_inter</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cons_eta</span><span class="p">)</span>
+
+        <span class="n">I</span> <span class="o">=</span> <span class="n">cons_inter</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> 
+        <span class="n">I</span> <span class="o">=</span> <span class="n">I</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_norm</span><span class="p">)</span>
+
+
+        <span class="c1"># Computation of theta</span>
+        <span class="n">Sig_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X_s</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">X_s</span><span class="p">)</span>
+        <span class="n">Sig_s_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Sig_s</span><span class="p">)</span>
+
+        <span class="n">theta_s</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sigma</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">eta</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Sig_s_inv</span><span class="p">,</span> <span class="n">eta</span><span class="p">))))</span>
+
+        <span class="n">distr</span> <span class="o">=</span> <span class="n">truncated_chi</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">_U</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">theta_s</span><span class="p">)</span>  
+
+        <span class="k">return</span> <span class="n">distr</span></div>
+
+<div class="viewcode-block" id="constraints.p_value"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints.p_value">[docs]</a>    <span class="k">def</span> <span class="nf">p_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_s</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">       </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#X_s = full_rank(X_s) -- not sure what this function was</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">X_s</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="bp">self</span><span class="p">(</span><span class="n">y</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;y does not satisfies the constraints&quot;</span><span class="p">)</span>
+
+        <span class="n">distr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distr_norm</span><span class="p">(</span><span class="n">X_s</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X_s</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">distr</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="constraints_vecnorm"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints_vecnorm">[docs]</a><span class="k">class</span> <span class="nc">constraints_vecnorm</span><span class="p">(</span><span class="n">constraints</span><span class="p">):</span>
+<div class="viewcode-block" id="constraints_vecnorm.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints_vecnorm.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span>  <span class="o">=</span> <span class="n">beta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dim</span>   <span class="o">=</span> <span class="n">dim</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-10</span><span class="p">):</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dim</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+        <span class="n">V1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">V1</span> <span class="o">&lt;</span> <span class="n">tol</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">V1</span><span class="p">,</span> <span class="nb">ord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
+
+<div class="viewcode-block" id="constraints_vecnorm.bounds"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.constraints_vecnorm.bounds">[docs]</a>    <span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;y does not respect the constraints&#39;</span><span class="p">)</span>
+
+        <span class="n">X</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dim</span><span class="p">)</span>
+        <span class="n">nu</span> <span class="o">=</span> <span class="n">nu</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dim</span><span class="p">)</span>
+
+        <span class="n">interv_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">U1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">,</span> <span class="n">X</span> <span class="p">)</span>
+        <span class="n">U2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="p">,</span> <span class="n">X</span> <span class="p">)</span>
+        <span class="n">V1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">,</span> <span class="n">nu</span><span class="p">)</span>
+        <span class="n">V2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_beta</span><span class="p">,</span>  <span class="n">nu</span><span class="p">)</span>
+
+
+        <span class="k">for</span> <span class="n">u1</span><span class="p">,</span> <span class="n">u2</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">U1</span><span class="p">,</span> <span class="n">U2</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">V2</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span> <span class="nb">float</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u1</span><span class="p">,</span> <span class="n">v1</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u2</span><span class="p">,</span> <span class="n">v2</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">u1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">u2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            
+            <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;c should be negative : &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+
+            <span class="n">disc</span> <span class="o">=</span> <span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">c</span>
+            
+            <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">disc</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+
+                <span class="n">r</span> <span class="o">=</span> <span class="n">roots_poly2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+                
+                <span class="n">I</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">r</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">))))</span>
+                <span class="n">interv_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">I</span> <span class="k">if</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">~</span><span class="n">I</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">b</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">I</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">((</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">c</span><span class="o">/</span><span class="n">b</span><span class="p">))</span>
+                <span class="n">interv_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">I</span> <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">~</span><span class="n">I</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="p">(</span><span class="n">disc</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">a</span><span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">b</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">interv_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">](</span><span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;l&#39;intervalle ne contient pas 0 : &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">interv_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+         
+        <span class="n">interv</span> <span class="o">=</span> <span class="n">intervals</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="o">*</span><span class="n">interv_list</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">interv</span></div></div>
+        
+
+<div class="viewcode-block" id="stack"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.stack">[docs]</a><span class="k">def</span> <span class="nf">stack</span><span class="p">(</span><span class="o">*</span><span class="n">quad_cons</span><span class="p">):</span>
+    <span class="n">quad</span> <span class="o">=</span> <span class="p">[</span><span class="n">con</span><span class="o">.</span><span class="n">quad_part</span> <span class="k">for</span> <span class="n">con</span> <span class="ow">in</span> <span class="n">quad_cons</span><span class="p">]</span>
+    <span class="n">lin</span> <span class="o">=</span>  <span class="p">[</span><span class="n">con</span><span class="o">.</span><span class="n">lin_part</span>  <span class="k">for</span> <span class="n">con</span> <span class="ow">in</span> <span class="n">quad_cons</span><span class="p">]</span>
+    <span class="n">off</span> <span class="o">=</span>  <span class="p">[</span><span class="n">con</span><span class="o">.</span><span class="n">offset</span>    <span class="k">for</span> <span class="n">con</span> <span class="ow">in</span> <span class="n">quad_cons</span><span class="p">]</span>
+                      
+    <span class="n">intersection</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">quad</span><span class="p">),</span> 
+                               <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">lin</span><span class="p">),</span>
+                               <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">off</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">intersection</span></div>
+
+
+
+<div class="viewcode-block" id="roots_poly2"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.quadratic.html#selectinf.constraints.quadratic.roots_poly2">[docs]</a><span class="k">def</span> <span class="nf">roots_poly2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="n">disc</span> <span class="o">=</span> <span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">c</span>
+
+    <span class="k">if</span> <span class="n">disc</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The polynom has no roots&quot;</span><span class="p">)</span>
+
+    
+    <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">b</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">disc</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">]))</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span>
+    <span class="n">r1</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">r</span><span class="p">))]</span>
+    <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="n">c</span> <span class="o">/</span> <span class="p">(</span><span class="n">r1</span><span class="o">*</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">)</span></div>
+    
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">doctest</span>
+    <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">()</span>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

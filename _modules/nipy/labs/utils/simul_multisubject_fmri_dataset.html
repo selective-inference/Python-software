@@ -1,0 +1,538 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.utils.simul_multisubject_fmri_dataset</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module conatins a function to produce a dataset which simulates</span>
+<span class="sd">a collection of 2D images This dataset is saved as a 3D image</span>
+<span class="sd">(each slice being a subject) and a 3D array</span>
+
+<span class="sd">Author : Bertrand Thirion, 2008-2010</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.ndimage</span> <span class="k">as</span> <span class="nn">nd</span>
+
+<span class="kn">from</span> <span class="nn">nibabel</span> <span class="k">import</span> <span class="n">save</span><span class="p">,</span> <span class="n">Nifti1Image</span>
+
+<span class="kn">from</span> <span class="nn">nipy.io.nibcompat</span> <span class="k">import</span> <span class="n">get_affine</span>
+
+<span class="kn">from</span> <span class="nn">nipy.externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<span class="c1"># definition of the maxima at the group level</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">]])</span>
+<span class="n">ampli</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_cone2d</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">ij</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">ampli</span><span class="p">,</span> <span class="n">width</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Define a cone of the proposed grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">ij</span> <span class="o">-</span> <span class="n">pos</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">codi</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">-</span> <span class="n">dist</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dist</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">)</span> <span class="o">/</span> <span class="n">width</span>
+    <span class="n">temp</span><span class="p">[</span><span class="n">ij</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">ij</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">codi</span> <span class="o">*</span> <span class="n">ampli</span>
+    <span class="k">return</span> <span class="n">temp</span>
+
+
+<span class="k">def</span> <span class="nf">_cone3d</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">ij</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">ampli</span><span class="p">,</span> <span class="n">width</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Define a cone of the proposed grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">ij</span> <span class="o">-</span> <span class="n">pos</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">codi</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">-</span> <span class="n">dist</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dist</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">)</span> <span class="o">/</span> <span class="n">width</span>
+    <span class="n">temp</span><span class="p">[</span><span class="n">ij</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">ij</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">ij</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">codi</span> <span class="o">*</span> <span class="n">ampli</span>
+    <span class="k">return</span> <span class="n">temp</span>
+
+
+<div class="viewcode-block" id="surrogate_2d_dataset"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.simul_multisubject_fmri_dataset.html#nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_2d_dataset">[docs]</a><span class="k">def</span> <span class="nf">surrogate_2d_dataset</span><span class="p">(</span><span class="n">n_subj</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="n">sk</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                         <span class="n">noise_level</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">ampli</span><span class="o">=</span><span class="n">ampli</span><span class="p">,</span>
+                         <span class="n">spatial_jitter</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">signal_jitter</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                         <span class="n">width</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">width_jitter</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                         <span class="n">out_text_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_image_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">seed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create surrogate (simulated) 2D activation data with spatial noise</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    n_subj: integer, optionnal</span>
+<span class="sd">        The number of subjects, ie the number of different maps</span>
+<span class="sd">        generated.</span>
+<span class="sd">    shape=(30,30): tuple of integers,</span>
+<span class="sd">         the shape of each image</span>
+<span class="sd">    sk: float, optionnal</span>
+<span class="sd">        Amount of spatial noise smoothness.</span>
+<span class="sd">    noise_level: float, optionnal</span>
+<span class="sd">        Amplitude of the spatial noise.</span>
+<span class="sd">        amplitude=noise_level)</span>
+<span class="sd">    pos: 2D ndarray of integers, optionnal</span>
+<span class="sd">        x, y positions of the various simulated activations.</span>
+<span class="sd">    ampli: 1D ndarray of floats, optionnal</span>
+<span class="sd">        Respective amplitude of each activation</span>
+<span class="sd">    spatial_jitter: float, optionnal</span>
+<span class="sd">        Random spatial jitter added to the position of each activation,</span>
+<span class="sd">        in pixel.</span>
+<span class="sd">    signal_jitter: float, optionnal</span>
+<span class="sd">        Random amplitude fluctuation for each activation, added to the</span>
+<span class="sd">        amplitude specified by `ampli`</span>
+<span class="sd">    width: float or ndarray, optionnal</span>
+<span class="sd">        Width of the activations</span>
+<span class="sd">    width_jitter: float</span>
+<span class="sd">        Relative width jitter of the blobs</span>
+<span class="sd">    out_text_file: string or None, optionnal</span>
+<span class="sd">        If not None, the resulting array is saved as a text file with the</span>
+<span class="sd">        given file name</span>
+<span class="sd">    out_image_file: string or None, optionnal</span>
+<span class="sd">        If not None, the resulting is saved as a nifti file with the</span>
+<span class="sd">        given file name.</span>
+<span class="sd">    seed=False:  int, optionnal</span>
+<span class="sd">        If seed is not False, the random number generator is initialized</span>
+<span class="sd">        at a certain value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset: 3D ndarray</span>
+<span class="sd">        The surrogate activation map, with dimensions ``(n_subj,) + shape``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">seed</span><span class="p">:</span>
+        <span class="n">nr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">([</span><span class="n">seed</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">numpy.random</span> <span class="k">as</span> <span class="nn">nr</span>
+
+    <span class="n">ij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subj</span><span class="p">):</span>
+        <span class="c1"># make the signal</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">lpos</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">+</span> <span class="n">spatial_jitter</span> <span class="o">*</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">lampli</span> <span class="o">=</span> <span class="n">ampli</span> <span class="o">+</span> <span class="n">signal_jitter</span> <span class="o">*</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ampli</span><span class="p">))</span>
+        <span class="n">this_width</span> <span class="o">=</span> <span class="n">width</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">width_jitter</span> <span class="o">*</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ampli</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">lampli</span><span class="p">)):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_cone2d</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">ij</span><span class="p">,</span> <span class="n">lpos</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">lampli</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                                            <span class="n">this_width</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+
+        <span class="c1"># make some noise</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="c1"># smooth the noise</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">nd</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">noise</span><span class="p">,</span> <span class="n">sk</span><span class="p">)</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">noise</span><span class="p">,</span> <span class="p">(</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">noise</span> <span class="o">*=</span> <span class="n">noise_level</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">noise</span><span class="p">)</span>
+
+        <span class="c1">#make the mixture</span>
+        <span class="n">data</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">noise</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out_text_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">out_text_file</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out_image_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">save</span><span class="p">(</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)),</span> <span class="n">out_image_file</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataset</span></div>
+
+
+<div class="viewcode-block" id="surrogate_3d_dataset"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.simul_multisubject_fmri_dataset.html#nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_3d_dataset">[docs]</a><span class="k">def</span> <span class="nf">surrogate_3d_dataset</span><span class="p">(</span><span class="n">n_subj</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">sk</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ampli</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">spatial_jitter</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">signal_jitter</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                         <span class="n">width</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">out_text_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_image_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">seed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create surrogate (simulated) 3D activation data with spatial noise.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    n_subj: integer, optionnal</span>
+<span class="sd">        The number of subjects, ie the number of different maps</span>
+<span class="sd">        generated.</span>
+<span class="sd">    shape=(20,20,20): tuple of 3 integers,</span>
+<span class="sd">         the shape of each image</span>
+<span class="sd">    mask=None: Nifti1Image instance,</span>
+<span class="sd">        referential- and mask- defining image (overrides shape)</span>
+<span class="sd">    sk: float, optionnal</span>
+<span class="sd">        Amount of spatial noise smoothness.</span>
+<span class="sd">    noise_level: float, optionnal</span>
+<span class="sd">        Amplitude of the spatial noise.</span>
+<span class="sd">        amplitude=noise_level)</span>
+<span class="sd">    pos: 2D ndarray of integers, optionnal</span>
+<span class="sd">        x, y positions of the various simulated activations.</span>
+<span class="sd">    ampli: 1D ndarray of floats, optionnal</span>
+<span class="sd">        Respective amplitude of each activation</span>
+<span class="sd">    spatial_jitter: float, optionnal</span>
+<span class="sd">        Random spatial jitter added to the position of each activation,</span>
+<span class="sd">        in pixel.</span>
+<span class="sd">    signal_jitter: float, optionnal</span>
+<span class="sd">        Random amplitude fluctuation for each activation, added to the</span>
+<span class="sd">        amplitude specified by ampli</span>
+<span class="sd">    width: float or ndarray, optionnal</span>
+<span class="sd">        Width of the activations</span>
+<span class="sd">    out_text_file: string or None, optionnal</span>
+<span class="sd">        If not None, the resulting array is saved as a text file with the</span>
+<span class="sd">        given file name</span>
+<span class="sd">    out_image_file: string or None, optionnal</span>
+<span class="sd">        If not None, the resulting is saved as a nifti file with the</span>
+<span class="sd">        given file name.</span>
+<span class="sd">    seed=False:  int, optionnal</span>
+<span class="sd">        If seed is not False, the random number generator is initialized</span>
+<span class="sd">        at a certain value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset: 3D ndarray</span>
+<span class="sd">        The surrogate activation map, with dimensions ``(n_subj,) + shape``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">seed</span><span class="p">:</span>
+        <span class="n">nr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">([</span><span class="n">seed</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">numpy.random</span> <span class="k">as</span> <span class="nn">nr</span>
+
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">mask_data</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="n">ijk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask_data</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># make the signal</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subj</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">lampli</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ampli</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ampli and pos do not have the same len&#39;</span><span class="p">)</span>
+            <span class="n">lpos</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">+</span> <span class="n">spatial_jitter</span> <span class="o">*</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">lampli</span> <span class="o">=</span> <span class="n">ampli</span> <span class="o">+</span> <span class="n">signal_jitter</span> <span class="o">*</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ampli</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">lampli</span><span class="p">)):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_cone3d</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">ijk</span><span class="p">,</span> <span class="n">lpos</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">lampli</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                                            <span class="n">width</span><span class="p">))</span>
+
+        <span class="c1"># make some noise</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="c1"># smooth the noise</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">nd</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">noise</span><span class="p">,</span> <span class="n">sk</span><span class="p">)</span>
+        <span class="n">noise</span> <span class="o">*=</span> <span class="n">noise_level</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">noise</span><span class="p">)</span>
+
+        <span class="c1"># make the mixture</span>
+        <span class="n">data</span> <span class="o">+=</span> <span class="n">noise</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">mask_data</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_subj</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">out_text_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">out_text_file</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out_image_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">save</span><span class="p">(</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)),</span> <span class="n">out_image_file</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataset</span></div>
+
+
+<div class="viewcode-block" id="surrogate_4d_dataset"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.simul_multisubject_fmri_dataset.html#nipy.labs.utils.simul_multisubject_fmri_dataset.surrogate_4d_dataset">[docs]</a><span class="k">def</span> <span class="nf">surrogate_4d_dataset</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_scans</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_sess</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                         <span class="n">dmtx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sk</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">signal_level</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                         <span class="n">out_image_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create surrogate (simulated) 3D activation data with spatial noise.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    shape = (20, 20, 20): tuple of integers,</span>
+<span class="sd">         the shape of each image</span>
+<span class="sd">    mask=None: brifti image instance,</span>
+<span class="sd">        referential- and mask- defining image (overrides shape)</span>
+<span class="sd">    n_scans: int, optional,</span>
+<span class="sd">        number of scans to be simlulated</span>
+<span class="sd">        overrided by the design matrix</span>
+<span class="sd">    n_sess: int, optional,</span>
+<span class="sd">        the number of simulated sessions</span>
+<span class="sd">    dmtx: array of shape(n_scans, n_rows),</span>
+<span class="sd">        the design matrix</span>
+<span class="sd">    sk: float, optionnal</span>
+<span class="sd">        Amount of spatial noise smoothness.</span>
+<span class="sd">    noise_level: float, optionnal</span>
+<span class="sd">        Amplitude of the spatial noise.</span>
+<span class="sd">        amplitude=noise_level)</span>
+<span class="sd">    signal_level: float, optional,</span>
+<span class="sd">        Amplitude of the signal</span>
+<span class="sd">    out_image_file: string or list of strings or None, optionnal</span>
+<span class="sd">        If not None, the resulting is saved as (set of) nifti file(s) with the</span>
+<span class="sd">        given file path(s)</span>
+<span class="sd">    seed=False:  int, optionnal</span>
+<span class="sd">        If seed is not False, the random number generator is initialized</span>
+<span class="sd">        at a certain value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset: a list of n_sess ndarray of shape</span>
+<span class="sd">             (shape[0], shape[1], shape[2], n_scans)</span>
+<span class="sd">             The surrogate activation map</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">seed</span><span class="p">:</span>
+        <span class="n">nr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">([</span><span class="n">seed</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">numpy.random</span> <span class="k">as</span> <span class="nn">nr</span>
+
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">mask_data</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dmtx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_scans</span> <span class="o">=</span> <span class="n">dmtx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">out_image_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_image_file</span><span class="p">,</span>
+                                                   <span class="n">string_types</span><span class="p">):</span>
+        <span class="n">out_image_file</span> <span class="o">=</span> <span class="p">[</span><span class="n">out_image_file</span><span class="p">]</span>
+
+    <span class="n">shape_4d</span> <span class="o">=</span> <span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="n">n_scans</span><span class="p">,)</span>
+
+    <span class="n">output_images</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">dmtx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dmtx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">betar</span> <span class="o">=</span> <span class="n">nd</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">),</span> <span class="n">sk</span><span class="p">)</span>
+            <span class="n">betar</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">betar</span><span class="p">)</span>
+            <span class="n">beta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">signal_level</span> <span class="o">*</span> <span class="n">betar</span><span class="p">)</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sess</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape_4d</span><span class="p">)</span>
+
+        <span class="c1"># make the signal</span>
+        <span class="k">if</span> <span class="n">dmtx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">mask_data</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">beta</span><span class="p">[</span><span class="n">mask_data</span><span class="p">],</span> <span class="n">dmtx</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_scans</span><span class="p">):</span>
+            <span class="c1"># make some noise</span>
+            <span class="n">noise</span> <span class="o">=</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span>
+
+            <span class="c1"># smooth the noise</span>
+            <span class="n">noise</span> <span class="o">=</span> <span class="n">nd</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">noise</span><span class="p">,</span> <span class="n">sk</span><span class="p">)</span>
+            <span class="n">noise</span> <span class="o">*=</span> <span class="n">noise_level</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">noise</span><span class="p">)</span>
+
+            <span class="c1"># make the mixture</span>
+            <span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">s</span><span class="p">]</span> <span class="o">+=</span> <span class="n">noise</span>
+            <span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">s</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">mask_data</span>
+
+        <span class="n">wim</span> <span class="o">=</span> <span class="n">Nifti1Image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+        <span class="n">output_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">out_image_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">save</span><span class="p">(</span><span class="n">wim</span><span class="p">,</span> <span class="n">out_image_file</span><span class="p">[</span><span class="n">ns</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">output_images</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

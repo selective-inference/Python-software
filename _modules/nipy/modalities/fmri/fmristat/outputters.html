@@ -1,0 +1,377 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.modalities.fmri.fmristat.outputters</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; Convenience functions and classes for statistics on images.</span>
+
+<span class="sd">These functions and classes support the return of statistical test results from</span>
+<span class="sd">iterations through data.</span>
+
+<span class="sd">The basic container here is the RegressionOutput.  This does two basic things:</span>
+
+<span class="sd">* via __call__, processes a result object from a regression to produce</span>
+<span class="sd">  something, usually an array</span>
+<span class="sd">* via slicing (__setitem__), it can store stuff, usually arrays.</span>
+
+<span class="sd">We use these by other objects (see algorithms.statistics.fmri.fmristat) slicing</span>
+<span class="sd">data out of images, fitting models to the data to create results objects, and</span>
+<span class="sd">then passing them to these here ``RegressionOutput`` containers via call, to get</span>
+<span class="sd">useful arrays, and then putting the results back into the ``RegressionOutput``</span>
+<span class="sd">containers via slicing (__setitem__).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s1">&#39;restructuredtext&#39;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="output_T"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.output_T">[docs]</a><span class="k">def</span> <span class="nf">output_T</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">retvals</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;effect&#39;</span><span class="p">,</span> <span class="s1">&#39;sd&#39;</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot; Convenience function to collect t contrast results</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    results : object</span>
+<span class="sd">        implementing Tcontrast method</span>
+<span class="sd">    contrast : array</span>
+<span class="sd">        contrast matrix</span>
+<span class="sd">    retvals : sequence, optional</span>
+<span class="sd">        None or more of strings &#39;effect&#39;, &#39;sd&#39;, &#39;t&#39;, where the presence of the</span>
+<span class="sd">        string means that that output will be returned.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    res_list : list</span>
+<span class="sd">        List of results.  It will have the same length as `retvals` and the</span>
+<span class="sd">        elements will be in the same order as retvals</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">Tcontrast</span><span class="p">(</span><span class="n">contrast</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">retvals</span><span class="p">)</span>
+    <span class="n">returns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">valname</span> <span class="ow">in</span> <span class="n">retvals</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">valname</span> <span class="o">==</span> <span class="s1">&#39;effect&#39;</span><span class="p">:</span>
+            <span class="n">returns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">effect</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">valname</span> <span class="o">==</span> <span class="s1">&#39;sd&#39;</span><span class="p">:</span>
+            <span class="n">returns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">sd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">valname</span> <span class="o">==</span> <span class="s1">&#39;t&#39;</span><span class="p">:</span>
+            <span class="n">returns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">returns</span></div>
+
+
+<div class="viewcode-block" id="output_F"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.output_F">[docs]</a><span class="k">def</span> <span class="nf">output_F</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">contrast</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This convenience function outputs the results of an Fcontrast</span>
+<span class="sd">    from a regression</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    results : object</span>
+<span class="sd">        implementing Tcontrast method</span>
+<span class="sd">    contrast : array</span>
+<span class="sd">        contrast matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    F : array</span>
+<span class="sd">        array of F values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">results</span><span class="o">.</span><span class="n">Fcontrast</span><span class="p">(</span><span class="n">contrast</span><span class="p">)</span><span class="o">.</span><span class="n">F</span></div>
+
+
+<div class="viewcode-block" id="output_resid"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.output_resid">[docs]</a><span class="k">def</span> <span class="nf">output_resid</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This convenience function outputs the residuals</span>
+<span class="sd">    from a regression</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">results</span><span class="o">.</span><span class="n">resid</span></div>
+
+
+<div class="viewcode-block" id="RegressionOutput"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.RegressionOutput">[docs]</a><span class="k">class</span> <span class="nc">RegressionOutput</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to output things in GLM passes through arrays of data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RegressionOutput.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.RegressionOutput.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">output_shape</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        img : ``Image`` instance</span>
+<span class="sd">            The output Image</span>
+<span class="sd">        fn : callable</span>
+<span class="sd">            A function that is applied to a</span>
+<span class="sd">            models.model.LikelihoodModelResults instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img</span> <span class="o">=</span> <span class="n">img</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span> <span class="o">=</span> <span class="n">fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_shape</span> <span class="o">=</span> <span class="n">output_shape</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="RegressionOutputList"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.RegressionOutputList">[docs]</a><span class="k">class</span> <span class="nc">RegressionOutputList</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to output more than one thing</span>
+<span class="sd">    from a GLM pass through arrays of data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RegressionOutputList.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.RegressionOutputList.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imgs</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize regression output list</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        imgs : list</span>
+<span class="sd">            The list of output images</span>
+<span class="sd">        fn : callable</span>
+<span class="sd">            A function that is applied to a</span>
+<span class="sd">            models.model.LikelihoodModelResults instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="n">imgs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span> <span class="o">=</span> <span class="n">fn</span></div>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">index</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span> <span class="o">=</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="TOutput"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.TOutput">[docs]</a><span class="k">class</span> <span class="nc">TOutput</span><span class="p">(</span><span class="n">RegressionOutputList</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Output contrast related to a T contrast from a GLM pass through data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TOutput.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.TOutput.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">effect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Returns a list of arrays, being [effect, sd, t] when all these are not</span>
+        <span class="c1"># None</span>
+        <span class="c1"># Compile list of desired return values</span>
+        <span class="n">retvals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Set self.list to contain selected input catching objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">effect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">retvals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;effect&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">retvals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;sd&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">retvals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="c1"># Set return function to return selected inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">output_T</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">retvals</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="output_AR1"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.outputters.html#nipy.modalities.fmri.fmristat.outputters.output_AR1">[docs]</a><span class="k">def</span> <span class="nf">output_AR1</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the usual AR(1) parameter on</span>
+<span class="sd">    the residuals from a regression.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">resid</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">resid</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">resid</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">resid</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">resid</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">rho</span></div>
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

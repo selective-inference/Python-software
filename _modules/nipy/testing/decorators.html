@@ -1,0 +1,337 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../testing.html">nipy.testing</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.testing.decorators</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; Extend numpy&#39;s decorators to use nipy&#39;s gui and data labels.</span>
+
+<span class="sd">This module should not import nose at the top level to avoid a run-time</span>
+<span class="sd">dependency on nose.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">numpy.testing.decorators</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">nipy.utils</span> <span class="k">import</span> <span class="n">templates</span><span class="p">,</span> <span class="n">example_data</span><span class="p">,</span> <span class="n">DataError</span>
+
+<span class="kn">from</span> <span class="nn">nibabel.optpkg</span> <span class="k">import</span> <span class="n">optional_package</span>
+
+<span class="kn">from</span> <span class="nn">nipy.externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<span class="n">matplotlib</span><span class="p">,</span> <span class="n">HAVE_MPL</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">optional_package</span><span class="p">(</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">)</span>
+<span class="n">needs_mpl</span> <span class="o">=</span> <span class="n">skipif</span><span class="p">(</span><span class="ow">not</span> <span class="n">HAVE_MPL</span><span class="p">,</span> <span class="s2">&quot;Test needs matplotlib&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="make_label_dec"><a class="viewcode-back" href="../../../api/generated/nipy.testing.decorators.html#nipy.testing.decorators.make_label_dec">[docs]</a><span class="k">def</span> <span class="nf">make_label_dec</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">ds</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Factory function to create a decorator that applies one or more labels.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    label : str or sequence</span>
+<span class="sd">        One or more labels that will be applied by the decorator to the</span>
+<span class="sd">        functions it decorates.  Labels are attributes of the decorated function</span>
+<span class="sd">        with their value set to True.</span>
+<span class="sd">    ds : str</span>
+<span class="sd">        An optional docstring for the resulting decorator.  If not given, a</span>
+<span class="sd">        default docstring is auto-generated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ldec : function</span>
+<span class="sd">        A decorator.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; slow = make_label_dec(&#39;slow&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; print(slow.__doc__)</span>
+<span class="sd">    Labels a test as &#39;slow&#39;</span>
+
+<span class="sd">    &gt;&gt;&gt; rare = make_label_dec([&#39;slow&#39;,&#39;hard&#39;],</span>
+<span class="sd">    ... &quot;Mix labels &#39;slow&#39; and &#39;hard&#39; for rare tests&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; @rare</span>
+<span class="sd">    ... def f(): pass</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; f.slow</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; f.hard</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">label</span>
+    <span class="c1"># Validate that the given label(s) are OK for use in setattr() by doing a</span>
+    <span class="c1"># dry run on a dummy function.</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="k">lambda</span> <span class="p">:</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span><span class="n">label</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># This is the actual decorator we&#39;ll return</span>
+    <span class="k">def</span> <span class="nf">decor</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">label</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span>
+    <span class="c1"># Apply the user&#39;s docstring</span>
+    <span class="k">if</span> <span class="n">ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="s2">&quot;Labels a test as </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">label</span>
+        <span class="n">decor</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">ds</span>
+    <span class="k">return</span> <span class="n">decor</span></div>
+
+
+<span class="c1"># Nipy specific labels</span>
+<span class="n">gui</span> <span class="o">=</span> <span class="n">make_label_dec</span><span class="p">(</span><span class="s1">&#39;gui&#39;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">make_label_dec</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># For tests that need further review</span>
+<div class="viewcode-block" id="needs_review"><a class="viewcode-back" href="../../../api/generated/nipy.testing.decorators.html#nipy.testing.decorators.needs_review">[docs]</a><span class="k">def</span> <span class="nf">needs_review</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Skip a test that needs further review.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    msg : string</span>
+<span class="sd">        msg regarding the review that needs to be done</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">skip_func</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">skipif</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">msg</span><span class="p">)(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">skip_func</span></div>
+
+
+<span class="c1"># Easier version of the numpy knownfailure</span>
+<div class="viewcode-block" id="knownfailure"><a class="viewcode-back" href="../../../api/generated/nipy.testing.decorators.html#nipy.testing.decorators.knownfailure">[docs]</a><span class="k">def</span> <span class="nf">knownfailure</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">knownfailureif</span><span class="p">(</span><span class="kc">True</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="if_datasource"><a class="viewcode-back" href="../../../api/generated/nipy.testing.decorators.html#nipy.testing.decorators.if_datasource">[docs]</a><span class="k">def</span> <span class="nf">if_datasource</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">get_filename</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">DataError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">skipif</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="k">lambda</span> <span class="n">f</span> <span class="p">:</span> <span class="n">f</span></div>
+
+
+<div class="viewcode-block" id="if_templates"><a class="viewcode-back" href="../../../api/generated/nipy.testing.decorators.html#nipy.testing.decorators.if_templates">[docs]</a><span class="k">def</span> <span class="nf">if_templates</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">if_datasource</span><span class="p">(</span><span class="n">templates</span><span class="p">,</span> <span class="s1">&#39;Cannot find template data&#39;</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="if_example_data"><a class="viewcode-back" href="../../../api/generated/nipy.testing.decorators.html#nipy.testing.decorators.if_example_data">[docs]</a><span class="k">def</span> <span class="nf">if_example_data</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">if_datasource</span><span class="p">(</span><span class="n">example_data</span><span class="p">,</span> <span class="s1">&#39;Cannot find example data&#39;</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="needs_mpl_agg"><a class="viewcode-back" href="../../../api/generated/nipy.testing.decorators.html#nipy.testing.decorators.needs_mpl_agg">[docs]</a><span class="k">def</span> <span class="nf">needs_mpl_agg</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Decorator requiring matplotlib with agg backend</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">HAVE_MPL</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">needs_mpl</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">from</span> <span class="nn">nose.tools</span> <span class="k">import</span> <span class="n">make_decorator</span>
+    <span class="k">def</span> <span class="nf">agg_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;agg&#39;</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="s1">&#39;agg&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">make_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">)(</span><span class="n">agg_func</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

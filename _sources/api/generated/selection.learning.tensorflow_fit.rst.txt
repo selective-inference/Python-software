@@ -1,0 +1,32 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+learning.tensorflow_fit
+=======================
+
+Module: :mod:`learning.tensorflow_fit`
+--------------------------------------
+.. automodule:: selection.learning.tensorflow_fit
+
+.. currentmodule:: selection.learning.tensorflow_fit
+
+Functions
+---------
+
+
+.. autofunction:: selection.learning.tensorflow_fit.create_l2_loss
+
+
+.. autofunction:: selection.learning.tensorflow_fit.create_logit_loss
+
+
+.. autofunction:: selection.learning.tensorflow_fit.create_optimizer
+
+
+.. autofunction:: selection.learning.tensorflow_fit.extract_weights
+
+
+.. autofunction:: selection.learning.tensorflow_fit.fit
+
+
+.. autofunction:: selection.learning.tensorflow_fit.predict
+

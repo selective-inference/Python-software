@@ -1,0 +1,543 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="glm" href="selectinf.glm.html" />
+    <link rel="prev" title="distributions.intervals" href="selectinf.distributions.intervals.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">distributions.pvalue</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-distributions-pvalue">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.pvalue</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#class">Class</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#selectioninterval"><code class="xref py py-class docutils literal notranslate"><span class="pre">SelectionInterval</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.distributions.pvalue.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="distributions-pvalue">
+<h1>distributions.pvalue<a class="headerlink" href="#distributions-pvalue" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-distributions-pvalue">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.pvalue</span></code><a class="headerlink" href="#module-distributions-pvalue" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.distributions.pvalue</span></code>:</p>
+digraph inheritancee4633029ad {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;distributions.pvalue.SelectionInterval&quot; [URL=&quot;#selectinf.distributions.pvalue.SelectionInterval&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Compute a selection interval for&quot;];
+}
+<span class="target" id="module-selectinf.distributions.pvalue"></span><p>This module contains functions needed to evaluate post selection
+p-values for non polyhedral selection procedures through a variety of means.</p>
+<p>These p-values appear for the group LASSO global null test as well as the nuclear norm
+p-value test.</p>
+<p>They are described in the <a class="reference external" href="http://arxiv.org/abs/1308.3020">Kac Rice</a> paper.</p>
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="selectioninterval">
+<h2><a class="reference internal" href="#selectinf.distributions.pvalue.SelectionInterval" title="selectinf.distributions.pvalue.SelectionInterval"><code class="xref py py-class docutils literal notranslate"><span class="pre">SelectionInterval</span></code></a><a class="headerlink" href="#selectioninterval" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="selectinf.distributions.pvalue.SelectionInterval">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.distributions.pvalue.</code><code class="sig-name descname">SelectionInterval</code><span class="sig-paren">(</span><em class="sig-param">lower_bound</em>, <em class="sig-param">observed</em>, <em class="sig-param">upper_bound</em>, <em class="sig-param">sigma</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#SelectionInterval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.SelectionInterval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Compute a selection interval for
+a Gaussian truncated to an interval.</p>
+<dl class="method">
+<dt id="selectinf.distributions.pvalue.SelectionInterval.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">lower_bound</em>, <em class="sig-param">observed</em>, <em class="sig-param">upper_bound</em>, <em class="sig-param">sigma</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#SelectionInterval.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.SelectionInterval.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.pvalue.SelectionInterval.pivot">
+<code class="sig-name descname">pivot</code><span class="sig-paren">(</span><em class="sig-param">exp</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#SelectionInterval.pivot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.SelectionInterval.pivot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.pvalue.SelectionInterval.conf_int">
+<code class="sig-name descname">conf_int</code><span class="sig-paren">(</span><em class="sig-param">lb</em>, <em class="sig-param">ub</em>, <em class="sig-param">alpha=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#SelectionInterval.conf_int"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.SelectionInterval.conf_int" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.distributions.pvalue.chi_pvalue">
+<code class="sig-prename descclassname">selectinf.distributions.pvalue.</code><code class="sig-name descname">chi_pvalue</code><span class="sig-paren">(</span><em class="sig-param">observed</em>, <em class="sig-param">lower_bound</em>, <em class="sig-param">upper_bound</em>, <em class="sig-param">sd</em>, <em class="sig-param">df</em>, <em class="sig-param">method='MC'</em>, <em class="sig-param">nsim=1000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#chi_pvalue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.chi_pvalue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a truncated <span class="math notranslate nohighlight">\(\chi\)</span> p-value based on the 
+conditional survival function.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : float</p>
+<p><strong>lower_bound</strong> : float</p>
+<p><strong>upper_bound</strong> : float</p>
+<p><strong>sd</strong> : float</p>
+<blockquote>
+<div><p>Standard deviation.</p>
+</div></blockquote>
+<p><strong>df</strong> : float</p>
+<blockquote>
+<div><p>Degrees of freedom.</p>
+</div></blockquote>
+<p><strong>method: string</strong></p>
+<blockquote>
+<div><p>One of [‘MC’, ‘cdf’, ‘sf’]</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pvalue</strong> : float</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Let <span class="math notranslate nohighlight">\(T\)</span> be <cite>observed</cite>, <span class="math notranslate nohighlight">\(L\)</span> be <cite>lower_bound</cite> and <span class="math notranslate nohighlight">\(U\)</span> be <cite>upper_bound</cite>,
+and <span class="math notranslate nohighlight">\(\sigma\)</span> be <cite>sd</cite>.
+The p-value, for <span class="math notranslate nohighlight">\(L \leq T \leq U\)</span> is</p>
+<div class="math notranslate nohighlight">
+\[\frac{P(\chi^2_k / \sigma^2 \geq T^2) - P(\chi^2_k / \sigma^2 \geq U^2)}
+{P(\chi^2_k / \sigma^2 \geq L^2) - P(\chi^2_k / \sigma^2 \geq U^2)} \]</div>
+<p>It can be computed using <cite>scipy.stats.chi</cite> either its <cite>cdf</cite> (distribution 
+function) or <cite>sf</cite> (survival function) or evaluated
+by Monte Carlo if method is <cite>MC</cite>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.distributions.pvalue.gauss_poly">
+<code class="sig-prename descclassname">selectinf.distributions.pvalue.</code><code class="sig-name descname">gauss_poly</code><span class="sig-paren">(</span><em class="sig-param">lower_bound</em>, <em class="sig-param">upper_bound</em>, <em class="sig-param">curvature</em>, <em class="sig-param">nsim=100</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#gauss_poly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.gauss_poly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the integral of a polynomial times the 
+standard Gaussian density over an interval.</p>
+<p>Introduced in <a class="reference external" href="http://arxiv.org/abs/1308.3020">Kac Rice</a>, display (33) of v2.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lower_bound</strong> : float</p>
+<p><strong>upper_bound</strong> : float</p>
+<p><strong>curvature</strong> : np.array</p>
+<blockquote>
+<div><p>A diagonal matrix related to curvature.
+It is assumed that <cite>curvature + lower_bound I</cite> is non-negative definite.</p>
+</div></blockquote>
+<p><strong>nsim</strong> : int</p>
+<blockquote>
+<div><p>How many draws from <span class="math notranslate nohighlight">\(N(0,1)\)</span> should we use?</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>integral</strong> : float</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The return value is a Monte Carlo estimate of</p>
+<div class="math notranslate nohighlight">
+\[\int_{L}^{U} \det(\Lambda + z I)
+\frac{e^{-z^2/2\sigma^2}}{\sqrt{2\pi\sigma^2}} \, dz\]</div>
+<p>where <span class="math notranslate nohighlight">\(L\)</span> is <cite>lower_bound</cite>, <span class="math notranslate nohighlight">\(U\)</span> is <cite>upper_bound</cite> and <span class="math notranslate nohighlight">\(\Lambda\)</span> is the
+diagonal matrix <cite>curvature</cite>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.distributions.pvalue.general_pvalue">
+<code class="sig-prename descclassname">selectinf.distributions.pvalue.</code><code class="sig-name descname">general_pvalue</code><span class="sig-paren">(</span><em class="sig-param">observed</em>, <em class="sig-param">lower_bound</em>, <em class="sig-param">upper_bound</em>, <em class="sig-param">curvature</em>, <em class="sig-param">nsim=100</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#general_pvalue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.general_pvalue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the integral of a polynomial times the 
+standard Gaussian density over an interval.</p>
+<p>Introduced in <a class="reference external" href="http://arxiv.org/abs/1308.3020">Kac Rice</a>, display (35) of v2.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : float</p>
+<p><strong>lower_bound</strong> : float</p>
+<p><strong>upper_bound</strong> : float</p>
+<p><strong>curvature</strong> : np.array</p>
+<blockquote>
+<div><p>A diagonal matrix related to curvature.
+It is assumed that <cite>curvature + lower_bound I</cite> is non-negative definite.</p>
+</div></blockquote>
+<p><strong>nsim</strong> : int</p>
+<blockquote>
+<div><p>How many draws from <span class="math notranslate nohighlight">\(N(0,1)\)</span> should we use?</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>integral</strong> : float</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The return value is a Monte Carlo estimate of</p>
+<div class="math notranslate nohighlight">
+\[\frac{\int_{T}^{U} \det(\Lambda + z I)
+\frac{e^{-z^2/2\sigma^2}}{\sqrt{2\pi\sigma^2}} \, dz}
+{\int_{L}^{U} \det(\Lambda + z I)
+\frac{e^{-z^2/2\sigma^2}}{\sqrt{2\pi\sigma^2}} \, dz}\]</div>
+<p>where <span class="math notranslate nohighlight">\(T\)</span> is <cite>observed</cite>, <span class="math notranslate nohighlight">\(L\)</span> is <cite>lower_bound</cite>, 
+<span class="math notranslate nohighlight">\(U\)</span> is <cite>upper_bound</cite> and <span class="math notranslate nohighlight">\(\Lambda\)</span> is the
+diagonal matrix <cite>curvature</cite>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.distributions.pvalue.norm_interval">
+<code class="sig-prename descclassname">selectinf.distributions.pvalue.</code><code class="sig-name descname">norm_interval</code><span class="sig-paren">(</span><em class="sig-param">lower</em>, <em class="sig-param">upper</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#norm_interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.norm_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>A multiprecision evaluation of</p>
+<div class="math notranslate nohighlight">
+\[\Phi(U) - \Phi(L)\]</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lower</strong> : float</p>
+<blockquote>
+<div><p>The lower limit <span class="math notranslate nohighlight">\(L\)</span></p>
+</div></blockquote>
+<p><strong>upper</strong> : float</p>
+<blockquote>
+<div><p>The upper limit <span class="math notranslate nohighlight">\(U\)</span></p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.distributions.pvalue.norm_pdf">
+<code class="sig-prename descclassname">selectinf.distributions.pvalue.</code><code class="sig-name descname">norm_pdf</code><span class="sig-paren">(</span><em class="sig-param">observed</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#norm_pdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.norm_pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>A multi-precision calculation of the
+standard normal density function:</p>
+<div class="math notranslate nohighlight">
+\[\frac{e^{-T^2/2}}{\sqrt{2\pi}}\]</div>
+<p>where <cite>T</cite> is observed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : float</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>density</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.distributions.pvalue.norm_q">
+<code class="sig-prename descclassname">selectinf.distributions.pvalue.</code><code class="sig-name descname">norm_q</code><span class="sig-paren">(</span><em class="sig-param">prob</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#norm_q"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.norm_q" title="Permalink to this definition">¶</a></dt>
+<dd><p>A multi-precision calculation of the
+standard normal quantile function:</p>
+<div class="math notranslate nohighlight">
+\[\int_{-\infty}^{q(p)} \frac{e^{-z^2/2}}{\sqrt{2\pi}} \; dz = p\]</div>
+<p>where <span class="math notranslate nohighlight">\(p\)</span> is <cite>prob</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prob</strong> : float</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>quantile</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.distributions.pvalue.truncnorm_cdf">
+<code class="sig-prename descclassname">selectinf.distributions.pvalue.</code><code class="sig-name descname">truncnorm_cdf</code><span class="sig-paren">(</span><em class="sig-param">observed</em>, <em class="sig-param">lower</em>, <em class="sig-param">upper</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/pvalue.html#truncnorm_cdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.pvalue.truncnorm_cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the truncated normal 
+distribution function.</p>
+<div class="math notranslate nohighlight">
+\[\frac{\Phi(U) - \Phi(T)}{\Phi(U) - \Phi(L)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(T\)</span> is <cite>observed</cite>, <span class="math notranslate nohighlight">\(L\)</span> is <cite>lower_bound</cite> and <span class="math notranslate nohighlight">\(U\)</span> is <cite>upper_bound</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : float</p>
+<p><strong>lower</strong> : float</p>
+<p><strong>upper</strong> : float</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>P</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.glm.html" class="btn btn-neutral float-right" title="glm" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.distributions.intervals.html" class="btn btn-neutral float-left" title="distributions.intervals" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

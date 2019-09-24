@@ -1,0 +1,783 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.graph.field</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module implements the Field class, which simply a WeightedGraph</span>
+<span class="sd">(see the graph.py) module, plus an arrray that yields (possibly</span>
+<span class="sd">multi-dimnesional) features associated with graph vertices. This</span>
+<span class="sd">allows some kinds of computations (all thoses relating to mathematical</span>
+<span class="sd">morphology, diffusion etc.)</span>
+
+<span class="sd">Certain functions are provided to Instantiate Fields easily, given a</span>
+<span class="sd">WeightedGraph and feature data.</span>
+
+<span class="sd">Author:Bertrand Thirion, 2006--2011</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.graph</span> <span class="k">import</span> <span class="n">WeightedGraph</span><span class="p">,</span> <span class="n">Graph</span>
+
+<span class="n">NEGINF</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+
+<div class="viewcode-block" id="field_from_coo_matrix_and_data"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.field_from_coo_matrix_and_data">[docs]</a><span class="k">def</span> <span class="nf">field_from_coo_matrix_and_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Instantiates a weighted graph from a (sparse) coo_matrix</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: (V, V) scipy.sparse.coo_matrix instance,</span>
+<span class="sd">       the input matrix</span>
+<span class="sd">    data: array of shape (V, dim),</span>
+<span class="sd">          the field data</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ifield: resulting Field instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;the input coo_matrix is not square&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;data and x do not have consistent shapes&quot;</span><span class="p">)</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">ifield</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edges</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ifield</span></div>
+
+
+<div class="viewcode-block" id="field_from_graph_and_data"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.field_from_graph_and_data">[docs]</a><span class="k">def</span> <span class="nf">field_from_graph_and_data</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Instantiate a Fieldfrom a WeightedGraph plus some feature data</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: (V, V) scipy.sparse.coo_matrix instance,</span>
+<span class="sd">       the input matrix</span>
+<span class="sd">    data: array of shape (V, dim),</span>
+<span class="sd">          the field data</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ifield: resulting field instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">g</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;data and g do not have consistent shapes&quot;</span><span class="p">)</span>
+    <span class="n">ifield</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span> <span class="n">g</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ifield</span></div>
+
+
+<div class="viewcode-block" id="Field"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field">[docs]</a><span class="k">class</span> <span class="nc">Field</span><span class="p">(</span><span class="n">WeightedGraph</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the basic field structure,</span>
+<span class="sd">         which contains the weighted graph structure</span>
+<span class="sd">         plus an array of data (the &#39;field&#39;)</span>
+<span class="sd">    field is an array of size(n, p)</span>
+<span class="sd">          where n is the number of vertices of the graph</span>
+<span class="sd">          and p is the field dimension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Field.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        V (int &gt; 0) the number of vertices of the graph</span>
+<span class="sd">        edges=None: the edge array of the graph</span>
+<span class="sd">        weights=None: the asociated weights array</span>
+<span class="sd">        field=None: the field data itself</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">V</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot create graph with no vertex&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">V</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">edges</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">E</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">elif</span> <span class="n">edges</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+                <span class="n">E</span> <span class="o">=</span> <span class="n">edges</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Incompatible size of the edges </span><span class="se">\</span>
+<span class="s1">                                  and weights matrices&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">V</span> <span class="o">=</span> <span class="n">V</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="n">E</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">edges</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+                <span class="n">field</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;field does not have a correct size&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">field</span></div>
+
+<div class="viewcode-block" id="Field.get_field"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.get_field">[docs]</a>    <span class="k">def</span> <span class="nf">get_field</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span></div>
+
+<div class="viewcode-block" id="Field.set_field"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.set_field">[docs]</a>    <span class="k">def</span> <span class="nf">set_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+            <span class="n">field</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;field does not have a correct size&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">field</span></div>
+
+<div class="viewcode-block" id="Field.closing"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.closing">[docs]</a>    <span class="k">def</span> <span class="nf">closing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbiter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Morphological closing of the field data. </span>
+<span class="sd">        self.field is changed inplace</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nbiter=1 : the number of iterations required</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nbiter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dilation</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">erosion</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.opening"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.opening">[docs]</a>    <span class="k">def</span> <span class="nf">opening</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbiter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Morphological opening of the field data.</span>
+<span class="sd">        self.field is changed inplace</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nbiter: int, optional, the number of iterations required</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nbiter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">erosion</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dilation</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Field.dilation"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.dilation">[docs]</a>    <span class="k">def</span> <span class="nf">dilation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbiter</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Morphological dilation of the field data, changed in place</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nbiter: int, optional, the number of iterations required</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        When data dtype is not float64, a slow version of the code is used</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nbiter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;data type is not float64; a slower version is used&#39;</span><span class="p">)</span>
+            <span class="n">fast</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">fast</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">._graph</span> <span class="k">import</span> <span class="n">dilation</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">idx</span><span class="p">,</span> <span class="n">neighb</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compact_neighb</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbiter</span><span class="p">):</span>
+                    <span class="n">dilation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">neighb</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="k">import</span> <span class="n">dia_matrix</span>
+            <span class="n">adj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span> <span class="o">+</span> <span class="n">dia_matrix</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">),</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">))</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">adj</span><span class="o">.</span><span class="n">tolil</span><span class="p">()</span><span class="o">.</span><span class="n">rows</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbiter</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">row</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Field.highest_neighbor"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.highest_neighbor">[docs]</a>    <span class="k">def</span> <span class="nf">highest_neighbor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refdim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the neighbor with highest field value along refdim</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        refdim: int, optional,</span>
+<span class="sd">                the dimension of the field under consideration</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        hneighb: array of shape(self.V), </span>
+<span class="sd">                 index of the neighbor with highest value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="k">import</span> <span class="n">dia_matrix</span>
+        <span class="n">refdim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">refdim</span><span class="p">)</span>
+        <span class="c1"># add self-edges to avoid singularities, when taking the maximum</span>
+        <span class="n">adj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span> <span class="o">+</span> <span class="n">dia_matrix</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">),</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">))</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">adj</span><span class="o">.</span><span class="n">tolil</span><span class="p">()</span><span class="o">.</span><span class="n">rows</span>
+        <span class="n">hneighb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">row</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">row</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">hneighb</span></div>
+
+<div class="viewcode-block" id="Field.erosion"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.erosion">[docs]</a>    <span class="k">def</span> <span class="nf">erosion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbiter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Morphological openeing of the field</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nbiter: int, optional, the number of iterations required</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nbiter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span>
+        <span class="n">lil</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span><span class="o">.</span><span class="n">tolil</span><span class="p">()</span><span class="o">.</span><span class="n">rows</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbiter</span><span class="p">):</span>
+            <span class="n">nf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">neighbors</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lil</span><span class="p">):</span>
+                <span class="n">nf</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">neighbors</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">nf</span></div>
+
+<div class="viewcode-block" id="Field.get_local_maxima"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.get_local_maxima">[docs]</a>    <span class="k">def</span> <span class="nf">get_local_maxima</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refdim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="n">NEGINF</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Look for the local maxima of one dimension (refdim) of self.field</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        refdim (int) the field dimension over which the maxima are looked after</span>
+<span class="sd">        th = float, optional</span>
+<span class="sd">            threshold so that only values above th are considered</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        idx: array of shape (nmax)</span>
+<span class="sd">             indices of the vertices that are local maxima</span>
+<span class="sd">        depth: array of shape (nmax)</span>
+<span class="sd">               topological depth of the local maxima :</span>
+<span class="sd">               depth[idx[i]] = q means that idx[i] is a q-order maximum</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">depth_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_maxima</span><span class="p">(</span><span class="n">refdim</span><span class="p">,</span> <span class="n">th</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">depth_all</span><span class="p">))</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="n">depth_all</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="n">depth</span></div>
+
+<div class="viewcode-block" id="Field.local_maxima"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.local_maxima">[docs]</a>    <span class="k">def</span> <span class="nf">local_maxima</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refdim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="n">NEGINF</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns all the local maxima of a field</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        refdim (int) field dimension over which the maxima are looked after</span>
+<span class="sd">        th: float, optional</span>
+<span class="sd">            threshold so that only values above th are considered</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        depth: array of shape (nmax)</span>
+<span class="sd">               a labelling of the vertices such that</span>
+<span class="sd">               depth[v] = 0 if v is not a local maximum</span>
+<span class="sd">               depth[v] = 1 if v is a first order maximum</span>
+<span class="sd">               ...</span>
+<span class="sd">               depth[v] = q if v is a q-order maximum</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">refdim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">refdim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No field has been defined so far&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">refdim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">refdim</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+
+        <span class="c1"># create a subfield(thresholding)</span>
+        <span class="n">sf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subfield</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">refdim</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">)</span>
+        <span class="n">initial_field</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">refdim</span><span class="p">]</span>
+        <span class="n">sf</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">initial_field</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># compute the depth in the subgraph</span>
+        <span class="n">ldepth</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">V</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">V</span><span class="p">):</span>
+            <span class="n">dilated_field_old</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">sf</span><span class="o">.</span><span class="n">dilation</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">non_max</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">dilated_field_old</span>
+            <span class="n">ldepth</span><span class="p">[</span><span class="n">non_max</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">ldepth</span><span class="p">[</span><span class="n">non_max</span><span class="p">])</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">non_max</span> <span class="o">==</span> <span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="n">ldepth</span><span class="p">[</span><span class="n">sf</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">==</span> <span class="n">initial_field</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="c1"># write all the depth values</span>
+        <span class="n">depth</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[:,</span> <span class="n">refdim</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">]</span> <span class="o">=</span> <span class="n">ldepth</span>
+        <span class="k">return</span> <span class="n">depth</span></div>
+
+<div class="viewcode-block" id="Field.diffusion"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.diffusion">[docs]</a>    <span class="k">def</span> <span class="nf">diffusion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbiter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;diffusion of the field data in the weighted graph structure</span>
+<span class="sd">        self.field is changed inplace</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nbiter: int, optional the number of iterations required</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The process is run for all the dimensions of the field</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nbiter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nbiter</span><span class="p">)</span>
+        <span class="n">adj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbiter</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">adj</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span></div>
+
+<div class="viewcode-block" id="Field.custom_watershed"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.custom_watershed">[docs]</a>    <span class="k">def</span> <span class="nf">custom_watershed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refdim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="n">NEGINF</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; customized watershed analysis of the field.</span>
+<span class="sd">        Note that bassins are found around each maximum</span>
+<span class="sd">        (and not minimum as conventionally)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        refdim: int, optional</span>
+<span class="sd">        th: float optional, threshold of the field</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        idx: array of shape (nbassins)</span>
+<span class="sd">             indices of the vertices that are local maxima</span>
+<span class="sd">        label : array of shape (self.V)</span>
+<span class="sd">              labelling of the vertices according to their bassin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="k">as</span> <span class="nn">ma</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No field has been defined so far&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">refdim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;refdim&gt;field.shape[1]&#39;</span><span class="p">)</span>
+
+        <span class="n">label</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+
+        <span class="c1"># create a subfield(thresholding)</span>
+        <span class="n">sf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subfield</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[:,</span> <span class="n">refdim</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">)</span>
+
+        <span class="c1"># compute the basins</span>
+        <span class="n">hneighb</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">highest_neighbor</span><span class="p">()</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">hneighb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">V</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">edges</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">V</span><span class="p">),</span> <span class="n">hneighb</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">edges</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edges</span><span class="p">)</span>
+        <span class="n">llabel</span> <span class="o">=</span> <span class="n">aux</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span>
+        <span class="n">n_bassins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">llabel</span><span class="p">))</span>
+
+        <span class="c1"># write all the depth values</span>
+        <span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[:,</span> <span class="n">refdim</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">]</span> <span class="o">=</span> <span class="n">llabel</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[:,</span> <span class="n">refdim</span><span class="p">],</span> <span class="n">mask</span><span class="o">=</span><span class="p">(</span><span class="n">label</span> <span class="o">!=</span> <span class="n">c</span><span class="p">))</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+                        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_bassins</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="n">label</span></div>
+
+<div class="viewcode-block" id="Field.threshold_bifurcations"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.threshold_bifurcations">[docs]</a>    <span class="k">def</span> <span class="nf">threshold_bifurcations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refdim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="n">NEGINF</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Analysis of the level sets of the field:</span>
+<span class="sd">        Bifurcations are defined as changes in the topology in the level sets</span>
+<span class="sd">        when the level (threshold) is varied</span>
+<span class="sd">        This can been thought of as a kind of Morse analysis</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        th: float, optional,</span>
+<span class="sd">            threshold so that only values above th are considered</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        idx: array of shape (nlsets)</span>
+<span class="sd">             indices of the vertices that are local maxima</span>
+<span class="sd">        height: array of shape (nlsets)</span>
+<span class="sd">                the depth of the local maxima</span>
+<span class="sd">                depth[idx[i]] = q means that idx[i] is a q-order maximum</span>
+<span class="sd">                Note that this is also the diameter of the basins</span>
+<span class="sd">                associated with local maxima</span>
+<span class="sd">        parents: array of shape (nlsets)</span>
+<span class="sd">                 the label of the maximum which dominates each local maximum</span>
+<span class="sd">                 i.e. it describes the hierarchy of the local maxima</span>
+<span class="sd">        label: array of shape (self.V)</span>
+<span class="sd">               a labelling of thevertices according to their bassin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="k">as</span> <span class="nn">ma</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No field has been defined so far&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">refdim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;refdim&gt;field.shape[1]&#39;</span><span class="p">)</span>
+
+        <span class="n">label</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+
+        <span class="c1"># create a subfield(thresholding)</span>
+        <span class="n">sf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subfield</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[:,</span> <span class="n">refdim</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">)</span>
+        <span class="n">initial_field</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">field</span><span class="p">[:,</span> <span class="n">refdim</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">sf</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="n">initial_field</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># explore the subfield</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span> <span class="n">initial_field</span><span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span><span class="o">.</span><span class="n">tolil</span><span class="p">()</span><span class="o">.</span><span class="n">rows</span>
+        <span class="n">llabel</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sf</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="n">parent</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+        <span class="c1"># q will denote the region index</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">llabel</span><span class="p">[</span><span class="n">rows</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">&gt;</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="n">nlabel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">llabel</span><span class="p">[</span><span class="n">rows</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+                <span class="k">if</span> <span class="n">nlabel</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">nlabel</span> <span class="o">=</span> <span class="n">nlabel</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="n">nlabel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="n">nlabel</span><span class="p">])</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nlabel</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># we are at a regular point</span>
+                    <span class="n">llabel</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nlabel</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># we are at a saddle point</span>
+                    <span class="n">llabel</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+                    <span class="n">parent</span><span class="p">[</span><span class="n">nlabel</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+                    <span class="n">root</span><span class="p">[</span><span class="n">nlabel</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">nlabel</span><span class="p">:</span>
+                        <span class="n">root</span><span class="p">[</span><span class="n">root</span> <span class="o">==</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+                    <span class="n">q</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># this is a new component</span>
+                <span class="n">llabel</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+                <span class="n">q</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="p">[:</span><span class="n">q</span><span class="p">]</span>
+
+        <span class="c1"># write all the depth values</span>
+        <span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[:,</span> <span class="n">refdim</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">]</span> <span class="o">=</span> <span class="n">llabel</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ma</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[:,</span> <span class="n">refdim</span><span class="p">],</span> <span class="n">mask</span><span class="o">=</span><span class="p">(</span><span class="n">label</span> <span class="o">!=</span> <span class="n">c</span><span class="p">))</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+                         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">q</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">label</span></div>
+
+<div class="viewcode-block" id="Field.constrained_voronoi"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.constrained_voronoi">[docs]</a>    <span class="k">def</span> <span class="nf">constrained_voronoi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Voronoi parcellation of the field starting from the input seed</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seed: int array of shape(p), the input seeds</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        label: The resulting labelling of the data</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        FIXME: deal with graphs with several ccs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No field has been defined so far&#39;</span><span class="p">)</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">-</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">WeightedGraph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">voronoi_labelling</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">label</span></div>
+
+<div class="viewcode-block" id="Field.geodesic_kmeans"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.geodesic_kmeans">[docs]</a>    <span class="k">def</span> <span class="nf">geodesic_kmeans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seeds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1.e-4</span><span class="p">,</span>
+                        <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Geodesic k-means algorithm</span>
+<span class="sd">        i.e. obtention of clusters that are topologically</span>
+<span class="sd">        connected and minimally variable concerning the information</span>
+<span class="sd">        of self.field</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seeds: array of shape(p), optional,</span>
+<span class="sd">               initial indices of the seeds within the field</span>
+<span class="sd">               if seeds==None the labels are used as initialization</span>
+<span class="sd">        labels: array of shape(self.V) initial labels, optional,</span>
+<span class="sd">                it is expected that labels take their values</span>
+<span class="sd">                in a certain range (0..lmax)</span>
+<span class="sd">                if Labels==None, this is not used</span>
+<span class="sd">                if seeds==None and labels==None,  an ewxception is raised</span>
+<span class="sd">        maxiter: int, optional,</span>
+<span class="sd">                 maximal number of iterations</span>
+<span class="sd">        eps: float, optional,</span>
+<span class="sd">             increase of inertia at which convergence is declared</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        seeds: array of shape (p), the final seeds</span>
+<span class="sd">        label : array of shape (self.V), the resulting field label</span>
+<span class="sd">        J: float, inertia value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No field has been defined so far&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">seeds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No initialization has been provided&#39;</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">seeds</span><span class="p">)</span>
+        <span class="n">inertia_old</span> <span class="o">=</span> <span class="n">NEGINF</span>
+        <span class="k">if</span> <span class="n">seeds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">label</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">label</span><span class="p">))</span> <span class="o">!=</span> <span class="n">k</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;missing values, cannot proceed&#39;</span><span class="p">)</span>
+            <span class="n">seeds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+            <span class="k">for</span>  <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="n">lj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">label</span> <span class="o">==</span> <span class="n">j</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">cent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">lj</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">tj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">cent</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">lj</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">seeds</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">lj</span><span class="p">[</span><span class="n">tj</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">seeds</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxiter</span><span class="p">):</span>
+            <span class="c1"># voronoi labelling</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrained_voronoi</span><span class="p">(</span><span class="n">seeds</span><span class="p">)</span>
+            <span class="c1"># update the seeds</span>
+            <span class="n">inertia</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">pinteria</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span>  <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="n">lj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">label</span> <span class="o">==</span> <span class="n">j</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">pinteria</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">seeds</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">lj</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">cent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">lj</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">tj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">cent</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">lj</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">seeds</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">lj</span><span class="p">[</span><span class="n">tj</span><span class="p">]</span>
+                <span class="n">inertia</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">cent</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">lj</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">inertia</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">inertia_old</span> <span class="o">-</span> <span class="n">inertia</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">inertia_old</span> <span class="o">=</span> <span class="n">inertia</span>
+        <span class="k">return</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">inertia</span></div>
+
+<div class="viewcode-block" id="Field.ward"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.ward">[docs]</a>    <span class="k">def</span> <span class="nf">ward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbcluster</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Ward&#39;s clustering of self</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nbcluster: int,</span>
+<span class="sd">                   the number of desired clusters</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        label: array of shape (self.V)</span>
+<span class="sd">               the resulting field label</span>
+<span class="sd">        J (float): the resulting inertia</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">nipy.algorithms.clustering.hierarchical_clustering</span>\
+             <span class="kn">import</span> <span class="nn">ward_segment</span>
+        <span class="n">label</span><span class="p">,</span> <span class="n">J</span> <span class="o">=</span> <span class="n">ward_segment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">qmax</span><span class="o">=</span><span class="n">nbcluster</span><span class="p">)</span>
+
+        <span class="c1"># compute the resulting inertia</span>
+        <span class="n">inertia</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span>  <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbcluster</span><span class="p">):</span>
+            <span class="n">lj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">label</span> <span class="o">==</span> <span class="n">j</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">cent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">lj</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">inertia</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">cent</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">lj</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">label</span><span class="p">,</span> <span class="n">inertia</span></div>
+
+<div class="viewcode-block" id="Field.copy"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; copy function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Field.subfield"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.graph.field.html#nipy.algorithms.graph.field.Field.subfield">[docs]</a>    <span class="k">def</span> <span class="nf">subfield</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a subfield of self, with only vertices such that valid &gt; 0</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        valid: array of shape (self.V),</span>
+<span class="sd">               nonzero for vertices to be retained</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        F: Field instance,</span>
+<span class="sd">           the desired subfield of self</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The vertices are renumbered as [1..p] where p = sum(valid&gt;0) when</span>
+<span class="sd">        sum(valid) == 0 then None is returned</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">G</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[],</span> <span class="p">[]])</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span>
+        <span class="k">return</span> <span class="n">Field</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">G</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

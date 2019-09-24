@@ -1,0 +1,468 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.fwhm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-fwhm">
+<h1>algorithms.fwhm<a class="headerlink" href="#algorithms-fwhm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-fwhm">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.fwhm</span></code><a class="headerlink" href="#module-algorithms-fwhm" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.fwhm</span></code>:</p>
+digraph inheritance3a2c6a47be {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;algorithms.fwhm.ReselImage&quot; [URL=&quot;#nipy.algorithms.fwhm.ReselImage&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;algorithms.fwhm.Resels&quot; -&gt; &quot;algorithms.fwhm.ReselImage&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;algorithms.fwhm.Resels&quot; [URL=&quot;#nipy.algorithms.fwhm.Resels&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;The Resels class.&quot;];
+}
+<span class="target" id="module-nipy.algorithms.fwhm"></span><p>This module provides classes and definitions for using full width at half
+maximum (FWHM) to be used in conjunction with Gaussian Random Field Theory
+to determine resolution elements (resels).</p>
+<p>A resolution element (resel) is defined as a block of pixels of the same
+size as the FWHM of the smoothed image.</p>
+<p>There are two methods implemented to estimate (3d, or volumewise) FWHM
+based on a 4d Image:</p>
+<blockquote>
+<div><p>fastFHWM: used if the entire 4d Image is available
+iterFWHM: used when 4d Image is being filled in by slices of residuals</p>
+</div></blockquote>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="reselimage">
+<h3><a class="reference internal" href="#nipy.algorithms.fwhm.ReselImage" title="nipy.algorithms.fwhm.ReselImage"><code class="xref py py-class docutils literal notranslate"><span class="pre">ReselImage</span></code></a><a class="headerlink" href="#reselimage" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.fwhm.ReselImage">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.fwhm.</code><code class="sig-name descname">ReselImage</code><span class="sig-paren">(</span><em class="sig-param">resels=None</em>, <em class="sig-param">fwhm=None</em>, <em class="sig-param">**keywords</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/fwhm.html#ReselImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.fwhm.ReselImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.fwhm.Resels" title="nipy.algorithms.fwhm.Resels"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.fwhm.Resels</span></code></a></p>
+<dl class="method">
+<dt id="nipy.algorithms.fwhm.ReselImage.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">resels=None</em>, <em class="sig-param">fwhm=None</em>, <em class="sig-param">**keywords</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/fwhm.html#ReselImage.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.fwhm.ReselImage.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize resel image</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>resels</strong> : <cite>core.api.Image</cite></p>
+<blockquote>
+<div><p>Image of resel per voxel values.</p>
+</div></blockquote>
+<p><strong>fwhm</strong> : <cite>core.api.Image</cite></p>
+<blockquote>
+<div><p>Image of FWHM values.</p>
+</div></blockquote>
+<p><strong>keywords</strong> : <code class="docutils literal notranslate"><span class="pre">dict</span></code></p>
+<blockquote>
+<div><p>Passed as keywords arguments to <cite>core.api.Image</cite></p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.fwhm.ReselImage.fwhm2resel">
+<code class="sig-name descname">fwhm2resel</code><span class="sig-paren">(</span><em class="sig-param">fwhm</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.fwhm.ReselImage.fwhm2resel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert FWHM <cite>fwhm</cite> to equivalent reseels per voxel</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fwhm</strong> : float</p>
+<blockquote>
+<div><p>Convert an FWHM value to an equivalent resels per voxel based on
+step sizes in self.coordmap.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>resels</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.fwhm.ReselImage.integrate">
+<code class="sig-name descname">integrate</code><span class="sig-paren">(</span><em class="sig-param">mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.fwhm.ReselImage.integrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrate resels within <cite>mask</cite> (or use self.mask)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>Optional mask over which to integrate (add) resels.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>total_resels :</p>
+<blockquote>
+<div><p>the resels contained in the mask</p>
+</div></blockquote>
+<p><strong>FWHM</strong> : float</p>
+<blockquote>
+<div><p>an estimate of FWHM based on the average resel per voxel</p>
+</div></blockquote>
+<p>nvoxel: int</p>
+<blockquote>
+<div><p>the number of voxels in the mask</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.fwhm.ReselImage.resel2fwhm">
+<code class="sig-name descname">resel2fwhm</code><span class="sig-paren">(</span><em class="sig-param">resels</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.fwhm.ReselImage.resel2fwhm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert resels as <cite>resels</cite> to isotropic FWHM</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>resels</strong> : float</p>
+<blockquote>
+<div><p>Convert a resel value to an equivalent isotropic FWHM based on
+step sizes in self.coordmap.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fwhm</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="resels">
+<h3><a class="reference internal" href="#nipy.algorithms.fwhm.Resels" title="nipy.algorithms.fwhm.Resels"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resels</span></code></a><a class="headerlink" href="#resels" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.fwhm.Resels">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.fwhm.</code><code class="sig-name descname">Resels</code><span class="sig-paren">(</span><em class="sig-param">coordmap</em>, <em class="sig-param">normalized=False</em>, <em class="sig-param">fwhm=None</em>, <em class="sig-param">resels=None</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">clobber=False</em>, <em class="sig-param">D=3</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/fwhm.html#Resels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.fwhm.Resels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The Resels class.</p>
+<dl class="method">
+<dt id="nipy.algorithms.fwhm.Resels.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">coordmap</em>, <em class="sig-param">normalized=False</em>, <em class="sig-param">fwhm=None</em>, <em class="sig-param">resels=None</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">clobber=False</em>, <em class="sig-param">D=3</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/fwhm.html#Resels.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.fwhm.Resels.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize resels class</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coordmap</strong> : <code class="docutils literal notranslate"><span class="pre">CoordinateMap</span></code></p>
+<blockquote>
+<div><p>CoordinateMap over which fwhm and resels are to be estimated.
+Used in fwhm/resel conversion.</p>
+</div></blockquote>
+<p><strong>fwhm</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>Optional Image of FWHM. Used to convert
+FWHM Image to resels if FWHM is not being estimated.</p>
+</div></blockquote>
+<p><strong>resels</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>Optional Image of resels. Used to
+compute resels within a mask, for instance, if
+FWHM has already been estimated.</p>
+</div></blockquote>
+<p><strong>mask</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>Mask over which to integrate resels.</p>
+</div></blockquote>
+<p><strong>clobber</strong> : <code class="docutils literal notranslate"><span class="pre">bool</span></code></p>
+<blockquote>
+<div><p>Clobber output FWHM and resel images?</p>
+</div></blockquote>
+<p><strong>D</strong> : <code class="docutils literal notranslate"><span class="pre">int</span></code></p>
+<blockquote>
+<div><p>Can be 2 or 3, the dimension of the final volume.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.fwhm.Resels.integrate">
+<code class="sig-name descname">integrate</code><span class="sig-paren">(</span><em class="sig-param">mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/fwhm.html#Resels.integrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.fwhm.Resels.integrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrate resels within <cite>mask</cite> (or use self.mask)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>Optional mask over which to integrate (add) resels.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>total_resels :</p>
+<blockquote>
+<div><p>the resels contained in the mask</p>
+</div></blockquote>
+<p><strong>FWHM</strong> : float</p>
+<blockquote>
+<div><p>an estimate of FWHM based on the average resel per voxel</p>
+</div></blockquote>
+<p>nvoxel: int</p>
+<blockquote>
+<div><p>the number of voxels in the mask</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.fwhm.Resels.resel2fwhm">
+<code class="sig-name descname">resel2fwhm</code><span class="sig-paren">(</span><em class="sig-param">resels</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/fwhm.html#Resels.resel2fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.fwhm.Resels.resel2fwhm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert resels as <cite>resels</cite> to isotropic FWHM</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>resels</strong> : float</p>
+<blockquote>
+<div><p>Convert a resel value to an equivalent isotropic FWHM based on
+step sizes in self.coordmap.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fwhm</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.fwhm.Resels.fwhm2resel">
+<code class="sig-name descname">fwhm2resel</code><span class="sig-paren">(</span><em class="sig-param">fwhm</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/fwhm.html#Resels.fwhm2resel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.fwhm.Resels.fwhm2resel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert FWHM <cite>fwhm</cite> to equivalent reseels per voxel</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fwhm</strong> : float</p>
+<blockquote>
+<div><p>Convert an FWHM value to an equivalent resels per voxel based on
+step sizes in self.coordmap.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>resels</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+utils.compat3
+=============
+
+Module: :mod:`utils.compat3`
+----------------------------
+.. automodule:: nipy.utils.compat3
+
+.. currentmodule:: nipy.utils.compat3
+
+.. autofunction:: nipy.utils.compat3.open4csv
+

@@ -1,0 +1,463 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.modalities.fmri.hrf</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; This module provides definitions of various hemodynamic response</span>
+<span class="sd">functions (hrf).</span>
+
+<span class="sd">In particular, it provides Gary Glover&#39;s canonical HRF, AFNI&#39;s default</span>
+<span class="sd">HRF, and a spectral HRF.</span>
+
+<span class="sd">The Glover HRF is based on:</span>
+
+<span class="sd">@article{glover1999deconvolution,</span>
+<span class="sd">  title={{Deconvolution of impulse response in event-related BOLD fMRI}},</span>
+<span class="sd">  author={Glover, G.H.},</span>
+<span class="sd">  journal={NeuroImage},</span>
+<span class="sd">  volume={9},</span>
+<span class="sd">  number={4},</span>
+<span class="sd">  pages={416--429},</span>
+<span class="sd">  year={1999},</span>
+<span class="sd">  publisher={Orlando, FL: Academic Press, c1992-}</span>
+<span class="sd">}</span>
+
+<span class="sd">This parametrization is from fmristat:</span>
+
+<span class="sd">http://www.math.mcgill.ca/keith/fmristat/</span>
+
+<span class="sd">fmristat models the HRF as the difference of two gamma functions, ``g1``</span>
+<span class="sd">and ``g2``, each defined by the timing of the gamma function peaks</span>
+<span class="sd">(``pk1, pk2``) and the FWHMs (``width1, width2``):</span>
+
+<span class="sd">   raw_hrf = g1(pk1, width1) - a2 * g2(pk2, width2)</span>
+
+<span class="sd">where ``a2`` is the scale factor for the ``g2`` gamma function.  The</span>
+<span class="sd">actual hrf is the raw hrf set to have an integral of 1. </span>
+
+<span class="sd">fmristat used ``pk1, width1, pk2, width2, a2 = (5.4 5.2 10.8 7.35</span>
+<span class="sd">0.35)``.  These are parameters to match Glover&#39;s 1 second duration</span>
+<span class="sd">auditory stimulus curves.  Glover wrote these as:</span>
+
+<span class="sd">   y(t) = c1 * t**n1 * exp(t/t1) - a2 * c2 * t**n2 * exp(t/t2)</span>
+
+<span class="sd">with ``n1, t1, n2, t2, a2 = (6.0, 0.9, 12, 0.9, 0.35)``,  and ``c1, c2`` being</span>
+<span class="sd">``1/max(t**n1 * exp(t/t1)), 1/max(t**n2 * exp(t/t2)``.  The difference between</span>
+<span class="sd">Glover&#39;s expression and ours is because we (and fmristat) use the peak location</span>
+<span class="sd">and width to characterize the function rather than ``n1, t1``.  The values we</span>
+<span class="sd">use are equivalent.  Specifically, in our formulation:</span>
+
+<span class="sd">&gt;&gt;&gt; n1, t1, c1 = gamma_params(5.4, 5.2)</span>
+<span class="sd">&gt;&gt;&gt; np.allclose((n1-1, t1), (6.0, 0.9), rtol=0.02)</span>
+<span class="sd">True</span>
+<span class="sd">&gt;&gt;&gt; n2, t2, c2 = gamma_params(10.8, 7.35)</span>
+<span class="sd">&gt;&gt;&gt; np.allclose((n2-1, t2), (12.0, 0.9), rtol=0.02)</span>
+<span class="sd">True</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">sympy</span>
+
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">sps</span>
+
+<span class="kn">from</span> <span class="nn">sympy.utilities.lambdify</span> <span class="k">import</span> <span class="n">implemented_function</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">lambdify_t</span><span class="p">,</span> <span class="n">T</span>
+
+<div class="viewcode-block" id="gamma_params"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hrf.html#nipy.modalities.fmri.hrf.gamma_params">[docs]</a><span class="k">def</span> <span class="nf">gamma_params</span><span class="p">(</span><span class="n">peak_location</span><span class="p">,</span> <span class="n">peak_fwhm</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Parameters for gamma density given peak and width</span>
+
+<span class="sd">    TODO: where does the coef come from again.... check fmristat code</span>
+
+<span class="sd">    From a peak location and peak FWHM, determine the parameters (shape,</span>
+<span class="sd">    scale) of a Gamma density:</span>
+
+<span class="sd">    f(x) = coef * x**(shape-1) * exp(-x/scale)</span>
+
+<span class="sd">    The coefficient returned ensures that the f has integral 1 over</span>
+<span class="sd">    [0,np.inf]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    peak_location : float</span>
+<span class="sd">       Location of the peak of the Gamma density</span>
+<span class="sd">    peak_fwhm : float</span>
+<span class="sd">       FWHM at the peak</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    shape : float</span>
+<span class="sd">       Shape parameter in the Gamma density</span>
+<span class="sd">    scale : float</span>
+<span class="sd">       Scale parameter in the Gamma density</span>
+<span class="sd">    coef : float</span>
+<span class="sd">       Coefficient needed to ensure the density has integral 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shape_m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">peak_location</span> <span class="o">/</span> <span class="n">peak_fwhm</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">peak_fwhm</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">peak_location</span> <span class="o">/</span> <span class="mi">8</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="n">coef</span> <span class="o">=</span> <span class="n">peak_location</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">shape_m1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">peak_location</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">shape_m1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">coef</span></div>
+
+
+<div class="viewcode-block" id="gamma_expr"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hrf.html#nipy.modalities.fmri.hrf.gamma_expr">[docs]</a><span class="k">def</span> <span class="nf">gamma_expr</span><span class="p">(</span><span class="n">peak_location</span><span class="p">,</span> <span class="n">peak_fwhm</span><span class="p">):</span>
+    <span class="n">shape</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">coef</span> <span class="o">=</span> <span class="n">gamma_params</span><span class="p">(</span><span class="n">peak_location</span><span class="p">,</span> <span class="n">peak_fwhm</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">coef</span> <span class="o">*</span> <span class="p">((</span><span class="n">T</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span><span class="o">+</span><span class="mf">1.0e-14</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="n">shape</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">sympy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">T</span><span class="o">+</span><span class="mf">1.0e-14</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_sym_int</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="c1"># numerical integral of symbolic function</span>
+    <span class="k">return</span> <span class="n">_get_num_int</span><span class="p">(</span><span class="n">lambdify_t</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">dt</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_num_int</span><span class="p">(</span><span class="n">lf</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="c1"># numerical integral of numerical function</span>
+    <span class="n">tt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span><span class="n">t</span><span class="o">+</span><span class="n">dt</span><span class="p">,</span><span class="n">dt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lf</span><span class="p">(</span><span class="n">tt</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">dt</span>
+
+
+<span class="c1"># Glover HRF</span>
+<span class="n">_gexpr</span> <span class="o">=</span> <span class="n">gamma_expr</span><span class="p">(</span><span class="mf">5.4</span><span class="p">,</span> <span class="mf">5.2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.35</span> <span class="o">*</span> <span class="n">gamma_expr</span><span class="p">(</span><span class="mf">10.8</span><span class="p">,</span> <span class="mf">7.35</span><span class="p">)</span>
+<span class="n">_gexpr</span> <span class="o">=</span> <span class="n">_gexpr</span> <span class="o">/</span> <span class="n">_get_sym_int</span><span class="p">(</span><span class="n">_gexpr</span><span class="p">)</span>
+<span class="c1"># The numerical function (pass times to get values)</span>
+<span class="n">glovert</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">_gexpr</span><span class="p">)</span>
+<span class="c1"># The symbolic function</span>
+<span class="n">glover</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="s1">&#39;glover&#39;</span><span class="p">,</span> <span class="n">glovert</span><span class="p">)</span>
+
+<span class="c1"># Derivative of Glover HRF</span>
+<span class="n">_dgexpr</span> <span class="o">=</span> <span class="n">_gexpr</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="n">_dpos</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">Derivative</span><span class="p">((</span><span class="n">T</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span> <span class="n">T</span><span class="p">)</span>
+<span class="n">_dgexpr</span> <span class="o">=</span> <span class="n">_dgexpr</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">_dpos</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">_dgexpr</span> <span class="o">=</span> <span class="n">_dgexpr</span> <span class="o">/</span> <span class="n">_get_sym_int</span><span class="p">(</span><span class="n">sympy</span><span class="o">.</span><span class="n">Abs</span><span class="p">(</span><span class="n">_dgexpr</span><span class="p">))</span>
+<span class="c1"># Numerical function</span>
+<span class="n">dglovert</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">_dgexpr</span><span class="p">)</span>
+<span class="c1"># Symbolic function</span>
+<span class="n">dglover</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="s1">&#39;dglover&#39;</span><span class="p">,</span> <span class="n">dglovert</span><span class="p">)</span>
+
+<span class="k">del</span><span class="p">(</span><span class="n">_gexpr</span><span class="p">);</span> <span class="k">del</span><span class="p">(</span><span class="n">_dpos</span><span class="p">);</span> <span class="k">del</span><span class="p">(</span><span class="n">_dgexpr</span><span class="p">)</span>
+
+<span class="c1"># AFNI&#39;s HRF</span>
+<span class="n">_aexpr</span> <span class="o">=</span> <span class="p">((</span><span class="n">T</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span><span class="o">**</span><span class="mf">8.6</span> <span class="o">*</span> <span class="n">sympy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">T</span><span class="o">/</span><span class="mf">0.547</span><span class="p">)</span>
+<span class="n">_aexpr</span> <span class="o">=</span> <span class="n">_aexpr</span> <span class="o">/</span> <span class="n">_get_sym_int</span><span class="p">(</span><span class="n">_aexpr</span><span class="p">)</span>
+<span class="c1"># Numerical function</span>
+<span class="n">afnit</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">_aexpr</span><span class="p">)</span>
+<span class="c1"># Symbolic function</span>
+<span class="n">afni</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="s1">&#39;afni&#39;</span><span class="p">,</span> <span class="n">afnit</span><span class="p">)</span>
+
+<span class="k">del</span><span class="p">(</span><span class="n">_aexpr</span><span class="p">)</span>
+
+<span class="c1"># SPMs HRF</span>
+<div class="viewcode-block" id="spm_hrf_compat"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hrf.html#nipy.modalities.fmri.hrf.spm_hrf_compat">[docs]</a><span class="k">def</span> <span class="nf">spm_hrf_compat</span><span class="p">(</span><span class="n">t</span><span class="p">,</span>
+                   <span class="n">peak_delay</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+                   <span class="n">under_delay</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                   <span class="n">peak_disp</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                   <span class="n">under_disp</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                   <span class="n">p_u_ratio</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+                   <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; SPM HRF function from sum of two gamma PDFs</span>
+
+<span class="sd">    This function is designed to be partially compatible with SPMs `spm_hrf.m`</span>
+<span class="sd">    function.</span>
+
+<span class="sd">    The SPN HRF is a *peak* gamma PDF (with location `peak_delay` and dispersion</span>
+<span class="sd">    `peak_disp`), minus an *undershoot* gamma PDF (with location `under_delay`</span>
+<span class="sd">    and dispersion `under_disp`, and divided by the `p_u_ratio`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : array-like</span>
+<span class="sd">        vector of times at which to sample HRF.</span>
+<span class="sd">    peak_delay : float, optional</span>
+<span class="sd">        delay of peak.</span>
+<span class="sd">    under_delay : float, optional</span>
+<span class="sd">        delay of undershoot.</span>
+<span class="sd">    peak_disp : float, optional</span>
+<span class="sd">        width (dispersion) of peak.</span>
+<span class="sd">    under_disp : float, optional</span>
+<span class="sd">        width (dispersion) of undershoot.</span>
+<span class="sd">    p_u_ratio : float, optional</span>
+<span class="sd">        peak to undershoot ratio.  Undershoot divided by this value before</span>
+<span class="sd">        subtracting from peak.</span>
+<span class="sd">    normalize : {True, False}, optional</span>
+<span class="sd">        If True, divide HRF values by their sum before returning.  SPM does this</span>
+<span class="sd">        by default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hrf : array</span>
+<span class="sd">        vector length ``len(t)`` of samples from HRF at times `t`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    See ``spm_hrf.m`` in the SPM distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">([</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">[</span><span class="n">peak_delay</span><span class="p">,</span> <span class="n">peak_disp</span><span class="p">,</span> <span class="n">under_delay</span><span class="p">,</span> <span class="n">under_disp</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;delays and dispersions must be &gt; 0&quot;</span><span class="p">)</span>
+    <span class="c1"># gamma.pdf only defined for t &gt; 0</span>
+    <span class="n">hrf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+    <span class="n">pos_t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">peak</span> <span class="o">=</span> <span class="n">sps</span><span class="o">.</span><span class="n">gamma</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">pos_t</span><span class="p">,</span>
+                         <span class="n">peak_delay</span> <span class="o">/</span> <span class="n">peak_disp</span><span class="p">,</span>
+                         <span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                         <span class="n">scale</span> <span class="o">=</span> <span class="n">peak_disp</span><span class="p">)</span>
+    <span class="n">undershoot</span> <span class="o">=</span> <span class="n">sps</span><span class="o">.</span><span class="n">gamma</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">pos_t</span><span class="p">,</span>
+                               <span class="n">under_delay</span> <span class="o">/</span> <span class="n">under_disp</span><span class="p">,</span>
+                               <span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                               <span class="n">scale</span> <span class="o">=</span> <span class="n">under_disp</span><span class="p">)</span>
+    <span class="n">hrf</span><span class="p">[</span><span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak</span> <span class="o">-</span> <span class="n">undershoot</span> <span class="o">/</span> <span class="n">p_u_ratio</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">normalize</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hrf</span>
+    <span class="k">return</span> <span class="n">hrf</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hrf</span><span class="p">)</span></div>
+
+
+<span class="n">_spm_can_int</span> <span class="o">=</span> <span class="n">_get_num_int</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">spm_hrf_compat</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="spmt"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hrf.html#nipy.modalities.fmri.hrf.spmt">[docs]</a><span class="k">def</span> <span class="nf">spmt</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; SPM canonical HRF, HRF values for time values `t`</span>
+
+<span class="sd">    This is the canonical HRF function as used in SPM</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">spm_hrf_compat</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">/</span> <span class="n">_spm_can_int</span></div>
+
+
+<div class="viewcode-block" id="dspmt"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hrf.html#nipy.modalities.fmri.hrf.dspmt">[docs]</a><span class="k">def</span> <span class="nf">dspmt</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; SPM canonical HRF derivative, HRF derivative values for time values `t`</span>
+
+<span class="sd">    This is the canonical HRF derivative function as used in SPM.</span>
+
+<span class="sd">    It is the numerical difference of the HRF sampled at time `t` minus the</span>
+<span class="sd">    values sampled at time `t` -1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">spmt</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">spmt</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<span class="n">_spm_dd_func</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">spm_hrf_compat</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">peak_disp</span><span class="o">=</span><span class="mf">1.01</span><span class="p">)</span>
+<span class="n">_spm_dd_func_int</span> <span class="o">=</span> <span class="n">_get_num_int</span><span class="p">(</span><span class="n">_spm_dd_func</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ddspmt"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hrf.html#nipy.modalities.fmri.hrf.ddspmt">[docs]</a><span class="k">def</span> <span class="nf">ddspmt</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; SPM canonical HRF dispersion derivative, values for time values `t`</span>
+
+<span class="sd">    This is the canonical HRF dispersion derivative function as used in SPM.</span>
+
+<span class="sd">    It is the numerical difference between the HRF sampled at time `t`, and</span>
+<span class="sd">    values at `t` for another HRF shape with a small change in the peak</span>
+<span class="sd">    dispersion parameter (``peak_disp`` in func:`spm_hrf_compat`).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">spmt</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">_spm_dd_func</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="n">_spm_dd_func_int</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.01</span></div>
+
+
+<span class="n">spm</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="s1">&#39;spm&#39;</span><span class="p">,</span> <span class="n">spmt</span><span class="p">)</span>
+<span class="n">dspm</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="s1">&#39;dspm&#39;</span><span class="p">,</span> <span class="n">dspmt</span><span class="p">)</span>
+<span class="n">ddspm</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="s1">&#39;ddspm&#39;</span><span class="p">,</span> <span class="n">ddspmt</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

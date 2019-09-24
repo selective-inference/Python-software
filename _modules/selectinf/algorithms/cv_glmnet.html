@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.algorithms.cv_glmnet</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module uses glmnet to run CV as part of cv_view.</span>
+
+<span class="sd">If a user attempts to import the module without rpy2 installed, it</span>
+<span class="sd">will raise an ImportError. So, this should not be in any api import.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..randomized.randomization</span> <span class="k">import</span> <span class="n">randomization</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">rpy2.robjects.packages</span> <span class="k">import</span> <span class="n">importr</span>
+    <span class="kn">from</span> <span class="nn">rpy2</span> <span class="k">import</span> <span class="n">robjects</span>
+    <span class="kn">import</span> <span class="nn">rpy2.robjects.numpy2ri</span>
+    <span class="n">rpy2</span><span class="o">.</span><span class="n">robjects</span><span class="o">.</span><span class="n">numpy2ri</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
+    <span class="n">rpy2</span><span class="o">.</span><span class="n">robjects</span><span class="o">.</span><span class="n">numpy2ri</span><span class="o">.</span><span class="n">deactivate</span><span class="p">()</span>
+    <span class="n">importr</span><span class="p">(</span><span class="s1">&#39;glmnet&#39;</span><span class="p">)</span>
+    <span class="n">have_glmnet</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;rpy2 and / or glmnet seem not to be installed -- CV_glmnet class will not work&#39;</span><span class="p">)</span>
+    <span class="n">have_glmnet</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">pass</span>
+
+<div class="viewcode-block" id="CV_glmnet"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv_glmnet.html#selectinf.algorithms.cv_glmnet.CV_glmnet">[docs]</a><span class="k">class</span> <span class="nc">CV_glmnet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="CV_glmnet.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv_glmnet.html#selectinf.algorithms.cv_glmnet.CV_glmnet.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">loss_label</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span>
+        <span class="k">if</span> <span class="n">have_glmnet</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">loss_label</span> <span class="o">==</span> <span class="s2">&quot;gaussian&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">family</span> <span class="o">=</span> <span class="n">robjects</span><span class="o">.</span><span class="n">StrVector</span><span class="p">(</span><span class="s1">&#39;g&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">loss_label</span> <span class="o">==</span> <span class="s2">&quot;logistic&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">family</span> <span class="o">=</span> <span class="n">robjects</span><span class="o">.</span><span class="n">StrVector</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CV_glmnet.using_glmnet"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv_glmnet.html#selectinf.algorithms.cv_glmnet.CV_glmnet.using_glmnet">[docs]</a>    <span class="k">def</span> <span class="nf">using_glmnet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">have_glmnet</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;glmnet failed to load with rpy2&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="n">rpy2</span><span class="o">.</span><span class="n">robjects</span><span class="o">.</span><span class="n">numpy2ri</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
+        <span class="n">robjects</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">            glmnet_cv = function(X,y, family, lam_seq=NA){</span>
+<span class="s1">            y = as.matrix(y)</span>
+<span class="s1">            X = as.matrix(X)</span>
+<span class="s1">            if (family==&quot;b&quot;){</span>
+<span class="s1">                family.full = &quot;binomial&quot;</span>
+<span class="s1">            } else if (family==&quot;g&quot;){</span>
+<span class="s1">                family.full = &quot;gaussian&quot;</span>
+<span class="s1">            }</span>
+<span class="s1">            if (is.na(lam_seq)){</span>
+<span class="s1">                G_CV = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE, family=family.full)</span>
+<span class="s1">            }</span>
+<span class="s1">            else {</span>
+<span class="s1">                G_CV = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE, lambda=lam_seq, family=family.full)</span>
+
+<span class="s1">            }</span>
+<span class="s1">            lam_1SE = G_CV$lambda.1se</span>
+<span class="s1">            lam_minCV = G_CV$lambda.min</span>
+<span class="s1">            n = nrow(X)</span>
+<span class="s1">            lam_minCV = lam_minCV*n</span>
+<span class="s1">            lam_1SE = lam_1SE*n</span>
+<span class="s1">            lam_seq = G_CV$lambda*n</span>
+<span class="s1">            result = list(lam_minCV=lam_minCV, lam_1SE=lam_1SE, lam_seq = lam_seq, CV_err=G_CV$cvm, SD=G_CV$cvsd)</span>
+<span class="s1">            return(result)</span>
+<span class="s1">            }&#39;&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">r_glmnet_cv</span> <span class="o">=</span> <span class="n">robjects</span><span class="o">.</span><span class="n">globalenv</span><span class="p">[</span><span class="s1">&#39;glmnet_cv&#39;</span><span class="p">]</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">r_X</span> <span class="o">=</span> <span class="n">robjects</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">nrow</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">r_y</span> <span class="o">=</span> <span class="n">robjects</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">nrow</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;lam_seq&#39;</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">r_glmnet_cv</span><span class="p">(</span><span class="n">r_X</span><span class="p">,</span> <span class="n">r_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r_lam_seq</span> <span class="o">=</span> <span class="n">robjects</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">true_divide</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">nrow</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">r_glmnet_cv</span><span class="p">(</span><span class="n">r_X</span><span class="p">,</span> <span class="n">r_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="p">,</span> <span class="n">r_lam_seq</span><span class="p">)</span>
+        <span class="n">lam_minCV</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">lam_1SE</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">lam_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;lam_seq&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span> <span class="o">=</span> <span class="n">lam_seq</span>
+        <span class="n">CV_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="c1"># this is stupid but glmnet sometime cuts my given seq of lambdas</span>
+        <span class="k">if</span> <span class="n">CV_err</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">CV_err_longer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">CV_err</span><span class="p">)</span>
+            <span class="n">CV_err_longer</span><span class="p">[:(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span><span class="o">=</span><span class="n">CV_err</span>
+            <span class="n">CV_err</span> <span class="o">=</span> <span class="n">CV_err_longer</span>
+        <span class="n">SD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+
+        <span class="n">rpy2</span><span class="o">.</span><span class="n">robjects</span><span class="o">.</span><span class="n">numpy2ri</span><span class="o">.</span><span class="n">deactivate</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">lam_minCV</span><span class="p">,</span> <span class="n">lam_1SE</span><span class="p">,</span> <span class="n">lam_seq</span><span class="p">,</span> <span class="n">CV_err</span><span class="p">,</span> <span class="n">SD</span></div>
+
+
+<div class="viewcode-block" id="CV_glmnet.choose_lambda_CVR"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv_glmnet.html#selectinf.algorithms.cv_glmnet.CV_glmnet.choose_lambda_CVR">[docs]</a>    <span class="k">def</span> <span class="nf">choose_lambda_CVR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">scale1</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">scale2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">CV_err</span><span class="p">,</span> <span class="n">SD</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_glmnet</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+
+        <span class="n">rv1</span><span class="p">,</span> <span class="n">rv2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">scale1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomization1</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale1</span><span class="p">)</span>
+            <span class="n">rv1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">randomization1</span><span class="o">.</span><span class="n">_sampler</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)))</span>
+        <span class="k">if</span> <span class="n">scale2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomization2</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale2</span><span class="p">)</span>
+            <span class="n">rv2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">randomization2</span><span class="o">.</span><span class="n">_sampler</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)))</span>
+        <span class="n">CVR</span> <span class="o">=</span> <span class="n">CV_err</span><span class="o">+</span><span class="n">rv1</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">+</span><span class="n">rv2</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">lam_CVR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">CVR</span><span class="p">)]</span> <span class="c1"># lam_CVR minimizes CVR</span>
+
+        <span class="n">CV1</span> <span class="o">=</span> <span class="n">CV_err</span><span class="o">+</span><span class="n">rv1</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="k">return</span>  <span class="n">lam_CVR</span><span class="p">,</span> <span class="n">SD</span><span class="p">,</span> <span class="n">CVR</span><span class="p">,</span> <span class="n">CV1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span></div>
+
+
+<div class="viewcode-block" id="CV_glmnet.bootstrap_CVR_curve"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv_glmnet.html#selectinf.algorithms.cv_glmnet.CV_glmnet.bootstrap_CVR_curve">[docs]</a>    <span class="k">def</span> <span class="nf">bootstrap_CVR_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bootstrap of CVR=CV+R1+R2 and CV1=CV+R1 curves</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">_bootstrap_CVerr_curve</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="n">loss_star</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">CVR_val</span><span class="p">,</span> <span class="n">CV1_val</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">choose_lambda_CVR</span><span class="p">(</span><span class="n">scale1</span><span class="p">,</span> <span class="n">scale2</span><span class="p">,</span> <span class="n">loss_star</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CVR_val</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CV1_val</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_CVR_boot</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">_bootstrap_CVerr_curve</span><span class="p">(</span><span class="n">indices</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">_CV1_boot</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">_bootstrap_CVerr_curve</span><span class="p">(</span><span class="n">indices</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">_CVR_boot</span><span class="p">,</span> <span class="n">_CV1_boot</span></div></div>
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

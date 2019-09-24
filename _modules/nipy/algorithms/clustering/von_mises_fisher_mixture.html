@@ -1,0 +1,655 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.clustering.von_mises_fisher_mixture</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Implementation of Von-Mises-Fisher Mixture models,</span>
+<span class="sd">i.e. the equaivalent of mixture of Gaussian on the sphere.</span>
+
+<span class="sd">Author: Bertrand Thirion, 2010-2011</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+
+<span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Module nipy.algorithms.clustering.von_mises_fisher_mixture&#39;</span> <span class="o">+</span> 
+     <span class="s1">&#39;deprecated, will be removed&#39;</span><span class="p">,</span>
+     <span class="ne">FutureWarning</span><span class="p">,</span>
+     <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VonMisesMixture"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture">[docs]</a><span class="k">class</span> <span class="nc">VonMisesMixture</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Model for Von Mises mixture distribution with fixed variance</span>
+<span class="sd">    on a two-dimensional sphere</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="VonMisesMixture.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">means</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">null_class</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize Von Mises mixture</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k: int,</span>
+<span class="sd">           number of components</span>
+<span class="sd">        precision: float,</span>
+<span class="sd">                   the fixed precision parameter</span>
+<span class="sd">        means: array of shape(self.k, 3), optional</span>
+<span class="sd">               input component centers</span>
+<span class="sd">        weights: array of shape(self.k), optional</span>
+<span class="sd">                 input components weights</span>
+<span class="sd">        null_class: bool, optional</span>
+<span class="sd">                    Inclusion of a null class within the model</span>
+<span class="sd">                    (related to k=0)</span>
+
+<span class="sd">        fixme</span>
+<span class="sd">        -----</span>
+<span class="sd">        consistency checks</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">em_dim</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">means</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precision</span> <span class="o">=</span> <span class="n">precision</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">null_class</span> <span class="o">=</span> <span class="n">null_class</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.log_density_per_component"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.log_density_per_component">[docs]</a>    <span class="k">def</span> <span class="nf">log_density_per_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the per-component density of the data</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array fo shape(n,3)</span>
+<span class="sd">           should be on the unit sphere</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        like: array of shape(n, self.k), with non-neagtive values</span>
+<span class="sd">              the density</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">constant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span> <span class="o">-</span> \
+                    <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span><span class="p">)))</span>
+        <span class="n">loglike</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">constant</span><span class="p">)</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">null_class</span><span class="p">:</span>
+            <span class="n">loglike</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+                                 <span class="n">loglike</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">loglike</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.density_per_component"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.density_per_component">[docs]</a>    <span class="k">def</span> <span class="nf">density_per_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the per-component density of the data</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array fo shape(n,3)</span>
+<span class="sd">           should be on the unit sphere</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        like: array of shape(n, self.k), with non-neagtive values</span>
+<span class="sd">              the density</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_density_per_component</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.weighted_density"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.weighted_density">[docs]</a>    <span class="k">def</span> <span class="nf">weighted_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return weighted density</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array shape(n,3)</span>
+<span class="sd">           should be on the unit sphere</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        like: array</span>
+<span class="sd">            of shape(n, self.k)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density_per_component</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.log_weighted_density"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.log_weighted_density">[docs]</a>    <span class="k">def</span> <span class="nf">log_weighted_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return log weighted density</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array fo shape(n,3)</span>
+<span class="sd">           should be on the unit sphere</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        log_like: array of shape(n, self.k)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_density_per_component</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.mixture_density"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.mixture_density">[docs]</a>    <span class="k">def</span> <span class="nf">mixture_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return mixture density</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array fo shape(n,3)</span>
+<span class="sd">           should be on the unit sphere</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        like: array of shape(n)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weighted_density</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.responsibilities"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.responsibilities">[docs]</a>    <span class="k">def</span> <span class="nf">responsibilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return responsibilities</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array fo shape(n,3)</span>
+<span class="sd">           should be on the unit sphere</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        resp: array of shape(n, self.k)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lwl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_weighted_density</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lwl</span><span class="o">.</span><span class="n">T</span> <span class="o">-</span> <span class="n">lwl</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">swl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="p">(</span><span class="n">wl</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">swl</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">return</span> <span class="n">resp</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.estimate_weights"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.estimate_weights">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Calculate and set weights from `z`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z: array of shape(self.k)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">z</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.estimate_means"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.estimate_means">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Calculate and set means from `x` and `z`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array fo shape(n,3)</span>
+<span class="sd">           should be on the unit sphere</span>
+<span class="sd">        z: array of shape(self.k)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.estimate"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">miniter</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return average log density across samples</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape (n,3)</span>
+<span class="sd">           should be on the unit sphere</span>
+<span class="sd">        maxiter : int, optional</span>
+<span class="sd">            maximum number of iterations of the algorithms</span>
+<span class="sd">        miniter : int, optional</span>
+<span class="sd">            minimum number of iterations</span>
+<span class="sd">        bias : array of shape(n), optional</span>
+<span class="sd">            prior probability of being in a non-null class</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ll : float</span>
+<span class="sd">            average (across samples) log-density</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># initialization with random positions and constant weights</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">null_class</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">aux</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">aux</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">]]</span>
+
+        <span class="c1"># EM algorithm</span>
+        <span class="k">assert</span> <span class="ow">not</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
+        <span class="n">pll</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxiter</span><span class="p">):</span>
+            <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixture_density</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">responsibilities</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="ow">not</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
+
+            <span class="c1"># bias z</span>
+            <span class="k">if</span> <span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">z</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">bias</span><span class="p">)</span>
+                <span class="n">z</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="p">((</span><span class="n">z</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">bias</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">estimate_weights</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">null_class</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">estimate_means</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">estimate_means</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="ow">not</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="n">miniter</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ll</span> <span class="o">&lt;</span> <span class="n">pll</span> <span class="o">+</span> <span class="mf">1.e-6</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="n">pll</span> <span class="o">=</span> <span class="n">ll</span>
+        <span class="k">return</span> <span class="n">ll</span></div>
+
+<div class="viewcode-block" id="VonMisesMixture.show"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.VonMisesMixture.show">[docs]</a>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Visualization utility</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape (n, 3)</span>
+<span class="sd">           should be on the unit sphere</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        Uses ``matplotlib``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># label the data</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">responsibilities</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="kn">import</span> <span class="nn">pylab</span>
+        <span class="kn">import</span> <span class="nn">mpl_toolkits.mplot3d.axes3d</span> <span class="k">as</span> <span class="nn">p3</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">p3</span><span class="o">.</span><span class="n">Axes3D</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">]</span> <span class="o">*</span> \
+                      <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">//</span> <span class="mi">8</span><span class="p">))[:</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">null_class</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">z</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot3D</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span>
+                      <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">null_class</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">z</span> <span class="o">==</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">uk</span> <span class="o">=</span> <span class="n">z</span> <span class="o">==</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot3D</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">uk</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">uk</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">uk</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span>
+                          <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot3D</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span>
+                      <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">2</span><span class="p">]],</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot3D</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span>
+                              <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot3D</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span>
+                      <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="mi">2</span><span class="p">]],</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="n">pylab</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="estimate_robust_vmm"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.estimate_robust_vmm">[docs]</a><span class="k">def</span> <span class="nf">estimate_robust_vmm</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">null_class</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ninit</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return the best von_mises mixture after severla initialization</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k: int, number of classes</span>
+<span class="sd">    precision: float, priori precision parameter</span>
+<span class="sd">    null class: bool, optional,</span>
+<span class="sd">                should a null class be included or not</span>
+<span class="sd">    x: array fo shape(n,3)</span>
+<span class="sd">       input data, should be on the unit sphere</span>
+<span class="sd">    ninit: int, optional,</span>
+<span class="sd">           number of iterations</span>
+<span class="sd">    bias: array of shape(n), optional</span>
+<span class="sd">          prior probability of being in a non-null class</span>
+<span class="sd">    maxiter: int, optional,</span>
+<span class="sd">             maximum number of iterations after each initialization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ninit</span><span class="p">):</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">VonMisesMixture</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">null_class</span><span class="o">=</span><span class="n">null_class</span><span class="p">)</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">aux</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">bias</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ll</span> <span class="o">&gt;</span> <span class="n">score</span><span class="p">:</span>
+            <span class="n">best_model</span> <span class="o">=</span> <span class="n">aux</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">ll</span>
+    <span class="k">return</span> <span class="n">best_model</span></div>
+
+
+<div class="viewcode-block" id="select_vmm"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.select_vmm">[docs]</a><span class="k">def</span> <span class="nf">select_vmm</span><span class="p">(</span><span class="n">krange</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">null_class</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ninit</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the best von_mises mixture after severla initialization</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    krange: list of ints,</span>
+<span class="sd">            number of classes to consider</span>
+<span class="sd">    precision:</span>
+<span class="sd">    null class:</span>
+<span class="sd">    x: array fo shape(n,3)</span>
+<span class="sd">       should be on the unit sphere</span>
+<span class="sd">    ninit: int, optional,</span>
+<span class="sd">           number of iterations</span>
+<span class="sd">    maxiter: int, optional,</span>
+<span class="sd">    bias: array of shape(n),</span>
+<span class="sd">          a prior probability of not being in the null class</span>
+<span class="sd">    verbose: Bool, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">krange</span><span class="p">:</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">estimate_robust_vmm</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">null_class</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ninit</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span>
+                                  <span class="n">maxiter</span><span class="p">)</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="n">aux</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">null_class</span><span class="p">:</span>
+            <span class="n">bic</span> <span class="o">=</span> <span class="n">ll</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">k</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bic</span> <span class="o">=</span> <span class="n">ll</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">bic</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bic</span> <span class="o">&gt;</span> <span class="n">score</span><span class="p">:</span>
+            <span class="n">best_model</span> <span class="o">=</span> <span class="n">aux</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">bic</span>
+    <span class="k">return</span> <span class="n">best_model</span></div>
+
+
+<div class="viewcode-block" id="select_vmm_cv"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.select_vmm_cv">[docs]</a><span class="k">def</span> <span class="nf">select_vmm_cv</span><span class="p">(</span><span class="n">krange</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">null_class</span><span class="p">,</span> <span class="n">cv_index</span><span class="p">,</span>
+                  <span class="n">ninit</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the best von_mises mixture after severla initialization</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    krange: list of ints,</span>
+<span class="sd">            number of classes to consider</span>
+<span class="sd">    precision: float,</span>
+<span class="sd">               precision parameter of the von-mises densities</span>
+<span class="sd">    x: array fo shape(n, 3)</span>
+<span class="sd">       should be on the unit sphere</span>
+<span class="sd">    null class: bool, whether a null class should be included or not</span>
+<span class="sd">    cv_index: set of indices for cross validation</span>
+<span class="sd">    ninit: int, optional,</span>
+<span class="sd">           number of iterations</span>
+<span class="sd">    maxiter: int, optional,</span>
+<span class="sd">    bias: array of shape (n), prior</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">mll</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">krange</span><span class="p">:</span>
+        <span class="n">mll</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">cv_index</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">cv_index</span><span class="p">):</span>
+                <span class="n">xl</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">cv_index</span> <span class="o">!=</span> <span class="n">i</span><span class="p">]</span>
+                <span class="n">xt</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">cv_index</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span>
+                <span class="n">bias_l</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">bias_l</span> <span class="o">=</span> <span class="n">bias</span><span class="p">[</span><span class="n">cv_index</span> <span class="o">!=</span> <span class="n">i</span><span class="p">]</span>
+                <span class="n">aux</span> <span class="o">=</span> <span class="n">estimate_robust_vmm</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">null_class</span><span class="p">,</span> <span class="n">xl</span><span class="p">,</span>
+                                          <span class="n">ninit</span><span class="o">=</span><span class="n">ninit</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">bias_l</span><span class="p">,</span>
+                                          <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">bias</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">ll</span><span class="p">[</span><span class="n">cv_index</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">aux</span><span class="o">.</span><span class="n">mixture_density</span><span class="p">(</span><span class="n">xt</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">bias_t</span> <span class="o">=</span> <span class="n">bias</span><span class="p">[</span><span class="n">cv_index</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span>
+                    <span class="n">lwd</span> <span class="o">=</span> <span class="n">aux</span><span class="o">.</span><span class="n">weighted_density</span><span class="p">(</span><span class="n">xt</span><span class="p">)</span>
+                    <span class="n">ll</span><span class="p">[</span><span class="n">cv_index</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">lwd</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">bias_t</span><span class="p">)</span> <span class="o">+</span>  \
+                        <span class="n">lwd</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">bias_t</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ll</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">mll</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">mll</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ll</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">estimate_robust_vmm</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">null_class</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span>
+                                  <span class="n">ninit</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">bias</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">mll</span><span class="p">[</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">mll</span><span class="p">[</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">score</span><span class="p">:</span>
+            <span class="n">best_model</span> <span class="o">=</span> <span class="n">aux</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">mll</span><span class="p">[</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">best_model</span></div>
+
+
+<div class="viewcode-block" id="sphere_density"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.sphere_density">[docs]</a><span class="k">def</span> <span class="nf">sphere_density</span><span class="p">(</span><span class="n">npoints</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the points and area of a npoints**2 points sampled on a sphere</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    s : array of shape(npoints ** 2, 3)</span>
+<span class="sd">    area: array of shape(npoints)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">npoints</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)[:</span><span class="n">npoints</span><span class="p">]</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">npoints</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)[:</span><span class="n">npoints</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">))),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">))),</span>
+                   <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">u</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">v</span><span class="p">)))))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">u</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">v</span><span class="p">))))</span> <span class="o">*</span> \
+           <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">npoints</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">s</span><span class="p">,</span> <span class="n">area</span></div>
+
+
+<div class="viewcode-block" id="example_noisy"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.example_noisy">[docs]</a><span class="k">def</span> <span class="nf">example_noisy</span><span class="p">():</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.48</span><span class="p">,</span> <span class="mf">0.64</span><span class="p">]</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.48</span><span class="p">,</span> <span class="mf">0.36</span><span class="p">]</span>
+    <span class="n">x3</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.48</span><span class="p">,</span> <span class="mf">0.64</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="o">.</span><span class="mi">1</span>
+    <span class="n">x</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x1</span>
+    <span class="n">x</span><span class="p">[</span><span class="mi">40</span><span class="p">:</span><span class="mi">150</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x2</span>
+    <span class="n">x</span><span class="p">[</span><span class="mi">150</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">x3</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">precision</span> <span class="o">=</span> <span class="mf">100.</span>
+    <span class="n">vmm</span> <span class="o">=</span> <span class="n">select_vmm</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">)),</span> <span class="n">precision</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">vmm</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="c1"># check that it sums to 1</span>
+    <span class="n">s</span><span class="p">,</span> <span class="n">area</span> <span class="o">=</span> <span class="n">sphere_density</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">((</span><span class="n">vmm</span><span class="o">.</span><span class="n">mixture_density</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="n">area</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="example_cv_nonoise"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.von_mises_fisher_mixture.html#nipy.algorithms.clustering.von_mises_fisher_mixture.example_cv_nonoise">[docs]</a><span class="k">def</span> <span class="nf">example_cv_nonoise</span><span class="p">():</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.48</span><span class="p">,</span> <span class="mf">0.64</span><span class="p">]</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.48</span><span class="p">,</span> <span class="mf">0.36</span><span class="p">]</span>
+    <span class="n">x3</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.48</span><span class="p">,</span> <span class="mf">0.64</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="o">.</span><span class="mi">1</span>
+    <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x1</span>
+    <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x2</span>
+    <span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x3</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">precision</span> <span class="o">=</span> <span class="mf">50.</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">vmm</span> <span class="o">=</span> <span class="n">select_vmm_cv</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">)),</span> <span class="n">precision</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">cv_index</span><span class="o">=</span><span class="n">sub</span><span class="p">,</span>
+                        <span class="n">null_class</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ninit</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">vmm</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="c1"># check that it sums to 1</span>
+    <span class="n">s</span><span class="p">,</span> <span class="n">area</span> <span class="o">=</span> <span class="n">sphere_density</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">vmm</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

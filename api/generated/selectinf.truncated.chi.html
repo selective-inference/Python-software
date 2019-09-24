@@ -1,0 +1,584 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="truncated.gaussian" href="selectinf.truncated.gaussian.html" />
+    <link rel="prev" title="truncated.base" href="selectinf.truncated.base.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">truncated.chi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-truncated-chi">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">truncated.chi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.truncated.chi.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="truncated-chi">
+<h1>truncated.chi<a class="headerlink" href="#truncated-chi" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-truncated-chi">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">truncated.chi</span></code><a class="headerlink" href="#module-truncated-chi" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.truncated.chi</span></code>:</p>
+digraph inheritance3a841d7ae8 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;truncated.base.truncated&quot; [URL=&quot;selectinf.truncated.base.html#selectinf.truncated.base.truncated&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A distribution, truncated to a union of intervals&quot;];
+  &quot;truncated.chi.truncated_chi&quot; [URL=&quot;#selectinf.truncated.chi.truncated_chi&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;&gt;&gt;&gt; from selectinf.constraints.intervals import intervals&quot;];
+  &quot;truncated.base.truncated&quot; -&gt; &quot;truncated.chi.truncated_chi&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;truncated.chi.truncated_chi2&quot; [URL=&quot;#selectinf.truncated.chi.truncated_chi2&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;&gt;&gt;&gt; from selectinf.constraints.intervals import intervals&quot;];
+  &quot;truncated.base.truncated&quot; -&gt; &quot;truncated.chi.truncated_chi2&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-selectinf.truncated.chi"></span><p>This module implements the class <cite>truncated_chi2</cite> which 
+performs (conditional) UMPU tests for Gaussians
+restricted to a set of intervals.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3><a class="reference internal" href="#selectinf.truncated.chi.truncated_chi" title="selectinf.truncated.chi.truncated_chi"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated_chi</span></code></a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.truncated.chi.truncated_chi">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.truncated.chi.</code><code class="sig-name descname">truncated_chi</code><span class="sig-paren">(</span><em class="sig-param">I</em>, <em class="sig-param">k</em>, <em class="sig-param">scale=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/truncated/chi.html#truncated_chi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="selectinf.truncated.base.html#selectinf.truncated.base.truncated" title="selectinf.truncated.base.truncated"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.truncated.base.truncated</span></code></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">selectinf.constraints.intervals</span> <span class="k">import</span> <span class="n">intervals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I</span> <span class="o">=</span> <span class="n">intervals</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">intervals</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">)),</span>
+<span class="gp">... </span>                           <span class="n">intervals</span><span class="p">((</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">)),</span>
+<span class="gp">... </span>                          <span class="o">~</span><span class="n">intervals</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">distr</span> <span class="o">=</span> <span class="n">truncated_chi</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">distr</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">distr</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.9</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.01</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">I</em>, <em class="sig-param">k</em>, <em class="sig-param">scale=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/truncated/chi.html#truncated_chi.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new object for a truncated_chi distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>I</strong> : intervals</p>
+<blockquote>
+<div><p>The intervals the distribution is truncated to</p>
+</div></blockquote>
+<p><strong>k</strong> : int</p>
+<blockquote>
+<div><p>Number of degree of freedom of the distribution</p>
+</div></blockquote>
+<p><strong>scale</strong> : float</p>
+<blockquote>
+<div><p>The distribution is sim scale * chi_k</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi.cdf">
+<code class="sig-name descname">cdf</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi.cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the survival function of the truncated distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z</strong> : float</p>
+<blockquote>
+<div><p>Minimum bound of the interval</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>cdf</strong> : float</p>
+<blockquote>
+<div><p>function  The cumulative distribution function of the 
+truncated distribution
+cdf(z) = P( X &lt; z | X is in intervals )</p>
+</div></blockquote>
+<p><strong>WARNING</strong> : This method only use the sf method</p>
+<p>more precise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi.pdf">
+<code class="sig-name descname">pdf</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi.pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the probability distribution funtion of the
+truncated distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z</strong> : float</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>p</strong> : float</p>
+<blockquote>
+<div><p>p(z) such that E[f(X)] = int f(z)p(z)dz</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi.quantile">
+<code class="sig-name descname">quantile</code><span class="sig-paren">(</span><em class="sig-param">q</em>, <em class="sig-param">tol=1e-06</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi.quantile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi.rvs">
+<code class="sig-name descname">rvs</code><span class="sig-paren">(</span><em class="sig-param">size=1</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi.rvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample a random variable from the truncated disribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>size</strong> : int</p>
+<blockquote>
+<div><p>Number of samples. Default : 1</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.array</p>
+<blockquote>
+<div><p>array of sample</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi.sf">
+<code class="sig-name descname">sf</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi.sf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the survival function of the truncated distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z</strong> : float</p>
+<blockquote>
+<div><p>Minimum bound of the interval</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>sf</strong> : float</p>
+<blockquote>
+<div><p>The survival function of the truncated distribution
+sf(z) = P( X &gt; z | X is in intervals )</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="truncated-chi2">
+<h3><a class="reference internal" href="#selectinf.truncated.chi.truncated_chi2" title="selectinf.truncated.chi.truncated_chi2"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated_chi2</span></code></a><a class="headerlink" href="#truncated-chi2" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.truncated.chi.truncated_chi2">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.truncated.chi.</code><code class="sig-name descname">truncated_chi2</code><span class="sig-paren">(</span><em class="sig-param">I</em>, <em class="sig-param">k</em>, <em class="sig-param">scale=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/truncated/chi.html#truncated_chi2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="selectinf.truncated.base.html#selectinf.truncated.base.truncated" title="selectinf.truncated.base.truncated"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.truncated.base.truncated</span></code></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">selectinf.constraints.intervals</span> <span class="k">import</span> <span class="n">intervals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I</span> <span class="o">=</span> <span class="n">intervals</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">intervals</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">)),</span>
+<span class="gp">... </span>                           <span class="n">intervals</span><span class="p">((</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">)),</span>
+<span class="gp">... </span>                          <span class="o">~</span><span class="n">intervals</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">distr</span> <span class="o">=</span> <span class="n">truncated_chi2</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">distr</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">distr</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.9</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.01</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi2.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">I</em>, <em class="sig-param">k</em>, <em class="sig-param">scale=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/truncated/chi.html#truncated_chi2.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi2.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new object for a truncated_chi distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>I</strong> : intervals</p>
+<blockquote>
+<div><p>The intervals the distribution is truncated to</p>
+</div></blockquote>
+<p><strong>k</strong> : int</p>
+<blockquote>
+<div><p>Number of degree of freedom of the distribution</p>
+</div></blockquote>
+<p><strong>scale</strong> : float</p>
+<blockquote>
+<div><p>The distribution is sim scale * chi_k</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi2.cdf">
+<code class="sig-name descname">cdf</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi2.cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the survival function of the truncated distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z</strong> : float</p>
+<blockquote>
+<div><p>Minimum bound of the interval</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>cdf</strong> : float</p>
+<blockquote>
+<div><p>function  The cumulative distribution function of the 
+truncated distribution
+cdf(z) = P( X &lt; z | X is in intervals )</p>
+</div></blockquote>
+<p><strong>WARNING</strong> : This method only use the sf method</p>
+<p>more precise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi2.pdf">
+<code class="sig-name descname">pdf</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi2.pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the probability distribution funtion of the
+truncated distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z</strong> : float</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>p</strong> : float</p>
+<blockquote>
+<div><p>p(z) such that E[f(X)] = int f(z)p(z)dz</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi2.quantile">
+<code class="sig-name descname">quantile</code><span class="sig-paren">(</span><em class="sig-param">q</em>, <em class="sig-param">tol=1e-06</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi2.quantile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi2.rvs">
+<code class="sig-name descname">rvs</code><span class="sig-paren">(</span><em class="sig-param">size=1</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi2.rvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample a random variable from the truncated disribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>size</strong> : int</p>
+<blockquote>
+<div><p>Number of samples. Default : 1</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.array</p>
+<blockquote>
+<div><p>array of sample</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.truncated.chi.truncated_chi2.sf">
+<code class="sig-name descname">sf</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.truncated.chi.truncated_chi2.sf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the survival function of the truncated distribution</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z</strong> : float</p>
+<blockquote>
+<div><p>Minimum bound of the interval</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>sf</strong> : float</p>
+<blockquote>
+<div><p>The survival function of the truncated distribution
+sf(z) = P( X &gt; z | X is in intervals )</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.truncated.gaussian.html" class="btn btn-neutral float-right" title="truncated.gaussian" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.truncated.base.html" class="btn btn-neutral float-left" title="truncated.base" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

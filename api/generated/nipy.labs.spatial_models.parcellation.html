@@ -1,0 +1,382 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.spatial_models.parcellation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-spatial-models-parcellation">
+<h1>labs.spatial_models.parcellation<a class="headerlink" href="#labs-spatial-models-parcellation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-labs-spatial-models-parcellation">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.spatial_models.parcellation</span></code><a class="headerlink" href="#module-labs-spatial-models-parcellation" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.labs.spatial_models.parcellation</span></code>:</p>
+digraph inheritance05382fd5ce {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;spatial_models.parcellation.MultiSubjectParcellation&quot; [URL=&quot;#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;MultiSubjectParcellation class are used to represent parcels&quot;];
+}
+<span class="target" id="module-nipy.labs.spatial_models.parcellation"></span><p>Generic Parcellation class:
+Contains all the items that define a multi-subject parcellation</p>
+<p>Author : Bertrand Thirion, 2005-2008</p>
+<p>TODO : add a method ‘global field’, i.e. non-subject-specific info</p>
+</div>
+<div class="section" id="multisubjectparcellation">
+<h2><a class="reference internal" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation" title="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiSubjectParcellation</span></code></a><a class="headerlink" href="#multisubjectparcellation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.spatial_models.parcellation.</code><code class="sig-name descname">MultiSubjectParcellation</code><span class="sig-paren">(</span><em class="sig-param">domain</em>, <em class="sig-param">template_labels=None</em>, <em class="sig-param">individual_labels=None</em>, <em class="sig-param">nb_parcel=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>MultiSubjectParcellation class are used to represent parcels
+that can have different spatial different contours
+in a given group of subject
+It consists of
+self.domain: the specification of a domain
+self.template_labels the specification of a template parcellation
+self.individual_labels the specification of individual parcellations</p>
+<p>fixme:should inherit from mroi.MultiROI</p>
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">domain</em>, <em class="sig-param">template_labels=None</em>, <em class="sig-param">individual_labels=None</em>, <em class="sig-param">nb_parcel=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize multi-subject parcellation</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>domain: discrete_domain.DiscreteDomain instance,</strong></p>
+<blockquote>
+<div><p>definition of the space considered in the parcellation</p>
+</div></blockquote>
+<p><strong>template_labels: array of shape domain.size, optional</strong></p>
+<blockquote>
+<div><p>definition of the template labelling</p>
+</div></blockquote>
+<p><strong>individual_labels: array of shape (domain.size, nb_subjects), optional,</strong></p>
+<blockquote>
+<div><p>the individual parcellations
+corresponding to the template</p>
+</div></blockquote>
+<p><strong>nb_parcel: int, optional,</strong></p>
+<blockquote>
+<div><p>number of parcels in the model
+can be inferred as template_labels.max()+1, or 1 by default
+cannot be smaller than template_labels.max()+1</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a copy of self</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.check">
+<code class="sig-name descname">check</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs an elementary check on self</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.set_template_labels">
+<code class="sig-name descname">set_template_labels</code><span class="sig-paren">(</span><em class="sig-param">template_labels</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.set_template_labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.set_template_labels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.set_individual_labels">
+<code class="sig-name descname">set_individual_labels</code><span class="sig-paren">(</span><em class="sig-param">individual_labels</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.set_individual_labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.set_individual_labels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.population">
+<code class="sig-name descname">population</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.population"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the counting of labels per voxel per subject</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>population: array of shape (self.nb_parcel, self.nb_subj)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.make_feature">
+<code class="sig-name descname">make_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em>, <em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.make_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.make_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute parcel-level averages of data</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string, the feature identifier</strong></p>
+<p><strong>data: array of shape (self.domain.size, self.nb_subj, dim) or</strong></p>
+<blockquote>
+<div><p>(self.domain.sire, self.nb_subj)
+Some information at the voxel level</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>pfeature: array of shape(self.nb_parcel, self.nbsubj, dim)</p>
+<blockquote>
+<div><p>the computed feature data</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.set_feature">
+<code class="sig-name descname">set_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em>, <em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.set_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.set_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set feature defined by <cite>fid</cite> and <cite>data</cite> into <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string</strong></p>
+<blockquote>
+<div><p>the feature identifier</p>
+</div></blockquote>
+<p><strong>data: array of shape (self.nb_parcel, self.nb_subj, dim) or</strong></p>
+<blockquote>
+<div><blockquote>
+<div><p>(self.nb_parcel, self.nb_subj)</p>
+</div></blockquote>
+<p>the data to be set as parcel- and subject-level information</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.get_feature">
+<code class="sig-name descname">get_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/parcellation.html#MultiSubjectParcellation.get_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.parcellation.MultiSubjectParcellation.get_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get feature defined by <cite>fid</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string, the feature identifier</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

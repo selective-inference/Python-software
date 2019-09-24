@@ -1,0 +1,1414 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.registration.groupwise_registration</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; Motion correction / motion correction with slice timing</span>
+
+<span class="sd">Routines implementing motion correction and motion correction combined with</span>
+<span class="sd">slice-timing.</span>
+
+<span class="sd">See:</span>
+
+<span class="sd">Roche, Alexis (2011) A four-dimensional registration algorithm with application</span>
+<span class="sd">to joint correction of motion and slice timing in fMRI. *Medical Imaging, IEEE</span>
+<span class="sd">Transactions on*;  30:1546--1554</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">...externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<span class="kn">from</span> <span class="nn">nibabel.affines</span> <span class="k">import</span> <span class="n">apply_affine</span>
+
+<span class="kn">from</span> <span class="nn">...fixes.nibabel</span> <span class="k">import</span> <span class="n">io_orientation</span>
+<span class="kn">from</span> <span class="nn">...io.nibcompat</span> <span class="k">import</span> <span class="n">get_header</span>
+<span class="kn">from</span> <span class="nn">...core.image.image_spaces</span> <span class="k">import</span> <span class="p">(</span><span class="n">make_xyz_image</span><span class="p">,</span>
+                                        <span class="n">xyz_affine</span><span class="p">,</span>
+                                        <span class="n">as_xyz_image</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..slicetiming</span> <span class="k">import</span> <span class="n">timefuncs</span>
+<span class="kn">from</span> <span class="nn">.affine</span> <span class="k">import</span> <span class="n">Rigid</span><span class="p">,</span> <span class="n">Affine</span>
+<span class="kn">from</span> <span class="nn">.optimizer</span> <span class="k">import</span> <span class="n">configure_optimizer</span><span class="p">,</span> <span class="n">use_derivatives</span>
+<span class="kn">from</span> <span class="nn">.type_check</span> <span class="k">import</span> <span class="p">(</span><span class="n">check_type</span><span class="p">,</span> <span class="n">check_type_and_shape</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">._registration</span> <span class="k">import</span> <span class="p">(</span><span class="n">_cspline_transform</span><span class="p">,</span>
+                            <span class="n">_cspline_sample3d</span><span class="p">,</span>
+                            <span class="n">_cspline_sample4d</span><span class="p">)</span>
+
+
+<span class="n">VERBOSE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;NIPY_DEBUG_PRINT&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">INTERLEAVED</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">XTOL</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<span class="n">FTOL</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<span class="n">GTOL</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<span class="n">STEPSIZE</span> <span class="o">=</span> <span class="mf">1e-6</span>
+<span class="n">SMALL</span> <span class="o">=</span> <span class="mf">1e-20</span>
+<span class="n">MAXITER</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">MAXFUN</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="interp_slice_times"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.interp_slice_times">[docs]</a><span class="k">def</span> <span class="nf">interp_slice_times</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">slice_times</span><span class="p">,</span> <span class="n">tr</span><span class="p">):</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+    <span class="n">nslices</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">slice_times</span><span class="p">)</span>
+    <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">slice_times</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">slice_times</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">tr</span><span class="p">])</span>
+    <span class="n">Zf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">-</span> <span class="n">Zf</span>
+    <span class="n">Zal</span> <span class="o">=</span> <span class="n">Zf</span> <span class="o">%</span> <span class="n">nslices</span>
+    <span class="n">Za</span> <span class="o">=</span> <span class="n">Zal</span> <span class="o">+</span> <span class="n">w</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">aux</span><span class="p">[</span><span class="n">Zal</span><span class="p">]</span> <span class="o">+</span> <span class="n">w</span> <span class="o">*</span> <span class="n">aux</span><span class="p">[</span><span class="n">Zal</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="p">(</span><span class="n">Z</span> <span class="o">-</span> <span class="n">Za</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="scanner_coords"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.scanner_coords">[docs]</a><span class="k">def</span> <span class="nf">scanner_coords</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">from_world</span><span class="p">,</span> <span class="n">to_world</span><span class="p">):</span>
+    <span class="n">Tv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">from_world</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">to_world</span><span class="p">))</span>
+    <span class="n">XYZ</span> <span class="o">=</span> <span class="n">apply_affine</span><span class="p">(</span><span class="n">Tv</span><span class="p">,</span> <span class="n">xyz</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">XYZ</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">XYZ</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">XYZ</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="make_grid"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.make_grid">[docs]</a><span class="k">def</span> <span class="nf">make_grid</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">subsampling</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">borders</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
+    <span class="n">slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">d</span> <span class="o">-</span> <span class="n">b</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>\
+                  <span class="k">for</span> <span class="n">d</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">subsampling</span><span class="p">,</span> <span class="n">borders</span><span class="p">)]</span>
+    <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mgrid</span><span class="p">[</span><span class="n">slices</span><span class="p">]</span>
+    <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">xyz</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="mi">3</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">xyz</span></div>
+
+
+<div class="viewcode-block" id="guess_slice_axis_and_direction"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.guess_slice_axis_and_direction">[docs]</a><span class="k">def</span> <span class="nf">guess_slice_axis_and_direction</span><span class="p">(</span><span class="n">slice_info</span><span class="p">,</span> <span class="n">affine</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">slice_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">orient</span> <span class="o">=</span> <span class="n">io_orientation</span><span class="p">(</span><span class="n">affine</span><span class="p">)</span>
+        <span class="n">slice_axis</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">orient</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">slice_direction</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">orient</span><span class="p">[</span><span class="n">slice_axis</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">slice_axis</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">slice_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">slice_direction</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">slice_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">slice_axis</span><span class="p">,</span> <span class="n">slice_direction</span></div>
+
+<div class="viewcode-block" id="tr_from_header"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.tr_from_header">[docs]</a><span class="k">def</span> <span class="nf">tr_from_header</span><span class="p">(</span><span class="n">images</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return the TR from the header of an image or list of images.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    images : image or list of images</span>
+<span class="sd">      Single or multiple input 4d images representing one or</span>
+<span class="sd">      several sessions.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">      Repetition time, as specified in NIfTI header.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">      if the TR between the images is inconsistent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">images</span><span class="p">]</span>
+    <span class="n">images_tr</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="n">get_header</span><span class="p">(</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="n">get_zooms</span><span class="p">()[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">images_tr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">images_tr</span> <span class="o">=</span> <span class="n">tr</span>
+        <span class="k">if</span> <span class="n">tr</span> <span class="o">!=</span> <span class="n">images_tr</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;TR inconsistent between images.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">images_tr</span></div>
+
+<div class="viewcode-block" id="Image4d"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Image4d">[docs]</a><span class="k">class</span> <span class="nc">Image4d</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to represent a sequence of 3d scans (possibly acquired on a</span>
+<span class="sd">    slice-by-slice basis).</span>
+
+<span class="sd">    Object remains empty until the data array is actually loaded in memory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">      data : nd array or proxy (function that actually gets the array)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Image4d.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Image4d.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">slice_times</span><span class="p">,</span> <span class="n">slice_info</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configure fMRI acquisition time parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">affine</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span>
+
+        <span class="c1"># guess the slice axis and direction (z-axis)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slice_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_direction</span> <span class="o">=</span>\
+            <span class="n">guess_slice_axis_and_direction</span><span class="p">(</span><span class="n">slice_info</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+
+        <span class="c1"># unformatted parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_slice_times</span> <span class="o">=</span> <span class="n">slice_times</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_timing_parameters</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_data</span> <span class="o">=</span> <span class="n">data</span></div>
+
+    <span class="k">def</span> <span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_data</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_timing_parameters</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Image4d.get_data"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Image4d.get_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span></div>
+
+<div class="viewcode-block" id="Image4d.get_shape"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Image4d.get_shape">[docs]</a>    <span class="k">def</span> <span class="nf">get_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span></div>
+
+    <span class="k">def</span> <span class="nf">_init_timing_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Number of slices</span>
+        <span class="n">nslices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">slice_axis</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span> <span class="o">=</span> <span class="n">nslices</span>
+        <span class="c1"># Set slice times</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_slice_times</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="c1"># If a single value is provided, assume synchronous slices</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">slice_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nslices</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">slice_times</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_slice_times</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Verify correctness of provided slice times</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_slice_times</span><span class="p">)</span> <span class="o">==</span> <span class="n">nslices</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Incorrect slice times were provided. There are </span><span class="si">%d</span><span class="s2"> &quot;</span>
+                    <span class="s2">&quot;slices in the volume, `slice_times` argument has length </span><span class="si">%d</span><span class="s2">&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">nslices</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_slice_times</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">slice_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_slice_times</span><span class="p">)</span>
+        <span class="c1"># Check that slice times are smaller than repetition time</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slice_times</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tr</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;slice times should be smaller than repetition time&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Image4d.z_to_slice"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Image4d.z_to_slice">[docs]</a>    <span class="k">def</span> <span class="nf">z_to_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Account for the fact that slices may be stored in reverse</span>
+<span class="sd">        order wrt the scanner coordinate system convention (slice 0 ==</span>
+<span class="sd">        bottom of the head)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_direction</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslices</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">z</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">z</span></div>
+
+<div class="viewcode-block" id="Image4d.scanner_time"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Image4d.scanner_time">[docs]</a>    <span class="k">def</span> <span class="nf">scanner_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zv</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        tv = scanner_time(zv, t)</span>
+<span class="sd">        zv, tv are grid coordinates; t is an actual time value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">interp_slice_times</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z_to_slice</span><span class="p">(</span><span class="n">zv</span><span class="p">),</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">slice_times</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">tr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">corr</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">tr</span></div>
+
+<div class="viewcode-block" id="Image4d.free_data"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Image4d.free_data">[docs]</a>    <span class="k">def</span> <span class="nf">free_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="kc">None</span></div></div>
+
+
+
+<div class="viewcode-block" id="Realign4dAlgorithm"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm">[docs]</a><span class="k">class</span> <span class="nc">Realign4dAlgorithm</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">im4d</span><span class="p">,</span>
+                 <span class="n">affine_class</span><span class="o">=</span><span class="n">Rigid</span><span class="p">,</span>
+                 <span class="n">transforms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">time_interp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">subsampling</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                 <span class="n">refscan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">borders</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                 <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;ncg&#39;</span><span class="p">,</span>
+                 <span class="n">optimize_template</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">xtol</span><span class="o">=</span><span class="n">XTOL</span><span class="p">,</span>
+                 <span class="n">ftol</span><span class="o">=</span><span class="n">FTOL</span><span class="p">,</span>
+                 <span class="n">gtol</span><span class="o">=</span><span class="n">GTOL</span><span class="p">,</span>
+                 <span class="n">stepsize</span><span class="o">=</span><span class="n">STEPSIZE</span><span class="p">,</span>
+                 <span class="n">maxiter</span><span class="o">=</span><span class="n">MAXITER</span><span class="p">,</span>
+                 <span class="n">maxfun</span><span class="o">=</span><span class="n">MAXFUN</span><span class="p">):</span>
+
+        <span class="c1"># Check arguments</span>
+        <span class="n">check_type_and_shape</span><span class="p">(</span><span class="n">subsampling</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">check_type</span><span class="p">(</span><span class="n">refscan</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">accept_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">check_type_and_shape</span><span class="p">(</span><span class="n">borders</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">check_type</span><span class="p">(</span><span class="n">xtol</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="n">check_type</span><span class="p">(</span><span class="n">ftol</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="n">check_type</span><span class="p">(</span><span class="n">gtol</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="n">check_type</span><span class="p">(</span><span class="n">stepsize</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="n">check_type</span><span class="p">(</span><span class="n">maxiter</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="n">check_type</span><span class="p">(</span><span class="n">maxfun</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">accept_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Get dimensional parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dims</span> <span class="o">=</span> <span class="n">im4d</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nscans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="c1"># Reduce borders if spatial image dimension too small to avoid</span>
+        <span class="c1"># getting an empty volume of interest</span>
+        <span class="n">borders</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">d</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="ow">not</span> <span class="n">d</span><span class="o">%</span><span class="mi">2</span><span class="p">))</span> <span class="k">for</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">borders</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">])]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span> <span class="o">=</span> <span class="n">make_grid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="n">subsampling</span><span class="p">,</span> <span class="n">borders</span><span class="p">)</span>
+        <span class="n">masksize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">masksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize space/time transformation parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine</span> <span class="o">=</span> <span class="n">im4d</span><span class="o">.</span><span class="n">affine</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv_affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">transforms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="p">[</span><span class="n">affine_class</span><span class="p">()</span> <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">transforms</span>
+
+        <span class="c1"># Compute the 4d cubic spline transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_interp</span> <span class="o">=</span> <span class="n">time_interp</span>
+        <span class="k">if</span> <span class="n">time_interp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span> <span class="o">=</span> <span class="n">im4d</span><span class="o">.</span><span class="n">tr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scanner_time</span> <span class="o">=</span> <span class="n">im4d</span><span class="o">.</span><span class="n">scanner_time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cbspline</span> <span class="o">=</span> <span class="n">_cspline_transform</span><span class="p">(</span><span class="n">im4d</span><span class="o">.</span><span class="n">get_data</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cbspline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">3</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cbspline</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span>\
+                    <span class="n">_cspline_transform</span><span class="p">(</span><span class="n">im4d</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">t</span><span class="p">])</span>
+
+        <span class="c1"># The reference scan conventionally defines the head</span>
+        <span class="c1"># coordinate system</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimize_template</span> <span class="o">=</span> <span class="n">optimize_template</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">optimize_template</span> <span class="ow">and</span> <span class="n">refscan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refscan</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refscan</span> <span class="o">=</span> <span class="n">refscan</span>
+
+        <span class="c1"># Set the minimization method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_fmin</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span>
+                      <span class="n">xtol</span><span class="o">=</span><span class="n">xtol</span><span class="p">,</span>
+                      <span class="n">ftol</span><span class="o">=</span><span class="n">ftol</span><span class="p">,</span>
+                      <span class="n">gtol</span><span class="o">=</span><span class="n">gtol</span><span class="p">,</span>
+                      <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">,</span>
+                      <span class="n">maxfun</span><span class="o">=</span><span class="n">maxfun</span><span class="p">)</span>
+
+        <span class="c1"># Auxiliary array for realignment estimation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">masksize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_res0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">masksize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">masksize</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">masksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+                          <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.resample"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.resample">[docs]</a>    <span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resample a particular time frame on the (sub-sampled) working</span>
+<span class="sd">        grid.</span>
+
+<span class="sd">        x,y,z,t are &quot;head&quot; grid coordinates</span>
+<span class="sd">        X,Y,Z,T are &quot;scanner&quot; grid coordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">scanner_coords</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">as_affine</span><span class="p">(),</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">inv_affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_interp</span><span class="p">:</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner_time</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+            <span class="n">_cspline_sample4d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">t</span><span class="p">],</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">cbspline</span><span class="p">,</span>
+                              <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
+                              <span class="n">mx</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">,</span>
+                              <span class="n">my</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">,</span>
+                              <span class="n">mz</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">,</span>
+                              <span class="n">mt</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_cspline_sample3d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">t</span><span class="p">],</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">cbspline</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">t</span><span class="p">],</span>
+                              <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span>
+                              <span class="n">mx</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">,</span>
+                              <span class="n">my</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">,</span>
+                              <span class="n">mz</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.resample_full_data"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.resample_full_data">[docs]</a>    <span class="k">def</span> <span class="nf">resample_full_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Gridding...&#39;</span><span class="p">)</span>
+        <span class="n">xyz</span> <span class="o">=</span> <span class="n">make_grid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">])</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Fully resampling scan </span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">))</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">scanner_coords</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">as_affine</span><span class="p">(),</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">inv_affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_interp</span><span class="p">:</span>
+                <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanner_time</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+                <span class="n">_cspline_sample4d</span><span class="p">(</span><span class="n">res</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">t</span><span class="p">],</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">cbspline</span><span class="p">,</span>
+                                  <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
+                                  <span class="n">mt</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_cspline_sample3d</span><span class="p">(</span><span class="n">res</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">t</span><span class="p">],</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">cbspline</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">t</span><span class="p">],</span>
+                                  <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.set_fmin"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.set_fmin">[docs]</a>    <span class="k">def</span> <span class="nf">set_fmin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the minimization function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepsize</span> <span class="o">=</span> <span class="n">stepsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;xtol&#39;</span><span class="p">,</span> <span class="n">XTOL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;ftol&#39;</span><span class="p">,</span> <span class="n">FTOL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;gtol&#39;</span><span class="p">,</span> <span class="n">GTOL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;maxiter&#39;</span><span class="p">,</span> <span class="n">MAXITER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;maxfun&#39;</span><span class="p">,</span> <span class="n">MAXFUN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_derivatives</span> <span class="o">=</span> <span class="n">use_derivatives</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.init_instant_motion"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.init_instant_motion">[docs]</a>    <span class="k">def</span> <span class="nf">init_instant_motion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Pre-compute and cache some constants (at fixed time) for</span>
+<span class="sd">        repeated computations of the alignment energy.</span>
+
+<span class="sd">        The idea is to decompose the average temporal variance via:</span>
+
+<span class="sd">        V = (n-1)/n V* + (n-1)/n^2 (x-m*)^2</span>
+
+<span class="sd">        with x the considered volume at time t, and m* the mean of all</span>
+<span class="sd">        resampled volumes but x. Only the second term is variable when</span>
+
+<span class="sd">        one volumes while the others are fixed. A similar</span>
+<span class="sd">        decomposition is used for the global variance, so we end up</span>
+<span class="sd">        with:</span>
+
+<span class="sd">        V/V0 = [nV* + (x-m*)^2] / [nV0* + (x-m0*)^2]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fixed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">))</span>
+        <span class="n">fixed</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">fixed</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimize_template</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">aux</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nscans</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">aux</span><span class="o">.</span><span class="n">T</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">aux</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nscans</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">aux</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.set_transform"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.set_transform">[docs]</a>    <span class="k">def</span> <span class="nf">set_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">pc</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">pc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_init_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pc</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">pc</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span> <span class="n">pc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pc</span> <span class="o">=</span> <span class="n">pc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_res</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_res</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="n">SMALL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_res0</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_V0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_res0</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="n">SMALL</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_derivatives</span><span class="p">:</span>
+            <span class="c1"># linearize the data wrt the transform parameters</span>
+            <span class="c1"># use the auxiliary array to save the current resampled data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_aux</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">]</span>
+            <span class="n">basis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span> <span class="n">pc</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepsize</span> <span class="o">*</span> <span class="n">basis</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux</span><span class="p">)</span>\
+                    <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepsize</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">]</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">pc</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aux</span><span class="p">[:]</span>
+            <span class="c1"># pre-compute gradient and hessian of numerator and</span>
+            <span class="c1"># denominator</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dV</span> <span class="o">=</span> <span class="n">c</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_res</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dV0</span> <span class="o">=</span> <span class="n">c</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_res0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_H</span> <span class="o">=</span> <span class="n">c</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The alignment energy is defined as the log-ratio between the</span>
+<span class="sd">        average temporal variance in the sequence and the global</span>
+<span class="sd">        spatio-temporal variance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_energy_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dV</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dV0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V0</span>
+
+    <span class="k">def</span> <span class="nf">_energy_hessian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_V0</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_H</span>\
+            <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dV</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dV</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">SMALL</span><span class="p">)</span>\
+            <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dV0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dV0</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_V0</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">SMALL</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.estimate_instant_motion"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.estimate_instant_motion">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_instant_motion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimate motion parameters at a particular time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Estimating motion at time frame </span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1">...&#39;</span>
+                  <span class="o">%</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">pc</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_energy</span><span class="p">(</span><span class="n">pc</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_energy</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">fprime</span><span class="p">(</span><span class="n">pc</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_energy</span><span class="p">(</span><span class="n">pc</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_energy_gradient</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">fhess</span><span class="p">(</span><span class="n">pc</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_energy</span><span class="p">(</span><span class="n">pc</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_energy_hessian</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_instant_motion</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">fmin</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span>\
+            <span class="n">configure_optimizer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span>
+                                <span class="n">fprime</span><span class="o">=</span><span class="n">fprime</span><span class="p">,</span>
+                                <span class="n">fhess</span><span class="o">=</span><span class="n">fhess</span><span class="p">,</span>
+                                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer_kwargs</span><span class="p">)</span>
+
+        <span class="c1"># With scipy &gt;= 0.9, some scipy minimization functions like</span>
+        <span class="c1"># fmin_bfgs may crash due to the subroutine</span>
+        <span class="c1"># `scalar_search_armijo` returning None as a stepsize when</span>
+        <span class="c1"># unhappy about the objective function. This seems to have the</span>
+        <span class="c1"># potential to occur in groupwise registration when using</span>
+        <span class="c1"># strong image subsampling, i.e. at the coarser levels of the</span>
+        <span class="c1"># multiscale pyramid. To avoid crashes, we insert a try/catch</span>
+        <span class="c1"># instruction.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pc</span> <span class="o">=</span> <span class="n">fmin</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">param</span><span class="p">,</span> <span class="n">disp</span><span class="o">=</span><span class="n">VERBOSE</span><span class="p">,</span>
+                      <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_transform</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">pc</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Minimization failed&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.estimate_motion"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.estimate_motion">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_motion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Optimize motion parameters for the whole sequence. All the</span>
+<span class="sd">        time frames are initially resampled according to the current</span>
+<span class="sd">        space/time transformation, the parameters of which are further</span>
+<span class="sd">        optimized sequentially.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Resampling scan </span><span class="si">%d</span><span class="s1">/</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Set the template as the reference scan (will be overwritten</span>
+        <span class="c1"># if template is to be optimized)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;template&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">refscan</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">estimate_instant_motion</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="n">t</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Realign4dAlgorithm.align_to_refscan"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4dAlgorithm.align_to_refscan">[docs]</a>    <span class="k">def</span> <span class="nf">align_to_refscan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The `motion_estimate` method aligns scans with an online</span>
+<span class="sd">        template so that spatial transforms map some average head</span>
+<span class="sd">        space to the scanner space. To conventionally redefine the</span>
+<span class="sd">        head space as being aligned with some reference scan, we need</span>
+<span class="sd">        to right compose each head_average-to-scanner transform with</span>
+<span class="sd">        the refscan&#39;s &#39;to head_average&#39; transform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">refscan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">Tref_inv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">refscan</span><span class="p">]</span><span class="o">.</span><span class="n">inv</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nscans</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="n">t</span><span class="p">])</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">Tref_inv</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="resample4d"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.resample4d">[docs]</a><span class="k">def</span> <span class="nf">resample4d</span><span class="p">(</span><span class="n">im4d</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">time_interp</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resample a 4D image according to the specified sequence of spatial</span>
+<span class="sd">    transforms, using either 4D interpolation if `time_interp` is True</span>
+<span class="sd">    and 3D interpolation otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">Realign4dAlgorithm</span><span class="p">(</span><span class="n">im4d</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">,</span>
+                           <span class="n">time_interp</span><span class="o">=</span><span class="n">time_interp</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">resample_full_data</span><span class="p">()</span>
+    <span class="n">im4d</span><span class="o">.</span><span class="n">free_data</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="adjust_subsampling"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.adjust_subsampling">[docs]</a><span class="k">def</span> <span class="nf">adjust_subsampling</span><span class="p">(</span><span class="n">speedup</span><span class="p">,</span> <span class="n">dims</span><span class="p">):</span>
+    <span class="n">dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span>
+    <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">speedup</span> <span class="o">*</span> <span class="n">dims</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">aux</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="single_run_realign4d"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.single_run_realign4d">[docs]</a><span class="k">def</span> <span class="nf">single_run_realign4d</span><span class="p">(</span><span class="n">im4d</span><span class="p">,</span>
+                         <span class="n">affine_class</span><span class="o">=</span><span class="n">Rigid</span><span class="p">,</span>
+                         <span class="n">time_interp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                         <span class="n">loops</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                         <span class="n">speedup</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                         <span class="n">refscan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                         <span class="n">borders</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                         <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;ncg&#39;</span><span class="p">,</span>
+                         <span class="n">xtol</span><span class="o">=</span><span class="n">XTOL</span><span class="p">,</span>
+                         <span class="n">ftol</span><span class="o">=</span><span class="n">FTOL</span><span class="p">,</span>
+                         <span class="n">gtol</span><span class="o">=</span><span class="n">GTOL</span><span class="p">,</span>
+                         <span class="n">stepsize</span><span class="o">=</span><span class="n">STEPSIZE</span><span class="p">,</span>
+                         <span class="n">maxiter</span><span class="o">=</span><span class="n">MAXITER</span><span class="p">,</span>
+                         <span class="n">maxfun</span><span class="o">=</span><span class="n">MAXFUN</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Realign a single run in space and time.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    im4d : Image4d instance</span>
+
+<span class="sd">    speedup : int or sequence</span>
+<span class="sd">      If a sequence, implement a multi-scale realignment</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">loops</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
+        <span class="n">loops</span> <span class="o">=</span> <span class="p">[</span><span class="n">loops</span><span class="p">]</span>
+    <span class="n">repeats</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">loops</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">format_arg</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeats</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">repeats</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;inconsistent length in arguments&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+    <span class="n">speedup</span> <span class="o">=</span> <span class="n">format_arg</span><span class="p">(</span><span class="n">speedup</span><span class="p">)</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">format_arg</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
+    <span class="n">xtol</span> <span class="o">=</span> <span class="n">format_arg</span><span class="p">(</span><span class="n">xtol</span><span class="p">)</span>
+    <span class="n">ftol</span> <span class="o">=</span> <span class="n">format_arg</span><span class="p">(</span><span class="n">ftol</span><span class="p">)</span>
+    <span class="n">gtol</span> <span class="o">=</span> <span class="n">format_arg</span><span class="p">(</span><span class="n">gtol</span><span class="p">)</span>
+    <span class="n">stepsize</span> <span class="o">=</span> <span class="n">format_arg</span><span class="p">(</span><span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">maxiter</span> <span class="o">=</span> <span class="n">format_arg</span><span class="p">(</span><span class="n">maxiter</span><span class="p">)</span>
+    <span class="n">maxfun</span> <span class="o">=</span> <span class="n">format_arg</span><span class="p">(</span><span class="n">maxfun</span><span class="p">)</span>
+
+    <span class="n">transforms</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">opt_params</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">loops</span><span class="p">,</span> <span class="n">speedup</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span>
+                     <span class="n">xtol</span><span class="p">,</span> <span class="n">ftol</span><span class="p">,</span> <span class="n">gtol</span><span class="p">,</span>
+                     <span class="n">stepsize</span><span class="p">,</span> <span class="n">maxiter</span><span class="p">,</span> <span class="n">maxfun</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">loops_</span><span class="p">,</span> <span class="n">speedup_</span><span class="p">,</span> <span class="n">optimizer_</span><span class="p">,</span> <span class="n">xtol_</span><span class="p">,</span> <span class="n">ftol_</span><span class="p">,</span> <span class="n">gtol_</span><span class="p">,</span>\
+            <span class="n">stepsize_</span><span class="p">,</span> <span class="n">maxiter_</span><span class="p">,</span> <span class="n">maxfun_</span> <span class="ow">in</span> <span class="n">opt_params</span><span class="p">:</span>
+        <span class="n">subsampling</span> <span class="o">=</span> <span class="n">adjust_subsampling</span><span class="p">(</span><span class="n">speedup_</span><span class="p">,</span> <span class="n">im4d</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="n">Realign4dAlgorithm</span><span class="p">(</span><span class="n">im4d</span><span class="p">,</span>
+                               <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">,</span>
+                               <span class="n">affine_class</span><span class="o">=</span><span class="n">affine_class</span><span class="p">,</span>
+                               <span class="n">time_interp</span><span class="o">=</span><span class="n">time_interp</span><span class="p">,</span>
+                               <span class="n">subsampling</span><span class="o">=</span><span class="n">subsampling</span><span class="p">,</span>
+                               <span class="n">refscan</span><span class="o">=</span><span class="n">refscan</span><span class="p">,</span>
+                               <span class="n">borders</span><span class="o">=</span><span class="n">borders</span><span class="p">,</span>
+                               <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer_</span><span class="p">,</span>
+                               <span class="n">xtol</span><span class="o">=</span><span class="n">xtol_</span><span class="p">,</span>
+                               <span class="n">ftol</span><span class="o">=</span><span class="n">ftol_</span><span class="p">,</span>
+                               <span class="n">gtol</span><span class="o">=</span><span class="n">gtol_</span><span class="p">,</span>
+                               <span class="n">stepsize</span><span class="o">=</span><span class="n">stepsize_</span><span class="p">,</span>
+                               <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter_</span><span class="p">,</span>
+                               <span class="n">maxfun</span><span class="o">=</span><span class="n">maxfun_</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">loop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">loops_</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">estimate_motion</span><span class="p">()</span>
+
+        <span class="n">r</span><span class="o">.</span><span class="n">align_to_refscan</span><span class="p">()</span>
+        <span class="n">transforms</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">transforms</span>
+        <span class="n">im4d</span><span class="o">.</span><span class="n">free_data</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">transforms</span></div>
+
+
+<div class="viewcode-block" id="realign4d"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.realign4d">[docs]</a><span class="k">def</span> <span class="nf">realign4d</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span>
+              <span class="n">affine_class</span><span class="o">=</span><span class="n">Rigid</span><span class="p">,</span>
+              <span class="n">time_interp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">align_runs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">loops</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+              <span class="n">between_loops</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+              <span class="n">speedup</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+              <span class="n">refscan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+              <span class="n">borders</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+              <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;ncg&#39;</span><span class="p">,</span>
+              <span class="n">xtol</span><span class="o">=</span><span class="n">XTOL</span><span class="p">,</span>
+              <span class="n">ftol</span><span class="o">=</span><span class="n">FTOL</span><span class="p">,</span>
+              <span class="n">gtol</span><span class="o">=</span><span class="n">GTOL</span><span class="p">,</span>
+              <span class="n">stepsize</span><span class="o">=</span><span class="n">STEPSIZE</span><span class="p">,</span>
+              <span class="n">maxiter</span><span class="o">=</span><span class="n">MAXITER</span><span class="p">,</span>
+              <span class="n">maxfun</span><span class="o">=</span><span class="n">MAXFUN</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    runs : list of Image4d objects</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    transforms : list</span>
+<span class="sd">                 nested list of rigid transformations</span>
+
+
+<span class="sd">    transforms map an &#39;ideal&#39; 4d grid (conventionally aligned with the</span>
+<span class="sd">    first scan of the first run) to the &#39;acquisition&#39; 4d grid for each</span>
+<span class="sd">    run</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Single-session case</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">runs</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
+        <span class="n">runs</span> <span class="o">=</span> <span class="p">[</span><span class="n">runs</span><span class="p">]</span>
+    <span class="n">nruns</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">runs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nruns</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">align_runs</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Correct motion and slice timing in each sequence separately</span>
+    <span class="n">transforms</span> <span class="o">=</span> <span class="p">[</span><span class="n">single_run_realign4d</span><span class="p">(</span><span class="n">run</span><span class="p">,</span>
+                                       <span class="n">affine_class</span><span class="o">=</span><span class="n">affine_class</span><span class="p">,</span>
+                                       <span class="n">time_interp</span><span class="o">=</span><span class="n">time_interp</span><span class="p">,</span>
+                                       <span class="n">loops</span><span class="o">=</span><span class="n">loops</span><span class="p">,</span>
+                                       <span class="n">speedup</span><span class="o">=</span><span class="n">speedup</span><span class="p">,</span>
+                                       <span class="n">refscan</span><span class="o">=</span><span class="n">refscan</span><span class="p">,</span>
+                                       <span class="n">borders</span><span class="o">=</span><span class="n">borders</span><span class="p">,</span>
+                                       <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                                       <span class="n">xtol</span><span class="o">=</span><span class="n">xtol</span><span class="p">,</span>
+                                       <span class="n">ftol</span><span class="o">=</span><span class="n">ftol</span><span class="p">,</span>
+                                       <span class="n">gtol</span><span class="o">=</span><span class="n">gtol</span><span class="p">,</span>
+                                       <span class="n">stepsize</span><span class="o">=</span><span class="n">stepsize</span><span class="p">,</span>
+                                       <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">,</span>
+                                       <span class="n">maxfun</span><span class="o">=</span><span class="n">maxfun</span><span class="p">)</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">align_runs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="c1"># Correct between-session motion using the mean image of each</span>
+    <span class="c1"># corrected run, and creating a fake time series with no temporal</span>
+    <span class="c1"># smoothness. If the runs have different affines, a correction is</span>
+    <span class="c1"># applied to the transforms associated with each run (except for</span>
+    <span class="c1"># the first run) so that all images included in the fake series</span>
+    <span class="c1"># have the same affine, namely that of the first run.</span>
+    <span class="n">is_same_affine</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">a1</span> <span class="o">-</span> <span class="n">a2</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">1e-5</span>
+    <span class="n">mean_img_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span><span class="n">nruns</span><span class="p">]</span>
+    <span class="n">mean_img_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mean_img_shape</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nruns</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_same_affine</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> <span class="n">runs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span><span class="p">):</span>
+            <span class="n">transforms_i</span> <span class="o">=</span> <span class="n">transforms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">runs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span> <span class="o">=</span> <span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span>
+            <span class="n">aff_corr</span> <span class="o">=</span> <span class="n">Affine</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span>
+                                     <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span><span class="p">)))</span>
+            <span class="n">transforms_i</span> <span class="o">=</span> <span class="p">[</span><span class="n">aff_corr</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">Affine</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">as_affine</span><span class="p">()))</span>\
+                                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">transforms</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="n">corr_run</span> <span class="o">=</span> <span class="n">resample4d</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms_i</span><span class="p">,</span>
+                              <span class="n">time_interp</span><span class="o">=</span><span class="n">time_interp</span><span class="p">)</span>
+        <span class="n">mean_img_data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">corr_run</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">corr_run</span>
+
+    <span class="n">mean_img</span> <span class="o">=</span> <span class="n">Image4d</span><span class="p">(</span><span class="n">mean_img_data</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span>
+                       <span class="n">tr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">slice_times</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">transfo_mean</span> <span class="o">=</span> <span class="n">single_run_realign4d</span><span class="p">(</span><span class="n">mean_img</span><span class="p">,</span>
+                                        <span class="n">affine_class</span><span class="o">=</span><span class="n">affine_class</span><span class="p">,</span>
+                                        <span class="n">time_interp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">loops</span><span class="o">=</span><span class="n">between_loops</span><span class="p">,</span>
+                                        <span class="n">speedup</span><span class="o">=</span><span class="n">speedup</span><span class="p">,</span>
+                                        <span class="n">borders</span><span class="o">=</span><span class="n">borders</span><span class="p">,</span>
+                                        <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                                        <span class="n">xtol</span><span class="o">=</span><span class="n">xtol</span><span class="p">,</span>
+                                        <span class="n">ftol</span><span class="o">=</span><span class="n">ftol</span><span class="p">,</span>
+                                        <span class="n">gtol</span><span class="o">=</span><span class="n">gtol</span><span class="p">,</span>
+                                        <span class="n">stepsize</span><span class="o">=</span><span class="n">stepsize</span><span class="p">,</span>
+                                        <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">,</span>
+                                        <span class="n">maxfun</span><span class="o">=</span><span class="n">maxfun</span><span class="p">)</span>
+
+    <span class="c1"># Compose transformations for each run</span>
+    <span class="n">ctransforms</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nruns</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nruns</span><span class="p">):</span>
+        <span class="n">ctransforms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">transfo_mean</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">transforms</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">ctransforms</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">transfo_mean</span></div>
+
+
+<div class="viewcode-block" id="Realign4d"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4d">[docs]</a><span class="k">class</span> <span class="nc">Realign4d</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Realign4d.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4d.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">slice_times</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slice_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">affine_class</span><span class="o">=</span><span class="n">Rigid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Spatiotemporal realignment class for series of 3D images.</span>
+
+<span class="sd">        The algorithm performs simultaneous motion and slice timing</span>
+<span class="sd">        correction for fMRI series or other data where slices are not</span>
+<span class="sd">        acquired simultaneously.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        images : image or list of images</span>
+<span class="sd">          Single or multiple input 4d images representing one or</span>
+<span class="sd">          several sessions.</span>
+
+<span class="sd">        tr : float</span>
+<span class="sd">          Inter-scan repetition time, i.e. the time elapsed between</span>
+<span class="sd">          two consecutive scans. The unit in which `tr` is given is</span>
+<span class="sd">          arbitrary although it needs to be consistent with the</span>
+<span class="sd">          `slice_times` argument.</span>
+
+<span class="sd">        slice_times : None or array-like</span>
+<span class="sd">          If None, slices are assumed to be acquired simultaneously</span>
+<span class="sd">          hence no slice timing correction is performed. If</span>
+<span class="sd">          array-like, then the slice acquisition times.</span>
+
+<span class="sd">        slice_info : None or tuple, optional</span>
+<span class="sd">          None, or a tuple with slice axis as the first element and</span>
+<span class="sd">          direction as the second, for instance (2, 1).  If None, then</span>
+<span class="sd">          guess the slice axis, and direction, as the closest to the z</span>
+<span class="sd">          axis, as estimated from the affine.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">slice_times</span><span class="p">,</span> <span class="n">slice_info</span><span class="p">,</span> <span class="n">affine_class</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">slice_times</span><span class="p">,</span> <span class="n">slice_info</span><span class="p">,</span> <span class="n">affine_class</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generic initialization method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">slice_times</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tr</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">slice_times</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">time_interp</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">time_interp</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+            <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">images</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">tr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Repetition time cannot be None.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Repetition time cannot be zero.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine_class</span> <span class="o">=</span> <span class="n">affine_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slice_times</span> <span class="o">=</span> <span class="n">slice_times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tr</span> <span class="o">=</span> <span class="n">tr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Note that, the affine of each run may be different. This is</span>
+        <span class="c1"># the case, for instance, if the subject exits the scanner</span>
+        <span class="c1"># inbetween sessions.</span>
+        <span class="k">for</span> <span class="n">im</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
+            <span class="n">xyz_img</span> <span class="o">=</span> <span class="n">as_xyz_image</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Image4d</span><span class="p">(</span><span class="n">xyz_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">,</span>
+                                      <span class="n">xyz_affine</span><span class="p">(</span><span class="n">xyz_img</span><span class="p">),</span>
+                                      <span class="n">tr</span><span class="p">,</span>
+                                      <span class="n">slice_times</span><span class="o">=</span><span class="n">slice_times</span><span class="p">,</span>
+                                      <span class="n">slice_info</span><span class="o">=</span><span class="n">slice_info</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transforms</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_within_run_transforms</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mean_transforms</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time_interp</span> <span class="o">=</span> <span class="n">time_interp</span>
+
+<div class="viewcode-block" id="Realign4d.estimate"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4d.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">loops</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                 <span class="n">between_loops</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">align_runs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">speedup</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                 <span class="n">refscan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">borders</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                 <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;ncg&#39;</span><span class="p">,</span>
+                 <span class="n">xtol</span><span class="o">=</span><span class="n">XTOL</span><span class="p">,</span>
+                 <span class="n">ftol</span><span class="o">=</span><span class="n">FTOL</span><span class="p">,</span>
+                 <span class="n">gtol</span><span class="o">=</span><span class="n">GTOL</span><span class="p">,</span>
+                 <span class="n">stepsize</span><span class="o">=</span><span class="n">STEPSIZE</span><span class="p">,</span>
+                 <span class="n">maxiter</span><span class="o">=</span><span class="n">MAXITER</span><span class="p">,</span>
+                 <span class="n">maxfun</span><span class="o">=</span><span class="n">MAXFUN</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Estimate motion parameters.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        loops : int or sequence of ints</span>
+<span class="sd">            Determines the number of iterations performed to realign</span>
+<span class="sd">            scans within each run for each pass defined by the</span>
+<span class="sd">            ``speedup`` argument. For instance, setting ``speedup`` ==</span>
+<span class="sd">            (5,2) and ``loops`` == (5,1) means that 5 iterations are</span>
+<span class="sd">            performed in a first pass where scans are subsampled by an</span>
+<span class="sd">            isotropic factor 5, followed by one iteration where scans</span>
+<span class="sd">            are subsampled by a factor 2.</span>
+<span class="sd">        between_loops : None, int or sequence of ints</span>
+<span class="sd">            Similar to ``loops`` for between-run motion</span>
+<span class="sd">            estimation. Determines the number of iterations used to</span>
+<span class="sd">            realign scans across runs, a procedure similar to</span>
+<span class="sd">            within-run realignment that uses the mean images from each</span>
+<span class="sd">            run. If None, assumed to be the same as ``loops``.</span>
+<span class="sd">            The setting used in the experiments described in Roche,</span>
+<span class="sd">            IEEE TMI 2011, was: ``speedup`` = (5, 2), ``loops`` = (5,</span>
+<span class="sd">            1) and ``between_loops`` = (5, 1).</span>
+<span class="sd">        align_runs : bool</span>
+<span class="sd">            Determines whether between-run motion is estimated or</span>
+<span class="sd">            not. If False, the ``between_loops`` argument is ignored.</span>
+<span class="sd">        speedup: int or sequence of ints</span>
+<span class="sd">            Determines an isotropic sub-sampling factor, or a sequence</span>
+<span class="sd">            of such factors, applied to the scans to perform motion</span>
+<span class="sd">            estimation. If a sequence, several estimation passes are</span>
+<span class="sd">            applied.</span>
+<span class="sd">        refscan : None or int</span>
+<span class="sd">            Defines the number of the scan used as the reference</span>
+<span class="sd">            coordinate system for each run. If None, a reference</span>
+<span class="sd">            coordinate system is defined internally that does not</span>
+<span class="sd">            correspond to any particular scan. Note that the</span>
+<span class="sd">            coordinate system associated with the first run is always</span>
+<span class="sd">        borders : sequence of ints</span>
+<span class="sd">            Should be of length 3. Determines the field of view for</span>
+<span class="sd">            motion estimation in terms of the number of slices at each</span>
+<span class="sd">            extremity of the reference grid that are ignored for</span>
+<span class="sd">            motion parameter estimation. For instance,</span>
+<span class="sd">            ``borders``==(1,1,1) means that the realignment cost</span>
+<span class="sd">            function will not take into account voxels located in the</span>
+<span class="sd">            first and last axial/sagittal/coronal slices in the</span>
+<span class="sd">            reference grid. Please note that this choice only affects</span>
+<span class="sd">            parameter estimation but does not affect image resampling</span>
+<span class="sd">            in any way, see ``resample`` method.</span>
+<span class="sd">        optimizer : str</span>
+<span class="sd">            Defines the optimization method. One of &#39;simplex&#39;,</span>
+<span class="sd">            &#39;powell&#39;, &#39;cg&#39;, &#39;ncg&#39;, &#39;bfgs&#39; and &#39;steepest&#39;.</span>
+<span class="sd">        xtol : float</span>
+<span class="sd">            Tolerance on variations of transformation parameters to</span>
+<span class="sd">            test numerical convergence.</span>
+<span class="sd">        ftol : float</span>
+<span class="sd">            Tolerance on variations of the intensity comparison metric</span>
+<span class="sd">            to test numerical convergence.</span>
+<span class="sd">        gtol : float</span>
+<span class="sd">            Tolerance on the gradient of the intensity comparison</span>
+<span class="sd">            metric to test numerical convergence. Applicable to</span>
+<span class="sd">            optimizers &#39;cg&#39;, &#39;ncg&#39;, &#39;bfgs&#39; and &#39;steepest&#39;.</span>
+<span class="sd">        stepsize : float</span>
+<span class="sd">            Step size to approximate the gradient and Hessian of the</span>
+<span class="sd">            intensity comparison metric w.r.t. transformation</span>
+<span class="sd">            parameters. Applicable to optimizers &#39;cg&#39;, &#39;ncg&#39;, &#39;bfgs&#39;</span>
+<span class="sd">            and &#39;steepest&#39;.</span>
+<span class="sd">        maxiter : int</span>
+<span class="sd">            Maximum number of iterations in optimization.</span>
+<span class="sd">        maxfun : int</span>
+<span class="sd">            Maximum number of function evaluations in maxfun.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">between_loops</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">between_loops</span> <span class="o">=</span> <span class="n">loops</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">realign4d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">,</span>
+                      <span class="n">affine_class</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">affine_class</span><span class="p">,</span>
+                      <span class="n">time_interp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_interp</span><span class="p">,</span>
+                      <span class="n">align_runs</span><span class="o">=</span><span class="n">align_runs</span><span class="p">,</span>
+                      <span class="n">loops</span><span class="o">=</span><span class="n">loops</span><span class="p">,</span>
+                      <span class="n">between_loops</span><span class="o">=</span><span class="n">between_loops</span><span class="p">,</span>
+                      <span class="n">speedup</span><span class="o">=</span><span class="n">speedup</span><span class="p">,</span>
+                      <span class="n">refscan</span><span class="o">=</span><span class="n">refscan</span><span class="p">,</span>
+                      <span class="n">borders</span><span class="o">=</span><span class="n">borders</span><span class="p">,</span>
+                      <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                      <span class="n">xtol</span><span class="o">=</span><span class="n">xtol</span><span class="p">,</span>
+                      <span class="n">ftol</span><span class="o">=</span><span class="n">ftol</span><span class="p">,</span>
+                      <span class="n">gtol</span><span class="o">=</span><span class="n">gtol</span><span class="p">,</span>
+                      <span class="n">stepsize</span><span class="o">=</span><span class="n">stepsize</span><span class="p">,</span>
+                      <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">,</span>
+                      <span class="n">maxfun</span><span class="o">=</span><span class="n">maxfun</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transforms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_within_run_transforms</span><span class="p">,</span>\
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mean_transforms</span> <span class="o">=</span> <span class="n">t</span></div>
+
+<div class="viewcode-block" id="Realign4d.resample"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.Realign4d.resample">[docs]</a>    <span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">align_runs</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the resampled run number r as a 4d nipy-like</span>
+<span class="sd">        image. Returns all runs as a list of images if r is None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">align_runs</span><span class="p">:</span>
+            <span class="n">transforms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transforms</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">transforms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_within_run_transforms</span>
+        <span class="n">runs</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">resample4d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">[</span><span class="n">r</span><span class="p">],</span>
+                               <span class="n">time_interp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_interp</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">make_xyz_image</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> <span class="s1">&#39;scanner&#39;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">resample4d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">[</span><span class="n">r</span><span class="p">],</span>
+                              <span class="n">time_interp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_time_interp</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runs</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> <span class="s1">&#39;scanner&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SpaceTimeRealign"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.SpaceTimeRealign">[docs]</a><span class="k">class</span> <span class="nc">SpaceTimeRealign</span><span class="p">(</span><span class="n">Realign4d</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SpaceTimeRealign.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.SpaceTimeRealign.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">slice_times</span><span class="p">,</span> <span class="n">slice_info</span><span class="p">,</span>
+                 <span class="n">affine_class</span><span class="o">=</span><span class="n">Rigid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Spatiotemporal realignment class for fMRI series.</span>
+
+<span class="sd">        This class gives a high-level interface to :class:`Realign4d`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        images : image or list of images</span>
+<span class="sd">            Single or multiple input 4d images representing one or several fMRI</span>
+<span class="sd">            runs.</span>
+<span class="sd">        tr : None or float or &quot;header-allow-1.0&quot;</span>
+<span class="sd">            Inter-scan repetition time in seconds, i.e. the time elapsed between</span>
+<span class="sd">            two consecutive scans. If None, an attempt is made to read the TR</span>
+<span class="sd">            from the header, but an exception is thrown for values 0 or 1. A</span>
+<span class="sd">            value of &quot;header-allow-1.0&quot; will signal to accept a header TR of 1.</span>
+<span class="sd">        slice_times : str or callable or array-like</span>
+<span class="sd">            If str, one of the function names in ``SLICETIME_FUNCTIONS``</span>
+<span class="sd">            dictionary from :mod:`nipy.algorithms.slicetiming.timefuncs`.  If</span>
+<span class="sd">            callable, a function taking two parameters: ``n_slices`` and ``tr``</span>
+<span class="sd">            (number of slices in the images, inter-scan repetition time in</span>
+<span class="sd">            seconds). This function returns a vector of times of slice</span>
+<span class="sd">            acquisition $t_i$ for each slice $i$ in the volumes.  See</span>
+<span class="sd">            :mod:`nipy.algorithms.slicetiming.timefuncs` for a collection of</span>
+<span class="sd">            functions for common slice acquisition schemes. If array-like, then</span>
+<span class="sd">            should be a slice time vector as above.</span>
+<span class="sd">        slice_info : int or length 2 sequence</span>
+<span class="sd">            If int, the axis in `images` that is the slice axis.  In a 4D image,</span>
+<span class="sd">            this will often be axis = 2.  If a 2 sequence, then elements are</span>
+<span class="sd">            ``(slice_axis, slice_direction)``, where ``slice_axis`` is the slice</span>
+<span class="sd">            axis in the image as above, and ``slice_direction`` is 1 if the</span>
+<span class="sd">            slices were acquired slice 0 first, slice -1 last, or -1 if acquired</span>
+<span class="sd">            slice -1 first, slice 0 last.  If `slice_info` is an int, assume</span>
+<span class="sd">            ``slice_direction`` == 1.</span>
+<span class="sd">        affine_class : ``Affine`` class, optional</span>
+<span class="sd">            transformation class to use to calculate transformations between</span>
+<span class="sd">            the volumes. Default is :class:``Rigid``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">tr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tr</span> <span class="o">=</span> <span class="n">tr_from_header</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tr</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;A TR of 1 was found in the header. &#39;</span>
+                    <span class="s1">&#39;This value often stands in for an unknown TR. &#39;</span>
+                    <span class="s1">&#39;Please specify TR explicitly. Alternatively &#39;</span>
+                    <span class="s1">&#39;consider setting TR to &quot;header-allow-1.0&quot;.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">tr</span> <span class="o">==</span> <span class="s2">&quot;header-allow-1.0&quot;</span><span class="p">:</span>
+            <span class="n">tr</span> <span class="o">=</span> <span class="n">tr_from_header</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Repetition time cannot be zero.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">slice_times</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;slice_times must be set for space/time &quot;</span>
+                             <span class="s2">&quot;registration; use SpaceRealign for space-only &quot;</span>
+                             <span class="s2">&quot;registration&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">slice_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;slice_info cannot be None&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">slice_info</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c1"># Presumably an int</span>
+            <span class="n">slice_axis</span> <span class="o">=</span> <span class="n">slice_info</span>
+            <span class="n">slice_info</span> <span class="o">=</span> <span class="p">(</span><span class="n">slice_axis</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># sequence</span>
+            <span class="n">slice_axis</span><span class="p">,</span> <span class="n">slice_direction</span> <span class="o">=</span> <span class="n">slice_info</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">images</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">n_slices</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">slice_axis</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_slices</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">slice_axis</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">slice_times</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="n">slice_times</span> <span class="o">=</span> <span class="n">timefuncs</span><span class="o">.</span><span class="n">SLICETIME_FUNCTIONS</span><span class="p">[</span><span class="n">slice_times</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">slice_times</span><span class="p">,</span> <span class="s1">&#39;__call__&#39;</span><span class="p">):</span>
+            <span class="n">slice_times</span> <span class="o">=</span> <span class="n">slice_times</span><span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">tr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">slice_times</span><span class="p">,</span> <span class="n">slice_info</span><span class="p">,</span> <span class="n">affine_class</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SpaceRealign"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.SpaceRealign">[docs]</a><span class="k">class</span> <span class="nc">SpaceRealign</span><span class="p">(</span><span class="n">Realign4d</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SpaceRealign.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.SpaceRealign.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">affine_class</span><span class="o">=</span><span class="n">Rigid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Spatial registration of time series with no time interpolation</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        images : image or list of images</span>
+<span class="sd">            Single or multiple input 4d images representing one or several fMRI</span>
+<span class="sd">            runs.</span>
+<span class="sd">        affine_class : ``Affine`` class, optional</span>
+<span class="sd">            transformation class to use to calculate transformations between</span>
+<span class="sd">            the volumes. Default is :class:``Rigid``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">affine_class</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="FmriRealign4d"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.FmriRealign4d">[docs]</a><span class="k">class</span> <span class="nc">FmriRealign4d</span><span class="p">(</span><span class="n">Realign4d</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FmriRealign4d.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.groupwise_registration.html#nipy.algorithms.registration.groupwise_registration.FmriRealign4d.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">slice_order</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">tr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tr_slices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">interleaved</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_interp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">slice_times</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">affine_class</span><span class="o">=</span><span class="n">Rigid</span><span class="p">,</span> <span class="n">slice_info</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Spatiotemporal realignment class for fMRI series. This class</span>
+<span class="sd">        is similar to `Realign4d` but provides a more flexible API for</span>
+<span class="sd">        initialization in order to make it easier to declare slice</span>
+<span class="sd">        acquisition times for standard sequences.</span>
+
+<span class="sd">        Warning: this class is deprecated; please use :class:`SpaceTimeRealign`</span>
+<span class="sd">        instead.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        images : image or list of images</span>
+<span class="sd">          Single or multiple input 4d images representing one or</span>
+<span class="sd">          several fMRI runs.</span>
+
+<span class="sd">        slice_order : str or array-like</span>
+<span class="sd">          If str, one of {&#39;ascending&#39;, &#39;descending&#39;}. If array-like,</span>
+<span class="sd">          then the order in which the slices were collected in</span>
+<span class="sd">          time. For instance, the following represents an ascending</span>
+<span class="sd">          contiguous sequence:</span>
+
+<span class="sd">          slice_order = [0, 1, 2, ...]</span>
+
+<span class="sd">          Note that `slice_order` differs from the argument used</span>
+<span class="sd">          e.g. in the SPM slice timing routine in that it maps spatial</span>
+<span class="sd">          slice positions to slice times. It is a mapping from space</span>
+<span class="sd">          to time, while SPM conventionally uses the reverse mapping</span>
+<span class="sd">          from time to space. For example, for an interleaved sequence</span>
+<span class="sd">          with 10 slices, where we acquired slice 0 (in space) first,</span>
+<span class="sd">          then slice 2 (in space) etc, `slice_order` would be [0, 5,</span>
+<span class="sd">          1, 6, 2, 7, 3, 8, 4, 9]</span>
+
+<span class="sd">          Using `slice_order` assumes that the inter-slice acquisition</span>
+<span class="sd">          time is constant throughout acquisition. If this is not the</span>
+<span class="sd">          case, use the `slice_times` argument instead and leave</span>
+<span class="sd">          `slice_order` to None.</span>
+
+<span class="sd">        tr : float</span>
+<span class="sd">          Inter-scan repetition time, i.e. the time elapsed between</span>
+<span class="sd">          two consecutive scans. The unit in which `tr` is given is</span>
+<span class="sd">          arbitrary although it needs to be consistent with the</span>
+<span class="sd">          `tr_slices` and `start` arguments if provided. If None, `tr`</span>
+<span class="sd">          is computed internally assuming a regular slice acquisition</span>
+<span class="sd">          scheme.</span>
+
+<span class="sd">        tr_slices : float</span>
+<span class="sd">          Inter-slice repetition time, same as `tr` for slices. If</span>
+<span class="sd">          None, acquisition is assumed regular and `tr_slices` is set</span>
+<span class="sd">          to `tr` divided by the number of slices.</span>
+
+<span class="sd">        start : float</span>
+<span class="sd">          Starting acquisition time (time of the first acquired slice)</span>
+<span class="sd">          respective to the time origin for resampling. `start` is</span>
+<span class="sd">          assumed to be given in the same unit as `tr`. Setting</span>
+<span class="sd">          `start=0` means that the resampled data will be synchronous</span>
+<span class="sd">          with the first acquired slice. Setting `start=-tr/2` means</span>
+<span class="sd">          that the resampled data will be synchronous with the slice</span>
+<span class="sd">          acquired at half repetition time.</span>
+
+<span class="sd">        time_interp: bool</span>
+<span class="sd">          Tells whether time interpolation is used or not within the</span>
+<span class="sd">          realignment algorithm. If False, slices are considered to be</span>
+<span class="sd">          acquired all at the same time, thus no slice timing</span>
+<span class="sd">          correction will be performed.</span>
+
+<span class="sd">        interleaved : bool</span>
+<span class="sd">          Deprecated argument.</span>
+
+<span class="sd">          Tells whether slice acquisition order is interleaved in a</span>
+<span class="sd">          certain sense. Setting `interleaved` to True or False will</span>
+<span class="sd">          trigger an error unless `slice_order` is &#39;ascending&#39; or</span>
+<span class="sd">          &#39;descending&#39; and `slice_times` is None.</span>
+
+<span class="sd">          If slice_order==&#39;ascending&#39; and interleaved==True, the</span>
+<span class="sd">          assumed slice order is (assuming 10 slices):</span>
+
+<span class="sd">          [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]</span>
+
+<span class="sd">          If slice_order==&#39;descending&#39; and interleaved==True, the</span>
+<span class="sd">          assumed slice order is:</span>
+
+<span class="sd">          [9, 4, 8, 3, 7, 2, 6, 1, 5, 0]</span>
+
+<span class="sd">          WARNING: given that there exist other types of interleaved</span>
+<span class="sd">          acquisitions depending on scanner settings and</span>
+<span class="sd">          manufacturers, you should refrain from using the</span>
+<span class="sd">          `interleaved` keyword argument unless you are sure what you</span>
+<span class="sd">          are doing. It is generally safer to explicitly input</span>
+<span class="sd">          `slice_order` or `slice_times`.</span>
+
+<span class="sd">        slice_times : None, str or array-like</span>
+
+<span class="sd">          This argument can be used instead of `slice_order`,</span>
+<span class="sd">          `tr_slices`, `start` and `time_interp` altogether.</span>
+
+<span class="sd">          If None, slices are assumed to be acquired simultaneously</span>
+<span class="sd">          hence no slice timing correction is performed. If</span>
+<span class="sd">          array-like, then `slice_times` gives the slice acquisition</span>
+<span class="sd">          times along the slice axis in units that are consistent with</span>
+<span class="sd">          the provided `tr`.</span>
+
+<span class="sd">          Generally speaking, the following holds for sequences with</span>
+<span class="sd">          constant inter-slice repetition time `tr_slices`:</span>
+
+<span class="sd">          `slice_times` = `start` + `tr_slices` * `slice_order`</span>
+
+<span class="sd">          For other sequences such as, e.g., sequences with</span>
+<span class="sd">          simultaneously acquired slices, it is necessary to input</span>
+<span class="sd">          `slice_times` explicitly along with `tr`.</span>
+
+<span class="sd">        slice_info : None or tuple, optional</span>
+<span class="sd">          None, or a tuple with slice axis as the first element and</span>
+<span class="sd">          direction as the second, for instance (2, 1). If None, then</span>
+<span class="sd">          the slice axis and direction are guessed from the first</span>
+<span class="sd">          run&#39;s affine assuming that slices are collected along the</span>
+<span class="sd">          closest axis to the z-axis. This means that we assume by</span>
+<span class="sd">          default an axial acquisition with slice axis pointing from</span>
+<span class="sd">          bottom to top of the head.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Please use SpaceTimeRealign instead of this class; &#39;</span>
+                      <span class="s1">&#39;We will soon remove this class&#39;</span><span class="p">,</span>
+                      <span class="ne">FutureWarning</span><span class="p">,</span>
+                      <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># if slice_times not None, make sure that parameters redundant</span>
+        <span class="c1"># with slice times all have their default value</span>
+        <span class="k">if</span> <span class="n">slice_times</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">slice_order</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                    <span class="ow">or</span> <span class="n">tr_slices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>\
+                    <span class="ow">or</span> <span class="n">start</span> <span class="o">!=</span> <span class="mf">0.0</span> \
+                    <span class="ow">or</span> <span class="n">time_interp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>\
+                    <span class="ow">or</span> <span class="n">interleaved</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Attempting to set both `slice_times` &#39;</span>
+                                 <span class="s1">&#39;and other arguments redundant with it&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">slice_times</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">tr</span> <span class="o">=</span> <span class="n">slice_times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">slice_times</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">slice_times</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tr</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">slice_times</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;No `tr` entered. Assuming regular acquisition&#39;</span>
+                              <span class="s1">&#39; with tr=</span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">tr</span><span class="p">)</span>
+        <span class="c1"># case where slice_time is None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># assume regular slice acquisition, therefore tr is</span>
+            <span class="c1"># arbitrary</span>
+            <span class="k">if</span> <span class="n">tr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tr</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="c1"># if no slice order provided, assume synchronous slices</span>
+            <span class="k">if</span> <span class="n">slice_order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">time_interp</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Slice order is requested &#39;</span>
+                                     <span class="s1">&#39;with time interpolation switched on&#39;</span><span class="p">)</span>
+                <span class="n">slice_times</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># if slice_order is a key word, replace it with the</span>
+                <span class="c1"># appropriate array of slice indices</span>
+                <span class="k">if</span> <span class="n">slice_order</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;ascending&#39;</span><span class="p">,</span> <span class="s1">&#39;descending&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)):</span>
+                        <span class="n">xyz_img</span> <span class="o">=</span> <span class="n">as_xyz_image</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">xyz_img</span> <span class="o">=</span> <span class="n">as_xyz_image</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+
+                    <span class="n">slice_axis</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">guess_slice_axis_and_direction</span><span class="p">(</span>
+                        <span class="n">slice_info</span><span class="p">,</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="n">xyz_img</span><span class="p">))</span>
+                    <span class="n">nslices</span> <span class="o">=</span> <span class="n">xyz_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">slice_axis</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">interleaved</span><span class="p">:</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;`interleaved` keyword argument is &#39;</span>
+                                      <span class="s1">&#39;deprecated&#39;</span><span class="p">,</span>
+                                      <span class="ne">FutureWarning</span><span class="p">,</span>
+                                      <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                        <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nslices</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span>
+                                         <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nslices</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nslices</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">slice_order</span> <span class="o">==</span> <span class="s1">&#39;descending&#39;</span><span class="p">:</span>
+                        <span class="n">aux</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">slice_order</span> <span class="o">=</span> <span class="n">aux</span>
+                <span class="c1"># if slice_order is provided explicitly, issue a</span>
+                <span class="c1"># warning and make sure interleaved is set to None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Please make sure you are NOT using &#39;</span>
+                                  <span class="s1">&#39;SPM-style slice order declaration&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">interleaved</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`interleaved` should be None when &#39;</span>
+                                         <span class="s1">&#39;providing explicit slice order&#39;</span><span class="p">)</span>
+                    <span class="n">slice_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">slice_order</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">tr_slices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">tr_slices</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">slice_order</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">slice_times</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">tr_slices</span> <span class="o">*</span> <span class="n">slice_order</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">slice_times</span><span class="p">,</span> <span class="n">slice_info</span><span class="p">,</span> <span class="n">affine_class</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

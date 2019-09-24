@@ -1,0 +1,550 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.mask.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-mask">
+<h1>labs.mask<a class="headerlink" href="#labs-mask" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.labs.mask">
+<span id="module-labs-mask"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.mask</span></code><a class="headerlink" href="#module-nipy.labs.mask" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for extracting masks from EPI images and applying them to time
+series.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.mask.compute_mask">
+<code class="sig-prename descclassname">nipy.labs.mask.</code><code class="sig-name descname">compute_mask</code><span class="sig-paren">(</span><em class="sig-param">mean_volume</em>, <em class="sig-param">reference_volume=None</em>, <em class="sig-param">m=0.2</em>, <em class="sig-param">M=0.9</em>, <em class="sig-param">cc=True</em>, <em class="sig-param">opening=2</em>, <em class="sig-param">exclude_zeros=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/mask.html#compute_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.mask.compute_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a mask file from fMRI data in 3D or 4D ndarrays.</p>
+<p>Compute and write the mask of an image based on the grey level
+This is based on an heuristic proposed by T.Nichols:
+find the least dense point of the histogram, between fractions
+m and M of the total image histogram.</p>
+<p>In case of failure, it is usually advisable to increase m.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mean_volume</strong> : 3D ndarray</p>
+<blockquote>
+<div><p>mean EPI image, used to compute the threshold for the mask.</p>
+</div></blockquote>
+<p><strong>reference_volume: 3D ndarray, optional</strong></p>
+<blockquote>
+<div><p>reference volume used to compute the mask. If none is give, the
+mean volume is used.</p>
+</div></blockquote>
+<p><strong>m</strong> : float, optional</p>
+<blockquote>
+<div><p>lower fraction of the histogram to be discarded.</p>
+</div></blockquote>
+<p><strong>M: float, optional</strong></p>
+<blockquote>
+<div><p>upper fraction of the histogram to be discarded.</p>
+</div></blockquote>
+<p><strong>cc: boolean, optional</strong></p>
+<blockquote>
+<div><p>if cc is True, only the largest connect component is kept.</p>
+</div></blockquote>
+<p><strong>opening: int, optional</strong></p>
+<blockquote>
+<div><p>if opening is larger than 0, an morphological opening is performed,
+to keep only large structures. This step is useful to remove parts of
+the skull that might have been included.</p>
+</div></blockquote>
+<p><strong>exclude_zeros: boolean, optional</strong></p>
+<blockquote>
+<div><p>Consider zeros as missing values for the computation of the
+threshold. This option is useful if the images have been
+resliced with a large padding of zeros.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mask</strong> : 3D boolean ndarray</p>
+<blockquote>
+<div><p>The brain mask</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.mask.compute_mask_files">
+<code class="sig-prename descclassname">nipy.labs.mask.</code><code class="sig-name descname">compute_mask_files</code><span class="sig-paren">(</span><em class="sig-param">input_filename</em>, <em class="sig-param">output_filename=None</em>, <em class="sig-param">return_mean=False</em>, <em class="sig-param">m=0.2</em>, <em class="sig-param">M=0.9</em>, <em class="sig-param">cc=1</em>, <em class="sig-param">exclude_zeros=False</em>, <em class="sig-param">opening=2</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/mask.html#compute_mask_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.mask.compute_mask_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a mask file from fMRI nifti file(s)</p>
+<p>Compute and write the mask of an image based on the grey level
+This is based on an heuristic proposed by T.Nichols:
+find the least dense point of the histogram, between fractions
+m and M of the total image histogram.</p>
+<p>In case of failure, it is usually advisable to increase m.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_filename</strong> : string</p>
+<blockquote>
+<div><p>nifti filename (4D) or list of filenames (3D).</p>
+</div></blockquote>
+<p><strong>output_filename</strong> : string or None, optional</p>
+<blockquote>
+<div><p>path to save the output nifti image (if not None).</p>
+</div></blockquote>
+<p><strong>return_mean</strong> : boolean, optional</p>
+<blockquote>
+<div><p>if True, and output_filename is None, return the mean image also, as
+a 3D array (2nd return argument).</p>
+</div></blockquote>
+<p><strong>m</strong> : float, optional</p>
+<blockquote>
+<div><p>lower fraction of the histogram to be discarded.</p>
+</div></blockquote>
+<p><strong>M: float, optional</strong></p>
+<blockquote>
+<div><p>upper fraction of the histogram to be discarded.</p>
+</div></blockquote>
+<p><strong>cc: boolean, optional</strong></p>
+<blockquote>
+<div><p>if cc is True, only the largest connect component is kept.</p>
+</div></blockquote>
+<p><strong>exclude_zeros: boolean, optional</strong></p>
+<blockquote>
+<div><p>Consider zeros as missing values for the computation of the
+threshold. This option is useful if the images have been
+resliced with a large padding of zeros.</p>
+</div></blockquote>
+<p><strong>opening: int, optional</strong></p>
+<blockquote>
+<div><p>Size of the morphological opening performed as post-processing</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mask</strong> : 3D boolean array</p>
+<blockquote>
+<div><p>The brain mask</p>
+</div></blockquote>
+<p><strong>mean_image</strong> : 3d ndarray, optional</p>
+<blockquote>
+<div><p>The main of all the images used to estimate the mask. Only
+provided if <cite>return_mean</cite> is True.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.mask.compute_mask_sessions">
+<code class="sig-prename descclassname">nipy.labs.mask.</code><code class="sig-name descname">compute_mask_sessions</code><span class="sig-paren">(</span><em class="sig-param">session_images</em>, <em class="sig-param">m=0.2</em>, <em class="sig-param">M=0.9</em>, <em class="sig-param">cc=1</em>, <em class="sig-param">threshold=0.5</em>, <em class="sig-param">exclude_zeros=False</em>, <em class="sig-param">return_mean=False</em>, <em class="sig-param">opening=2</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/mask.html#compute_mask_sessions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.mask.compute_mask_sessions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a common mask for several sessions of fMRI data.</p>
+<blockquote>
+<div><p>Uses the mask-finding algorithmes to extract masks for each
+session, and then keep only the main connected component of the
+a given fraction of the intersection of all the masks.</p>
+</div></blockquote>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>session_images</strong> : list of (list of strings) or nipy image objects</p>
+<blockquote>
+<div><p>A list of images/list of nifti filenames. Each inner list/image
+represents a session.</p>
+</div></blockquote>
+<p><strong>m</strong> : float, optional</p>
+<blockquote>
+<div><p>lower fraction of the histogram to be discarded.</p>
+</div></blockquote>
+<p><strong>M: float, optional</strong></p>
+<blockquote>
+<div><p>upper fraction of the histogram to be discarded.</p>
+</div></blockquote>
+<p><strong>cc: boolean, optional</strong></p>
+<blockquote>
+<div><p>if cc is True, only the largest connect component is kept.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : float, optional</p>
+<blockquote>
+<div><p>the inter-session threshold: the fraction of the
+total number of session in for which a voxel must be in the
+mask to be kept in the common mask.
+threshold=1 corresponds to keeping the intersection of all
+masks, whereas threshold=0 is the union of all masks.</p>
+</div></blockquote>
+<p><strong>exclude_zeros: boolean, optional</strong></p>
+<blockquote>
+<div><p>Consider zeros as missing values for the computation of the
+threshold. This option is useful if the images have been
+resliced with a large padding of zeros.</p>
+</div></blockquote>
+<p><strong>return_mean: boolean, optional</strong></p>
+<blockquote>
+<div><p>if return_mean is True, the mean image accross subjects is
+returned.</p>
+</div></blockquote>
+<p><strong>opening: int, optional,</strong></p>
+<blockquote>
+<div><p>size of  the morphological opening</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mask</strong> : 3D boolean ndarray</p>
+<blockquote>
+<div><p>The brain mask</p>
+</div></blockquote>
+<p><strong>mean</strong> : 3D float array</p>
+<blockquote>
+<div><p>The mean image</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.mask.intersect_masks">
+<code class="sig-prename descclassname">nipy.labs.mask.</code><code class="sig-name descname">intersect_masks</code><span class="sig-paren">(</span><em class="sig-param">input_masks</em>, <em class="sig-param">output_filename=None</em>, <em class="sig-param">threshold=0.5</em>, <em class="sig-param">cc=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/mask.html#intersect_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.mask.intersect_masks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of input mask images, generate the output image which
+is the the threshold-level intersection of the inputs</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_masks: list of strings or ndarrays</strong></p>
+<blockquote>
+<div><p>paths of the input images nsubj set as len(input_mask_files), or
+individual masks.</p>
+</div></blockquote>
+<p><strong>output_filename, string:</strong></p>
+<blockquote>
+<div><p>Path of the output image, if None no file is saved.</p>
+</div></blockquote>
+<p><strong>threshold: float within [0, 1[, optional</strong></p>
+<blockquote>
+<div><p>gives the level of the intersection.
+threshold=1 corresponds to keeping the intersection of all
+masks, whereas threshold=0 is the union of all masks.</p>
+</div></blockquote>
+<p><strong>cc: bool, optional</strong></p>
+<blockquote>
+<div><p>If true, extract the main connected component</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>grp_mask, boolean array of shape the image shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.mask.largest_cc">
+<code class="sig-prename descclassname">nipy.labs.mask.</code><code class="sig-name descname">largest_cc</code><span class="sig-paren">(</span><em class="sig-param">mask</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/mask.html#largest_cc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.mask.largest_cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the largest connected component of a 3D mask array.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask: 3D boolean array</strong></p>
+<blockquote>
+<div><p>3D array indicating a mask.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>mask: 3D boolean array</p>
+<blockquote>
+<div><p>3D array indicating a mask, with only one connected component.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.mask.series_from_mask">
+<code class="sig-prename descclassname">nipy.labs.mask.</code><code class="sig-name descname">series_from_mask</code><span class="sig-paren">(</span><em class="sig-param">filenames</em>, <em class="sig-param">mask</em>, <em class="sig-param">dtype=&lt;class 'numpy.float32'&gt;</em>, <em class="sig-param">smooth=False</em>, <em class="sig-param">ensure_finite=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/mask.html#series_from_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.mask.series_from_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the time series from the given sessions filenames, using the mask.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filenames: list of 3D nifti file names, or 4D nifti filename.</strong></p>
+<blockquote>
+<div><p>Files are grouped by session.</p>
+</div></blockquote>
+<p><strong>mask: 3d ndarray</strong></p>
+<blockquote>
+<div><p>3D mask array: true where a voxel should be used.</p>
+</div></blockquote>
+<p><strong>smooth: False or float, optional</strong></p>
+<blockquote>
+<div><p>If smooth is not False, it gives the size, in voxel of the
+spatial smoothing to apply to the signal.</p>
+</div></blockquote>
+<p><strong>ensure_finite: boolean, optional</strong></p>
+<blockquote>
+<div><p>If ensure_finite is True, the non-finite values (NaNs and infs)
+found in the images will be replaced by zeros</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>session_series: ndarray</p>
+<blockquote>
+<div><p>3D array of time course: (session, voxel, time)</p>
+</div></blockquote>
+<p>header: header object</p>
+<blockquote>
+<div><p>The header of the first file.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>When using smoothing, ensure_finite should be True: as elsewhere non
+finite values will spread accross the image.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.mask.threshold_connect_components">
+<code class="sig-prename descclassname">nipy.labs.mask.</code><code class="sig-name descname">threshold_connect_components</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">threshold</em>, <em class="sig-param">copy=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/mask.html#threshold_connect_components"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.mask.threshold_connect_components" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Given a map with some coefficients set to zero, segment the</dt><dd><p>connect components with number of voxels smaller than the
+threshold and set them to 0.</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: ndarray,</strong></p>
+<blockquote>
+<div><p>The spatial map to segment</p>
+</div></blockquote>
+<p><strong>threshold: scalar,</strong></p>
+<blockquote>
+<div><p>The minimum number of voxels to keep a cluster.</p>
+</div></blockquote>
+<p><strong>copy: bool, optional</strong></p>
+<blockquote>
+<div><p>If copy is false, the input array is modified inplace</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>map: ndarray,</p>
+<blockquote>
+<div><p>the map with connected components removed</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

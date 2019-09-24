@@ -1,0 +1,548 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.slicetiming.timefuncs.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-slicetiming-timefuncs">
+<h1>algorithms.slicetiming.timefuncs<a class="headerlink" href="#algorithms-slicetiming-timefuncs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.algorithms.slicetiming.timefuncs">
+<span id="module-algorithms-slicetiming-timefuncs"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.slicetiming.timefuncs</span></code><a class="headerlink" href="#module-nipy.algorithms.slicetiming.timefuncs" title="Permalink to this headline">¶</a></h2>
+<p>Utility functions for returning slice times from number of slices and TR</p>
+<p>Slice timing routines in nipy need a vector of slice times.</p>
+<p>Slice times are vectors <span class="math notranslate nohighlight">\(t_i\)</span> with <span class="math notranslate nohighlight">\(i = 0 ... N\)</span> of times, one for each slice, where
+<span class="math notranslate nohighlight">\(t_i\)</span> gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+<p>We like these vectors because they are unambiguous; the indices <span class="math notranslate nohighlight">\(i\)</span> refer to
+positions in space, and the values <span class="math notranslate nohighlight">\(t_i\)</span> refer to times.</p>
+<p>But, there are many common slice timing regimes for which it’s easy to get the
+slice times once you know the volume acquisition time (the TR) and the number of
+slices.</p>
+<p>For example, if you acquired the slices in a simple ascending order, and you
+have 10 slices and the TR was 2.0, then the slice times are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.</span>  <span class="o">*</span> <span class="mf">2.0</span>
+<span class="go">array([ 0. ,  0.2,  0.4,  0.6,  0.8,  1. ,  1.2,  1.4,  1.6,  1.8])</span>
+</pre></div>
+</div>
+<p>These are small convenience functions that accept the number of slices and the
+TR as input, and return a vector of slice times:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ascending</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+<span class="go">array([ 0. ,  0.2,  0.4,  0.6,  0.8,  1. ,  1.2,  1.4,  1.6,  1.8])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.slicetiming.timefuncs.st_01234">
+<code class="sig-prename descclassname">nipy.algorithms.slicetiming.timefuncs.</code><code class="sig-name descname">st_01234</code><span class="sig-paren">(</span><em class="sig-param">n_slices</em>, <em class="sig-param">TR</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/slicetiming/timefuncs.html#st_01234"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.slicetiming.timefuncs.st_01234" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple ascending slice sequence</p>
+<p>slice 0 first, slice 1 second etc.</p>
+<p>For example, for 5 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_01234</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0. ,  0.2,  0.4,  0.6,  0.8])</span>
+</pre></div>
+</div>
+<p>Note: slice 0 is the first slice in the voxel data block</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_slices</strong> : int</p>
+<blockquote>
+<div><p>Number of slices in volume</p>
+</div></blockquote>
+<p><strong>TR</strong> : float</p>
+<blockquote>
+<div><p>Time to acquire one full volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slice_times</strong> : (n_slices,) ndarray</p>
+<blockquote>
+<div><p>Vectors <span class="math notranslate nohighlight">\(t_i i = 0 ... N\)</span> of times, one for each slice, where <span class="math notranslate nohighlight">\(t_i\)</span>
+gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.slicetiming.timefuncs.st_02413">
+<code class="sig-prename descclassname">nipy.algorithms.slicetiming.timefuncs.</code><code class="sig-name descname">st_02413</code><span class="sig-paren">(</span><em class="sig-param">n_slices</em>, <em class="sig-param">TR</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/slicetiming/timefuncs.html#st_02413"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.slicetiming.timefuncs.st_02413" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ascend alternate every second slice, starting at first slice</p>
+<p>Collect slice 0 first, slice 2 second up to top.  Then return to collect
+slice 1, slice 3 etc.</p>
+<p>For example, for 5 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_02413</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0. ,  0.6,  0.2,  0.8,  0.4])</span>
+</pre></div>
+</div>
+<p>Note: slice 0 is the first slice in the voxel data block</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_slices</strong> : int</p>
+<blockquote>
+<div><p>Number of slices in volume</p>
+</div></blockquote>
+<p><strong>TR</strong> : float</p>
+<blockquote>
+<div><p>Time to acquire one full volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slice_times</strong> : (n_slices,) ndarray</p>
+<blockquote>
+<div><p>Vectors <span class="math notranslate nohighlight">\(t_i i = 0 ... N\)</span> of times, one for each slice, where <span class="math notranslate nohighlight">\(t_i\)</span>
+gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.slicetiming.timefuncs.st_03142">
+<code class="sig-prename descclassname">nipy.algorithms.slicetiming.timefuncs.</code><code class="sig-name descname">st_03142</code><span class="sig-paren">(</span><em class="sig-param">n_slices</em>, <em class="sig-param">TR</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/slicetiming/timefuncs.html#st_03142"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.slicetiming.timefuncs.st_03142" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ascend alternate, where alternation is by half the volume</p>
+<p>Collect slice 0 then slice <code class="docutils literal notranslate"><span class="pre">ceil(n_slices</span> <span class="pre">/</span> <span class="pre">2.)</span></code> then slice 1 then slice
+<code class="docutils literal notranslate"><span class="pre">ceil(nslices</span> <span class="pre">/</span> <span class="pre">2.)</span> <span class="pre">+</span> <span class="pre">1</span></code> etc.</p>
+<p>For example, for 5 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_03142</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0. ,  0.4,  0.8,  0.2,  0.6])</span>
+</pre></div>
+</div>
+<p>Note: slice 0 is the first slice in the voxel data block</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_slices</strong> : int</p>
+<blockquote>
+<div><p>Number of slices in volume</p>
+</div></blockquote>
+<p><strong>TR</strong> : float</p>
+<blockquote>
+<div><p>Time to acquire one full volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slice_times</strong> : (n_slices,) ndarray</p>
+<blockquote>
+<div><p>Vectors <span class="math notranslate nohighlight">\(t_i i = 0 ... N\)</span> of times, one for each slice, where <span class="math notranslate nohighlight">\(t_i\)</span>
+gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.slicetiming.timefuncs.st_13024">
+<code class="sig-prename descclassname">nipy.algorithms.slicetiming.timefuncs.</code><code class="sig-name descname">st_13024</code><span class="sig-paren">(</span><em class="sig-param">n_slices</em>, <em class="sig-param">TR</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/slicetiming/timefuncs.html#st_13024"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.slicetiming.timefuncs.st_13024" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ascend alternate every second slice, starting at second slice</p>
+<p>Collect slice 1 first, slice 3 second up to top (highest numbered slice).
+Then return to collect slice 0, slice 2 etc.  This order is rare except on
+Siemens acquisitions with an even number of slices.  See
+<a class="reference internal" href="#nipy.algorithms.slicetiming.timefuncs.st_odd0_even1" title="nipy.algorithms.slicetiming.timefuncs.st_odd0_even1"><code class="xref py py-func docutils literal notranslate"><span class="pre">st_odd0_even1()</span></code></a> for this logic.</p>
+<p>For example, for 5 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_13024</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0.4,  0. ,  0.6,  0.2,  0.8])</span>
+</pre></div>
+</div>
+<p>Note: slice 0 is the first slice in the voxel data block</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_slices</strong> : int</p>
+<blockquote>
+<div><p>Number of slices in volume</p>
+</div></blockquote>
+<p><strong>TR</strong> : float</p>
+<blockquote>
+<div><p>Time to acquire one full volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slice_times</strong> : (n_slices,) ndarray</p>
+<blockquote>
+<div><p>Vectors <span class="math notranslate nohighlight">\(t_i i = 0 ... N\)</span> of times, one for each slice, where <span class="math notranslate nohighlight">\(t_i\)</span>
+gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.slicetiming.timefuncs.st_41302">
+<code class="sig-prename descclassname">nipy.algorithms.slicetiming.timefuncs.</code><code class="sig-name descname">st_41302</code><span class="sig-paren">(</span><em class="sig-param">n_slices</em>, <em class="sig-param">TR</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/slicetiming/timefuncs.html#st_41302"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.slicetiming.timefuncs.st_41302" title="Permalink to this definition">¶</a></dt>
+<dd><p>Descend alternate, where alternation is by half the volume</p>
+<p>Collect slice <code class="docutils literal notranslate"><span class="pre">(n_slices</span> <span class="pre">-</span> <span class="pre">1)</span></code> then slice <code class="docutils literal notranslate"><span class="pre">floor(nslices</span> <span class="pre">/</span> <span class="pre">2.)</span> <span class="pre">-</span> <span class="pre">1</span></code>
+then slice <code class="docutils literal notranslate"><span class="pre">(n_slices</span> <span class="pre">-</span> <span class="pre">2)</span></code> then slice <code class="docutils literal notranslate"><span class="pre">floor(nslices</span> <span class="pre">/</span> <span class="pre">2.)</span> <span class="pre">-</span> <span class="pre">2</span></code> etc.</p>
+<p>For example, for 5 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_41302</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0.6,  0.2,  0.8,  0.4,  0. ])</span>
+</pre></div>
+</div>
+<p>Note: slice 0 is the first slice in the voxel data block</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_slices</strong> : int</p>
+<blockquote>
+<div><p>Number of slices in volume</p>
+</div></blockquote>
+<p><strong>TR</strong> : float</p>
+<blockquote>
+<div><p>Time to acquire one full volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slice_times</strong> : (n_slices,) ndarray</p>
+<blockquote>
+<div><p>Vectors <span class="math notranslate nohighlight">\(t_i i = 0 ... N\)</span> of times, one for each slice, where <span class="math notranslate nohighlight">\(t_i\)</span>
+gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.slicetiming.timefuncs.st_42031">
+<code class="sig-prename descclassname">nipy.algorithms.slicetiming.timefuncs.</code><code class="sig-name descname">st_42031</code><span class="sig-paren">(</span><em class="sig-param">n_slices</em>, <em class="sig-param">TR</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/slicetiming/timefuncs.html#st_42031"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.slicetiming.timefuncs.st_42031" title="Permalink to this definition">¶</a></dt>
+<dd><p>Descend alternate every second slice, starting at last slice</p>
+<p>Collect slice (<cite>n_slices</cite> - 1) first, slice (<cite>nslices</cite> - 3) second down to
+bottom (lowest numbered slice).  Then return to collect slice (<cite>n_slices</cite>
+-2), slice (<cite>n_slices</cite> - 4) etc.</p>
+<p>For example, for 5 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_42031</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0.4,  0.8,  0.2,  0.6,  0. ])</span>
+</pre></div>
+</div>
+<p>Note: slice 0 is the first slice in the voxel data block</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_slices</strong> : int</p>
+<blockquote>
+<div><p>Number of slices in volume</p>
+</div></blockquote>
+<p><strong>TR</strong> : float</p>
+<blockquote>
+<div><p>Time to acquire one full volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slice_times</strong> : (n_slices,) ndarray</p>
+<blockquote>
+<div><p>Vectors <span class="math notranslate nohighlight">\(t_i i = 0 ... N\)</span> of times, one for each slice, where <span class="math notranslate nohighlight">\(t_i\)</span>
+gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.slicetiming.timefuncs.st_43210">
+<code class="sig-prename descclassname">nipy.algorithms.slicetiming.timefuncs.</code><code class="sig-name descname">st_43210</code><span class="sig-paren">(</span><em class="sig-param">n_slices</em>, <em class="sig-param">TR</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/slicetiming/timefuncs.html#st_43210"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.slicetiming.timefuncs.st_43210" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple descending slice sequence</p>
+<p>slice <code class="docutils literal notranslate"><span class="pre">n_slices-1</span></code> first, slice <code class="docutils literal notranslate"><span class="pre">n_slices</span> <span class="pre">-</span> <span class="pre">2</span></code> second etc.</p>
+<p>For example, for 5 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_43210</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0.8,  0.6,  0.4,  0.2,  0. ])</span>
+</pre></div>
+</div>
+<p>Note: slice 0 is the first slice in the voxel data block</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_slices</strong> : int</p>
+<blockquote>
+<div><p>Number of slices in volume</p>
+</div></blockquote>
+<p><strong>TR</strong> : float</p>
+<blockquote>
+<div><p>Time to acquire one full volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slice_times</strong> : (n_slices,) ndarray</p>
+<blockquote>
+<div><p>Vectors <span class="math notranslate nohighlight">\(t_i i = 0 ... N\)</span> of times, one for each slice, where <span class="math notranslate nohighlight">\(t_i\)</span>
+gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.slicetiming.timefuncs.st_odd0_even1">
+<code class="sig-prename descclassname">nipy.algorithms.slicetiming.timefuncs.</code><code class="sig-name descname">st_odd0_even1</code><span class="sig-paren">(</span><em class="sig-param">n_slices</em>, <em class="sig-param">TR</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/slicetiming/timefuncs.html#st_odd0_even1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.slicetiming.timefuncs.st_odd0_even1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ascend alternate starting at slice 0 for odd, slice 1 for even <cite>n_slices</cite></p>
+<p>Acquisitions with alternating ascending slices from Siemens scanners often
+seem to have this behavior as default - see:</p>
+<blockquote>
+<div><p><a class="reference external" href="https://mri.radiology.uiowa.edu/fmri_images.html">https://mri.radiology.uiowa.edu/fmri_images.html</a></p>
+</div></blockquote>
+<p>This means we use the <a class="reference internal" href="#nipy.algorithms.slicetiming.timefuncs.st_02413" title="nipy.algorithms.slicetiming.timefuncs.st_02413"><code class="xref py py-func docutils literal notranslate"><span class="pre">st_02413()</span></code></a> algorithm if <cite>n_slices</cite> is odd, and
+the <a class="reference internal" href="#nipy.algorithms.slicetiming.timefuncs.st_13024" title="nipy.algorithms.slicetiming.timefuncs.st_13024"><code class="xref py py-func docutils literal notranslate"><span class="pre">st_13024()</span></code></a> algorithm if <cite>n_slices</cite> is even.</p>
+<p>For example, for 4 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_odd0_even1</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0.5 ,  0.  ,  0.75,  0.25])</span>
+</pre></div>
+</div>
+<p>5 slices and a TR of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">st_odd0_even1</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="go">array([ 0. ,  0.6,  0.2,  0.8,  0.4])</span>
+</pre></div>
+</div>
+<p>Note: slice 0 is the first slice in the voxel data block</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_slices</strong> : int</p>
+<blockquote>
+<div><p>Number of slices in volume</p>
+</div></blockquote>
+<p><strong>TR</strong> : float</p>
+<blockquote>
+<div><p>Time to acquire one full volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slice_times</strong> : (n_slices,) ndarray</p>
+<blockquote>
+<div><p>Vectors <span class="math notranslate nohighlight">\(t_i i = 0 ... N\)</span> of times, one for each slice, where <span class="math notranslate nohighlight">\(t_i\)</span>
+gives the time at which slice number <span class="math notranslate nohighlight">\(i\)</span> was acquired, relative to the
+beginning of the volume acquisition.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

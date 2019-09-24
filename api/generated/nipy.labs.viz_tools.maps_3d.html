@@ -1,0 +1,382 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.viz_tools.maps_3d.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-viz-tools-maps-3d">
+<h1>labs.viz_tools.maps_3d<a class="headerlink" href="#labs-viz-tools-maps-3d" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.labs.viz_tools.maps_3d">
+<span id="module-labs-viz-tools-maps-3d"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.viz_tools.maps_3d</span></code><a class="headerlink" href="#module-nipy.labs.viz_tools.maps_3d" title="Permalink to this headline">¶</a></h2>
+<p>3D visualization of activation maps using Mayavi</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.viz_tools.maps_3d.affine_img_src">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.maps_3d.</code><code class="sig-name descname">affine_img_src</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">affine</em>, <em class="sig-param">scale=1</em>, <em class="sig-param">name='AffineImage'</em>, <em class="sig-param">reverse_x=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/maps_3d.html#affine_img_src"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.maps_3d.affine_img_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a Mayavi source defined by a 3D array and an affine, for
+wich the voxel of the 3D array are mapped by the affine.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The data arrays</p>
+</div></blockquote>
+<p><strong>affine: (4 x 4) ndarray</strong></p>
+<blockquote>
+<div><p>The (4 x 4) affine matrix relating voxels to world
+coordinates.</p>
+</div></blockquote>
+<p><strong>scale: float, optional</strong></p>
+<blockquote>
+<div><p>An optional addition scaling factor.</p>
+</div></blockquote>
+<p><strong>name: string, optional</strong></p>
+<blockquote>
+<div><p>The name of the Mayavi source created.</p>
+</div></blockquote>
+<p><strong>reverse_x: boolean, optional</strong></p>
+<blockquote>
+<div><p>Reverse the x (lateral) axis. Useful to compared with
+images in radiologic convention.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The affine should be diagonal.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.maps_3d.autocrop_img">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.maps_3d.</code><code class="sig-name descname">autocrop_img</code><span class="sig-paren">(</span><em class="sig-param">img</em>, <em class="sig-param">bg_color</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/maps_3d.html#autocrop_img"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.maps_3d.autocrop_img" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.maps_3d.demo_plot_map_3d">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.maps_3d.</code><code class="sig-name descname">demo_plot_map_3d</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/maps_3d.html#demo_plot_map_3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.maps_3d.demo_plot_map_3d" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.maps_3d.m2screenshot">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.maps_3d.</code><code class="sig-name descname">m2screenshot</code><span class="sig-paren">(</span><em class="sig-param">mayavi_fig=None</em>, <em class="sig-param">mpl_axes=None</em>, <em class="sig-param">autocrop=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/maps_3d.html#m2screenshot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.maps_3d.m2screenshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Capture a screeshot of the Mayavi figure and display it in the
+matplotlib axes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.maps_3d.plot_anat_3d">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.maps_3d.</code><code class="sig-name descname">plot_anat_3d</code><span class="sig-paren">(</span><em class="sig-param">anat=None</em>, <em class="sig-param">anat_affine=None</em>, <em class="sig-param">scale=1</em>, <em class="sig-param">sulci_opacity=0.5</em>, <em class="sig-param">gyri_opacity=0.3</em>, <em class="sig-param">opacity=None</em>, <em class="sig-param">skull_percentile=78</em>, <em class="sig-param">wm_percentile=79</em>, <em class="sig-param">outline_color=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/maps_3d.html#plot_anat_3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.maps_3d.plot_anat_3d" title="Permalink to this definition">¶</a></dt>
+<dd><p>3D anatomical display</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>skull_percentile</strong> : float, optional</p>
+<blockquote>
+<div><p>The percentile of the values in the image that delimit the skull from
+the outside of the brain. The smaller the fraction of you field of view
+is occupied by the brain, the larger this value should be.</p>
+</div></blockquote>
+<p><strong>wm_percentile</strong> : float, optional</p>
+<blockquote>
+<div><p>The percentile of the values in the image that delimit the white matter
+from the grey matter. Typical this is skull_percentile + 1</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.maps_3d.plot_map_3d">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.maps_3d.</code><code class="sig-name descname">plot_map_3d</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">anat=None</em>, <em class="sig-param">anat_affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">offscreen=False</em>, <em class="sig-param">vmin=None</em>, <em class="sig-param">vmax=None</em>, <em class="sig-param">cmap=None</em>, <em class="sig-param">view=(38.5</em>, <em class="sig-param">70.5</em>, <em class="sig-param">300</em>, <em class="sig-param">(-2.7</em>, <em class="sig-param">-12</em>, <em class="sig-param">9.1))</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/maps_3d.html#plot_map_3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.maps_3d.plot_map_3d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a 3D volume rendering view of the activation, with an
+outline of the brain.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map</strong> : 3D ndarray</p>
+<blockquote>
+<div><p>The activation map, as a 3D image.</p>
+</div></blockquote>
+<p><strong>affine</strong> : 4x4 ndarray</p>
+<blockquote>
+<div><p>The affine matrix going from image voxel space to MNI space.</p>
+</div></blockquote>
+<p><strong>cut_coords: 3-tuple of floats, optional</strong></p>
+<blockquote>
+<div><p>The MNI coordinates of a 3D cursor to indicate a feature
+or a cut, in MNI coordinates and order.</p>
+</div></blockquote>
+<p><strong>anat</strong> : 3D ndarray, optional</p>
+<blockquote>
+<div><p>The anatomical image to be used as a background. If None, the
+MNI152 T1 1mm template is used. If False, no anatomical
+image is used.</p>
+</div></blockquote>
+<p><strong>anat_affine</strong> : 4x4 ndarray, optional</p>
+<blockquote>
+<div><p>The affine matrix going from the anatomical image voxel space to 
+MNI space. This parameter is not used when the default 
+anatomical is used, but it is compulsory when using an
+explicite anatomical image.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : float, optional</p>
+<blockquote>
+<div><p>The lower threshold of the positive activation. This
+parameter is used to threshold the activation map.</p>
+</div></blockquote>
+<p><strong>offscreen: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, Mayavi attempts to plot offscreen. Will work only
+with VTK &gt;= 5.2.</p>
+</div></blockquote>
+<p><strong>vmin</strong> : float, optional</p>
+<blockquote>
+<div><p>The minimal value, for the colormap</p>
+</div></blockquote>
+<p><strong>vmax</strong> : float, optional</p>
+<blockquote>
+<div><p>The maximum value, for the colormap</p>
+</div></blockquote>
+<p><strong>cmap</strong> : a callable, or a pylab colormap</p>
+<blockquote>
+<div><p>A callable returning a (n, 4) array for n values between
+0 and 1 for the colors. This can be for instance a pylab
+colormap.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If you are using a VTK version below 5.2, there is no way to
+avoid opening a window during the rendering under Linux. This is
+necessary to use the graphics card for the rendering. You must
+maintain this window on top of others and on the screen.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

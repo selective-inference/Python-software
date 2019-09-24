@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.spatial_models.hierarchical_parcellation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-spatial-models-hierarchical-parcellation">
+<h1>labs.spatial_models.hierarchical_parcellation<a class="headerlink" href="#labs-spatial-models-hierarchical-parcellation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.labs.spatial_models.hierarchical_parcellation">
+<span id="module-labs-spatial-models-hierarchical-parcellation"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.spatial_models.hierarchical_parcellation</span></code><a class="headerlink" href="#module-nipy.labs.spatial_models.hierarchical_parcellation" title="Permalink to this headline">¶</a></h2>
+<p>Computation of parcellations using a hierarchical approach.
+Author: Bertrand Thirion, 2008</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.spatial_models.hierarchical_parcellation.hparcel">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.hierarchical_parcellation.</code><code class="sig-name descname">hparcel</code><span class="sig-paren">(</span><em class="sig-param">domain</em>, <em class="sig-param">ldata</em>, <em class="sig-param">nb_parcel</em>, <em class="sig-param">nb_perm=0</em>, <em class="sig-param">niter=5</em>, <em class="sig-param">mu=10.0</em>, <em class="sig-param">dmax=10.0</em>, <em class="sig-param">lamb=100.0</em>, <em class="sig-param">chunksize=100000.0</em>, <em class="sig-param">verbose=0</em>, <em class="sig-param">initial_mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/hierarchical_parcellation.html#hparcel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.hierarchical_parcellation.hparcel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that performs the parcellation by optimizing the
+inter-subject similarity while retaining the connectedness
+within subject and some consistency across subjects.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>domain: discrete_domain.DiscreteDomain instance,</strong></p>
+<blockquote>
+<div><p>yields all the spatial information on the parcelled domain</p>
+</div></blockquote>
+<p><strong>ldata: list of (n_subj) arrays of shape (domain.size, dim)</strong></p>
+<blockquote>
+<div><p>the feature data used to inform the parcellation</p>
+</div></blockquote>
+<p><strong>nb_parcel: int,</strong></p>
+<blockquote>
+<div><p>the number of parcels</p>
+</div></blockquote>
+<p><strong>nb_perm: int, optional,</strong></p>
+<blockquote>
+<div><p>the number of times the parcellation and prfx
+computation is performed on sign-swaped data</p>
+</div></blockquote>
+<p><strong>niter: int, optional,</strong></p>
+<blockquote>
+<div><p>number of iterations to obtain the convergence of the method
+information in the clustering algorithm</p>
+</div></blockquote>
+<p><strong>mu: float, optional,</strong></p>
+<blockquote>
+<div><p>relative weight of anatomical information</p>
+</div></blockquote>
+<p><strong>dmax: float optional,</strong></p>
+<blockquote>
+<div><p>radius of allowed deformations</p>
+</div></blockquote>
+<p><strong>lamb: float optional</strong></p>
+<blockquote>
+<div><p>parameter to control the relative importance of space vs function</p>
+</div></blockquote>
+<p><strong>chunksize; int, optional</strong></p>
+<blockquote>
+<div><p>number of points used in internal sub-sampling</p>
+</div></blockquote>
+<p><strong>verbose: bool, optional,</strong></p>
+<blockquote>
+<div><p>verbosity mode</p>
+</div></blockquote>
+<p><strong>initial_mask: array of shape (domain.size, nb_subj), optional</strong></p>
+<blockquote>
+<div><p>initial subject-depedent masking of the domain</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Pa: the resulting parcellation structure appended with the labelling</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.hierarchical_parcellation.perm_prfx">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.hierarchical_parcellation.</code><code class="sig-name descname">perm_prfx</code><span class="sig-paren">(</span><em class="sig-param">domain</em>, <em class="sig-param">graphs</em>, <em class="sig-param">features</em>, <em class="sig-param">nb_parcel</em>, <em class="sig-param">ldata</em>, <em class="sig-param">initial_mask=None</em>, <em class="sig-param">nb_perm=100</em>, <em class="sig-param">niter=5</em>, <em class="sig-param">dmax=10.0</em>, <em class="sig-param">lamb=100.0</em>, <em class="sig-param">chunksize=100000.0</em>, <em class="sig-param">verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/hierarchical_parcellation.html#perm_prfx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.hierarchical_parcellation.perm_prfx" title="Permalink to this definition">¶</a></dt>
+<dd><p>caveat: assumes that the functional dimension is 1</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

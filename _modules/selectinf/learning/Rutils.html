@@ -1,0 +1,368 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.learning.Rutils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">glob</span><span class="o">,</span> <span class="nn">tempfile</span><span class="o">,</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">traitlets</span> <span class="k">import</span> <span class="p">(</span><span class="n">HasTraits</span><span class="p">,</span> 
+                       <span class="n">Integer</span><span class="p">,</span> 
+                       <span class="n">Unicode</span><span class="p">,</span> 
+                       <span class="n">Float</span><span class="p">,</span> 
+                       <span class="n">Integer</span><span class="p">,</span> 
+                       <span class="n">Instance</span><span class="p">,</span> 
+                       <span class="n">Dict</span><span class="p">,</span> 
+                       <span class="n">Bool</span><span class="p">,</span>
+                       <span class="n">default</span><span class="p">)</span>
+<span class="c1"># Rpy</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">rpy2.robjects</span> <span class="k">as</span> <span class="nn">rpy</span>
+    <span class="kn">from</span> <span class="nn">rpy2.robjects</span> <span class="k">import</span> <span class="n">numpy2ri</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;library(knockoff); library(glmnet)&#39;</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">rpy2</span> <span class="k">import</span> <span class="n">rinterface</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;rpy2 with knockoff and glmnet unavailable&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="null_print"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.null_print">[docs]</a><span class="k">def</span> <span class="nf">null_print</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<span class="c1"># Knockoff selection</span>
+
+<span class="n">methods</span> <span class="o">=</span> <span class="p">{}</span>
+<div class="viewcode-block" id="generic_method"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.generic_method">[docs]</a><span class="k">class</span> <span class="nc">generic_method</span><span class="p">(</span><span class="n">HasTraits</span><span class="p">):</span>
+
+    <span class="n">need_CV</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">selectiveR_method</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">wide_ok</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># ok for p&gt;= n?</span>
+
+    <span class="c1"># Traits</span>
+
+    <span class="n">q</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">method_name</span> <span class="o">=</span> <span class="n">Unicode</span><span class="p">(</span><span class="s1">&#39;Generic method&#39;</span><span class="p">)</span>
+    <span class="n">model_target</span> <span class="o">=</span> <span class="n">Unicode</span><span class="p">()</span>
+
+<div class="viewcode-block" id="generic_method.setup"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.generic_method.setup">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">feature_cov</span><span class="p">):</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">feature_cov</span> <span class="o">=</span> <span class="n">feature_cov</span></div>
+
+<div class="viewcode-block" id="generic_method.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.generic_method.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">l_theory</span><span class="p">,</span> <span class="n">l_min</span><span class="p">,</span> <span class="n">l_1se</span><span class="p">,</span> <span class="n">sigma_reid</span><span class="p">):</span>
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">Y</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">l_theory</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">l_min</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">l_1se</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">sigma_reid</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                             <span class="n">Y</span><span class="p">,</span>
+                             <span class="n">l_theory</span><span class="p">,</span>
+                             <span class="n">l_min</span><span class="p">,</span>
+                             <span class="n">l_1se</span><span class="p">,</span>
+                             <span class="n">sigma_reid</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="generic_method.select"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.generic_method.select">[docs]</a>    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;abstract method&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="generic_method.register"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.generic_method.register">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="n">methods</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span></div>
+
+<div class="viewcode-block" id="generic_method.selected_target"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.generic_method.selected_target">[docs]</a>    <span class="k">def</span> <span class="nf">selected_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_cov</span><span class="p">[</span><span class="n">active</span><span class="p">]</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">C</span><span class="p">[:,</span><span class="n">active</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="generic_method.full_target"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.generic_method.full_target">[docs]</a>    <span class="k">def</span> <span class="nf">full_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">beta</span><span class="p">[</span><span class="n">active</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="generic_method.get_target"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.generic_method.get_target">[docs]</a>    <span class="k">def</span> <span class="nf">get_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;selected&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;debiased&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Gaussian methods only have selected or full targets&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_target</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="s1">&#39;debiased&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_target</span><span class="p">(</span><span class="n">active</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_target</span><span class="p">(</span><span class="n">active</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="lasso_glmnet"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.lasso_glmnet">[docs]</a><span class="k">class</span> <span class="nc">lasso_glmnet</span><span class="p">(</span><span class="n">generic_method</span><span class="p">):</span>
+
+<div class="viewcode-block" id="lasso_glmnet.select"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.lasso_glmnet.select">[docs]</a>    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">CV</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+        <span class="n">numpy2ri</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
+
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;X = as.matrix(X)&#39;</span><span class="p">)</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;Y = as.numeric(Y)&#39;</span><span class="p">)</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;set.seed(</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="n">seed</span><span class="p">)</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)&#39;</span><span class="p">)</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s2">&quot;L1 = cvG[[&#39;lambda.min&#39;]]&quot;</span><span class="p">)</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s2">&quot;L2 = cvG[[&#39;lambda.1se&#39;]]&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">CV</span><span class="p">:</span>
+            <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s2">&quot;L = L1&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s2">&quot;L = 0.99 * L2&quot;</span><span class="p">)</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s2">&quot;G = glmnet(X, Y, intercept=FALSE, standardize=FALSE)&quot;</span><span class="p">)</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">)</span>
+        <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;B = as.numeric(coef(G, s=L, exact=TRUE, x=X, y=Y))[-1]&#39;</span><span class="p">)</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">))</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="p">(</span><span class="n">B</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">selected</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+            <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">selected</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">V</span><span class="p">,</span> <span class="n">V</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span></div></div>
+
+<span class="n">lasso_glmnet</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+
+<div class="viewcode-block" id="factor_knockoffs"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.factor_knockoffs">[docs]</a><span class="k">def</span> <span class="nf">factor_knockoffs</span><span class="p">(</span><span class="n">feature_cov</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;asdp&#39;</span><span class="p">):</span>
+
+    <span class="n">numpy2ri</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="s1">&#39;Sigma&#39;</span><span class="p">,</span> <span class="n">feature_cov</span><span class="p">)</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="s1">&#39;method&#39;</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+
+<span class="s1">    # Compute the Cholesky -- from create.gaussian</span>
+
+<span class="s1">    Sigma = as.matrix(Sigma)</span>
+<span class="s1">    diag_s = diag(switch(method, equi = create.solve_equi(Sigma), </span>
+<span class="s1">                  sdp = create.solve_sdp(Sigma), asdp = create.solve_asdp(Sigma)))</span>
+<span class="s1">    if (is.null(dim(diag_s))) {</span>
+<span class="s1">        diag_s = diag(diag_s, length(diag_s))</span>
+<span class="s1">    }</span>
+<span class="s1">    SigmaInv_s = solve(Sigma, diag_s)</span>
+<span class="s1">    Sigma_k = 2 * diag_s - diag_s </span><span class="si">%*%</span><span class="s1"> SigmaInv_s</span>
+<span class="s1">    chol_k = chol(Sigma_k)</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
+    <span class="n">knockoff_chol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;chol_k&#39;</span><span class="p">))</span>
+    <span class="n">SigmaInv_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;SigmaInv_s&#39;</span><span class="p">))</span>
+    <span class="n">diag_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;diag_s&#39;</span><span class="p">))</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="s1">&#39;.knockoff_factorizations/</span><span class="si">%s</span><span class="s1">.npz&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mkstemp</span><span class="p">()[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">1</span><span class="p">],),</span>
+             <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+             <span class="n">feature_cov</span><span class="o">=</span><span class="n">feature_cov</span><span class="p">,</span>
+             <span class="n">knockoff_chol</span><span class="o">=</span><span class="n">knockoff_chol</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">knockoff_chol</span></div>
+
+<div class="viewcode-block" id="cv_glmnet_lam"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.Rutils.html#selectinf.learning.Rutils.cv_glmnet_lam">[docs]</a><span class="k">def</span> <span class="nf">cv_glmnet_lam</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Some calculations that can be reused by methods:</span>
+<span class="sd">    </span>
+<span class="sd">    lambda.min, lambda.1se, lambda.theory and Reid et al. estimate of noise</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">numpy2ri</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;set.seed(</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="n">seed</span><span class="p">)</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="n">Y</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;X=as.matrix(X)&#39;</span><span class="p">)</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;Y=as.numeric(Y)&#39;</span><span class="p">)</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;set.seed(1)&#39;</span><span class="p">)</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;G = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)&#39;</span><span class="p">)</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s2">&quot;L = G[[&#39;lambda.min&#39;]]&quot;</span><span class="p">)</span>
+    <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s2">&quot;L1 = G[[&#39;lambda.1se&#39;]]&quot;</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">)</span>
+    <span class="n">L1</span> <span class="o">=</span> <span class="n">rpy</span><span class="o">.</span><span class="n">r</span><span class="p">(</span><span class="s1">&#39;L1&#39;</span><span class="p">)</span>
+    <span class="n">numpy2ri</span><span class="o">.</span><span class="n">deactivate</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="mf">1.00001</span> <span class="o">*</span> <span class="n">L</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="mf">1.00001</span> <span class="o">*</span> <span class="n">L1</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

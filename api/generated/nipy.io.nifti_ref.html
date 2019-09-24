@@ -1,0 +1,526 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.io.nifti_ref.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="io-nifti-ref">
+<h1>io.nifti_ref<a class="headerlink" href="#io-nifti-ref" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-io-nifti-ref">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">io.nifti_ref</span></code><a class="headerlink" href="#module-io-nifti-ref" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.io.nifti_ref</span></code>:</p>
+digraph inheritance80d45d5a66 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;io.nifti_ref.NiftiError&quot; [URL=&quot;#nipy.io.nifti_ref.NiftiError&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+}
+<span class="target" id="module-nipy.io.nifti_ref"></span><p>An implementation of some of the NIFTI conventions as desribed in:</p>
+<p><a class="reference external" href="http://nifti.nimh.nih.gov/pub/dist/src/niftilib/nifti1.h">http://nifti.nimh.nih.gov/pub/dist/src/niftilib/nifti1.h</a></p>
+<p>A version of the same file is in the nibabel repisitory at
+<code class="docutils literal notranslate"><span class="pre">doc/source/external/nifti1.h</span></code>.</p>
+<div class="section" id="background">
+<h3>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h3>
+<p>We (nipystas) make an explicit distinction between:</p>
+<ul class="simple">
+<li><p>an input coordinate system of an image (the array == voxel coordinates)</p></li>
+<li><p>output coordinate system (usually millimeters in some world for space, seconds
+for time)</p></li>
+<li><p>the mapping between the two.</p></li>
+</ul>
+<p>The collection of these three is the <code class="docutils literal notranslate"><span class="pre">coordmap</span></code> attribute of a NIPY image.</p>
+<p>There is no constraint that the number of input and output coordinates should be
+the same.</p>
+<p>We don’t specify the units of our output coordinate system, but assume spatial
+units are millimeters and time units are seconds.</p>
+<p>NIFTI is mostly less explicit, but more constrained.</p>
+<div class="section" id="nifti-input-coordinate-system">
+<h4>NIFTI input coordinate system<a class="headerlink" href="#nifti-input-coordinate-system" title="Permalink to this headline">¶</a></h4>
+<p>NIFTI files can have up to seven voxel dimensions (7 axes in the input
+coordinate system).</p>
+<p>The first 3 voxel dimensions of a NIFTI file must be spatial but can be in any
+order in relationship to directions in mm space (the output coordinate system)</p>
+<p>The 4th voxel dimension is assumed to be time.  In particular, if you have some
+other meaning for a non-spatial dimension, the NIFTI standard suggests you set
+the length of the 4th dimension to be 1, and use the 5th dimension of the image
+instead, and set the NIFTI “intent” fields to state the meaning. If the
+<code class="docutils literal notranslate"><span class="pre">intent</span></code> field is set correctly then it should be possible to set meaningful
+input coordinate axis names for dimensions &gt; (0, 1, 2).</p>
+<p>There’s a wrinkle to the 4th axis is time story; the <code class="docutils literal notranslate"><span class="pre">xyxt_units</span></code> field in the
+NIFTI header can specify the 4th dimension units as Hz (frequency), PPM
+(concentration) or Radians / second.</p>
+<p>NIFTI also has a ‘dim_info’ header attribute that optionally specifies that 0 or
+more of the first three voxel axes are ‘frequency’, ‘phase’ or ‘slice’.  These
+terms refer to 2D MRI acquisition encoding, where ‘slice’s are collected
+sequentially, and the two remaining dimensions arose from frequency and phase
+encoding.  The <code class="docutils literal notranslate"><span class="pre">dim_info</span></code> fields are often not set.  3D acquisitions don’t have
+a ‘slice’ dimension.</p>
+</div>
+<div class="section" id="nifti-output-coordinate-system">
+<h4>NIFTI output coordinate system<a class="headerlink" href="#nifti-output-coordinate-system" title="Permalink to this headline">¶</a></h4>
+<p>In the NIFTI specification, the order of the output coordinates (at least the
+first 3) are fixed to be what might be called RAS+, that is (‘x=L-&gt;R’, ‘y=P-&gt;A’,
+‘z=I-&gt;S’). This RAS+ output order is not allowed to change and there is no way of
+specifying such a change in the NIFTI header.</p>
+<p>The world in which these RAS+ X, Y, Z axes exist can be one of the recognized
+spaces, which are: scanner, aligned (to another file’s world space), Talairach,
+MNI 152 (aligned to the MNI 152 atlas).</p>
+<p>By implication, the 4th output dimension is likely to be seconds (given the 4th
+input dimension is likely time), but there’s a field <code class="docutils literal notranslate"><span class="pre">xyzt_units</span></code> (see above)
+that can be used to imply the 4th output dimension is actually frequency,
+concentration or angular velocity.</p>
+</div>
+<div class="section" id="nifti-input-output-mapping">
+<h4>NIFTI input / output mapping<a class="headerlink" href="#nifti-input-output-mapping" title="Permalink to this headline">¶</a></h4>
+<p>NIFTI stores the relationship between the first 3 (spatial) voxel axes and the
+RAS+ coordinates in an <em>XYZ affine</em>.  This is a homogenous coordinate affine,
+hence 4 by 4 for 3 (spatial) dimensions.</p>
+<p>NIFTI also stores “pixel dimensions” in a <code class="docutils literal notranslate"><span class="pre">pixdim</span></code> field. This can give you
+scaling for individual axes.  We ignore the values of <code class="docutils literal notranslate"><span class="pre">pixdim</span></code> for the first 3
+axes if we have a full (“sform”) affine stored in the header, otherwise they
+form part of the affine above.  <code class="docutils literal notranslate"><span class="pre">pixdim``[3:]</span> <span class="pre">provide</span> <span class="pre">voxel</span> <span class="pre">to</span> <span class="pre">output</span> <span class="pre">scalings</span>
+<span class="pre">for</span> <span class="pre">later</span> <span class="pre">axes.</span>&#160; <span class="pre">The</span> <span class="pre">units</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">4th</span> <span class="pre">dimension</span> <span class="pre">can</span> <span class="pre">come</span> <span class="pre">from</span> <span class="pre">``xyzt_units</span></code> as
+above.</p>
+<p>We take the convention that the output coordinate names are (‘x=L-&gt;R’, ‘y=P-&gt;A’,
+‘z=I-&gt;S’,’t’,’u’,’v’,’w’) unless there is no time axis (see below) in which case
+we just omit ‘t’.  The first 3 axes are also named after the output space
+(‘scanner-x=L-&gt;R’, ‘mni-x=L-R’ etc).</p>
+<p>The input axes are ‘ijktuvw’ unless there is no time axis (see below), in which
+case they are ‘ijkuvw’ (remember, NIFTI only allows 7 dimensions, and one is
+used up by the time length 1 axis).</p>
+</div>
+<div class="section" id="time-like-axes">
+<h4>Time-like axes<a class="headerlink" href="#time-like-axes" title="Permalink to this headline">¶</a></h4>
+<p>A time-like axis is an axis that is any of time, Hz, PPM or radians / second.</p>
+<p>We recognize time in a NIPY coordinate map by an input or an output axis named
+‘t’ or ‘time’.  If it’s an output axis we work out the corresponding input axis.</p>
+<p>A Hz axis can be called ‘hz’ or ‘frequency-hz’.</p>
+<p>A PPM axis can be called ‘ppm’ or ‘concentration-ppm’.</p>
+<p>A radians / second axis can be called ‘rads’ or ‘radians/s’.</p>
+</div>
+<div class="section" id="does-this-nifti-image-have-a-time-like-axis">
+<h4>Does this NIFTI image have a time-like axis?<a class="headerlink" href="#does-this-nifti-image-have-a-time-like-axis" title="Permalink to this headline">¶</a></h4>
+<p>We take there to be no time axis if there are only three NIFTI dimensions, or
+if:</p>
+<ul class="simple">
+<li><p>the length of the fourth NIFTI dimension is 1 AND</p></li>
+<li><p>There are more than four dimensions AND</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">xyzt_units</span></code> field does not indicate time or time-like units.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="what-we-do-about-all-this">
+<h3>What we do about all this<a class="headerlink" href="#what-we-do-about-all-this" title="Permalink to this headline">¶</a></h3>
+<p>For saving a NIPY image to NIFTI, see the docstring for <a class="reference internal" href="#nipy.io.nifti_ref.nipy2nifti" title="nipy.io.nifti_ref.nipy2nifti"><code class="xref py py-func docutils literal notranslate"><span class="pre">nipy2nifti()</span></code></a>.
+For loading a NIFTI image to NIPY, see the docstring for <a class="reference internal" href="#nipy.io.nifti_ref.nifti2nipy" title="nipy.io.nifti_ref.nifti2nipy"><code class="xref py py-func docutils literal notranslate"><span class="pre">nifti2nipy()</span></code></a>.</p>
+</div>
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="niftierror">
+<h2><a class="reference internal" href="#nipy.io.nifti_ref.NiftiError" title="nipy.io.nifti_ref.NiftiError"><code class="xref py py-class docutils literal notranslate"><span class="pre">NiftiError</span></code></a><a class="headerlink" href="#niftierror" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.io.nifti_ref.NiftiError">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.io.nifti_ref.</code><code class="sig-name descname">NiftiError</code><a class="reference internal" href="../../_modules/nipy/io/nifti_ref.html#NiftiError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.io.nifti_ref.NiftiError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<dl class="method">
+<dt id="nipy.io.nifti_ref.NiftiError.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">$self</em>, <em class="sig-param">/</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.io.nifti_ref.NiftiError.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.io.nifti_ref.NiftiError.args">
+<code class="sig-name descname">args</code><a class="headerlink" href="#nipy.io.nifti_ref.NiftiError.args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.io.nifti_ref.NiftiError.with_traceback">
+<code class="sig-name descname">with_traceback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.io.nifti_ref.NiftiError.with_traceback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception.with_traceback(tb) –
+set self.__traceback__ to tb and return self.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.io.nifti_ref.nifti2nipy">
+<code class="sig-prename descclassname">nipy.io.nifti_ref.</code><code class="sig-name descname">nifti2nipy</code><span class="sig-paren">(</span><em class="sig-param">ni_img</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/io/nifti_ref.html#nifti2nipy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.io.nifti_ref.nifti2nipy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return NIPY image from NIFTI image <cite>ni_image</cite></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ni_img</strong> : nibabel.Nifti1Image</p>
+<blockquote>
+<div><p>NIFTI image</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>img</strong> : <code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>nipy image</p>
+</div></blockquote>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>NiftiError</strong> : if image is &lt; 3D</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Lacking any other information, we take the input coordinate names for
+axes 0:7 to be  (‘i’, ‘j’, ‘k’, ‘t’, ‘u’, ‘v’, ‘w’).</p>
+<p>If the image is 1D or 2D then we have a problem.  If there’s a defined
+(sform, qform) affine, this has 3 input dimensions, and we have to guess
+what the extra input dimensions are.  If we don’t have a defined affine, we
+don’t know what the output dimensions are.  For example, if the image is 2D,
+and we don’t have an affine, are these X and Y or X and Z or Y and Z?
+In the presence of ambiguity, resist the temptation to guess - raise a
+NiftiError.</p>
+<p>If there is a time-like axis, name the input and corresponding output axis
+for the type of axis (‘t’, ‘hz’, ‘ppm’, ‘rads’).</p>
+<p>Otherwise remove the ‘t’ axis from both input and output names, and squeeze
+the length 1 dimension from the input data.</p>
+<p>If there’s a ‘t’ axis get <code class="docutils literal notranslate"><span class="pre">toffset</span></code> and put into affine at position [3,
+-1].</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">dim_info</span></code> is set coherently, set input axis names to ‘slice’, ‘freq’,
+‘phase’ from <code class="docutils literal notranslate"><span class="pre">dim_info</span></code>.</p>
+<p>Get the output spatial coordinate names from the ‘scanner’, ‘aligned’,
+‘talairach’, ‘mni’ XYZ spaces (see <a class="reference internal" href="nipy.core.reference.spaces.html#module-nipy.core.reference.spaces" title="nipy.core.reference.spaces"><code class="xref py py-mod docutils literal notranslate"><span class="pre">nipy.core.reference.spaces</span></code></a>).</p>
+<p>We construct the N-D affine by taking the XYZ affine and adding scaling
+diagonal elements from <code class="docutils literal notranslate"><span class="pre">pixdim</span></code>.</p>
+<p>If the space units in NIFTI <code class="docutils literal notranslate"><span class="pre">xyzt_units</span></code> are ‘microns’ or ‘meters’ we
+adjust the affine to mm units, but warn because this might be a mistake.</p>
+<p>If the time units in NIFTI <cite>xyzt_units</cite> are ‘msec’ or ‘usec’, scale the time
+axis <code class="docutils literal notranslate"><span class="pre">pixdim</span></code> values accordingly.</p>
+<p>Ignore the intent-related fields for now, but warn that we are doing so if
+there appears to be specific information in there.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.io.nifti_ref.nipy2nifti">
+<code class="sig-prename descclassname">nipy.io.nifti_ref.</code><code class="sig-name descname">nipy2nifti</code><span class="sig-paren">(</span><em class="sig-param">img</em>, <em class="sig-param">data_dtype=None</em>, <em class="sig-param">strict=None</em>, <em class="sig-param">fix0=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/io/nifti_ref.html#nipy2nifti"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.io.nifti_ref.nipy2nifti" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return NIFTI image from nipy image <cite>img</cite></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>img</strong> : object</p>
+<blockquote>
+<div><p>An object, usually a NIPY <code class="docutils literal notranslate"><span class="pre">Image</span></code>,  having attributes <cite>coordmap</cite> and
+<cite>shape</cite></p>
+</div></blockquote>
+<p><strong>data_dtype</strong> : None or dtype specifier</p>
+<blockquote>
+<div><p>None means try and use header dtype, otherwise try and use data dtype,
+otherwise use np.float32.  A dtype specifier means set the header output
+data dtype using <code class="docutils literal notranslate"><span class="pre">np.dtype(data_dtype)</span></code>.</p>
+</div></blockquote>
+<p><strong>strict</strong> : bool, optional</p>
+<blockquote>
+<div><p>Whether to use strict checking of input image for creating NIFTI</p>
+</div></blockquote>
+<p><strong>fix0: bool, optional</strong></p>
+<blockquote>
+<div><p>Whether to fix potential 0 column / row in affine. This option only used
+when trying to find time etc axes in the coordmap output names.  In
+order to find matching input names, we need to use the corresponding
+rows and columns in the affine.  Sometimes time, in particular, has 0
+scaling, and thus all 0 in the corresponding row / column.  In that case
+it’s hard to work out which input corresponds. If <cite>fix0</cite> is True, and
+there is only one all zero (matrix part of the) affine row, and only one
+all zero (matrix part of the) affine column, fix scaling for that
+combination to zero, assuming this a zero scaling for time.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ni_img</strong> : <code class="docutils literal notranslate"><span class="pre">nibabel.Nifti1Image</span></code></p>
+<blockquote>
+<div><p>NIFTI image</p>
+</div></blockquote>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>NiftiError: if space axes not orthogonal to non-space axes</strong></p>
+<p><strong>NiftiError: if non-space axes not orthogonal to each other</strong></p>
+<p><strong>NiftiError: if `img` output space does not match named spaces in NIFTI</strong></p>
+<p><strong>NiftiError: if input image has more than 7 dimensions</strong></p>
+<p><strong>NiftiError: if input image has 7 dimensions, but no time dimension, because</strong></p>
+<blockquote>
+<div><p>we need to add an extra 1 length axis at position 3</p>
+</div></blockquote>
+<p><strong>NiftiError: if we find a time-like input axis but the matching output axis</strong></p>
+<blockquote>
+<div><p>is a different time-like.</p>
+</div></blockquote>
+<p><strong>NiftiError: if we find a time-like output axis but the matching input axis</strong></p>
+<blockquote>
+<div><p>is a different time-like.</p>
+</div></blockquote>
+<p><strong>NiftiError: if we find a time output axis and there are non-zero non-spatial</strong></p>
+<blockquote>
+<div><p>offsets in the affine, but we can’t find a corresponding input axis.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>First, we need to create a valid XYZ Affine.  We check if this can be done
+by checking if there are recognizable X, Y, Z output axes and corresponding
+input (voxel) axes.  This requires the input image to be at least 3D. If we
+find these requirements, we reorder the image axes to have XYZ output axes
+and 3 spatial input axes first, and get the corresponding XYZ affine.</p>
+<p>If the spatial dimensions are not orthogonal to the non-spatial dimensions,
+raise a NiftiError.</p>
+<p>If the non-spatial dimensions are not orthogonal to each other, raise a
+NiftiError.</p>
+<p>We check if the XYZ output fits with the NIFTI named spaces of scanner,
+aligned, Talairach, MNI.  If so, set the NIFTI code and qform, sform
+accordingly.  If the space corresponds to ‘unknown’ then we must set the
+NIFTI transform codes to 0, and the affine must match the affine we will get
+from loading the NIFTI with no qform, sform.  If not, we’re going to lose
+information in the affine, and raise an error.</p>
+<p>If any of the first three input axes are named (‘slice’, ‘freq’, ‘phase’)
+set the <code class="docutils literal notranslate"><span class="pre">dim_info</span></code> field accordingly.</p>
+<p>Set the <code class="docutils literal notranslate"><span class="pre">xyzt_units</span></code> field to indicate millimeters and seconds, if there
+is a ‘t’ axis, otherwise millimeters and 0 (unknown).</p>
+<p>We look to see if we have a time-like axis in the inputs or the outputs. A
+time-like axis has labels ‘t’, ‘hz’, ‘ppm’, ‘rads’.  If we have an axis ‘t’
+in the inputs <em>and</em> the outputs, check they either correspond, or both
+inputs and output correspond with no other axis, otherwise raise NiftiError.
+Do the same check for ‘hz’, then ‘ppm’, then ‘rads’.</p>
+<p>If we do have a time-like axis, roll that axis to be the 4th axis.  If this
+axis is actually time, take the <code class="docutils literal notranslate"><span class="pre">affine[3,</span> <span class="pre">-1]</span></code> and put into the
+<code class="docutils literal notranslate"><span class="pre">toffset</span></code> field.  If there’s no time-like axis, but there are other
+non-spatial axes, make a length 1 4th array axis to indicate this.</p>
+<p>If the resulting NIFTI image has more than 7 dimensions, raise a NiftiError.</p>
+<p>Set <code class="docutils literal notranslate"><span class="pre">pixdim</span></code> for axes &gt;= 3 using vector length of corresponding affine
+columns.</p>
+<p>We don’t set the intent-related fields for now.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

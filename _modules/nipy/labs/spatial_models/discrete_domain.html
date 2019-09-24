@@ -1,0 +1,999 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.spatial_models.discrete_domain</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines the StructuredDomain class,</span>
+<span class="sd">that represents a generic neuroimaging kind of domain</span>
+<span class="sd">This is meant to provide a unified API to deal with n-d imaged and meshes.</span>
+
+
+<span class="sd">Author: Bertrand Thirion, 2010</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sp</span>
+
+<span class="kn">from</span> <span class="nn">nibabel</span> <span class="k">import</span> <span class="n">load</span><span class="p">,</span> <span class="n">Nifti1Image</span><span class="p">,</span> <span class="n">save</span>
+
+<span class="kn">from</span> <span class="nn">nipy.io.nibcompat</span> <span class="k">import</span> <span class="n">get_header</span><span class="p">,</span> <span class="n">get_affine</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.graph</span> <span class="k">import</span> <span class="p">(</span><span class="n">WeightedGraph</span><span class="p">,</span> <span class="n">wgraph_from_coo_matrix</span><span class="p">,</span>
+                                   <span class="n">wgraph_from_3d_grid</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">nipy.externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<span class="c1">##############################################################</span>
+<span class="c1"># Ancillary functions</span>
+<span class="c1">##############################################################</span>
+
+
+<div class="viewcode-block" id="smatrix_from_3d_array"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.smatrix_from_3d_array">[docs]</a><span class="k">def</span> <span class="nf">smatrix_from_3d_array</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a sparse adjacency matrix from an array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mask : 3d array,</span>
+<span class="sd">           input array, interpreted as a mask</span>
+<span class="sd">    nn: int, optional</span>
+<span class="sd">        3d neighboring system to be chosen within {6, 18, 26}</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coo_mat: a sparse coo matrix,</span>
+<span class="sd">             adjacency of the neighboring system</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ijk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">smatrix_from_3d_idx</span><span class="p">(</span><span class="n">ijk</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="smatrix_from_3d_idx"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.smatrix_from_3d_idx">[docs]</a><span class="k">def</span> <span class="nf">smatrix_from_3d_idx</span><span class="p">(</span><span class="n">ijk</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a sparse adjacency matrix from 3d index system</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    idx:array of shape (n_samples, 3), type int</span>
+<span class="sd">        indexes of certain positions in a 3d space</span>
+<span class="sd">    nn: int, optional</span>
+<span class="sd">        3d neighboring system to be chosen within {6, 18, 26}</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coo_mat: a sparse coo matrix,</span>
+<span class="sd">             adjacency of the neighboring system</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">wgraph_from_3d_grid</span><span class="p">(</span><span class="n">ijk</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">G</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="smatrix_from_nd_array"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.smatrix_from_nd_array">[docs]</a><span class="k">def</span> <span class="nf">smatrix_from_nd_array</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a sparse adjacency matrix from an arbitrary nd array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mask : nd array,</span>
+<span class="sd">           input array, interpreted as a mask</span>
+<span class="sd">    nn: int, optional</span>
+<span class="sd">        nd neighboring system, unsused at the moment</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coo_mat: a sparse coo matrix,</span>
+<span class="sd">             adjacency of the neighboring system</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">smatrix_from_nd_idx</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="smatrix_from_nd_idx"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.smatrix_from_nd_idx">[docs]</a><span class="k">def</span> <span class="nf">smatrix_from_nd_idx</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a sparse adjacency matrix from nd index system</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    idx:array of shape (n_samples, dim), type int</span>
+<span class="sd">        indexes of certain positions in a nd space</span>
+<span class="sd">    nn: int, optional</span>
+<span class="sd">        nd neighboring system, unused at the moment</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coo_mat: a sparse coo matrix,</span>
+<span class="sd">             adjacency of the neighboring system</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">nidx</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">-</span> <span class="n">idx</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">eA</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">eB</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># compute the edges in each possible direction</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dim</span><span class="p">):</span>
+        <span class="n">mi</span> <span class="o">=</span> <span class="n">nidx</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="n">mi</span><span class="p">[:</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])))</span>
+        <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">nidx</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">v1</span><span class="p">)))</span>
+        <span class="n">o1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span>
+        <span class="n">sv1</span> <span class="o">=</span> <span class="n">v1</span><span class="p">[</span><span class="n">o1</span><span class="p">]</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">sv1</span><span class="p">[:</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">sv1</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nz</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">nz</span><span class="p">))</span>
+        <span class="n">eA</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">o1</span><span class="p">[</span><span class="n">nz</span><span class="p">])</span>
+        <span class="n">eB</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">o1</span><span class="p">[</span><span class="n">nz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">nidx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">nidx</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">eA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">eA</span><span class="p">)</span>
+    <span class="n">eB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">eB</span><span class="p">)</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">eA</span><span class="p">)</span>
+    <span class="c1"># create a graph structure</span>
+    <span class="k">if</span> <span class="n">E</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sp</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">eA</span><span class="p">,</span> <span class="n">eB</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">eB</span><span class="p">,</span> <span class="n">eA</span><span class="p">))))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">WeightedGraph</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">G</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="array_affine_coord"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.array_affine_coord">[docs]</a><span class="k">def</span> <span class="nf">array_affine_coord</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">affine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute coordinates from a boolean array and an affine transform</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mask: nd array,</span>
+<span class="sd">           input array, interpreted as a mask</span>
+<span class="sd">    affine: (n+1, n+1) matrix,</span>
+<span class="sd">            affine transform that maps the mask points to some embedding space</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coords: array of shape(sum(mask&gt;0), n),</span>
+<span class="sd">            the computed coordinates</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">idx_affine_coord</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="idx_affine_coord"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.idx_affine_coord">[docs]</a><span class="k">def</span> <span class="nf">idx_affine_coord</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">affine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute coordinates from a set of indexes and an affine transform</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    idx:array of shape (n_samples, dim), type int</span>
+<span class="sd">        indexes of certain positions in a nd space</span>
+<span class="sd">    affine: (n+1, n+1) matrix,</span>
+<span class="sd">            affine transform that maps the mask points to some embedding space</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coords: array of shape(sum(mask&gt;0), n),</span>
+<span class="sd">            the computed coordinates</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">hidx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">))))</span>
+    <span class="n">coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">hidx</span><span class="p">,</span> <span class="n">affine</span><span class="o">.</span><span class="n">T</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">coord</span></div>
+
+
+<div class="viewcode-block" id="reduce_coo_matrix"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.reduce_coo_matrix">[docs]</a><span class="k">def</span> <span class="nf">reduce_coo_matrix</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reduce a supposedly coo_matrix to the vertices in the mask</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mat: sparse coo_matrix,</span>
+<span class="sd">         input matrix</span>
+<span class="sd">    mask: boolean array of shape mat.shape[0],</span>
+<span class="sd">          desired elements</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">wgraph_from_coo_matrix</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">K</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">K</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span></div>
+
+
+<span class="c1">#################################################################</span>
+<span class="c1"># Functions to instantiate StructuredDomains</span>
+<span class="c1">#################################################################</span>
+<div class="viewcode-block" id="domain_from_binary_array"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.domain_from_binary_array">[docs]</a><span class="k">def</span> <span class="nf">domain_from_binary_array</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a StructuredDomain from an n-d array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mask: np.array instance</span>
+<span class="sd">          a supposedly boolean array that repesents the domain</span>
+<span class="sd">    affine: np.array, optional</span>
+<span class="sd">            affine transform that maps the array coordinates</span>
+<span class="sd">            to some embedding space</span>
+<span class="sd">            by default, this is np.eye(dim+1, dim+1)</span>
+<span class="sd">    nn: neighboring system considered</span>
+<span class="sd">        unsued at the moment</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">affine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">vol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">affine</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span>
+    <span class="n">coord</span> <span class="o">=</span> <span class="n">array_affine_coord</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+    <span class="n">topology</span> <span class="o">=</span> <span class="n">smatrix_from_nd_array</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">StructuredDomain</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">topology</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="domain_from_image"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.domain_from_image">[docs]</a><span class="k">def</span> <span class="nf">domain_from_image</span><span class="p">(</span><span class="n">mim</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a StructuredDomain instance from the input mask image</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mim: NiftiIImage instance, or string path toward such an image</span>
+<span class="sd">         supposedly a mask (where is used to crate the DD)</span>
+<span class="sd">    nn: int, optional</span>
+<span class="sd">        neighboring system considered from the image</span>
+<span class="sd">        can be 6, 18 or 26</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    The corresponding StructuredDomain instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mim</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="n">iim</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">mim</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">iim</span> <span class="o">=</span> <span class="n">mim</span>
+    <span class="k">return</span> <span class="n">domain_from_binary_array</span><span class="p">(</span><span class="n">iim</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">iim</span><span class="p">),</span> <span class="n">nn</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="grid_domain_from_binary_array"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.grid_domain_from_binary_array">[docs]</a><span class="k">def</span> <span class="nf">grid_domain_from_binary_array</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a NDGridDomain from an n-d array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mask: np.array instance</span>
+<span class="sd">          a supposedly boolean array that repesents the domain</span>
+<span class="sd">    affine: np.array, optional</span>
+<span class="sd">            affine transform that maps the array coordinates</span>
+<span class="sd">            to some embedding space</span>
+<span class="sd">            by default, this is np.eye(dim+1, dim+1)</span>
+<span class="sd">    nn: neighboring system considered</span>
+<span class="sd">        unsued at the moment</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="n">affine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">ijk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">vol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span>
+    <span class="n">topology</span> <span class="o">=</span> <span class="n">smatrix_from_nd_idx</span><span class="p">(</span><span class="n">ijk</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">NDGridDomain</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">ijk</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">topology</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="grid_domain_from_image"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.grid_domain_from_image">[docs]</a><span class="k">def</span> <span class="nf">grid_domain_from_image</span><span class="p">(</span><span class="n">mim</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a NDGridDomain instance from the input mask image</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mim: NiftiIImage instance, or string path toward such an image</span>
+<span class="sd">         supposedly a mask (where is used to crate the DD)</span>
+<span class="sd">    nn: int, optional</span>
+<span class="sd">        neighboring system considered from the image</span>
+<span class="sd">        can be 6, 18 or 26</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    The corresponding NDGridDomain instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mim</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="n">iim</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">mim</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">iim</span> <span class="o">=</span> <span class="n">mim</span>
+    <span class="k">return</span> <span class="n">grid_domain_from_binary_array</span><span class="p">(</span><span class="n">iim</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">iim</span><span class="p">),</span> <span class="n">nn</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="grid_domain_from_shape"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.grid_domain_from_shape">[docs]</a><span class="k">def</span> <span class="nf">grid_domain_from_shape</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a NDGridDomain from an n-d array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape: tuple</span>
+<span class="sd">      the shape of a rectangular domain.</span>
+<span class="sd">    affine: np.array, optional</span>
+<span class="sd">      affine transform that maps the array coordinates</span>
+<span class="sd">      to some embedding space.</span>
+<span class="sd">      By default, this is np.eye(dim+1, dim+1)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">affine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">rect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">ijk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rect</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">vol</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]))</span> <span class="o">*</span>
+           <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rect</span><span class="p">))))</span>
+    <span class="n">topology</span> <span class="o">=</span> <span class="n">smatrix_from_nd_idx</span><span class="p">(</span><span class="n">ijk</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">NDGridDomain</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">ijk</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">topology</span><span class="p">)</span></div>
+
+
+<span class="c1">################################################################</span>
+<span class="c1"># Domain from mesh</span>
+<span class="c1">################################################################</span>
+
+
+<div class="viewcode-block" id="MeshDomain"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.MeshDomain">[docs]</a><span class="k">class</span> <span class="nc">MeshDomain</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    temporary class to handle meshes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MeshDomain.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.MeshDomain.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">triangles</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize mesh domain instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coord: array of shape (n_vertices, 3),</span>
+<span class="sd">               the node coordinates</span>
+<span class="sd">        triangles: array of shape(n_triables, 3),</span>
+<span class="sd">                   indices of the nodes per triangle</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coord</span> <span class="o">=</span> <span class="n">coord</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span> <span class="o">=</span> <span class="n">triangles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">V</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span></div>
+        <span class="c1"># fixme: implement consistency checks</span>
+
+<div class="viewcode-block" id="MeshDomain.area"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.MeshDomain.area">[docs]</a>    <span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return array of areas for each node</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        area: array of shape self.V,</span>
+<span class="sd">              area of each node</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">)</span>
+        <span class="n">narea</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_area</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Area spanned by the vectors(a,b) in 3D</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                          <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                          <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">c</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">E</span><span class="p">):</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">e</span><span class="p">]</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">ar</span> <span class="o">=</span> <span class="n">_area</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+            <span class="n">narea</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ar</span>
+            <span class="n">narea</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ar</span>
+            <span class="n">narea</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ar</span>
+
+        <span class="n">narea</span> <span class="o">/=</span> <span class="mi">6</span>
+        <span class="c1"># because division by 2 has been &#39;forgotten&#39; in area computation</span>
+        <span class="c1"># the area of a triangle is divided into the 3 vertices</span>
+        <span class="k">return</span> <span class="n">narea</span></div>
+
+<div class="viewcode-block" id="MeshDomain.topology"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.MeshDomain.topology">[docs]</a>    <span class="k">def</span> <span class="nf">topology</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a sparse matrix that represents the connectivity in self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">)</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span> <span class="o">*</span> <span class="n">E</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">E</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">E</span><span class="p">):</span>
+            <span class="n">sa</span><span class="p">,</span> <span class="n">sb</span><span class="p">,</span> <span class="n">sc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">edges</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sa</span><span class="p">,</span> <span class="n">sb</span><span class="p">])</span>
+            <span class="n">edges</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sa</span><span class="p">,</span> <span class="n">sc</span><span class="p">])</span>
+            <span class="n">edges</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sb</span><span class="p">,</span> <span class="n">sc</span><span class="p">])</span>
+
+        <span class="n">G</span> <span class="o">=</span> <span class="n">WeightedGraph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+
+        <span class="c1"># symmeterize the graph</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">symmeterize</span><span class="p">()</span>
+
+        <span class="c1"># remove redundant edges</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">cut_redundancies</span><span class="p">()</span>
+
+        <span class="c1"># make it a metric graph</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">set_euclidian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coord</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">G</span><span class="o">.</span><span class="n">to_coo_matrix</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="domain_from_mesh"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.domain_from_mesh">[docs]</a><span class="k">def</span> <span class="nf">domain_from_mesh</span><span class="p">(</span><span class="n">mesh</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Instantiate a StructuredDomain from a gifti mesh</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mesh: nibabel gifti mesh instance, or path to such a mesh</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">nibabel.gifti</span> <span class="k">import</span> <span class="n">read</span>
+        <span class="n">mesh_</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mesh_</span> <span class="o">=</span> <span class="n">mesh</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mesh_</span><span class="o">.</span><span class="n">darrays</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">cor</span><span class="p">,</span> <span class="n">tri</span> <span class="o">=</span> <span class="n">mesh_</span><span class="o">.</span><span class="n">darrays</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">mesh_</span><span class="o">.</span><span class="n">darrays</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">cor</span><span class="p">,</span> <span class="n">nor</span><span class="p">,</span> <span class="n">tri</span> <span class="o">=</span> <span class="n">mesh_</span><span class="o">.</span><span class="n">darrays</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> arrays in gifti file (case not handled)&quot;</span> \
+                            <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">mesh_</span><span class="o">.</span><span class="n">darrays</span><span class="p">))</span>
+    <span class="n">mesh_dom</span> <span class="o">=</span> <span class="n">MeshDomain</span><span class="p">(</span><span class="n">cor</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">tri</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">vol</span> <span class="o">=</span> <span class="n">mesh_dom</span><span class="o">.</span><span class="n">area</span><span class="p">()</span>
+    <span class="n">topology</span> <span class="o">=</span> <span class="n">mesh_dom</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">StructuredDomain</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">mesh_dom</span><span class="o">.</span><span class="n">coord</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">topology</span><span class="p">)</span></div>
+
+
+<span class="c1">################################################################</span>
+<span class="c1"># StructuredDomain class</span>
+<span class="c1">################################################################</span>
+
+
+<div class="viewcode-block" id="DiscreteDomain"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain">[docs]</a><span class="k">class</span> <span class="nc">DiscreteDomain</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Descriptor of a certain domain that consists of discrete elements that</span>
+<span class="sd">    are characterized by a coordinate system and a topology:</span>
+<span class="sd">    the coordinate system is specified through a coordinate array</span>
+<span class="sd">    the topology encodes the neighboring system</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DiscreteDomain.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">local_volume</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">referential</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize discrete domain instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dim: int</span>
+<span class="sd">            the (physical) dimension of the domain.</span>
+<span class="sd">        coord: array of shape(size, em_dim)</span>
+<span class="sd">            explicit coordinates of the domain sites.</span>
+<span class="sd">        local_volume: array of shape(size)</span>
+<span class="sd">            yields the volume associated with each site.</span>
+<span class="sd">        id: string, optional</span>
+<span class="sd">            domain identifier.</span>
+<span class="sd">        referential: string, optional</span>
+<span class="sd">            identifier of the referential of the coordinates system.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Caveat: em_dim may be greater than dim e.g. (meshes coordinate in 3D)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># dimension</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
+
+        <span class="c1"># number of discrete elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">coord</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># coordinate system</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span> <span class="o">==</span> <span class="n">coord</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">coord</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">em_dim</span> <span class="o">=</span> <span class="n">dim</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">em_dim</span> <span class="o">=</span> <span class="n">coord</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">em_dim</span> <span class="o">&lt;</span> <span class="n">dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Embedding dimension cannot be smaller than dim&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coord</span> <span class="o">=</span> <span class="n">coord</span>
+
+        <span class="c1"># volume</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">local_volume</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Inconsistent Volume size&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_volume</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Volume should be positive&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_volume</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">local_volume</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">referential</span> <span class="o">=</span> <span class="n">referential</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.copy"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a copy of self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_dom</span> <span class="o">=</span> <span class="n">DiscreteDomain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">local_volume</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">referential</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">new_dom</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">new_dom</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.get_coord"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_coord">[docs]</a>    <span class="k">def</span> <span class="nf">get_coord</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns self.coord</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.get_volume"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_volume">[docs]</a>    <span class="k">def</span> <span class="nf">get_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns self.local_volume</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_volume</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.connected_components"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.connected_components">[docs]</a>    <span class="k">def</span> <span class="nf">connected_components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns a labelling of the domain into connected components</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">topology</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">wgraph_from_coo_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.mask"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.mask">[docs]</a>    <span class="k">def</span> <span class="nf">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bmask</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an DiscreteDomain instance that has been further masked</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">bmask</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid mask size&#39;</span><span class="p">)</span>
+
+        <span class="n">svol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_volume</span><span class="p">[</span><span class="n">bmask</span><span class="p">]</span>
+        <span class="n">scoord</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span><span class="p">[</span><span class="n">bmask</span><span class="p">]</span>
+        <span class="n">DD</span> <span class="o">=</span> <span class="n">DiscreteDomain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">scoord</span><span class="p">,</span> <span class="n">svol</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">referential</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+            <span class="n">DD</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="n">bmask</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">DD</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.set_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.set_feature">[docs]</a>    <span class="k">def</span> <span class="nf">set_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">override</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Append a feature &#39;fid&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: string,</span>
+<span class="sd">             feature identifier</span>
+<span class="sd">        data: array of shape(self.size, p) or self.size</span>
+<span class="sd">              the feature data</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Wrong data size&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">override</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">fid</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.get_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_feature">[docs]</a>    <span class="k">def</span> <span class="nf">get_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return self.features[fid]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">fid</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.representative_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.representative_feature">[docs]</a>    <span class="k">def</span> <span class="nf">representative_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute a statistical representative of the within-Foain feature</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: string, feature id</span>
+<span class="sd">        method: string, method used to compute a representative</span>
+<span class="sd">                to be chosen among &#39;mean&#39;, &#39;max&#39;, &#39;median&#39;, &#39;min&#39;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;median&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DiscreteDomain.integrate"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.integrate">[docs]</a>    <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Integrate  certain feature over the domain and returns the result</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid : string,  feature identifier,</span>
+<span class="sd">              by default, the 1 function is integrataed, yielding domain volume</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        lsum = array of shape (self.feature[fid].shape[1]),</span>
+<span class="sd">               the result</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_volume</span><span class="p">)</span>
+        <span class="n">ffid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">fid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ffid</span><span class="p">)</span> <span class="o">==</span> <span class="n">ffid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">ffid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ffid</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">slv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_volume</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ffid</span> <span class="o">*</span> <span class="n">slv</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="StructuredDomain"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.StructuredDomain">[docs]</a><span class="k">class</span> <span class="nc">StructuredDomain</span><span class="p">(</span><span class="n">DiscreteDomain</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Besides DiscreteDomain attributed, StructuredDomain has a topology,</span>
+<span class="sd">    which allows many operations (morphology etc.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StructuredDomain.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.StructuredDomain.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">local_volume</span><span class="p">,</span> <span class="n">topology</span><span class="p">,</span> <span class="n">did</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                 <span class="n">referential</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize structured domain instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dim: int,</span>
+<span class="sd">             the (physical) dimension of the domain</span>
+<span class="sd">        coord: array of shape(size, em_dim),</span>
+<span class="sd">               explicit coordinates of the domain sites</span>
+<span class="sd">        local_volume: array of shape(size),</span>
+<span class="sd">                      yields the volume associated with each site</span>
+<span class="sd">        topology: sparse binary coo_matrix of shape (size, size),</span>
+<span class="sd">                  that yields the neighboring locations in the domain</span>
+<span class="sd">        did: string, optional,</span>
+<span class="sd">             domain identifier</span>
+<span class="sd">        referential: string, optional,</span>
+<span class="sd">                     identifier of the referential of the coordinates system</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">DiscreteDomain</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">local_volume</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span>
+                                <span class="n">referential</span><span class="p">)</span>
+
+        <span class="c1"># topology</span>
+        <span class="k">if</span> <span class="n">topology</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">topology</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Incompatible shape for topological model&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">topology</span> <span class="o">=</span> <span class="n">topology</span></div>
+
+<div class="viewcode-block" id="StructuredDomain.mask"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.StructuredDomain.mask">[docs]</a>    <span class="k">def</span> <span class="nf">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bmask</span><span class="p">,</span> <span class="n">did</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a StructuredDomain instance that has been further masked</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">td</span> <span class="o">=</span> <span class="n">DiscreteDomain</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bmask</span><span class="p">)</span>
+        <span class="n">stopo</span> <span class="o">=</span> <span class="n">reduce_coo_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">bmask</span><span class="p">)</span>
+        <span class="n">dd</span> <span class="o">=</span> <span class="n">StructuredDomain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">td</span><span class="o">.</span><span class="n">coord</span><span class="p">,</span> <span class="n">td</span><span class="o">.</span><span class="n">local_volume</span><span class="p">,</span>
+                            <span class="n">stopo</span><span class="p">,</span> <span class="n">did</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">referential</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">dd</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">td</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fid</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">dd</span></div></div>
+
+
+<div class="viewcode-block" id="NDGridDomain"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.NDGridDomain">[docs]</a><span class="k">class</span> <span class="nc">NDGridDomain</span><span class="p">(</span><span class="n">StructuredDomain</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Particular instance of StructuredDomain, that receives</span>
+<span class="sd">    3 additional variables:</span>
+<span class="sd">    affine: array of shape (dim+1, dim+1),</span>
+<span class="sd">            affine transform that maps points to a coordinate system</span>
+<span class="sd">    shape: dim-tuple,</span>
+<span class="sd">           shape of the domain</span>
+<span class="sd">    ijk: array of shape(size, dim), int</span>
+<span class="sd">         grid coordinates of the points</span>
+
+<span class="sd">    This is to allow easy conversion to images when dim==3,</span>
+<span class="sd">    and for compatibility with previous classes</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NDGridDomain.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.NDGridDomain.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">ijk</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">local_volume</span><span class="p">,</span> <span class="n">topology</span><span class="p">,</span>
+                <span class="n">referential</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize ndgrid domain instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dim: int,</span>
+<span class="sd">             the (physical) dimension of the domain</span>
+<span class="sd">        ijk: array of shape(size, dim), int</span>
+<span class="sd">             grid coordinates of the points</span>
+<span class="sd">        shape: dim-tuple,</span>
+<span class="sd">           shape of the domain</span>
+<span class="sd">        affine: array of shape (dim+1, dim+1),</span>
+<span class="sd">            affine transform that maps points to a coordinate system</span>
+<span class="sd">        local_volume: array of shape(size),</span>
+<span class="sd">                      yields the volume associated with each site</span>
+<span class="sd">        topology: sparse binary coo_matrix of shape (size, size),</span>
+<span class="sd">                  that yields the neighboring locations in the domain</span>
+<span class="sd">        referential: string, optional,</span>
+<span class="sd">                     identifier of the referential of the coordinates system</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        FIXME: local_volume might be computed on-the-fly as |det(affine)|</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># shape</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="n">dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Incompatible shape and dim&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+
+        <span class="c1"># affine</span>
+        <span class="k">if</span> <span class="n">affine</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Incompatible dim and affine&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine</span> <span class="o">=</span> <span class="n">affine</span>
+
+        <span class="c1"># ijk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ijk</span><span class="p">)</span> <span class="o">==</span> <span class="n">ijk</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ijk</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">ijk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ijk</span><span class="p">,</span> <span class="p">(</span><span class="n">ijk</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ijk</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Provided indices do not fit within shape&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ijk</span> <span class="o">=</span> <span class="n">ijk</span>
+
+        <span class="c1"># coord</span>
+        <span class="n">coord</span> <span class="o">=</span> <span class="n">idx_affine_coord</span><span class="p">(</span><span class="n">ijk</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+
+        <span class="n">StructuredDomain</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">local_volume</span><span class="p">,</span> <span class="n">topology</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NDGridDomain.mask"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.NDGridDomain.mask">[docs]</a>    <span class="k">def</span> <span class="nf">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bmask</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an instance of self that has been further masked</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">bmask</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid mask size&#39;</span><span class="p">)</span>
+
+        <span class="n">svol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_volume</span><span class="p">[</span><span class="n">bmask</span><span class="p">]</span>
+        <span class="n">stopo</span> <span class="o">=</span> <span class="n">reduce_coo_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">bmask</span><span class="p">)</span>
+        <span class="n">sijk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ijk</span><span class="p">[</span><span class="n">bmask</span><span class="p">]</span>
+        <span class="n">DD</span> <span class="o">=</span> <span class="n">NDGridDomain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">sijk</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> <span class="n">svol</span><span class="p">,</span>
+                          <span class="n">stopo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">referential</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+            <span class="n">DD</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="n">bmask</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">DD</span></div>
+
+<div class="viewcode-block" id="NDGridDomain.to_image"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.NDGridDomain.to_image">[docs]</a>    <span class="k">def</span> <span class="nf">to_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write itself as a binary image, and returns it</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string, path of the output image, if any</span>
+<span class="sd">        data: array of shape self.size,</span>
+<span class="sd">              data to put in the nonzer-region of the image</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">wdata</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ijk</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ijk</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ijk</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;incorrect data size&#39;</span><span class="p">)</span>
+            <span class="n">wdata</span><span class="p">[</span><span class="n">wdata</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+
+        <span class="n">nim</span> <span class="o">=</span> <span class="n">Nifti1Image</span><span class="p">(</span><span class="n">wdata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+        <span class="n">get_header</span><span class="p">(</span><span class="n">nim</span><span class="p">)[</span><span class="s1">&#39;descrip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;mask image representing domain </span><span class="si">%s</span><span class="s1">&#39;</span>
+                                      <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">save</span><span class="p">(</span><span class="n">nim</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nim</span></div>
+
+<div class="viewcode-block" id="NDGridDomain.make_feature_from_image"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.discrete_domain.html#nipy.labs.spatial_models.discrete_domain.NDGridDomain.make_feature_from_image">[docs]</a>    <span class="k">def</span> <span class="nf">make_feature_from_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">fid</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Extract the information from an image to make it a domain a feature</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string or Nifti1Image instance,</span>
+<span class="sd">              the image from which one wished to extract data</span>
+<span class="sd">        fid: string, optional</span>
+<span class="sd">             identifier of the resulting feature.</span>
+<span class="sd">             if &#39;&#39;, the feature is not stored</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        the correponding set of values</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="n">nim</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nim</span> <span class="o">=</span> <span class="n">path</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">get_affine</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;nim and self do not have the same referential&#39;</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">nim</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ijk</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ijk</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ijk</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">fid</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span>
+
+        <span class="k">return</span> <span class="n">feature</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,671 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.modalities.fmri.fmristat.model</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines the two default GLM passes of fmristat</span>
+
+<span class="sd">The results of both passes of the GLM get pushed around by generators, which</span>
+<span class="sd">know how to get out the (probably 3D) data for each slice, or parcel (for the</span>
+<span class="sd">AR) case, estimate in 2D, then store the data back again in its original shape.</span>
+
+<span class="sd">The containers here, in the execute methods, know how to reshape the data on the</span>
+<span class="sd">way into the estimation (to 2D), then back again, to 3D, or 4D.</span>
+
+<span class="sd">It&#39;s relatively easy to do this when just iterating over simple slices, but it</span>
+<span class="sd">gets a bit more complicated when taking arbitrary shaped samples from the image,</span>
+<span class="sd">as we do for estimating the AR coefficients, where we take all the voxels with</span>
+<span class="sd">similar AR coefficients at once.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span> <span class="k">as</span> <span class="nn">path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="k">as</span> <span class="nn">npl</span>
+
+<span class="kn">from</span> <span class="nn">nipy.algorithms.statistics.models.regression</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">OLSModel</span><span class="p">,</span> <span class="n">ARModel</span><span class="p">,</span> <span class="n">ar_bias_corrector</span><span class="p">,</span> <span class="n">ar_bias_correct</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.statistics.formula</span> <span class="k">import</span> <span class="n">make_recarray</span>
+
+<span class="c1"># nipy core imports</span>
+<span class="kn">from</span> <span class="nn">nipy.core.api</span> <span class="k">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">parcels</span><span class="p">,</span> <span class="n">matrix_generator</span><span class="p">,</span> <span class="n">AffineTransform</span>
+
+<span class="c1"># nipy IO imports</span>
+<span class="kn">from</span> <span class="nn">nipy.io.api</span> <span class="k">import</span> <span class="n">save_image</span>
+
+<span class="c1"># fmri imports</span>
+<span class="kn">from</span> <span class="nn">..api</span> <span class="k">import</span> <span class="n">FmriImageList</span><span class="p">,</span> <span class="n">axis0_generator</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">outputters</span>
+
+
+<div class="viewcode-block" id="ModelOutputImage"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.ModelOutputImage">[docs]</a><span class="k">class</span> <span class="nc">ModelOutputImage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    These images have their values filled in as the model is fit, and</span>
+<span class="sd">    are saved to disk after being completely filled in.</span>
+
+<span class="sd">    They are saved to disk by calling the &#39;save&#39; method.</span>
+
+<span class="sd">    The __getitem__ and __setitem__ calls are delegated to a private</span>
+<span class="sd">    Image.  An exception is raised if trying to get/set data after the</span>
+<span class="sd">    data has been saved to disk.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ModelOutputImage.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.ModelOutputImage.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">coordmap</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_im_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_im</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_im_data</span><span class="p">,</span> <span class="n">coordmap</span><span class="p">)</span>
+        <span class="c1"># Using a dangerous undocumented API here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clobber</span> <span class="o">=</span> <span class="n">clobber</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flushed</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="ModelOutputImage.save"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.ModelOutputImage.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save current Image data to disk</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">clobber</span> <span class="ow">and</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;trying to clobber existing file&#39;</span><span class="p">)</span>
+        <span class="n">save_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_im</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flushed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">del</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_im</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flushed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;trying to read value from a &#39;</span>
+                             <span class="s1">&#39;saved ModelOutputImage&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_im_data</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flushed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;trying to set value on saved&#39;</span>
+                             <span class="s1">&#39;ModelOutputImage&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_im_data</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="model_generator"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.model_generator">[docs]</a><span class="k">def</span> <span class="nf">model_generator</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">volume_start_times</span><span class="p">,</span> <span class="n">iterable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">slicetimes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">OLSModel</span><span class="p">,</span>
+                    <span class="n">model_params</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">()):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generator for the models for a pass of fmristat analysis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">volume_start_times</span> <span class="o">=</span> <span class="n">make_recarray</span><span class="p">(</span><span class="n">volume_start_times</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="s1">&#39;t&#39;</span><span class="p">)</span>
+    <span class="c1"># Generator for slices of the data with time as first axis</span>
+    <span class="n">axis0_gen</span> <span class="o">=</span> <span class="n">axis0_generator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">slicers</span><span class="o">=</span><span class="n">iterable</span><span class="p">)</span>
+    <span class="c1"># Iterate over 2D slices of the data</span>
+    <span class="k">for</span> <span class="n">indexer</span><span class="p">,</span> <span class="n">indexed_data</span> <span class="ow">in</span> <span class="n">matrix_generator</span><span class="p">(</span><span class="n">axis0_gen</span><span class="p">):</span>
+        <span class="n">model_args</span> <span class="o">=</span> <span class="n">model_params</span><span class="p">(</span><span class="n">indexer</span><span class="p">)</span> <span class="c1"># model may depend on i</span>
+        <span class="c1"># Get the design for these volume start times</span>
+        <span class="n">design</span> <span class="o">=</span> <span class="n">formula</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">volume_start_times</span><span class="p">,</span> <span class="n">return_float</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Make the model from the design</span>
+        <span class="n">rmodel</span> <span class="o">=</span> <span class="n">model_type</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="o">*</span><span class="n">model_args</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">indexer</span><span class="p">,</span> <span class="n">indexed_data</span><span class="p">,</span> <span class="n">rmodel</span></div>
+
+
+<div class="viewcode-block" id="results_generator"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.results_generator">[docs]</a><span class="k">def</span> <span class="nf">results_generator</span><span class="p">(</span><span class="n">model_iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generator for results from an iterator that returns</span>
+<span class="sd">    (index, data, model) tuples.</span>
+
+<span class="sd">    See model_generator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">model_iterable</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">d</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OLS"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.OLS">[docs]</a><span class="k">class</span> <span class="nc">OLS</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    First pass through fmri_image.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fmri_image : `FmriImageList` or 4D image</span>
+<span class="sd">       object returning 4D data from np.asarray, with first</span>
+<span class="sd">       (``object[0]``) axis being the independent variable of the model;</span>
+<span class="sd">       object[0] returns an object with attribute ``shape``.</span>
+<span class="sd">    formula :  :class:`nipy.algorithms.statistics.formula.Formula`</span>
+<span class="sd">    outputs :</span>
+<span class="sd">    volume_start_times :</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="OLS.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.OLS.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">,</span> <span class="n">formula</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[],</span>
+                 <span class="n">volume_start_times</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmri_image</span> <span class="o">=</span> <span class="n">fmri_image</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">fmri_image</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">fmri_image</span><span class="o">.</span><span class="n">get_list_data</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">formula</span> <span class="o">=</span> <span class="n">formula</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="n">outputs</span>
+        <span class="k">if</span> <span class="n">volume_start_times</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmri_image</span><span class="o">.</span><span class="n">volume_start_times</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span> <span class="o">=</span> <span class="n">volume_start_times</span></div>
+
+<div class="viewcode-block" id="OLS.execute"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.OLS.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">model_generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">formula</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span><span class="p">,</span>
+                            <span class="n">model_type</span><span class="o">=</span><span class="n">OLSModel</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">results_generator</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">type</span><span class="p">([]),</span> <span class="nb">type</span><span class="p">(())]:</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">),)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">return</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span>
+
+        <span class="n">o</span> <span class="o">=</span> <span class="n">generate_output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">reshape</span><span class="o">=</span><span class="n">reshape</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="estimateAR"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.estimateAR">[docs]</a><span class="k">def</span> <span class="nf">estimateAR</span><span class="p">(</span><span class="n">resid</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate AR parameters using bias correction from fMRIstat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    resid:  array-like</span>
+<span class="sd">        residuals from model</span>
+<span class="sd">    model:  an OLS model used to estimate residuals</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : array</span>
+<span class="sd">        shape (order, resid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">invM</span> <span class="o">=</span> <span class="n">ar_bias_corrector</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">npl</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">design</span><span class="p">),</span> <span class="n">order</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ar_bias_correct</span><span class="p">(</span><span class="n">resid</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">invM</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AR1"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.AR1">[docs]</a><span class="k">class</span> <span class="nc">AR1</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Second pass through fmri_image.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fmri_image : `FmriImageList`</span>
+<span class="sd">       object returning 4D array from ``np.asarray``, having attribute</span>
+<span class="sd">       ``volume_start_times`` (if `volume_start_times` is None), and</span>
+<span class="sd">       such that ``object[0]`` returns something with attributes ``shape``</span>
+<span class="sd">    formula :  :class:`nipy.algorithms.statistics.formula.Formula`</span>
+<span class="sd">    rho : ``Image``</span>
+<span class="sd">       image of AR(1) coefficients.  Returning data from</span>
+<span class="sd">       ``rho.get_data()``, and having attribute ``coordmap``</span>
+<span class="sd">    outputs :</span>
+<span class="sd">    volume_start_times : </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AR1.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.AR1.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">,</span> <span class="n">formula</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[],</span>
+                 <span class="n">volume_start_times</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmri_image</span> <span class="o">=</span> <span class="n">fmri_image</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">fmri_image</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">fmri_image</span><span class="o">.</span><span class="n">get_list_data</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">formula</span> <span class="o">=</span> <span class="n">formula</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="n">outputs</span>
+        <span class="c1"># Cleanup rho values, truncate them to a scale of 0.01</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">rho</span><span class="o">.</span><span class="n">coordmap</span><span class="p">)</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">rho</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.</span>
+        <span class="n">r</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">volume_start_times</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmri_image</span><span class="o">.</span><span class="n">volume_start_times</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span> <span class="o">=</span> <span class="n">volume_start_times</span></div>
+
+<div class="viewcode-block" id="AR1.execute"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.AR1.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">iterable</span> <span class="o">=</span> <span class="n">parcels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">])</span>
+        <span class="k">def</span> <span class="nf">model_params</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),)</span>
+        <span class="c1"># Generates indexer, data, model</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">model_generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">formula</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">volume_start_times</span><span class="p">,</span>
+                            <span class="n">iterable</span><span class="o">=</span><span class="n">iterable</span><span class="p">,</span>
+                            <span class="n">model_type</span><span class="o">=</span><span class="n">ARModel</span><span class="p">,</span>
+                            <span class="n">model_params</span><span class="o">=</span><span class="n">model_params</span><span class="p">)</span>
+        <span class="c1"># Generates indexer, data, 2D results</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">results_generator</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            To write output, arrays have to be reshaped --</span>
+<span class="sd">            this function does the appropriate reshaping for the two</span>
+<span class="sd">            passes of fMRIstat.</span>
+
+<span class="sd">            These passes are:</span>
+<span class="sd">              i) &#39;slices through the z-axis&#39;</span>
+<span class="sd">              ii) &#39;parcels of approximately constant AR1 coefficient&#39;</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span> <span class="c1"># 2D imput matrix</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span> <span class="c1"># integer indexing</span>
+                    <span class="c1"># reshape to ND (where N is probably 4)</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="c1"># Convert lists to tuples, put anything else into a tuple</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">type</span><span class="p">([]),</span> <span class="nb">type</span><span class="p">(())]:</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="c1"># Add : to indexing</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">),)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># not 2D</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span> <span class="c1"># integer indexing</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">return</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span>
+
+        <span class="c1"># Put results pulled from results generator r, into outputs</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">generate_output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">reshape</span><span class="o">=</span><span class="n">reshape</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="output_T"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.output_T">[docs]</a><span class="k">def</span> <span class="nf">output_T</span><span class="p">(</span><span class="n">outbase</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">,</span> <span class="n">effect</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+             <span class="n">clobber</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return t contrast regression outputs list for `contrast`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outbase : string</span>
+<span class="sd">        Base filename that will be used to construct a set of files</span>
+<span class="sd">        for the TContrast.  For example, outbase=&#39;output.nii&#39; will</span>
+<span class="sd">        result in the following files (assuming defaults for all other</span>
+<span class="sd">        params): output_effect.nii, output_sd.nii, output_t.nii</span>
+<span class="sd">    contrast : array</span>
+<span class="sd">        F contrast matrix</span>
+<span class="sd">    fmri_image : ``FmriImageList`` or ``Image``</span>
+<span class="sd">        object such that ``object[0]`` has attributes ``shape`` and</span>
+<span class="sd">        ``coordmap``</span>
+<span class="sd">    effect : {True, False}, optional</span>
+<span class="sd">        whether to write an effect image</span>
+<span class="sd">    sd : {True, False}, optional</span>
+<span class="sd">        whether to write a standard deviation image</span>
+<span class="sd">    t : {True, False}, optional</span>
+<span class="sd">        whether to write a t image</span>
+<span class="sd">    clobber : {False, True}, optional</span>
+<span class="sd">        whether to overwrite images that exist.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    reglist : ``RegressionOutputList`` instance</span>
+<span class="sd">        Regression output list with selected outputs, where selection is by</span>
+<span class="sd">        inputs `effect`, `sd` and `t`</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Note that this routine uses the corresponding ``output_T`` routine in</span>
+<span class="sd">    :mod:`outputters`, but indirectly via the TOutput object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">build_filename</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">outbase</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">outbase</span><span class="p">[:</span><span class="n">index</span><span class="p">],</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">outbase</span><span class="p">[</span><span class="n">index</span><span class="p">:]])</span>
+    <span class="k">if</span> <span class="n">effect</span><span class="p">:</span>
+        <span class="n">effectim</span> <span class="o">=</span> <span class="n">ModelOutputImage</span><span class="p">(</span><span class="n">build_filename</span><span class="p">(</span><span class="s1">&#39;effect&#39;</span><span class="p">),</span>
+                                    <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span>
+                                    <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="n">clobber</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">effectim</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">sd</span><span class="p">:</span>
+        <span class="n">sdim</span> <span class="o">=</span> <span class="n">ModelOutputImage</span><span class="p">(</span><span class="n">build_filename</span><span class="p">(</span><span class="s1">&#39;sd&#39;</span><span class="p">),</span>
+                                <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                <span class="n">clobber</span><span class="o">=</span><span class="n">clobber</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sdim</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">t</span><span class="p">:</span>
+        <span class="n">tim</span> <span class="o">=</span> <span class="n">ModelOutputImage</span><span class="p">(</span><span class="n">build_filename</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">),</span>
+                               <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span><span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                               <span class="n">clobber</span><span class="o">=</span><span class="n">clobber</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tim</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">outputters</span><span class="o">.</span><span class="n">TOutput</span><span class="p">(</span><span class="n">contrast</span><span class="p">,</span> <span class="n">effect</span><span class="o">=</span><span class="n">effectim</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="n">sdim</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">tim</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="output_F"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.output_F">[docs]</a><span class="k">def</span> <span class="nf">output_F</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; output F statistic images</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outfile : str</span>
+<span class="sd">        filename for F contrast image</span>
+<span class="sd">    contrast : array</span>
+<span class="sd">        F contrast matrix</span>
+<span class="sd">    fmri_image : ``FmriImageList`` or ``Image``</span>
+<span class="sd">        object such that ``object[0]`` has attributes ``shape`` and</span>
+<span class="sd">        ``coordmap``</span>
+<span class="sd">    clobber : bool</span>
+<span class="sd">        if True, overwrites previous output; if False, raises error</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f_reg_out : ``RegressionOutput`` instance</span>
+<span class="sd">        Object that can a) be called with a results instance as argument,</span>
+<span class="sd">        returning an array, and b) accept the output array for storing, via</span>
+<span class="sd">        ``obj[slice_spec] = arr`` type slicing.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">ModelOutputImage</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                         <span class="n">clobber</span><span class="o">=</span><span class="n">clobber</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outputters</span><span class="o">.</span><span class="n">RegressionOutput</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span>
+                                       <span class="n">outputters</span><span class="o">.</span><span class="n">output_F</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">contrast</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="output_AR1"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.output_AR1">[docs]</a><span class="k">def</span> <span class="nf">output_AR1</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create an output file of the AR1 parameter from the OLS pass of</span>
+<span class="sd">    fmristat.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outfile :</span>
+<span class="sd">    fmri_image : ``FmriImageList`` or 4D image</span>
+<span class="sd">       object such that ``object[0]`` has attributes ``coordmap`` and ``shape``</span>
+<span class="sd">    clobber : bool</span>
+<span class="sd">       if True, overwrite previous output</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    regression_output : ``RegressionOutput`` instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">outim</span> <span class="o">=</span> <span class="n">ModelOutputImage</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span>
+                             <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="n">clobber</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outputters</span><span class="o">.</span><span class="n">RegressionOutput</span><span class="p">(</span><span class="n">outim</span><span class="p">,</span> <span class="n">outputters</span><span class="o">.</span><span class="n">output_AR1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="output_resid"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.output_resid">[docs]</a><span class="k">def</span> <span class="nf">output_resid</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">fmri_image</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create an output file of the residuals parameter from the OLS pass of</span>
+<span class="sd">    fmristat.</span>
+
+<span class="sd">    Uses affine part of the first image to output resids unless</span>
+<span class="sd">    fmri_image is an Image.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outfile :</span>
+<span class="sd">    fmri_image : ``FmriImageList`` or 4D image</span>
+<span class="sd">       If ``FmriImageList``, needs attributes ``volume_start_times``,</span>
+<span class="sd">       supports len(), and object[0] has attributes ``affine``,</span>
+<span class="sd">       ``coordmap`` and ``shape``, from which we create a new 4D</span>
+<span class="sd">       coordmap and shape</span>
+<span class="sd">       If 4D image, use the images coordmap and shape</span>
+<span class="sd">    clobber : bool</span>
+<span class="sd">       if True, overwrite previous output</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    regression_output :</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fmri_image</span><span class="p">,</span> <span class="n">FmriImageList</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fmri_image</span><span class="o">.</span><span class="n">list</span><span class="p">)</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coordmap</span>
+        <span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">affine</span>
+        <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">fmri_image</span><span class="o">.</span><span class="n">volume_start_times</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span>
+                  <span class="n">fmri_image</span><span class="o">.</span><span class="n">volume_start_times</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="c1"># FIXME: NIFTI specific naming here</span>
+        <span class="n">innames</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">)</span>
+        <span class="n">outnames</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">function_range</span><span class="o">.</span><span class="n">coord_names</span><span class="p">)</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">AffineTransform</span><span class="o">.</span><span class="n">from_params</span><span class="p">(</span><span class="n">innames</span><span class="p">,</span> <span class="n">outnames</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span><span class="p">,)</span> <span class="o">+</span> <span class="n">fmri_image</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fmri_image</span><span class="p">,</span> <span class="n">Image</span><span class="p">):</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">fmri_image</span><span class="o">.</span><span class="n">coordmap</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">fmri_image</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;expecting FmriImageList or 4d Image&quot;</span><span class="p">)</span>
+
+    <span class="n">outim</span> <span class="o">=</span> <span class="n">ModelOutputImage</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">cmap</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="n">clobber</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outputters</span><span class="o">.</span><span class="n">RegressionOutput</span><span class="p">(</span><span class="n">outim</span><span class="p">,</span> <span class="n">outputters</span><span class="o">.</span><span class="n">output_resid</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_output"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.model.html#nipy.modalities.fmri.fmristat.model.generate_output">[docs]</a><span class="k">def</span> <span class="nf">generate_output</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">reshape</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write out results of a given output.</span>
+
+<span class="sd">    In the regression setting, results is generally going to be a</span>
+<span class="sd">    scipy.stats.models.model.LikelihoodModelResults instance.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outputs : sequence</span>
+<span class="sd">        sequence of output objects</span>
+<span class="sd">    iterable : object</span>
+<span class="sd">        Object which iterates, returning tuples of (indexer, results), where</span>
+<span class="sd">        ``indexer`` can be used to index into the `outputs`</span>
+<span class="sd">    reshape : callable</span>
+<span class="sd">        accepts two arguments, first is the indexer, and the second is the array</span>
+<span class="sd">        which will be indexed; returns modified indexer and array ready for</span>
+<span class="sd">        slicing with modified indexer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">indexer</span><span class="p">,</span> <span class="n">results</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">:</span>
+            <span class="c1"># Might be regression output object</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="s2">&quot;list&quot;</span><span class="p">):</span> <span class="c1"># lame test here</span>
+                <span class="n">k</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">reshape</span><span class="p">(</span><span class="n">indexer</span><span class="p">,</span> <span class="n">output</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+                <span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># or a regression output list (like a TOutput, with several</span>
+                <span class="c1"># images to output to)</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">output</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">list</span><span class="p">):</span>
+                    <span class="n">k</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">reshape</span><span class="p">(</span><span class="n">indexer</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="n">l</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+    <span class="c1"># flush outputs, if necessary</span>
+    <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">outputters</span><span class="o">.</span><span class="n">RegressionOutput</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">img</span><span class="p">,</span> <span class="s1">&#39;save&#39;</span><span class="p">):</span>
+                <span class="n">output</span><span class="o">.</span><span class="n">img</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">outputters</span><span class="o">.</span><span class="n">RegressionOutputList</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">im</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="s1">&#39;save&#39;</span><span class="p">):</span>
+                    <span class="n">im</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,455 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.distributions.chain</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A simple implementation of Besag and Clifford&#39;s generalized</span>
+<span class="sd">Monte Carlo Significance Tests.</span>
+
+<span class="sd">.. _besag_clifford: http://www.jstor.org/stable/pdf/2336623.pdf</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="markov_chain"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.markov_chain">[docs]</a><span class="k">class</span> <span class="nc">markov_chain</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract implementation of a Markov chain.</span>
+
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># API</span>
+
+    <span class="c1"># A Markov chain knows how to step forward</span>
+
+<div class="viewcode-block" id="markov_chain.forward_step"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.markov_chain.forward_step">[docs]</a>    <span class="k">def</span> <span class="nf">forward_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;abstract method&#39;</span><span class="p">)</span></div>
+
+    <span class="c1"># Some Markov chains can run in time-reversed direction.</span>
+    <span class="c1"># Not all subclasses need this method implemented</span>
+
+<div class="viewcode-block" id="markov_chain.backward_step"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.markov_chain.backward_step">[docs]</a>    <span class="k">def</span> <span class="nf">backward_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;abstract method&#39;</span><span class="p">)</span></div>
+
+    <span class="c1"># A Markov chain has a state</span>
+
+<div class="viewcode-block" id="markov_chain.get_state"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.markov_chain.get_state">[docs]</a>    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span></div>
+
+<div class="viewcode-block" id="markov_chain.set_state"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.markov_chain.set_state">[docs]</a>    <span class="k">def</span> <span class="nf">set_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">state</span></div>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_state</span><span class="p">,</span> <span class="n">set_state</span><span class="p">)</span>
+
+    <span class="c1"># A Markov chain is iterable</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="markov_chain.next"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.markov_chain.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_step</span><span class="p">()</span></div>
+
+    <span class="fm">__next__</span> <span class="o">=</span> <span class="nb">next</span> <span class="c1"># Python3 compatibility</span></div>
+
+<div class="viewcode-block" id="reversible_markov_chain"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.reversible_markov_chain">[docs]</a><span class="k">class</span> <span class="nc">reversible_markov_chain</span><span class="p">(</span><span class="n">markov_chain</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An abstract representation of a Markov chain that</span>
+<span class="sd">    is reversible with respect to some stationary</span>
+<span class="sd">    distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># For reversible chains forward_step</span>
+    <span class="c1"># and backward_step are the same</span>
+
+<div class="viewcode-block" id="reversible_markov_chain.step"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.reversible_markov_chain.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;abstract method&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="reversible_markov_chain.forward_step"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.reversible_markov_chain.forward_step">[docs]</a>    <span class="k">def</span> <span class="nf">forward_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For a reversible chain, a forward_step is just a step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="reversible_markov_chain.backward_step"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.reversible_markov_chain.backward_step">[docs]</a>    <span class="k">def</span> <span class="nf">backward_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For a reversible chain, a backward_step is just a step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="parallel_test"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.parallel_test">[docs]</a><span class="k">def</span> <span class="nf">parallel_test</span><span class="p">(</span><span class="n">reversible_chain</span><span class="p">,</span> <span class="n">null_state</span><span class="p">,</span> <span class="n">test_statistic</span><span class="p">,</span> <span class="n">ndraw</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Besag and Clifford&#39;s parallel test for reversible</span>
+<span class="sd">    Markov chains.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    reversible_chain : iterable</span>
+<span class="sd">        An object implementing a Markov chain,</span>
+<span class="sd">        with `forward_step` and `backward_step` methods.</span>
+
+<span class="sd">    null_state : object</span>
+<span class="sd">        An object nominally drawn from the</span>
+<span class="sd">        stationary distribution.</span>
+
+<span class="sd">    test_statistic : callable</span>
+<span class="sd">        A test statistic to compute on each state</span>
+<span class="sd">        of the chain. The overall</span>
+<span class="sd">        test statistic is the ranking of</span>
+<span class="sd">        `test_statistic(null_state)` in a sample</span>
+<span class="sd">        of `ndraw` steps of the chain.</span>
+<span class="sd">        </span>
+<span class="sd">    ndraw : int</span>
+<span class="sd">        How many total draws of the chain should be made?</span>
+<span class="sd">        Includes `null_state` as one of these draws.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    rank : int</span>
+<span class="sd">        How many of the draws had a test statistic</span>
+<span class="sd">        less than the observed value? </span>
+<span class="sd">        Ties are handled by randomization.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    The attribute `chain.state` is reset to its initial value</span>
+<span class="sd">    after running.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">chain</span> <span class="o">=</span> <span class="n">reversible_chain</span>
+
+    <span class="n">observed</span> <span class="o">=</span> <span class="n">test_statistic</span><span class="p">(</span><span class="n">null_state</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">old_state</span><span class="p">,</span> <span class="n">chain</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">null_state</span>
+    
+    <span class="n">intermed_state</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">backward_step</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndraw</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+
+        <span class="c1"># take a step from intermediate state</span>
+        <span class="n">chain</span><span class="o">.</span><span class="n">forward_step</span><span class="p">()</span>
+
+        <span class="c1"># compute the test statistic</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test_statistic</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">state</span><span class="p">))</span>
+
+        <span class="c1"># reset the state to the intermediate state</span>
+        <span class="n">chain</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">intermed_state</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+    <span class="n">rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">r</span> <span class="o">&lt;</span> <span class="n">observed</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">])</span> 
+    <span class="n">ties</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">observed</span> <span class="o">==</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">])</span> 
+    
+    <span class="n">possible_ranks</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">rank</span> <span class="o">+</span> <span class="n">ties</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">final_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">possible_ranks</span><span class="p">)</span>
+
+    <span class="c1"># reset the chain&#39;s state to previous value</span>
+
+    <span class="n">chain</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">old_state</span>
+
+    <span class="k">return</span> <span class="n">final_rank</span></div>
+
+<span class="c1"># make sure nose does not try to test this function</span>
+<span class="n">parallel_test</span><span class="o">.</span><span class="n">__test__</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="serial_test"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.chain.html#selectinf.constraints.affine.serial_test">[docs]</a><span class="k">def</span> <span class="nf">serial_test</span><span class="p">(</span><span class="n">reversible_chain</span><span class="p">,</span> <span class="n">null_state</span><span class="p">,</span> <span class="n">test_statistic</span><span class="p">,</span> <span class="n">ndraw</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Besag and Clifford&#39;s parallel test for reversible</span>
+<span class="sd">    Markov chains.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    reversible_chain : iterable</span>
+<span class="sd">        An object implementing a Markov chain,</span>
+<span class="sd">        with next method returning current state.</span>
+
+<span class="sd">    null_state : object</span>
+<span class="sd">        An object nominally drawn from the</span>
+<span class="sd">        stationary distribution.</span>
+
+<span class="sd">    test_statistic : callable</span>
+<span class="sd">        A test statistic to compute on each state</span>
+<span class="sd">        of the chain. The overall</span>
+<span class="sd">        test statistic is the ranking of</span>
+<span class="sd">        `test_statistic(null_state)` in a sample</span>
+<span class="sd">        of `ndraw` steps of the chain.</span>
+<span class="sd">        </span>
+<span class="sd">    ndraw : int</span>
+<span class="sd">        How many total draws of the chain should be made?</span>
+<span class="sd">        Includes `null_state` as one of these draws.</span>
+<span class="sd">        Ties are handled by randomization.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    rank : int</span>
+<span class="sd">        How many of the draws had a test statistic</span>
+<span class="sd">        less than the observed value?</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    The attribute `chain.state` is reset to its initial value</span>
+<span class="sd">    after running.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">chain</span> <span class="o">=</span> <span class="n">reversible_chain</span>
+
+    <span class="n">observed</span> <span class="o">=</span> <span class="n">test_statistic</span><span class="p">(</span><span class="n">null_state</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">old_state</span><span class="p">,</span> <span class="n">chain</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">null_state</span>
+    
+    <span class="n">random_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">ndraw</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># go forward from null_state</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">random_idx</span><span class="p">):</span>
+
+        <span class="n">chain</span><span class="o">.</span><span class="n">forward_step</span><span class="p">()</span>
+
+        <span class="c1"># compute the test statistic</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test_statistic</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">state</span><span class="p">))</span>
+
+    <span class="c1"># reset the state</span>
+
+    <span class="n">chain</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">null_state</span>
+
+    <span class="c1"># go backward from null_state</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndraw</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">random_idx</span><span class="p">):</span>
+        <span class="n">chain</span><span class="o">.</span><span class="n">backward_step</span><span class="p">()</span>
+
+        <span class="c1"># compute the test statistic</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test_statistic</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">state</span><span class="p">))</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+    <span class="n">rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">r</span> <span class="o">&lt;</span> <span class="n">observed</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">])</span> 
+    <span class="n">ties</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">observed</span> <span class="o">==</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">])</span> 
+
+    <span class="n">possible_ranks</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">rank</span> <span class="o">+</span> <span class="n">ties</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">final_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">possible_ranks</span><span class="p">)</span>
+    
+    <span class="c1"># reset the chain&#39;s state to previous value</span>
+
+    <span class="n">chain</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">old_state</span>
+
+    <span class="k">return</span> <span class="n">final_rank</span></div>
+
+<span class="c1"># make sure nose does not try to test this function</span>
+<span class="n">serial_test</span><span class="o">.</span><span class="n">__test__</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

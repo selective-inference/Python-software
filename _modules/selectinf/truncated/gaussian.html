@@ -1,0 +1,642 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.truncated.gaussian</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module implements the class `truncated_gaussian` which </span>
+<span class="sd">performs (conditional) UMPU tests for Gaussians</span>
+<span class="sd">restricted to a set of intervals.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">..distributions.pvalue</span> <span class="k">import</span> <span class="p">(</span><span class="n">norm_pdf</span><span class="p">,</span> 
+                                    <span class="n">truncnorm_cdf</span><span class="p">,</span> 
+                                    <span class="n">norm_q</span><span class="p">,</span>
+                                    <span class="n">norm_interval</span><span class="p">,</span>
+                                    <span class="n">mp</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">ndist</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">find_root</span>
+
+<div class="viewcode-block" id="truncated_gaussian"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian">[docs]</a><span class="k">class</span> <span class="nc">truncated_gaussian</span><span class="p">(</span><span class="n">truncated</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; from selectinf.constraints.intervals import intervals</span>
+<span class="sd">    &gt;&gt;&gt; I = intervals.intersection(intervals((-1, 6)), \</span>
+<span class="sd">                                       intervals(( 0, 7)), \</span>
+<span class="sd">                                       ~intervals((1, 4)))</span>
+<span class="sd">    &gt;&gt;&gt; distr = truncated_gaussian(I, 3.1, 2.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="truncated_gaussian.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new object for a truncated_gaussian distribution</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        I : intervals</span>
+<span class="sd">            The intervals the distribution is truncated to.</span>
+
+<span class="sd">        mu : int</span>
+<span class="sd">            Mean of Gaussian that is truncated.</span>
+
+<span class="sd">        scale : float</span>
+<span class="sd">            SD of Gaussian that is truncated.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mu</span> <span class="o">=</span> <span class="n">mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="n">truncated</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">I</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_cdf_notTruncated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">dps</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the probability of being in the interval (a, b)</span>
+<span class="sd">        for a variable with a Gaussian distribution (not truncated)</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        a, b : float</span>
+<span class="sd">            Bounds of the interval. Can be infinite.</span>
+
+<span class="sd">        dps : int</span>
+<span class="sd">            Decimal precision (decimal places). Used in mpmath</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            The probability of being in the intervals (a, b)</span>
+<span class="sd">            P( a &lt; X &lt; b)</span>
+<span class="sd">            for a non truncated variable</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mu</span>
+        <span class="n">dps_temp</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">dps</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">dps</span> <span class="o">=</span> <span class="n">dps</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="n">norm_interval</span><span class="p">((</span><span class="n">a</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">,</span>
+                            <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">dps</span> <span class="o">=</span> <span class="n">dps_temp</span>
+
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="k">def</span> <span class="nf">_pdf_notTruncated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dps</span><span class="p">):</span>
+
+        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mu</span>
+        <span class="n">dps_temp</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">dps</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">dps</span> <span class="o">=</span> <span class="n">dps</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="n">norm_pdf</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">dps</span> <span class="o">=</span> <span class="n">dps_temp</span>
+
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="k">def</span> <span class="nf">_quantile_notTruncated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dps</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-6</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the quantile for the non truncated distribution</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        q : float</span>
+<span class="sd">            quantile you want to compute. Between 0 and 1</span>
+
+<span class="sd">        tol : float</span>
+<span class="sd">            precision for the output</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        x : float</span>
+<span class="sd">            x such that P(X &lt; x) = q</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mu</span>
+        <span class="n">dps_temp</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">dps</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">dps</span> <span class="o">=</span> <span class="n">dps</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="n">norm_q</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">dps</span> <span class="o">=</span> <span class="n">dps_temp</span>
+
+        <span class="k">return</span> <span class="n">val</span></div>
+
+<div class="viewcode-block" id="truncated_gaussian_old"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old">[docs]</a><span class="k">class</span> <span class="nc">truncated_gaussian_old</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Gaussian distribution, truncated to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="truncated_gaussian_old.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intervals</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">intervals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span>
+        <span class="n">intervals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># makes assumption intervals are disjoint</span>
+        <span class="c1"># and the sorted endpoints give the correct</span>
+        <span class="c1"># set of intervals...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cutoff_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">[</span><span class="n">D</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cutoff_array</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mu</span> <span class="o">=</span> <span class="n">mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mu_or_scale_changed</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">intervals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cutoff_array</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">negated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s2">&quot;_negated&quot;</span><span class="p">):</span>
+            <span class="n">klass</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_negated</span> <span class="o">=</span> <span class="n">klass</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_cutoff_array</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+                                  <span class="n">mu</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span>
+                                  <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_negated</span>
+    
+    <span class="c1"># private method to update P and D after a change of parameters</span>
+
+    <span class="k">def</span> <span class="nf">_mu_or_scale_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">mu</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">norm_interval</span><span class="p">((</span><span class="n">a</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">,</span>
+                                         <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span> 
+                           <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">norm_pdf</span><span class="p">((</span><span class="n">a</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">),</span> 
+                            <span class="n">norm_pdf</span><span class="p">((</span><span class="n">b</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">))</span> 
+                           <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">])</span>
+
+    <span class="c1"># mean parameter : mu</span>
+
+<div class="viewcode-block" id="truncated_gaussian_old.set_mu"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.set_mu">[docs]</a>    <span class="k">def</span> <span class="nf">set_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mu</span> <span class="o">=</span> <span class="n">mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mu_or_scale_changed</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="truncated_gaussian_old.get_mu"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.get_mu">[docs]</a>    <span class="k">def</span> <span class="nf">get_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mu</span></div>
+
+    <span class="n">mu</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_mu</span><span class="p">,</span> <span class="n">set_mu</span><span class="p">)</span>
+
+    <span class="c1"># variance parameter : scale</span>
+
+<div class="viewcode-block" id="truncated_gaussian_old.set_scale"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.set_scale">[docs]</a>    <span class="k">def</span> <span class="nf">set_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mu_or_scale_changed</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="truncated_gaussian_old.get_scale"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.get_scale">[docs]</a>    <span class="k">def</span> <span class="nf">get_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span></div>
+
+    <span class="n">scale</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_scale</span><span class="p">,</span> <span class="n">set_scale</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">delta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. math::</span>
+<span class="sd"> </span>
+<span class="sd">            \begin{align}</span>
+<span class="sd">              \delta_\mu(a,b) &amp;\triangleq \int_a^b x\phi(x-\mu)\,dx \\</span>
+<span class="sd">              &amp;= - \phi(b-\mu) + \phi(a-\mu) +</span>
+<span class="sd">              \mu\left(\Phi(b-\mu)-\Phi(a-\mu)\right),</span>
+<span class="sd">            \end{align}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mu</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span>
+        <span class="k">return</span> <span class="n">D</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">D</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">P</span>
+    
+    <span class="c1"># End of properties</span>
+
+<div class="viewcode-block" id="truncated_gaussian_old.twosided"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.twosided">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">twosided</span><span class="p">(</span><span class="n">thresh</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">thresh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">thresh</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">truncated_gaussian</span><span class="p">([(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span><span class="o">-</span><span class="n">thresh</span><span class="p">),(</span><span class="n">thresh</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)],</span>
+                                  <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span></div>
+    
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;&#39;</span><span class="si">%s</span><span class="s1">(</span><span class="si">%s</span><span class="s1">, mu=</span><span class="si">%0.3e</span><span class="s1">, scale=</span><span class="si">%0.3e</span><span class="s1">)&#39;&#39;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                                                      <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">,</span>
+                                                      <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span>
+                                                      <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="truncated_gaussian_old.cdf"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.cdf">[docs]</a>    <span class="k">def</span> <span class="nf">cdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observed</span><span class="p">):</span>
+        <span class="n">P</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">observed</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">intervals</span> <span class="o">&lt;=</span> <span class="n">observed</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">observed</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">P</span><span class="p">[:</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">+</span> 
+                        <span class="p">(</span><span class="n">norm_interval</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">,</span>
+                                       <span class="p">(</span><span class="n">observed</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">))</span>
+                        <span class="p">)</span> <span class="o">/</span> <span class="n">P</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">P</span><span class="p">[:</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">P</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1.</span></div>
+
+<div class="viewcode-block" id="truncated_gaussian_old.quantile"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.quantile">[docs]</a>    <span class="k">def</span> <span class="nf">quantile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+        <span class="n">P</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+        <span class="n">Psum</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">Csum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="nb">list</span><span class="p">(</span><span class="n">P</span><span class="p">)))</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">Csum</span> <span class="o">&lt;</span> <span class="n">Psum</span><span class="o">*</span><span class="n">q</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">Csum</span> <span class="o">&lt;</span> <span class="n">Psum</span><span class="o">*</span><span class="n">q</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">q</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">TruncatedGaussianError</span><span class="p">(</span><span class="s1">&#39;invalid quantile&#39;</span><span class="p">)</span>
+
+        <span class="n">pnorm_increment</span> <span class="o">=</span> <span class="n">Psum</span><span class="o">*</span><span class="n">q</span> <span class="o">-</span> <span class="n">Csum</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mu</span> <span class="o">+</span> <span class="n">norm_q</span><span class="p">(</span><span class="n">norm_interval</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,(</span><span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span> <span class="o">+</span> <span class="n">pnorm_increment</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">norm_q</span><span class="p">(</span><span class="n">norm_interval</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span> <span class="o">-</span> <span class="n">pnorm_increment</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span></div>
+        
+    <span class="c1"># make a function for vector version?</span>
+<div class="viewcode-block" id="truncated_gaussian_old.right_endpoint"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.right_endpoint">[docs]</a>    <span class="k">def</span> <span class="nf">right_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left_endpoint</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="n">left_endpoint</span> <span class="c1"># shorthand from Will&#39;s code</span>
+        <span class="n">mu</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span>
+        <span class="n">alpha1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">left_endpoint</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">alpha1</span> <span class="o">&gt;</span> <span class="n">alpha</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">alpha2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">alpha1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">alpha2</span><span class="p">)</span></div>
+            
+<div class="viewcode-block" id="truncated_gaussian_old.G"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.G">[docs]</a>    <span class="k">def</span> <span class="nf">G</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left_endpoint</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        $g_{\mu}$ from Will&#39;s code</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">klass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="n">left_endpoint</span> <span class="c1"># shorthand from Will&#39;s code</span>
+        <span class="n">mu</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span>
+
+        <span class="n">const</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">D</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">D</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">mu</span><span class="o">*</span><span class="n">P</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="n">right_endpoint</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right_endpoint</span><span class="p">(</span><span class="n">left_endpoint</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">right_endpoint</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">valid_intervals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span><span class="p">:</span>
+            <span class="n">intersection</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">left_endpoint</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span>
+                            <span class="nb">min</span><span class="p">(</span><span class="n">right_endpoint</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">intersection</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">intersection</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">valid_intervals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">intersection</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">valid_intervals</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">klass</span><span class="p">(</span><span class="n">valid_intervals</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span><span class="o">.</span><span class="n">delta</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">const</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="truncated_gaussian_old.dG"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.dG">[docs]</a>    <span class="k">def</span> <span class="nf">dG</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left_endpoint</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        $gg_{\mu}$ from Will&#39;s code</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="n">left_endpoint</span> <span class="c1"># shorthand from Will&#39;s code</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right_endpoint</span><span class="p">(</span><span class="n">left_endpoint</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">-</span> 
+                <span class="n">left_endpoint</span><span class="p">)</span> <span class="o">*</span> <span class="n">norm_pdf</span><span class="p">((</span><span class="n">left_endpoint</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">)</span> <span class="o">/</span> 
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="truncated_gaussian_old.equal_tailed_interval"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.equal_tailed_interval">[docs]</a>    <span class="k">def</span> <span class="nf">equal_tailed_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="n">old_mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+        <span class="n">lb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">-</span> <span class="mf">20.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+        <span class="n">ub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">+</span> <span class="mf">20.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+        <span class="k">def</span> <span class="nf">F</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">param</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">observed</span><span class="p">)</span>
+
+        <span class="c1">#from scipy.optimize import bisect</span>
+        <span class="c1">#FL = lambda x: (F(x) - (1 - 0.5 * alpha))</span>
+        <span class="c1">#FU = lambda x: (F(x) - 0.5 * alpha)</span>
+        <span class="c1">#L_conf = bisect(FL, lb, ub)</span>
+        <span class="c1">#U_conf = bisect(FU, lb, ub)</span>
+        <span class="c1">#return np.array([L_conf, U_conf])</span>
+
+        <span class="n">L</span> <span class="o">=</span> <span class="n">find_root</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">find_root</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">old_mu</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">L</span><span class="p">,</span> <span class="n">U</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="truncated_gaussian_old.UMAU_interval"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.truncated_gaussian_old.UMAU_interval">[docs]</a>    <span class="k">def</span> <span class="nf">UMAU_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span>
+                      <span class="n">mu_lo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">mu_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-8</span><span class="p">):</span>
+        <span class="n">old_mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">upper</span> <span class="o">=</span> <span class="n">_UMAU</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span>
+                          <span class="n">alpha</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span>
+                          <span class="n">mu_lo</span><span class="o">=</span><span class="n">mu_lo</span><span class="p">,</span>
+                          <span class="n">mu_hi</span><span class="o">=</span><span class="n">mu_hi</span><span class="p">,</span>
+                          <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">TruncatedGaussianError</span><span class="p">:</span>
+            <span class="n">upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="n">tg_neg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">negated</span>
+        <span class="k">try</span><span class="p">:</span>
+
+            <span class="n">lower</span> <span class="o">=</span> <span class="o">-</span><span class="n">_UMAU</span><span class="p">(</span><span class="o">-</span><span class="n">observed</span><span class="p">,</span>
+                          <span class="n">alpha</span><span class="p">,</span> <span class="n">tg_neg</span><span class="p">,</span>
+                          <span class="n">mu_lo</span><span class="o">=</span><span class="n">mu_hi</span><span class="p">,</span>
+                          <span class="n">mu_hi</span><span class="o">=</span><span class="n">mu_lo</span><span class="p">,</span>
+                          <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">)</span>
+
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">lower</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">negated</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">old_mu</span><span class="p">,</span> <span class="n">old_mu</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">])</span></div></div>
+
+<div class="viewcode-block" id="G"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.G">[docs]</a><span class="k">def</span> <span class="nf">G</span><span class="p">(</span><span class="n">left_endpoints</span><span class="p">,</span> <span class="n">mus</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">tg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the $G$ function of `tg(intervals)` over </span>
+<span class="sd">    `zip(left_endpoints, mus)`.</span>
+
+<span class="sd">    A copy is made of `tg` and its $(\mu,\scale)$ are not modified.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tg</span> <span class="o">=</span> <span class="n">truncated_gaussian</span><span class="p">(</span><span class="n">tg</span><span class="o">.</span><span class="n">intervals</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">left_endpoint</span><span class="p">,</span> <span class="n">mu</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">left_endpoints</span><span class="p">,</span> <span class="n">mus</span><span class="p">):</span>
+        <span class="n">tg</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tg</span><span class="o">.</span><span class="n">G</span><span class="p">(</span><span class="n">left_endpoint</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">results</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="dG"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.dG">[docs]</a><span class="k">def</span> <span class="nf">dG</span><span class="p">(</span><span class="n">left_endpoints</span><span class="p">,</span> <span class="n">mus</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">tg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the $G$ function of `tg(intervals)` over </span>
+<span class="sd">    `zip(left_endpoints, mus)`.</span>
+
+<span class="sd">    A copy is made of `tg` and its $(\mu,\scale)$ are not modified.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tg</span> <span class="o">=</span> <span class="n">truncated_gaussian</span><span class="p">(</span><span class="n">tg</span><span class="o">.</span><span class="n">intervals</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">left_endpoint</span><span class="p">,</span> <span class="n">mu</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">left_endpoints</span><span class="p">,</span> <span class="n">mus</span><span class="p">):</span>
+        <span class="n">tg</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tg</span><span class="o">.</span><span class="n">dG</span><span class="p">(</span><span class="n">left_endpoint</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">results</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TruncatedGaussianError"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.TruncatedGaussianError">[docs]</a><span class="k">class</span> <span class="nc">TruncatedGaussianError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<span class="k">def</span> <span class="nf">_UMAU</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">tg</span><span class="p">,</span> 
+         <span class="n">mu_lo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+         <span class="n">mu_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+         <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-8</span><span class="p">):</span>
+
+    <span class="n">klass</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">tg</span><span class="p">)</span>
+    <span class="n">tg</span> <span class="o">=</span> <span class="n">klass</span><span class="p">(</span><span class="n">tg</span><span class="o">.</span><span class="n">intervals</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">tg</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="n">observed</span> <span class="c1"># shorthand</span>
+    <span class="k">if</span> <span class="n">mu_lo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mu_lo</span> <span class="o">=</span> <span class="n">X</span>
+    <span class="k">if</span> <span class="n">mu_hi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mu_hi</span> <span class="o">=</span> <span class="n">X</span> <span class="o">+</span> <span class="mi">2</span>
+
+    <span class="c1"># find upper and lower points for bisection</span>
+    <span class="n">tg</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu_lo</span>
+    <span class="k">while</span> <span class="n">tg</span><span class="o">.</span><span class="n">G</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># mu_too_high</span>
+        <span class="n">mu_lo</span><span class="p">,</span> <span class="n">mu_hi</span> <span class="o">=</span> <span class="n">mu_lo</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">mu_lo</span>
+        <span class="n">tg</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu_lo</span>
+
+    <span class="n">tg</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu_hi</span>
+    <span class="k">while</span> <span class="n">tg</span><span class="o">.</span><span class="n">G</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># mu_too_low</span>
+        <span class="n">mu_lo</span><span class="p">,</span> <span class="n">mu_hi</span> <span class="o">=</span> <span class="n">mu_hi</span><span class="p">,</span> <span class="n">mu_hi</span> <span class="o">+</span> <span class="mi">2</span>
+        <span class="n">tg</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu_hi</span>
+
+    <span class="c1"># bisection</span>
+    <span class="k">while</span> <span class="n">mu_hi</span> <span class="o">-</span> <span class="n">mu_lo</span> <span class="o">&gt;</span> <span class="n">tol</span><span class="p">:</span>
+        <span class="n">mu_bar</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu_lo</span> <span class="o">+</span> <span class="n">mu_hi</span><span class="p">)</span>
+        <span class="n">tg</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu_bar</span>
+        <span class="k">if</span> <span class="n">tg</span><span class="o">.</span><span class="n">G</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mu_hi</span> <span class="o">=</span> <span class="n">mu_bar</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mu_lo</span> <span class="o">=</span> <span class="n">mu_bar</span>
+    <span class="k">return</span> <span class="n">mu_bar</span>
+
+<div class="viewcode-block" id="find_root"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.gaussian.html#selectinf.truncated.gaussian.find_root">[docs]</a><span class="k">def</span> <span class="nf">find_root</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    searches for solution to f(x) = y in (lb, ub), where </span>
+<span class="sd">    f is a monotone decreasing function</span>
+<span class="sd">    &quot;&quot;&quot;</span>       
+    
+    <span class="c1"># make sure solution is in range</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span>   <span class="o">=</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span>
+    <span class="n">fa</span><span class="p">,</span> <span class="n">fb</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    
+    <span class="c1"># assume a &lt; b</span>
+    <span class="k">if</span> <span class="n">fa</span> <span class="o">&gt;</span> <span class="n">y</span> <span class="ow">and</span> <span class="n">fb</span> <span class="o">&gt;</span> <span class="n">y</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">fb</span> <span class="o">&gt;</span> <span class="n">y</span> <span class="p">:</span> 
+            <span class="n">b</span><span class="p">,</span> <span class="n">fb</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">fa</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="ow">and</span> <span class="n">fb</span> <span class="o">&lt;</span> <span class="n">y</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">fa</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="p">:</span> 
+            <span class="n">a</span><span class="p">,</span> <span class="n">fa</span> <span class="o">=</span> <span class="n">a</span> <span class="o">-</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">))</span>
+    
+    <span class="c1"># determine the necessary number of iterations</span>
+    <span class="n">max_iter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tol</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+
+    <span class="c1"># bisect (slow but sure) until solution is obtained</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
+        <span class="n">c</span><span class="p">,</span> <span class="n">fc</span>  <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">f</span><span class="p">((</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fc</span> <span class="o">&gt;</span> <span class="n">y</span><span class="p">:</span> <span class="n">a</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="k">elif</span> <span class="n">fc</span> <span class="o">&lt;</span> <span class="n">y</span><span class="p">:</span> <span class="n">b</span> <span class="o">=</span> <span class="n">c</span>
+    
+    <span class="k">return</span> <span class="n">c</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

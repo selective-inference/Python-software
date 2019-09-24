@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.interfaces.matlab</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; General matlab interface code</span>
+
+<span class="sd">This is for nipy convenience.  If you&#39;re doing heavy matlab interfacing, please</span>
+<span class="sd">use NiPype instead:</span>
+
+<span class="sd">http://nipy.org/nipype</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="c1"># Stdlib imports</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+
+<span class="n">matlab_cmd</span> <span class="o">=</span> <span class="s1">&#39;matlab -nojvm -nosplash&#39;</span>
+
+<div class="viewcode-block" id="run_matlab"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.matlab.html#nipy.interfaces.matlab.run_matlab">[docs]</a><span class="k">def</span> <span class="nf">run_matlab</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> -r </span><span class="se">\&quot;</span><span class="si">%s</span><span class="s1">;exit</span><span class="se">\&quot;</span><span class="s1"> &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">matlab_cmd</span><span class="p">,</span> <span class="n">cmd</span><span class="p">),</span>
+                    <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="run_matlab_script"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.matlab.html#nipy.interfaces.matlab.run_matlab_script">[docs]</a><span class="k">def</span> <span class="nf">run_matlab_script</span><span class="p">(</span><span class="n">script_lines</span><span class="p">,</span> <span class="n">script_name</span><span class="o">=</span><span class="s1">&#39;pyscript&#39;</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Put multiline matlab script into script file and run &#39;&#39;&#39;</span>
+    <span class="n">mfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">script_name</span> <span class="o">+</span> <span class="s1">&#39;.m&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">)</span>
+    <span class="n">mfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">script_lines</span><span class="p">)</span>
+    <span class="n">mfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">run_matlab</span><span class="p">(</span><span class="n">script_name</span><span class="p">)</span></div>
+
+
+<span class="c1"># Functions, classes and other top-level code</span>
+<div class="viewcode-block" id="mlab_tempfile"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.matlab.html#nipy.interfaces.matlab.mlab_tempfile">[docs]</a><span class="k">def</span> <span class="nf">mlab_tempfile</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a temporary file-like object with valid matlab name.</span>
+
+<span class="sd">    The file name is accessible as the .name attribute of the returned object.</span>
+<span class="sd">    The caller is responsible for closing the returned object, at which time</span>
+<span class="sd">    the underlying file gets deleted from the filesystem.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dir : str</span>
+<span class="sd">        A path to use as the starting directory.  Note that this directory must</span>
+<span class="sd">        already exist, it is NOT created if it doesn&#39;t (in that case, OSError is</span>
+<span class="sd">        raised instead).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : file-like object</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; f = mlab_tempfile()</span>
+<span class="sd">    &gt;&gt;&gt; pth, fname = os.path.split(f.name)</span>
+<span class="sd">    &gt;&gt;&gt; &#39;-&#39; not in fname</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; f.close()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^\w+$&#39;</span><span class="p">)</span>
+    <span class="c1"># Make temp files until we get one whose name is a valid matlab identifier,</span>
+    <span class="c1"># since matlab imposes that constraint.  Since the temp file routines may</span>
+    <span class="c1"># return names that aren&#39;t valid matlab names, but we can&#39;t control that</span>
+    <span class="c1"># directly, we just keep trying until we get a valid name.  To avoid an</span>
+    <span class="c1"># infinite loop for some strange reason, we only try 100 times.</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.m&#39;</span><span class="p">,</span><span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;tmp_matlab_&#39;</span><span class="p">,</span>
+                                        <span class="nb">dir</span><span class="o">=</span><span class="nb">dir</span><span class="p">)</span>
+        <span class="c1"># Check the file name for matlab compliance</span>
+        <span class="n">fname</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">valid_name</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            <span class="k">break</span>
+        <span class="c1"># Close the temp file we just made if its name is not valid; the</span>
+        <span class="c1"># tempfile module then takes care of deleting the actual file on disk.</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not make temp file after 100 tries&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

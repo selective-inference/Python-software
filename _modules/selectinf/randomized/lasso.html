@@ -1,0 +1,1215 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.randomized.lasso</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">ndist</span>
+
+<span class="kn">import</span> <span class="nn">regreg.api</span> <span class="k">as</span> <span class="nn">rr</span>
+
+<span class="kn">from</span> <span class="nn">..algorithms.sqrt_lasso</span> <span class="k">import</span> <span class="n">solve_sqrt_lasso</span><span class="p">,</span> <span class="n">choose_lambda</span>
+
+<span class="kn">from</span> <span class="nn">.query</span> <span class="k">import</span> <span class="n">gaussian_query</span>
+
+<span class="kn">from</span> <span class="nn">.randomization</span> <span class="k">import</span> <span class="n">randomization</span>
+<span class="kn">from</span> <span class="nn">..base</span> <span class="k">import</span> <span class="n">restricted_estimator</span>
+<span class="kn">from</span> <span class="nn">..algorithms.debiased_lasso</span> <span class="k">import</span> <span class="p">(</span><span class="n">debiasing_matrix</span><span class="p">,</span>
+                                         <span class="n">pseudoinverse_debiasing_matrix</span><span class="p">)</span>
+
+<span class="c1">#### High dimensional version</span>
+<span class="c1">#### - parametric covariance</span>
+<span class="c1">#### - Gaussian randomization</span>
+
+<div class="viewcode-block" id="lasso"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.lasso">[docs]</a><span class="k">class</span> <span class="nc">lasso</span><span class="p">(</span><span class="n">gaussian_query</span><span class="p">):</span>
+
+
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for the randomized LASSO for post-selection inference.</span>
+<span class="sd">    The problem solved is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \text{minimize}_{\beta} \ell(\beta) + </span>
+<span class="sd">            \sum_{i=1}^p \lambda_i |\beta_i\| - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2</span>
+
+<span class="sd">    where $\lambda$ is `lam`, $\omega$ is a randomization generated below</span>
+<span class="sd">    and the last term is a small ridge penalty. Each static method</span>
+<span class="sd">    forms $\ell$ as well as the $\ell_1$ penalty. The generic class</span>
+<span class="sd">    forms the remaining two terms in the objective.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="lasso.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.lasso.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">loglike</span><span class="p">,</span>
+                 <span class="n">feature_weights</span><span class="p">,</span>
+                 <span class="n">ridge_term</span><span class="p">,</span>
+                 <span class="n">randomizer</span><span class="p">,</span>
+                 <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new post-selection object for the LASSO problem</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        loglike : `regreg.smooth.glm.glm`</span>
+<span class="sd">            A (negative) log-likelihood as implemented in `regreg`.</span>
+
+<span class="sd">        feature_weights : np.ndarray</span>
+<span class="sd">            Feature weights for L-1 penalty. If a float,</span>
+<span class="sd">            it is brodcast to all features.</span>
+
+<span class="sd">        ridge_term : float</span>
+<span class="sd">            How big a ridge term to add?</span>
+
+<span class="sd">        randomizer : object</span>
+<span class="sd">            Randomizer -- contains representation of randomization density.</span>
+
+<span class="sd">        perturb : np.ndarray</span>
+<span class="sd">            Random perturbation subtracted as a linear</span>
+<span class="sd">            term in the objective function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span> <span class="o">=</span> <span class="n">loglike</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span> <span class="o">=</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="n">feature_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">loglike</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">feature_weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span> <span class="o">=</span> <span class="n">ridge_term</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">weighted_l1norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_weights</span><span class="p">,</span> <span class="n">lagrange</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="o">=</span> <span class="n">perturb</span>  <span class="c1"># random perturbation</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomizer</span></div>
+
+<div class="viewcode-block" id="lasso.fit"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.lasso.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tol&#39;</span><span class="p">:</span> <span class="mf">1.e-12</span><span class="p">,</span> <span class="s1">&#39;min_its&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">},</span>
+            <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Fit the randomized lasso using `regreg`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        solve_args : keyword args</span>
+<span class="sd">             Passed to `regreg.problems.simple_problem.solve`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        signs : np.float</span>
+<span class="sd">             Support and non-zero signs of randomized lasso solution.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span>
+
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">,</span> 
+         <span class="bp">self</span><span class="o">.</span><span class="n">initial_subgrad</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solve_randomized_problem</span><span class="p">(</span>
+                                     <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">,</span> 
+                                     <span class="n">solve_args</span><span class="o">=</span><span class="n">solve_args</span><span class="p">)</span>
+
+        <span class="n">active_signs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">)</span>
+        <span class="n">active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="n">active_signs</span> <span class="o">!=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lagrange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="o">.</span><span class="n">weights</span>
+        <span class="n">unpenalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lagrange</span> <span class="o">==</span> <span class="mi">0</span>
+
+        <span class="n">active</span> <span class="o">*=</span> <span class="o">~</span><span class="n">unpenalized</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_overall</span> <span class="o">=</span> <span class="n">overall</span> <span class="o">=</span> <span class="p">(</span><span class="n">active</span> <span class="o">+</span> <span class="n">unpenalized</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inactive</span> <span class="o">=</span> <span class="n">inactive</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">_overall</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unpenalized</span> <span class="o">=</span> <span class="n">unpenalized</span>
+
+        <span class="n">_active_signs</span> <span class="o">=</span> <span class="n">active_signs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># don&#39;t release sign of unpenalized variables</span>
+        <span class="n">_active_signs</span><span class="p">[</span><span class="n">unpenalized</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>  
+        <span class="n">ordered_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">active</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span>
+                                  <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">unpenalized</span><span class="p">)[</span><span class="mi">0</span><span class="p">])))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sign&#39;</span><span class="p">:</span> <span class="n">_active_signs</span><span class="p">,</span>
+                                   <span class="s1">&#39;variables&#39;</span><span class="p">:</span> <span class="n">ordered_variables</span><span class="p">}</span>
+
+        <span class="c1"># initial state for opt variables</span>
+
+        <span class="n">initial_scalings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">[</span><span class="n">active</span><span class="p">])</span>
+        <span class="n">initial_unpenalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_unpenalized</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">initial_scalings</span><span class="p">,</span>
+                                                  <span class="n">initial_unpenalized</span><span class="p">])</span>
+
+        <span class="n">_beta_unpenalized</span> <span class="o">=</span> <span class="n">restricted_estimator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="p">,</span> 
+                                                 <span class="bp">self</span><span class="o">.</span><span class="n">_overall</span><span class="p">,</span> 
+                                                 <span class="n">solve_args</span><span class="o">=</span><span class="n">solve_args</span><span class="p">)</span>
+
+        <span class="n">beta_bar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">beta_bar</span><span class="p">[</span><span class="n">overall</span><span class="p">]</span> <span class="o">=</span> <span class="n">_beta_unpenalized</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beta_full</span> <span class="o">=</span> <span class="n">beta_bar</span>
+
+        <span class="c1"># form linear part</span>
+
+        <span class="n">num_opt_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})</span>
+        <span class="c1"># E for active</span>
+        <span class="c1"># U for unpenalized</span>
+        <span class="c1"># -E for inactive</span>
+
+        <span class="n">opt_linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="n">num_opt_var</span><span class="p">))</span>
+        <span class="n">_score_linear_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="n">num_opt_var</span><span class="p">))</span>
+
+        <span class="c1"># \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator</span>
+
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">saturated_loss</span><span class="o">.</span><span class="n">hessian</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">beta_bar</span><span class="p">))</span>
+        <span class="n">_hessian_active</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">active</span><span class="p">]</span> <span class="o">*</span> <span class="n">W</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+        <span class="n">_hessian_unpen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">unpenalized</span><span class="p">]</span> <span class="o">*</span> <span class="n">W</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+
+        <span class="n">_score_linear_term</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">_hessian_active</span><span class="p">,</span> <span class="n">_hessian_unpen</span><span class="p">])</span>
+
+        <span class="c1"># set the observed score (data dependent) state</span>
+
+        <span class="c1"># observed_score_state is</span>
+        <span class="c1"># \nabla \ell(\bar{\beta}_E) + Q(\bar{\beta}_E) \bar{\beta}_E</span>
+        <span class="c1"># in linear regression this is _ALWAYS_ -X^TY</span>
+        <span class="c1"># </span>
+        <span class="c1"># should be asymptotically equivalent to</span>
+        <span class="c1"># \nabla \ell(\beta^*) + Q(\beta^*)\beta^*</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span> <span class="o">=</span> <span class="n">_score_linear_term</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">_beta_unpenalized</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span><span class="p">[</span><span class="n">inactive</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">beta_bar</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)[</span><span class="n">inactive</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">signed_basis_vector</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="n">active_directions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">signed_basis_vector</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> 
+                                                          <span class="n">j</span><span class="p">,</span> 
+                                                          <span class="n">active_signs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> 
+                                      <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">active</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="n">scaling_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">active</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">active</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">_opt_hessian</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_opt_hessian</span> <span class="o">=</span> <span class="p">(</span><span class="n">_hessian_active</span> <span class="o">*</span> <span class="n">active_signs</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">active</span><span class="p">]</span> 
+                            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span> <span class="o">*</span> <span class="n">active_directions</span><span class="p">)</span>
+
+        <span class="n">opt_linear</span><span class="p">[:,</span> <span class="n">scaling_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">_opt_hessian</span>
+
+        <span class="c1"># beta_U piece</span>
+
+        <span class="n">unpenalized_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">active</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">num_opt_var</span><span class="p">)</span>
+        <span class="n">unpenalized_directions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">signed_basis_vector</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> 
+                                           <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">unpenalized</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">if</span> <span class="n">unpenalized</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+            <span class="n">opt_linear</span><span class="p">[:,</span> <span class="n">unpenalized_slice</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">_hessian_unpen</span>
+                                                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span> <span class="o">*</span>
+                                                <span class="n">unpenalized_directions</span><span class="p">)</span>
+
+        <span class="n">opt_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_subgrad</span>
+
+        <span class="c1"># now make the constraints and implied gaussian</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">A_scaling</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">num_opt_var</span><span class="p">)</span>
+        <span class="n">b_scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_opt_var</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">A_scaling</span><span class="p">[:</span><span class="n">active</span><span class="o">.</span><span class="n">sum</span><span class="p">()],</span>
+                                    <span class="n">b_scaling</span><span class="p">[:</span><span class="n">active</span><span class="o">.</span><span class="n">sum</span><span class="p">()],</span>
+                                    <span class="n">opt_linear</span><span class="p">,</span>
+                                    <span class="n">opt_offset</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_opt_var</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler_data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">active_signs</span></div>
+
+    <span class="k">def</span> <span class="nf">_solve_randomized_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                                  <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                                  <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tol&#39;</span><span class="p">:</span> <span class="mf">1.e-12</span><span class="p">,</span> <span class="s1">&#39;min_its&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}):</span>
+
+        <span class="c1"># take a new perturbation if supplied</span>
+        <span class="k">if</span> <span class="n">perturb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="o">=</span> <span class="n">perturb</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomizer</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+
+        <span class="n">quad</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">identity_quadratic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span><span class="p">,</span> 
+                                     <span class="mi">0</span><span class="p">,</span> 
+                                     <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span><span class="p">,</span> 
+                                     <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">problem</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">simple_problem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="p">)</span>
+
+        <span class="n">initial_soln</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">quad</span><span class="p">,</span> <span class="o">**</span><span class="n">solve_args</span><span class="p">)</span> 
+        <span class="n">initial_subgrad</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">initial_soln</span><span class="p">,</span> 
+                                                          <span class="s1">&#39;grad&#39;</span><span class="p">)</span> <span class="o">+</span>
+                            <span class="n">quad</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">initial_soln</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">initial_soln</span><span class="p">,</span> <span class="n">initial_subgrad</span>
+
+<div class="viewcode-block" id="lasso.gaussian"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.lasso.gaussian">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                 <span class="n">Y</span><span class="p">,</span>
+                 <span class="n">feature_weights</span><span class="p">,</span>
+                 <span class="n">sigma</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                 <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">ridge_term</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">randomizer_scale</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Squared-error LASSO with feature weights.</span>
+<span class="sd">        Objective function is (before randomization)</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|</span>
+
+<span class="sd">        where $\lambda$ is `feature_weights`. The ridge term</span>
+<span class="sd">        is determined by the Hessian and `np.std(Y)` by default,</span>
+<span class="sd">        as is the randomizer scale.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        X : ndarray</span>
+<span class="sd">            Shape (n,p) -- the design matrix.</span>
+
+<span class="sd">        Y : ndarray</span>
+<span class="sd">            Shape (n,) -- the response.</span>
+
+<span class="sd">        feature_weights: [float, sequence]</span>
+<span class="sd">            Penalty weights. An intercept, or other unpenalized</span>
+<span class="sd">            features are handled by setting those entries of</span>
+<span class="sd">            `feature_weights` to 0. If `feature_weights` is</span>
+<span class="sd">            a float, then all parameters are penalized equally.</span>
+
+<span class="sd">        sigma : float (optional)</span>
+<span class="sd">            Noise variance. Set to 1 if `covariance_estimator` is not None.</span>
+<span class="sd">            This scales the loglikelihood by `sigma**(-2)`.</span>
+
+<span class="sd">        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)</span>
+<span class="sd">            An optional quadratic term to be added to the objective.</span>
+<span class="sd">            Can also be a linear term by setting quadratic</span>
+<span class="sd">            coefficient to 0.</span>
+
+<span class="sd">        ridge_term : float</span>
+<span class="sd">            How big a ridge term to add?</span>
+
+<span class="sd">        randomizer_scale : float</span>
+<span class="sd">            Scale for IID components of randomizer.</span>
+
+<span class="sd">        randomizer : str</span>
+<span class="sd">            One of [&#39;laplace&#39;, &#39;logistic&#39;, &#39;gaussian&#39;]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        L : `selection.randomized.lasso.lasso`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">loglike</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">glm</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">)</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">mean_diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">X</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">ridge_term</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ridge_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">randomizer_scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomizer_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+
+        <span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="n">p</span><span class="p">,),</span> <span class="n">randomizer_scale</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lasso</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> 
+                     <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+                     <span class="n">ridge_term</span><span class="p">,</span> <span class="n">randomizer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="lasso.logistic"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.lasso.logistic">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">logistic</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                 <span class="n">successes</span><span class="p">,</span>
+                 <span class="n">feature_weights</span><span class="p">,</span>
+                 <span class="n">trials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">ridge_term</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">randomizer_scale</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Logistic LASSO with feature weights (before randomization)</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">             \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|</span>
+
+<span class="sd">        where $\ell$ is the negative of the logistic</span>
+<span class="sd">        log-likelihood (half the logistic deviance)</span>
+<span class="sd">        and $\lambda$ is `feature_weights`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        X : ndarray</span>
+<span class="sd">            Shape (n,p) -- the design matrix.</span>
+
+<span class="sd">        successes : ndarray</span>
+<span class="sd">            Shape (n,) -- response vector. An integer number of successes.</span>
+<span class="sd">            For data that is proportions, multiply the proportions</span>
+<span class="sd">            by the number of trials first.</span>
+
+<span class="sd">        feature_weights: [float, sequence]</span>
+<span class="sd">            Penalty weights. An intercept, or other unpenalized</span>
+<span class="sd">            features are handled by setting those entries of</span>
+<span class="sd">            `feature_weights` to 0. If `feature_weights` is</span>
+<span class="sd">            a float, then all parameters are penalized equally.</span>
+
+<span class="sd">        trials : ndarray (optional)</span>
+<span class="sd">            Number of trials per response, defaults to</span>
+<span class="sd">            ones the same shape as Y.</span>
+
+<span class="sd">        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)</span>
+<span class="sd">            An optional quadratic term to be added to the objective.</span>
+<span class="sd">            Can also be a linear term by setting quadratic</span>
+<span class="sd">            coefficient to 0.</span>
+
+<span class="sd">        ridge_term : float</span>
+<span class="sd">            How big a ridge term to add?</span>
+
+<span class="sd">        randomizer_scale : float</span>
+<span class="sd">            Scale for IID components of randomizer.</span>
+
+<span class="sd">        randomizer : str</span>
+<span class="sd">            One of [&#39;laplace&#39;, &#39;logistic&#39;, &#39;gaussian&#39;]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        L : `selection.randomized.lasso.lasso`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">loglike</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">glm</span><span class="o">.</span><span class="n">logistic</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">successes</span><span class="p">,</span> <span class="n">trials</span><span class="o">=</span><span class="n">trials</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">)</span>
+
+        <span class="n">mean_diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">X</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">ridge_term</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ridge_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">randomizer_scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomizer_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span>
+
+        <span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="n">p</span><span class="p">,),</span> <span class="n">randomizer_scale</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lasso</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> 
+                     <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">),</span>
+                     <span class="n">ridge_term</span><span class="p">,</span> <span class="n">randomizer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="lasso.coxph"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.lasso.coxph">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">coxph</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+              <span class="n">times</span><span class="p">,</span>
+              <span class="n">status</span><span class="p">,</span>
+              <span class="n">feature_weights</span><span class="p">,</span>
+              <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">ridge_term</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">randomizer_scale</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cox proportional hazards LASSO with feature weights.</span>
+<span class="sd">        Objective function is (before randomization)</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \beta \mapsto \ell^{\text{Cox}}(\beta) + </span>
+<span class="sd">            \sum_{i=1}^p \lambda_i |\beta_i|</span>
+
+<span class="sd">        where $\ell^{\text{Cox}}$ is the</span>
+<span class="sd">        negative of the log of the Cox partial</span>
+<span class="sd">        likelihood and $\lambda$ is `feature_weights`.</span>
+<span class="sd">        Uses Efron&#39;s tie breaking method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        X : ndarray</span>
+<span class="sd">            Shape (n,p) -- the design matrix.</span>
+
+<span class="sd">        times : ndarray</span>
+<span class="sd">            Shape (n,) -- the survival times.</span>
+
+<span class="sd">        status : ndarray</span>
+<span class="sd">            Shape (n,) -- the censoring status.</span>
+
+<span class="sd">        feature_weights: [float, sequence]</span>
+<span class="sd">            Penalty weights. An intercept, or other unpenalized</span>
+<span class="sd">            features are handled by setting those entries of</span>
+<span class="sd">            `feature_weights` to 0. If `feature_weights` is</span>
+<span class="sd">            a float, then all parameters are penalized equally.</span>
+
+<span class="sd">        covariance_estimator : optional</span>
+<span class="sd">            If None, use the parameteric</span>
+<span class="sd">            covariance estimate of the selected model.</span>
+
+<span class="sd">        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)</span>
+<span class="sd">            An optional quadratic term to be added to the objective.</span>
+<span class="sd">            Can also be a linear term by setting quadratic</span>
+<span class="sd">            coefficient to 0.</span>
+
+<span class="sd">        ridge_term : float</span>
+<span class="sd">            How big a ridge term to add?</span>
+
+<span class="sd">        randomizer_scale : float</span>
+<span class="sd">            Scale for IID components of randomizer.</span>
+
+<span class="sd">        randomizer : str</span>
+<span class="sd">            One of [&#39;laplace&#39;, &#39;logistic&#39;, &#39;gaussian&#39;]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        L : `selection.randomized.lasso.lasso`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loglike</span> <span class="o">=</span> <span class="n">coxph_obj</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">)</span>
+
+        <span class="c1"># scale for randomization seems kind of meaningless here...</span>
+
+        <span class="n">mean_diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">X</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">ridge_term</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ridge_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">randomizer_scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomizer_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+
+        <span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="n">p</span><span class="p">,),</span> <span class="n">randomizer_scale</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lasso</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span>
+                     <span class="n">feature_weights</span><span class="p">,</span>
+                     <span class="n">ridge_term</span><span class="p">,</span>
+                     <span class="n">randomizer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="lasso.poisson"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.lasso.poisson">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">poisson</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                <span class="n">counts</span><span class="p">,</span>
+                <span class="n">feature_weights</span><span class="p">,</span>
+                <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">ridge_term</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">randomizer_scale</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Poisson log-linear LASSO with feature weights.</span>
+<span class="sd">        Objective function is (before randomization)</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|</span>
+
+<span class="sd">        where $\ell^{\text{Poisson}}$ is the negative</span>
+<span class="sd">        of the log of the Poisson likelihood (half the deviance)</span>
+<span class="sd">        and $\lambda$ is `feature_weights`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        X : ndarray</span>
+<span class="sd">            Shape (n,p) -- the design matrix.</span>
+
+<span class="sd">        counts : ndarray</span>
+<span class="sd">            Shape (n,) -- the response.</span>
+
+<span class="sd">        feature_weights: [float, sequence]</span>
+<span class="sd">            Penalty weights. An intercept, or other unpenalized</span>
+<span class="sd">            features are handled by setting those entries of</span>
+<span class="sd">            `feature_weights` to 0. If `feature_weights` is</span>
+<span class="sd">            a float, then all parameters are penalized equally.</span>
+
+<span class="sd">        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)</span>
+<span class="sd">            An optional quadratic term to be added to the objective.</span>
+<span class="sd">            Can also be a linear term by setting quadratic</span>
+<span class="sd">            coefficient to 0.</span>
+
+<span class="sd">        ridge_term : float</span>
+<span class="sd">            How big a ridge term to add?</span>
+
+<span class="sd">        randomizer_scale : float</span>
+<span class="sd">            Scale for IID components of randomizer.</span>
+
+<span class="sd">        randomizer : str</span>
+<span class="sd">            One of [&#39;laplace&#39;, &#39;logistic&#39;, &#39;gaussian&#39;]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        L : `selection.randomized.lasso.lasso`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">loglike</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">glm</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">)</span>
+
+        <span class="c1"># scale for randomizer seems kind of meaningless here...</span>
+
+        <span class="n">mean_diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">X</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">ridge_term</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ridge_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">randomizer_scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomizer_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+
+        <span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="n">p</span><span class="p">,),</span> <span class="n">randomizer_scale</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lasso</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span>
+                     <span class="n">feature_weights</span><span class="p">,</span>
+                     <span class="n">ridge_term</span><span class="p">,</span>
+                     <span class="n">randomizer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="lasso.sqrt_lasso"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.lasso.sqrt_lasso">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">sqrt_lasso</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                   <span class="n">Y</span><span class="p">,</span>
+                   <span class="n">feature_weights</span><span class="p">,</span>
+                   <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">ridge_term</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">randomizer_scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;min_its&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
+                   <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use sqrt-LASSO to choose variables.</span>
+<span class="sd">        Objective function is (before randomization)</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|</span>
+
+<span class="sd">        where $\lambda$ is `feature_weights`. After solving the problem</span>
+<span class="sd">        treat as if `gaussian` with implied variance and choice of</span>
+<span class="sd">        multiplier. See arxiv.org/abs/1504.08031 for details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        X : ndarray</span>
+<span class="sd">            Shape (n,p) -- the design matrix.</span>
+
+<span class="sd">        Y : ndarray</span>
+<span class="sd">            Shape (n,) -- the response.</span>
+
+<span class="sd">        feature_weights: [float, sequence]</span>
+<span class="sd">            Penalty weights. An intercept, or other unpenalized</span>
+<span class="sd">            features are handled by setting those entries of</span>
+<span class="sd">            `feature_weights` to 0. If `feature_weights` is</span>
+<span class="sd">            a float, then all parameters are penalized equally.</span>
+
+<span class="sd">        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)</span>
+<span class="sd">            An optional quadratic term to be added to the objective.</span>
+<span class="sd">            Can also be a linear term by setting quadratic</span>
+<span class="sd">            coefficient to 0.</span>
+
+<span class="sd">        covariance : str</span>
+<span class="sd">            One of &#39;parametric&#39; or &#39;sandwich&#39;. Method</span>
+<span class="sd">            used to estimate covariance for inference</span>
+<span class="sd">            in second stage.</span>
+
+<span class="sd">        solve_args : dict</span>
+<span class="sd">            Arguments passed to solver.</span>
+
+<span class="sd">        ridge_term : float</span>
+<span class="sd">            How big a ridge term to add?</span>
+
+<span class="sd">        randomizer_scale : float</span>
+<span class="sd">            Scale for IID components of randomizer.</span>
+
+<span class="sd">        randomizer : str</span>
+<span class="sd">            One of [&#39;laplace&#39;, &#39;logistic&#39;, &#39;gaussian&#39;]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        L : `selection.randomized.lasso.lasso`</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        Unlike other variants of LASSO, this</span>
+<span class="sd">        solves the problem on construction as the active</span>
+<span class="sd">        set is needed to find equivalent gaussian LASSO.</span>
+<span class="sd">        Assumes parametric model is correct for inference,</span>
+<span class="sd">        i.e. does not accept a covariance estimator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="n">feature_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">*</span> <span class="n">feature_weights</span>
+
+        <span class="n">mean_diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">X</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">ridge_term</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ridge_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">randomizer_scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomizer_scale</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">perturb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">perturb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">*</span> <span class="n">randomizer_scale</span>
+
+        <span class="n">randomQ</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">identity_quadratic</span><span class="p">(</span><span class="n">ridge_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">perturb</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># a ridge + linear term</span>
+
+        <span class="k">if</span> <span class="n">quadratic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">totalQ</span> <span class="o">=</span> <span class="n">randomQ</span> <span class="o">+</span> <span class="n">quadratic</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">totalQ</span> <span class="o">=</span> <span class="n">randomQ</span>
+
+        <span class="n">soln</span><span class="p">,</span> <span class="n">sqrt_loss</span> <span class="o">=</span> <span class="n">solve_sqrt_lasso</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                                           <span class="n">Y</span><span class="p">,</span>
+                                           <span class="n">weights</span><span class="o">=</span><span class="n">feature_weights</span><span class="p">,</span>
+                                           <span class="n">quadratic</span><span class="o">=</span><span class="n">totalQ</span><span class="p">,</span>
+                                           <span class="n">solve_args</span><span class="o">=</span><span class="n">solve_args</span><span class="p">,</span>
+                                           <span class="n">force_fat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">denom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Y</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">soln</span><span class="p">))</span>
+        <span class="n">loglike</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">glm</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+
+        <span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="n">p</span><span class="p">,),</span> <span class="n">randomizer_scale</span> <span class="o">*</span> <span class="n">denom</span><span class="p">)</span>
+
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">lasso</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> 
+                    <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">)</span> <span class="o">*</span> <span class="n">denom</span><span class="p">,</span>
+                    <span class="n">ridge_term</span> <span class="o">*</span> <span class="n">denom</span><span class="p">,</span>
+                    <span class="n">randomizer</span><span class="p">,</span>
+                    <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span> <span class="o">*</span> <span class="n">denom</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">_sqrt_soln</span> <span class="o">=</span> <span class="n">soln</span>
+
+        <span class="k">return</span> <span class="n">obj</span></div></div>
+
+<span class="c1"># private functions</span>
+
+<span class="c1"># functions construct targets of inference</span>
+<span class="c1"># and covariance with score representation</span>
+
+<div class="viewcode-block" id="selected_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.selected_targets">[docs]</a><span class="k">def</span> <span class="nf">selected_targets</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> 
+                     <span class="n">W</span><span class="p">,</span> 
+                     <span class="n">features</span><span class="p">,</span> 
+                     <span class="n">sign_info</span><span class="o">=</span><span class="p">{},</span> 
+                     <span class="n">dispersion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tol&#39;</span><span class="p">:</span> <span class="mf">1.e-12</span><span class="p">,</span> <span class="s1">&#39;min_its&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}):</span>
+
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">loglike</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">Xfeat</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">features</span><span class="p">]</span>
+    <span class="n">Qfeat</span> <span class="o">=</span> <span class="n">Xfeat</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">Xfeat</span><span class="p">)</span>
+    <span class="n">observed_target</span> <span class="o">=</span> <span class="n">restricted_estimator</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">solve_args</span><span class="o">=</span><span class="n">solve_args</span><span class="p">)</span>
+    <span class="n">cov_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Qfeat</span><span class="p">)</span>
+    <span class="n">_score_linear</span> <span class="o">=</span> <span class="o">-</span><span class="n">Xfeat</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="n">_score_linear</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">cov_target</span><span class="p">)</span>
+    <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">features_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="n">features</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alternatives</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">features_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">sign_info</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">alternatives</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sign_info</span><span class="p">[</span><span class="n">features_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">dispersion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># use Pearson&#39;s X^2</span>
+        <span class="n">dispersion</span> <span class="o">=</span> <span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">loglike</span><span class="o">.</span><span class="n">saturated_loss</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span>
+            <span class="n">Xfeat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">observed_target</span><span class="p">)))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">W</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">Xfeat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">crosscov_target_score</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">alternatives</span></div>
+
+<div class="viewcode-block" id="full_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.full_targets">[docs]</a><span class="k">def</span> <span class="nf">full_targets</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> 
+                 <span class="n">W</span><span class="p">,</span> 
+                 <span class="n">features</span><span class="p">,</span> 
+                 <span class="n">dispersion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tol&#39;</span><span class="p">:</span> <span class="mf">1.e-12</span><span class="p">,</span> <span class="s1">&#39;min_its&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}):</span>
+    
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">loglike</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">features_bool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="n">features_bool</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">features_bool</span>
+
+    <span class="c1"># target is one-step estimator</span>
+
+    <span class="n">Qfull</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span>
+    <span class="n">Qfull_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Qfull</span><span class="p">)</span>
+    <span class="n">full_estimator</span> <span class="o">=</span> <span class="n">loglike</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="o">**</span><span class="n">solve_args</span><span class="p">)</span>
+    <span class="n">cov_target</span> <span class="o">=</span> <span class="n">Qfull_inv</span><span class="p">[</span><span class="n">features</span><span class="p">][:,</span> <span class="n">features</span><span class="p">]</span>
+    <span class="n">observed_target</span> <span class="o">=</span> <span class="n">full_estimator</span><span class="p">[</span><span class="n">features</span><span class="p">]</span>
+    <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="n">cov_target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">crosscov_target_score</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">cov_target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">dispersion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># use Pearson&#39;s X^2</span>
+        <span class="n">dispersion</span> <span class="o">=</span> <span class="p">(((</span><span class="n">y</span> <span class="o">-</span> <span class="n">loglike</span><span class="o">.</span><span class="n">saturated_loss</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">full_estimator</span><span class="p">)))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">W</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> 
+                      <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span>
+
+    <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">crosscov_target_score</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">alternatives</span></div>
+
+<div class="viewcode-block" id="debiased_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.debiased_targets">[docs]</a><span class="k">def</span> <span class="nf">debiased_targets</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> 
+                     <span class="n">W</span><span class="p">,</span> 
+                     <span class="n">features</span><span class="p">,</span> 
+                     <span class="n">sign_info</span><span class="o">=</span><span class="p">{},</span> 
+                     <span class="n">penalty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1">#required kwarg</span>
+                     <span class="n">dispersion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">approximate_inverse</span><span class="o">=</span><span class="s1">&#39;JM&#39;</span><span class="p">,</span>
+                     <span class="n">debiasing_args</span><span class="o">=</span><span class="p">{}):</span>
+
+    <span class="k">if</span> <span class="n">penalty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;require penalty for consistent estimator&#39;</span><span class="p">)</span>
+
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">loglike</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">features_bool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="n">features_bool</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">features_bool</span>
+
+    <span class="c1"># relevant rows of approximate inverse</span>
+
+
+    <span class="k">if</span> <span class="n">approximate_inverse</span> <span class="o">==</span> <span class="s1">&#39;JM&#39;</span><span class="p">:</span>
+        <span class="n">Qinv_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">debiasing_matrix</span><span class="p">(</span><span class="n">X</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">W</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">],</span> 
+                                                  <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">features</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                                                  <span class="o">**</span><span class="n">debiasing_args</span><span class="p">))</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Qinv_hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">pseudoinverse_debiasing_matrix</span><span class="p">(</span><span class="n">X</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">W</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">],</span>
+                                                                <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">features</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                                                                <span class="o">**</span><span class="n">debiasing_args</span><span class="p">))</span>
+
+    <span class="n">problem</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">simple_problem</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> <span class="n">penalty</span><span class="p">)</span>
+    <span class="n">nonrand_soln</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+    <span class="n">G_nonrand</span> <span class="o">=</span> <span class="n">loglike</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">nonrand_soln</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)</span>
+
+    <span class="n">observed_target</span> <span class="o">=</span> <span class="n">nonrand_soln</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">-</span> <span class="n">Qinv_hat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">G_nonrand</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="n">M1</span> <span class="o">=</span> <span class="n">Qinv_hat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">cov_target</span> <span class="o">=</span> <span class="p">(</span><span class="n">M1</span> <span class="o">*</span> <span class="n">W</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M1</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">M1</span> <span class="o">*</span> <span class="n">W</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Qfull</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span>
+        <span class="n">cov_target</span> <span class="o">=</span> <span class="n">Qinv_hat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Qfull</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Qinv_hat</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+        <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="o">-</span><span class="n">Qinv_hat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Qfull</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="n">dispersion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># use Pearson&#39;s X^2</span>
+        <span class="n">Xfeat</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">features</span><span class="p">]</span>
+        <span class="n">Qrelax</span> <span class="o">=</span> <span class="n">Xfeat</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">Xfeat</span><span class="p">)</span>
+        <span class="n">relaxed_soln</span> <span class="o">=</span> <span class="n">nonrand_soln</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Qrelax</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">G_nonrand</span><span class="p">[</span><span class="n">features</span><span class="p">])</span>
+        <span class="n">dispersion</span> <span class="o">=</span> <span class="p">(((</span><span class="n">y</span> <span class="o">-</span> <span class="n">loglike</span><span class="o">.</span><span class="n">saturated_loss</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">Xfeat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">relaxed_soln</span><span class="p">)))</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">W</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> 
+                      <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
+
+    <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">crosscov_target_score</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">alternatives</span></div>
+
+<div class="viewcode-block" id="form_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.form_targets">[docs]</a><span class="k">def</span> <span class="nf">form_targets</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> 
+                 <span class="n">loglike</span><span class="p">,</span> 
+                 <span class="n">W</span><span class="p">,</span> 
+                 <span class="n">features</span><span class="p">,</span> 
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">_target</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;full&#39;</span><span class="p">:</span><span class="n">full_targets</span><span class="p">,</span>
+               <span class="s1">&#39;selected&#39;</span><span class="p">:</span><span class="n">selected_targets</span><span class="p">,</span>
+               <span class="s1">&#39;debiased&#39;</span><span class="p">:</span><span class="n">debiased_targets</span><span class="p">}[</span><span class="n">target</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_target</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span>
+                   <span class="n">W</span><span class="p">,</span>
+                   <span class="n">features</span><span class="p">,</span>
+                   <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="split_lasso"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.split_lasso">[docs]</a><span class="k">class</span> <span class="nc">split_lasso</span><span class="p">(</span><span class="n">lasso</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Data split, then LASSO (i.e. data carving)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="split_lasso.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.split_lasso.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">loglike</span><span class="p">,</span>
+                 <span class="n">feature_weights</span><span class="p">,</span>
+                 <span class="n">proportion_select</span><span class="p">,</span>
+                 <span class="n">ridge_term</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">feature_weights</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">proportion_select</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">loglike</span><span class="p">,</span>
+                             <span class="n">feature_weights</span><span class="p">,</span>
+                             <span class="n">proportion_select</span><span class="p">,</span>
+                             <span class="n">ridge_term</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span> <span class="o">=</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">weighted_l1norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_weights</span><span class="p">,</span> <span class="n">lagrange</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="o">=</span> <span class="n">perturb</span></div>
+
+<div class="viewcode-block" id="split_lasso.fit"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.split_lasso.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tol&#39;</span><span class="p">:</span> <span class="mf">1.e-12</span><span class="p">,</span> <span class="s1">&#39;min_its&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">},</span>
+            <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">estimate_dispersion</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="n">signs</span> <span class="o">=</span> <span class="n">lasso</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                          <span class="n">solve_args</span><span class="o">=</span><span class="n">solve_args</span><span class="p">,</span>
+                          <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">)</span>
+        
+        <span class="c1"># for data splitting randomization,</span>
+        <span class="c1"># we need to estimate a dispersion parameter</span>
+
+        <span class="c1"># we then setup up the sampler again</span>
+
+        <span class="k">if</span> <span class="n">estimate_dispersion</span><span class="p">:</span>
+
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">df_fit</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span><span class="p">[</span><span class="s1">&#39;variables&#39;</span><span class="p">])</span>
+
+            <span class="n">dispersion</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_beta_full</span><span class="p">,</span> 
+                                                            <span class="s1">&#39;func&#39;</span><span class="p">)</span> <span class="o">/</span>
+                          <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">df_fit</span><span class="p">))</span>
+
+            <span class="c1"># run setup again after </span>
+            <span class="c1"># estimating dispersion </span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="n">dispersion</span><span class="p">,</span> <span class="s1">&#39;dispersion&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">df_fit</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler_data</span><span class="p">,</span> 
+                                     <span class="n">dispersion</span><span class="o">=</span><span class="n">dispersion</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">signs</span></div>
+
+    <span class="k">def</span> <span class="nf">_setup_implied_gaussian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                                <span class="n">opt_linear</span><span class="p">,</span> 
+                                <span class="n">opt_offset</span><span class="p">,</span>
+                                <span class="n">dispersion</span><span class="p">):</span>
+
+        <span class="c1"># key observation is that the covariance of the added noise is </span>
+        <span class="c1"># roughly dispersion * (1 - pi) / pi * X^TX (in OLS regression, similar for other</span>
+        <span class="c1"># models), so the precision is  (X^TX)^{-1} * (pi / ((1 - pi) * dispersion))</span>
+        <span class="c1"># and prec.dot(opt_linear) = S_E / (dispersion * (1 - pi) / pi)</span>
+        <span class="c1"># because opt_linear has shape p x E with the columns</span>
+        <span class="c1"># being those non-zero columns of the solution. Above S_E = np.diag(signs)</span>
+        <span class="c1"># the conditional precision is S_E Q[E][:,E] * pi / ((1 - pi) * dispersion) S_E</span>
+        <span class="c1"># and logdens_linear is Q[E][:,E]^{-1} S_E</span>
+        <span class="c1"># padded with zeros</span>
+        <span class="c1"># to be E x p</span>
+
+        <span class="n">pi_s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proportion_select</span>
+        <span class="n">ratio</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pi_s</span><span class="p">)</span> <span class="o">/</span> <span class="n">pi_s</span>
+
+        <span class="n">ordered_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span><span class="p">[</span><span class="s1">&#39;variables&#39;</span><span class="p">]</span>
+        
+        <span class="n">cond_precision</span> <span class="o">=</span> <span class="n">opt_linear</span><span class="p">[</span><span class="n">ordered_vars</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">dispersion</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span>
+
+        <span class="n">signs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span><span class="p">[</span><span class="s1">&#39;sign&#39;</span><span class="p">][</span><span class="n">ordered_vars</span><span class="p">]</span>
+        <span class="n">signs</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">signs</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">cond_precision</span> <span class="o">*=</span> <span class="n">signs</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">cond_precision</span> <span class="o">-</span> <span class="n">cond_precision</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">/</span> 
+               <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">cond_precision</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.e-6</span><span class="p">)</span>
+        <span class="n">cond_cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">cond_precision</span><span class="p">)</span>
+        <span class="n">logdens_linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ordered_vars</span><span class="p">),</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span><span class="p">))</span> 
+        <span class="n">logdens_linear</span><span class="p">[:,</span> <span class="n">ordered_vars</span><span class="p">]</span> <span class="o">=</span> <span class="n">cond_cov</span> <span class="o">*</span> <span class="n">signs</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="p">(</span><span class="n">dispersion</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span>
+        <span class="n">cond_mean</span> <span class="o">=</span> <span class="o">-</span><span class="n">logdens_linear</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span> <span class="o">+</span> <span class="n">opt_offset</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cond_mean</span><span class="p">,</span> <span class="n">cond_cov</span><span class="p">,</span> <span class="n">cond_precision</span><span class="p">,</span> <span class="n">logdens_linear</span>
+
+    <span class="k">def</span> <span class="nf">_solve_randomized_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                                  <span class="c1"># optional binary vector </span>
+                                  <span class="c1"># indicating selection data </span>
+                                  <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                                  <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tol&#39;</span><span class="p">:</span> <span class="mf">1.e-12</span><span class="p">,</span> <span class="s1">&#39;min_its&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}):</span>
+
+        <span class="c1"># take a new perturbation if none supplied</span>
+        <span class="k">if</span> <span class="n">perturb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selection_idx</span> <span class="o">=</span> <span class="n">perturb</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_selection_idx&quot;</span><span class="p">):</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">total_size</span> <span class="o">=</span> <span class="n">n</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">pi_s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proportion_select</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selection_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selection_idx</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">pi_s</span><span class="o">*</span><span class="n">n</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_selection_idx</span><span class="p">)</span>
+
+        <span class="n">inv_frac</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">proportion_select</span>
+        <span class="n">quad</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">identity_quadratic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span><span class="p">,</span>
+                                     <span class="mi">0</span><span class="p">,</span>
+                                     <span class="mi">0</span><span class="p">,</span>
+                                     <span class="mi">0</span><span class="p">,)</span>
+        
+        <span class="n">randomized_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_selection_idx</span><span class="p">)</span>
+        <span class="n">randomized_loss</span><span class="o">.</span><span class="n">coef</span> <span class="o">*=</span> <span class="n">inv_frac</span>
+
+        <span class="n">problem</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">simple_problem</span><span class="p">(</span><span class="n">randomized_loss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="p">)</span>
+        <span class="n">initial_soln</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">quad</span><span class="p">,</span> <span class="o">**</span><span class="n">solve_args</span><span class="p">)</span> 
+        <span class="n">initial_subgrad</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">initial_soln</span><span class="p">,</span> 
+                                                          <span class="s1">&#39;grad&#39;</span><span class="p">)</span> <span class="o">+</span>
+                            <span class="n">quad</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">initial_soln</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">initial_soln</span><span class="p">,</span> <span class="n">initial_subgrad</span>
+
+<div class="viewcode-block" id="split_lasso.gaussian"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.lasso.html#selectinf.randomized.lasso.split_lasso.gaussian">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                 <span class="n">Y</span><span class="p">,</span>
+                 <span class="n">feature_weights</span><span class="p">,</span>
+                 <span class="n">proportion</span><span class="p">,</span>
+                 <span class="n">sigma</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                 <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">ridge_term</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Squared-error LASSO with feature weights.</span>
+<span class="sd">        Objective function is (before randomization)</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + </span>
+<span class="sd">           \sum_{i=1}^p \lambda_i |\beta_i|</span>
+
+<span class="sd">        where $\lambda$ is `feature_weights`. The ridge term</span>
+<span class="sd">        is determined by the Hessian and `np.std(Y)` by default.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        X : ndarray</span>
+<span class="sd">            Shape (n,p) -- the design matrix.</span>
+
+<span class="sd">        Y : ndarray</span>
+<span class="sd">            Shape (n,) -- the response.</span>
+
+<span class="sd">        feature_weights: [float, sequence]</span>
+<span class="sd">            Penalty weights. An intercept, or other unpenalized</span>
+<span class="sd">            features are handled by setting those entries of</span>
+<span class="sd">            `feature_weights` to 0. If `feature_weights` is</span>
+<span class="sd">            a float, then all parameters are penalized equally.</span>
+
+<span class="sd">        sigma : float (optional)</span>
+<span class="sd">            Noise variance. Set to 1 if `covariance_estimator` is not None.</span>
+<span class="sd">            This scales the loglikelihood by `sigma**(-2)`.</span>
+
+<span class="sd">        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)</span>
+<span class="sd">            An optional quadratic term to be added to the objective.</span>
+<span class="sd">            Can also be a linear term by setting quadratic</span>
+<span class="sd">            coefficient to 0.</span>
+
+<span class="sd">        randomizer_scale : float</span>
+<span class="sd">            Scale for IID components of randomizer.</span>
+
+<span class="sd">        randomizer : str</span>
+<span class="sd">            One of [&#39;laplace&#39;, &#39;logistic&#39;, &#39;gaussian&#39;]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        L : `selection.randomized.lasso.lasso`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">loglike</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">glm</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> 
+                                  <span class="n">Y</span><span class="p">,</span> 
+                                  <span class="n">coef</span><span class="o">=</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> 
+                                  <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">)</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">mean_diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">X</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">split_lasso</span><span class="p">(</span><span class="n">loglike</span><span class="p">,</span> 
+                           <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+                           <span class="n">proportion</span><span class="p">)</span></div></div>
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

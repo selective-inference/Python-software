@@ -1,0 +1,477 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="algorithms.cv" href="selection.algorithms.cv.html" />
+    <link rel="prev" title="algorithms.change_point" href="selection.algorithms.change_point.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Selection documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.adjusted_MLE.cv_MLE.html">adjusted_MLE.cv_MLE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.adjusted_MLE.risk_comparisons.html">adjusted_MLE.risk_comparisons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.adjusted_MLE.sampler_based_quantiles.html">adjusted_MLE.sampler_based_quantiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">algorithms.covtest</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-algorithms-covtest">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.covtest</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.base.html">base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.glm.html">glm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.core.html">learning.core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.keras_fit.html">learning.keras_fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.tensorflow_fit.html">learning.tensorflow_fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.tensorflow_test.html">learning.tensorflow_test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Selection documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.adjusted_MLE.cv_MLE.html">adjusted_MLE.cv_MLE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.adjusted_MLE.risk_comparisons.html">adjusted_MLE.risk_comparisons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.adjusted_MLE.sampler_based_quantiles.html">adjusted_MLE.sampler_based_quantiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">algorithms.covtest</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-algorithms-covtest">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.covtest</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.base.html">base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.glm.html">glm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.core.html">learning.core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.keras_fit.html">learning.keras_fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.tensorflow_fit.html">learning.tensorflow_fit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.tensorflow_test.html">learning.tensorflow_test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selection.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Selection documentation</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selection.algorithms.covtest.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-covtest">
+<h1>algorithms.covtest<a class="headerlink" href="#algorithms-covtest" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-covtest">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.covtest</span></code><a class="headerlink" href="#module-algorithms-covtest" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selection.algorithms.cv.html" class="btn btn-neutral float-right" title="algorithms.cv" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selection.algorithms.change_point.html" class="btn btn-neutral float-left" title="algorithms.change_point" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

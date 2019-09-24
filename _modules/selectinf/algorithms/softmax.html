@@ -1,0 +1,344 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.algorithms.softmax</h1><div class="highlight"><pre>
+<span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">This module implements the softmax approximation for</span>
+<span class="sd">a multivariate Gaussian truncated by affine constraints. The approximation</span>
+<span class="sd">is an approximation of the normalizing constant in the </span>
+<span class="sd">likelihood.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">regreg.api</span> <span class="k">import</span> <span class="n">smooth_atom</span>
+
+<div class="viewcode-block" id="softmax_objective"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.softmax.html#selectinf.algorithms.softmax.softmax_objective">[docs]</a><span class="k">class</span> <span class="nc">softmax_objective</span><span class="p">(</span><span class="n">smooth_atom</span><span class="p">):</span>
+
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The softmax objective</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">         z \mapsto \frac{1}{2} z^TQz + </span>
+<span class="sd">         \sum_{i=1}^{m} \log \left(1 + </span>
+<span class="sd">         \frac{1}{(b_i-A_i^T z) / s_i} \right)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    Recall Chernoff&#39;s approximation for $Z \sim N(0,I_{n \times n})$:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        -\log P_{\mu}(AZ \leq b) \approx \inf_{z:Az \leq b} </span>
+<span class="sd">        \frac{1}{2}\|z-\mu\|^2_2</span>
+<span class="sd">        = \inf_{z} I_K(z) +  \frac{1}{2}\|z-\mu\|^2_2</span>
+
+<span class="sd">    where $I_K$ is the constraint for the set $K=\left\{z:Az \leq b \right\}.$</span>
+
+<span class="sd">    The softmax approximation is similar to Chernoff&#39;s approximation</span>
+<span class="sd">    though it uses a soft max barrier function </span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">         \sum_{i=1}^{m}\log\left(1+\frac{1}{b_i-A_i^T z}\right).</span>
+
+<span class="sd">    The softmax objective is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">         z \mapsto \frac{1}{2} z^TQz + </span>
+<span class="sd">         \sum_{i=1}^{m}\log\left(1+\frac{1}{(b_i-A_i^T z) / s_i}\right).</span>
+
+<span class="sd">    where $s_i$ are scalings and $Q$ is a precision matrix (i.e. inverse covariance).</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objective_template</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;&quot;&quot;\text</span><span class="si">{softmax}</span><span class="s2">_K\left(</span><span class="si">%(var)s</span><span class="s2">\right)&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="softmax_objective.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.softmax.html#selectinf.algorithms.softmax.softmax_objective.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">shape</span><span class="p">,</span>
+                 <span class="n">precision</span><span class="p">,</span>
+                 <span class="n">constraints</span><span class="p">,</span>
+                 <span class="n">feasible_point</span><span class="p">,</span>
+                 <span class="n">coef</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> 
+                 <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">smooth_atom</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                             <span class="n">shape</span><span class="p">,</span>
+                             <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
+                             <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">,</span>
+                             <span class="n">initial</span><span class="o">=</span><span class="n">initial</span><span class="p">,</span>
+                             <span class="n">coef</span><span class="o">=</span><span class="n">coef</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precision</span> <span class="o">=</span> <span class="n">precision</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">feasible_point</span>
+
+        <span class="c1"># not sure we really need to copy</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span> <span class="o">=</span> <span class="n">constraints</span>
+        <span class="n">con_linear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">linear_part</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">con_linear</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">con_linear</span><span class="o">.</span><span class="n">T</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="softmax_objective.smooth_objective"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.softmax.html#selectinf.algorithms.softmax.softmax_objective.smooth_objective">[docs]</a>    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Evaluate the smooth objective, computing its value, gradient or both.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        mean_param : ndarray</span>
+<span class="sd">            The current parameter values.</span>
+
+<span class="sd">        mode : str</span>
+<span class="sd">            One of [&#39;func&#39;, &#39;grad&#39;, &#39;both&#39;]. </span>
+
+<span class="sd">        check_feasibility : bool</span>
+<span class="sd">            If True, return `np.inf` when</span>
+<span class="sd">            point is not feasible, i.e. when `mean_param` is not</span>
+<span class="sd">            in the domain.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        If `mode` is &#39;func&#39; returns just the objective value </span>
+<span class="sd">        at `mean_param`, else if `mode` is &#39;grad&#39; returns the gradient</span>
+<span class="sd">        else returns both.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">param</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_offset</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+
+        <span class="n">con</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span> <span class="c1"># shorthand</span>
+        <span class="n">slack</span> <span class="o">=</span> <span class="p">(</span><span class="n">con</span><span class="o">.</span><span class="n">offset</span> <span class="o">-</span> <span class="n">con</span><span class="o">.</span><span class="n">linear_part</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">param</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling</span>
+
+        <span class="n">BIG</span> <span class="o">=</span> <span class="mf">1e20</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="s1">&#39;func&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">slack</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">BIG</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">param</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">param</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">slack</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">]:</span>
+            <span class="n">dslack</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">slack</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">slack</span><span class="p">)</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="o">-</span> <span class="n">con</span><span class="o">.</span><span class="n">linear_part</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dslack</span><span class="p">)</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;both&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">f</span><span class="p">,</span> <span class="n">g</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">g</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;func&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">f</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;mode incorrectly specified&quot;</span><span class="p">)</span></div></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

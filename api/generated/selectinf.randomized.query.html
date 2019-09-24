@@ -1,0 +1,1369 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="randomized.randomization" href="selectinf.randomized.randomization.html" />
+    <link rel="prev" title="randomized.modelQ" href="selectinf.randomized.modelQ.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">randomized.query</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-randomized-query">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.query</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.randomized.query.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="randomized-query">
+<h1>randomized.query<a class="headerlink" href="#randomized-query" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-randomized-query">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.query</span></code><a class="headerlink" href="#module-randomized-query" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.randomized.query</span></code>:</p>
+digraph inheritance1946ee62fe {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;randomized.query.affine_gaussian_sampler&quot; [URL=&quot;#selectinf.randomized.query.affine_gaussian_sampler&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Sample from an affine truncated Gaussian&quot;];
+  &quot;randomized.query.optimization_sampler&quot; -&gt; &quot;randomized.query.affine_gaussian_sampler&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.query.gaussian_query&quot; [URL=&quot;#selectinf.randomized.query.gaussian_query&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;randomized.query.query&quot; -&gt; &quot;randomized.query.gaussian_query&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.query.multiple_queries&quot; [URL=&quot;#selectinf.randomized.query.multiple_queries&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Combine several queries of a given data&quot;];
+  &quot;randomized.query.optimization_intervals&quot; [URL=&quot;#selectinf.randomized.query.optimization_intervals&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;randomized.query.optimization_sampler&quot; [URL=&quot;#selectinf.randomized.query.optimization_sampler&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;randomized.query.query&quot; [URL=&quot;#selectinf.randomized.query.query&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;This class is the base of randomized selective inference&quot;];
+}
+<span class="target" id="module-selectinf.randomized.query"></span></div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="affine-gaussian-sampler">
+<h3><a class="reference internal" href="#selectinf.randomized.query.affine_gaussian_sampler" title="selectinf.randomized.query.affine_gaussian_sampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">affine_gaussian_sampler</span></code></a><a class="headerlink" href="#affine-gaussian-sampler" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">affine_gaussian_sampler</code><span class="sig-paren">(</span><em class="sig-param">affine_con</em>, <em class="sig-param">initial_point</em>, <em class="sig-param">observed_score_state</em>, <em class="sig-param">log_cond_density</em>, <em class="sig-param">logdens_transform</em>, <em class="sig-param">selection_info=None</em>, <em class="sig-param">useC=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#affine_gaussian_sampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.randomized.query.optimization_sampler" title="selectinf.randomized.query.optimization_sampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.randomized.query.optimization_sampler</span></code></a></p>
+<p>Sample from an affine truncated Gaussian</p>
+<dl class="method">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">affine_con</em>, <em class="sig-param">initial_point</em>, <em class="sig-param">observed_score_state</em>, <em class="sig-param">log_cond_density</em>, <em class="sig-param">logdens_transform</em>, <em class="sig-param">selection_info=None</em>, <em class="sig-param">useC=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#affine_gaussian_sampler.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>affine_con</strong> : <cite>selection.constraints.affine.constraints</cite></p>
+<blockquote>
+<div><blockquote>
+<div><p>Affine constraints</p>
+</div></blockquote>
+<dl class="simple">
+<dt>initial_point<span class="classifier">ndarray</span></dt><dd><p>Feasible point for affine constraints.</p>
+</dd>
+<dt>observed_score_state<span class="classifier">ndarray</span></dt><dd><p>Observed score of convex loss (slightly modified).
+Essentially (asymptotically) equivalent 
+to :math:<a href="#id1"><span class="problematic" id="id2">`</span></a></p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>abla ell(eta^*) +</strong></p>
+<blockquote>
+<div><blockquote>
+<div><p>Q(eta^*)eta^*` where <span class="math notranslate nohighlight">\(eta^*\)</span> is population
+minimizer. For linear regression, it is always
+<span class="math notranslate nohighlight">\(-X^Ty\)</span>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>log_cond_density<span class="classifier">callable</span></dt><dd><p>Density of optimization variables given score</p>
+</dd>
+<dt>logdens_transform<span class="classifier">tuple</span></dt><dd><p>Description of how conditional mean
+of optimization variables depends on score.</p>
+</dd>
+<dt>selection_info<span class="classifier">optional</span></dt><dd><p>Function of optimization variables that
+will be conditioned on.</p>
+</dd>
+<dt>useC<span class="classifier">bool, optional</span></dt><dd><p>Use python or C solver.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler.log_cond_density">
+<code class="sig-name descname">log_cond_density</code><span class="sig-paren">(</span><em class="sig-param">opt_sample</em>, <em class="sig-param">target_sample</em>, <em class="sig-param">transform=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#affine_gaussian_sampler.log_cond_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler.log_cond_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Density of opt_sample | target_sample</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><em class="sig-param">ndraw</em>, <em class="sig-param">burnin</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#affine_gaussian_sampler.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample <cite>target</cite> from selective density
+using projected Langevin sampler with
+gradient map <cite>self.gradient</cite> and
+projection map <cite>self.projection</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ndraw</strong> : int</p>
+<blockquote>
+<div><p>How long a chain to return?</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int</p>
+<blockquote>
+<div><p>How many samples to discard?</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler.selective_MLE">
+<code class="sig-name descname">selective_MLE</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">target_score_cov</em>, <em class="sig-param">init_soln</em>, <em class="sig-param">solve_args={'tol': 1e-12}</em>, <em class="sig-param">level=0.9</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#affine_gaussian_sampler.selective_MLE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler.selective_MLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selective MLE based on approximation of
+CGF.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>target_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covaraince of target.</p>
+</div></blockquote>
+<p><strong>target_score_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covariance of target and score of randomized query.</p>
+</div></blockquote>
+<p><strong>init_soln</strong> : ndarray</p>
+<blockquote>
+<div><p>Feasible point for optimization problem.</p>
+</div></blockquote>
+<p><strong>level</strong> : float, optional</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict, optional</p>
+<blockquote>
+<div><p>Arguments passed to solver.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler.reparam_map">
+<code class="sig-name descname">reparam_map</code><span class="sig-paren">(</span><em class="sig-param">parameter_target</em>, <em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">target_score_cov</em>, <em class="sig-param">init_soln</em>, <em class="sig-param">solve_args={'tol': 1e-12}</em>, <em class="sig-param">useC=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#affine_gaussian_sampler.reparam_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler.reparam_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler.coefficient_pvalues">
+<code class="sig-name descname">coefficient_pvalues</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">score_cov</em>, <em class="sig-param">parameter=None</em>, <em class="sig-param">sample_args=()</em>, <em class="sig-param">sample=None</em>, <em class="sig-param">normal_sample=None</em>, <em class="sig-param">alternatives=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler.coefficient_pvalues" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct selective p-values
+for each parameter of the target.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : np.float</p>
+<blockquote>
+<div><p>A vector of parameters with shape <cite>self.shape</cite>,
+representing coordinates of the target.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>A vector of parameters with shape <cite>self.shape</cite>
+at which to evaluate p-values. Defaults
+to <cite>np.zeros(self.shape)</cite>.</p>
+</div></blockquote>
+<p><strong>sample_args</strong> : sequence</p>
+<blockquote>
+<div><p>Arguments to <cite>self.sample</cite> if sample is None.</p>
+</div></blockquote>
+<p><strong>sample</strong> : np.array (optional)</p>
+<blockquote>
+<div><p>If not None, assumed to be a sample of shape (-1,) + <cite>self.shape</cite>
+representing a sample of the target from parameters <cite>self.reference</cite>.
+Allows reuse of the same sample for construction of confidence
+intervals, hypothesis tests, etc.</p>
+</div></blockquote>
+<p><strong>alternatives</strong> : list of [‘greater’, ‘less’, ‘twosided’]</p>
+<blockquote>
+<div><p>What alternative to use.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pvalues</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler.confidence_intervals">
+<code class="sig-name descname">confidence_intervals</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">score_cov</em>, <em class="sig-param">sample_args=()</em>, <em class="sig-param">sample=None</em>, <em class="sig-param">normal_sample=None</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">initial_guess=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler.confidence_intervals" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : np.float</p>
+<blockquote>
+<div><p>A vector of parameters with shape <cite>self.shape</cite>,
+representing coordinates of the target.</p>
+</div></blockquote>
+<p><strong>sample_args</strong> : sequence</p>
+<blockquote>
+<div><p>Arguments to <cite>self.sample</cite> if sample is None.</p>
+</div></blockquote>
+<p><strong>sample</strong> : np.array (optional)</p>
+<blockquote>
+<div><p>If not None, assumed to be a sample of shape (-1,) + <cite>self.shape</cite>
+representing a sample of the target from parameters <cite>self.reference</cite>.
+Allows reuse of the same sample for construction of confidence
+intervals, hypothesis tests, etc.</p>
+</div></blockquote>
+<p><strong>level</strong> : float (optional)</p>
+<blockquote>
+<div><p>Specify the
+confidence level.</p>
+</div></blockquote>
+<p><strong>initial_guess</strong> : np.float</p>
+<blockquote>
+<div><p>Initial guesses at upper and lower limits, optional.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>intervals</strong> : [(float, float)]</p>
+<blockquote>
+<div><p>List of confidence intervals.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Construct selective confidence intervals
+for each parameter of the target.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.affine_gaussian_sampler.hypothesis_test">
+<code class="sig-name descname">hypothesis_test</code><span class="sig-paren">(</span><em class="sig-param">test_stat</em>, <em class="sig-param">observed_value</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">score_cov</em>, <em class="sig-param">sample_args=()</em>, <em class="sig-param">sample=None</em>, <em class="sig-param">parameter=0</em>, <em class="sig-param">alternative='twosided'</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.affine_gaussian_sampler.hypothesis_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample <cite>target</cite> from selective density
+using sampler with
+gradient map <cite>self.gradient</cite> and
+projection map <cite>self.projection</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>test_stat</strong> : callable</p>
+<blockquote>
+<div><p>Test statistic to evaluate on sample from
+selective distribution.</p>
+</div></blockquote>
+<p><strong>observed_value</strong> : float</p>
+<blockquote>
+<div><p>Observed value of test statistic.
+Used in p-value calculation.</p>
+</div></blockquote>
+<p><strong>sample_args</strong> : sequence</p>
+<blockquote>
+<div><p>Arguments to <cite>self.sample</cite> if sample is None.</p>
+</div></blockquote>
+<p><strong>sample</strong> : np.array (optional)</p>
+<blockquote>
+<div><p>If not None, assumed to be a sample of shape (-1,) + <cite>self.shape</cite>
+representing a sample of the target from parameters.
+Allows reuse of the same sample for construction of confidence
+intervals, hypothesis tests, etc. If not None,
+<cite>ndraw, burnin, stepsize</cite> are ignored.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.float (optional)</p>
+<p><strong>alternative</strong> : [‘greater’, ‘less’, ‘twosided’]</p>
+<blockquote>
+<div><p>What alternative to use.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pvalue</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="gaussian-query">
+<h3><a class="reference internal" href="#selectinf.randomized.query.gaussian_query" title="selectinf.randomized.query.gaussian_query"><code class="xref py py-class docutils literal notranslate"><span class="pre">gaussian_query</span></code></a><a class="headerlink" href="#gaussian-query" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.query.gaussian_query">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">gaussian_query</code><span class="sig-paren">(</span><em class="sig-param">randomization</em>, <em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#gaussian_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.gaussian_query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.randomized.query.query" title="selectinf.randomized.query.query"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.randomized.query.query</span></code></a></p>
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">randomization</em>, <em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>randomization</strong> : <cite>selection.randomized.randomization.randomization</cite></p>
+<blockquote>
+<div><p>Instance of a randomization scheme. 
+Describes the law of <span class="math notranslate nohighlight">\(\omega\)</span>.</p>
+</div></blockquote>
+<p><strong>perturb</strong> : ndarray, optional</p>
+<blockquote>
+<div><p>Value of randomization vector, an instance of <span class="math notranslate nohighlight">\(\omega\)</span>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.query.gaussian_query.useC">
+<code class="sig-name descname">useC</code><em class="property"> = True</em><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.useC" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class with Gaussian perturbation to the objective – 
+easy to apply CLT to such things</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#gaussian_query.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.get_sampler">
+<code class="sig-name descname">get_sampler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.get_sampler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.randomize">
+<code class="sig-name descname">randomize</code><span class="sig-paren">(</span><em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.randomize" title="Permalink to this definition">¶</a></dt>
+<dd><p>The actual randomization step.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>perturb</strong> : ndarray, optional</p>
+<blockquote>
+<div><p>Value of randomization vector, an instance of <span class="math notranslate nohighlight">\(\omega\)</span>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.sampler">
+<em class="property">property </em><code class="sig-name descname">sampler</code><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sampler of optimization (augmented) variables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.selective_MLE">
+<code class="sig-name descname">selective_MLE</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">target_score_cov</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">solve_args={'tol': 1e-12}</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.selective_MLE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>target_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covaraince of target.</p>
+</div></blockquote>
+<p><strong>target_score_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covariance of target and score of randomized query.</p>
+</div></blockquote>
+<p><strong>level</strong> : float, optional</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict, optional</p>
+<blockquote>
+<div><p>Arguments passed to solver.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.set_sampler">
+<code class="sig-name descname">set_sampler</code><span class="sig-paren">(</span><em class="sig-param">sampler</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.set_sampler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.setup_sampler">
+<code class="sig-name descname">setup_sampler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.setup_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup query to prepare for sampling.
+Should set a few key attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>observed_score_state</p></li>
+<li><p>observed_opt_state</p></li>
+<li><p>opt_transform</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.gaussian_query.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">target_score_cov</em>, <em class="sig-param">alternatives</em>, <em class="sig-param">opt_sample=None</em>, <em class="sig-param">target_sample=None</em>, <em class="sig-param">parameter=None</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">ndraw=10000</em>, <em class="sig-param">burnin=2000</em>, <em class="sig-param">compute_intervals=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.query.gaussian_query.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce p-values and confidence intervals for targets
+of model including selected features</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>target</strong> : one of [‘selected’, ‘full’]</p>
+<p><strong>features</strong> : np.bool</p>
+<blockquote>
+<div><p>Binary encoding of which features to use in final
+model and targets.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.array</p>
+<blockquote>
+<div><p>Hypothesized value for parameter – defaults to 0.</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>dispersion</strong> : float (optional)</p>
+<blockquote>
+<div><p>Use a known value for dispersion, or Pearson’s X^2?</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="multiple-queries">
+<h3><a class="reference internal" href="#selectinf.randomized.query.multiple_queries" title="selectinf.randomized.query.multiple_queries"><code class="xref py py-class docutils literal notranslate"><span class="pre">multiple_queries</span></code></a><a class="headerlink" href="#multiple-queries" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.query.multiple_queries">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">multiple_queries</code><span class="sig-paren">(</span><em class="sig-param">objectives</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#multiple_queries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.multiple_queries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Combine several queries of a given data
+through randomized algorithms.</p>
+<dl class="method">
+<dt id="selectinf.randomized.query.multiple_queries.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">objectives</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#multiple_queries.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.multiple_queries.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>objectives</strong> : sequence</p>
+<blockquote>
+<div><p>A sequences of randomized objective functions.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Each element of <cite>objectives</cite> must
+have a <cite>setup_sampler</cite> method that returns
+a description of the distribution of the
+data implicated in the objective function,
+typically through the score or gradient
+of the objective function.
+These descriptions are passed to a function
+<cite>form_covariances</cite> to linearly decompose
+each score in terms of a target
+and an asymptotically independent piece.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.multiple_queries.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#multiple_queries.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.multiple_queries.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.multiple_queries.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">opt_sampling_info</em>, <em class="sig-param">alternatives=None</em>, <em class="sig-param">parameter=None</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">ndraw=5000</em>, <em class="sig-param">burnin=2000</em>, <em class="sig-param">compute_intervals=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#multiple_queries.summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.multiple_queries.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce p-values and confidence intervals for targets
+of model including selected features</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>alternatives</strong> : [str], optional</p>
+<blockquote>
+<div><p>Sequence of strings describing the alternatives,
+should be values of [‘twosided’, ‘less’, ‘greater’]</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.array</p>
+<blockquote>
+<div><p>Hypothesized value for parameter – defaults to 0.</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Compute confidence intervals?</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.multiple_queries.coefficient_pvalues">
+<code class="sig-name descname">coefficient_pvalues</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">parameter=None</em>, <em class="sig-param">sample_args=()</em>, <em class="sig-param">alternatives=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#multiple_queries.coefficient_pvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.multiple_queries.coefficient_pvalues" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct selective p-values
+for each parameter of the target.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : ndarray (optional)</p>
+<blockquote>
+<div><p>A vector of parameters with shape <cite>self.shape</cite>
+at which to evaluate p-values. Defaults
+to <cite>np.zeros(self.shape)</cite>.</p>
+</div></blockquote>
+<p><strong>sample_args</strong> : sequence</p>
+<blockquote>
+<div><p>Arguments to <cite>self.sample</cite> if sample is not found
+for a given objective.</p>
+</div></blockquote>
+<p><strong>alternatives</strong> : [str], optional</p>
+<blockquote>
+<div><p>Sequence of strings describing the alternatives,
+should be values of [‘twosided’, ‘less’, ‘greater’]</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pvalues</strong> : ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.multiple_queries.confidence_intervals">
+<code class="sig-name descname">confidence_intervals</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">sample_args=()</em>, <em class="sig-param">level=0.9</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#multiple_queries.confidence_intervals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.multiple_queries.confidence_intervals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct selective confidence intervals
+for each parameter of the target.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>sample_args</strong> : sequence</p>
+<blockquote>
+<div><p>Arguments to <cite>self.sample</cite> if sample is not found
+for a given objective.</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>limits</strong> : ndarray</p>
+<blockquote>
+<div><p>Confidence intervals for each target.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="optimization-intervals">
+<h3><a class="reference internal" href="#selectinf.randomized.query.optimization_intervals" title="selectinf.randomized.query.optimization_intervals"><code class="xref py py-class docutils literal notranslate"><span class="pre">optimization_intervals</span></code></a><a class="headerlink" href="#optimization-intervals" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.query.optimization_intervals">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">optimization_intervals</code><span class="sig-paren">(</span><em class="sig-param">opt_sampling_info</em>, <em class="sig-param">observed</em>, <em class="sig-param">nsample</em>, <em class="sig-param">target_cov=None</em>, <em class="sig-param">normal_sample=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_intervals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_intervals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_intervals.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">opt_sampling_info</em>, <em class="sig-param">observed</em>, <em class="sig-param">nsample</em>, <em class="sig-param">target_cov=None</em>, <em class="sig-param">normal_sample=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_intervals.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_intervals.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_intervals.pivot">
+<code class="sig-name descname">pivot</code><span class="sig-paren">(</span><em class="sig-param">linear_func</em>, <em class="sig-param">candidate</em>, <em class="sig-param">alternative='twosided'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_intervals.pivot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_intervals.pivot" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>alternative<span class="classifier">[‘greater’, ‘less’, ‘twosided’]</span></dt><dd><p>What alternative to use.</p>
+</dd>
+</dl>
+<p>pvalue : np.float</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_intervals.confidence_interval">
+<code class="sig-name descname">confidence_interval</code><span class="sig-paren">(</span><em class="sig-param">linear_func</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">how_many_sd=20</em>, <em class="sig-param">guess=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_intervals.confidence_interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_intervals.confidence_interval" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="optimization-sampler">
+<h3><a class="reference internal" href="#selectinf.randomized.query.optimization_sampler" title="selectinf.randomized.query.optimization_sampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">optimization_sampler</span></code></a><a class="headerlink" href="#optimization-sampler" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.query.optimization_sampler">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">optimization_sampler</code><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_sampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_sampler.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_sampler.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_sampler.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_sampler.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_sampler.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_sampler.sample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_sampler.log_cond_density">
+<code class="sig-name descname">log_cond_density</code><span class="sig-paren">(</span><em class="sig-param">opt_sample</em>, <em class="sig-param">target_sample</em>, <em class="sig-param">transform=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_sampler.log_cond_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_sampler.log_cond_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Density of opt_sample | target_sample</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_sampler.hypothesis_test">
+<code class="sig-name descname">hypothesis_test</code><span class="sig-paren">(</span><em class="sig-param">test_stat</em>, <em class="sig-param">observed_value</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">score_cov</em>, <em class="sig-param">sample_args=()</em>, <em class="sig-param">sample=None</em>, <em class="sig-param">parameter=0</em>, <em class="sig-param">alternative='twosided'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_sampler.hypothesis_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_sampler.hypothesis_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample <cite>target</cite> from selective density
+using sampler with
+gradient map <cite>self.gradient</cite> and
+projection map <cite>self.projection</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>test_stat</strong> : callable</p>
+<blockquote>
+<div><p>Test statistic to evaluate on sample from
+selective distribution.</p>
+</div></blockquote>
+<p><strong>observed_value</strong> : float</p>
+<blockquote>
+<div><p>Observed value of test statistic.
+Used in p-value calculation.</p>
+</div></blockquote>
+<p><strong>sample_args</strong> : sequence</p>
+<blockquote>
+<div><p>Arguments to <cite>self.sample</cite> if sample is None.</p>
+</div></blockquote>
+<p><strong>sample</strong> : np.array (optional)</p>
+<blockquote>
+<div><p>If not None, assumed to be a sample of shape (-1,) + <cite>self.shape</cite>
+representing a sample of the target from parameters.
+Allows reuse of the same sample for construction of confidence
+intervals, hypothesis tests, etc. If not None,
+<cite>ndraw, burnin, stepsize</cite> are ignored.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.float (optional)</p>
+<p><strong>alternative</strong> : [‘greater’, ‘less’, ‘twosided’]</p>
+<blockquote>
+<div><p>What alternative to use.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pvalue</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_sampler.confidence_intervals">
+<code class="sig-name descname">confidence_intervals</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">score_cov</em>, <em class="sig-param">sample_args=()</em>, <em class="sig-param">sample=None</em>, <em class="sig-param">normal_sample=None</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">initial_guess=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_sampler.confidence_intervals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_sampler.confidence_intervals" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : np.float</p>
+<blockquote>
+<div><p>A vector of parameters with shape <cite>self.shape</cite>,
+representing coordinates of the target.</p>
+</div></blockquote>
+<p><strong>sample_args</strong> : sequence</p>
+<blockquote>
+<div><p>Arguments to <cite>self.sample</cite> if sample is None.</p>
+</div></blockquote>
+<p><strong>sample</strong> : np.array (optional)</p>
+<blockquote>
+<div><p>If not None, assumed to be a sample of shape (-1,) + <cite>self.shape</cite>
+representing a sample of the target from parameters <cite>self.reference</cite>.
+Allows reuse of the same sample for construction of confidence
+intervals, hypothesis tests, etc.</p>
+</div></blockquote>
+<p><strong>level</strong> : float (optional)</p>
+<blockquote>
+<div><p>Specify the
+confidence level.</p>
+</div></blockquote>
+<p><strong>initial_guess</strong> : np.float</p>
+<blockquote>
+<div><p>Initial guesses at upper and lower limits, optional.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>intervals</strong> : [(float, float)]</p>
+<blockquote>
+<div><p>List of confidence intervals.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Construct selective confidence intervals
+for each parameter of the target.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.optimization_sampler.coefficient_pvalues">
+<code class="sig-name descname">coefficient_pvalues</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">score_cov</em>, <em class="sig-param">parameter=None</em>, <em class="sig-param">sample_args=()</em>, <em class="sig-param">sample=None</em>, <em class="sig-param">normal_sample=None</em>, <em class="sig-param">alternatives=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#optimization_sampler.coefficient_pvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.optimization_sampler.coefficient_pvalues" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct selective p-values
+for each parameter of the target.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : np.float</p>
+<blockquote>
+<div><p>A vector of parameters with shape <cite>self.shape</cite>,
+representing coordinates of the target.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>A vector of parameters with shape <cite>self.shape</cite>
+at which to evaluate p-values. Defaults
+to <cite>np.zeros(self.shape)</cite>.</p>
+</div></blockquote>
+<p><strong>sample_args</strong> : sequence</p>
+<blockquote>
+<div><p>Arguments to <cite>self.sample</cite> if sample is None.</p>
+</div></blockquote>
+<p><strong>sample</strong> : np.array (optional)</p>
+<blockquote>
+<div><p>If not None, assumed to be a sample of shape (-1,) + <cite>self.shape</cite>
+representing a sample of the target from parameters <cite>self.reference</cite>.
+Allows reuse of the same sample for construction of confidence
+intervals, hypothesis tests, etc.</p>
+</div></blockquote>
+<p><strong>alternatives</strong> : list of [‘greater’, ‘less’, ‘twosided’]</p>
+<blockquote>
+<div><p>What alternative to use.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pvalues</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="query">
+<h3><a class="reference internal" href="#selectinf.randomized.query.query" title="selectinf.randomized.query.query"><code class="xref py py-class docutils literal notranslate"><span class="pre">query</span></code></a><a class="headerlink" href="#query" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.query.query">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">query</code><span class="sig-paren">(</span><em class="sig-param">randomization</em>, <em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This class is the base of randomized selective inference
+based on convex programs.</p>
+<p>The main mechanism is to take an initial penalized program</p>
+<div class="math notranslate nohighlight">
+\[\text{minimize}_B \ell(B) + {\cal P}(B)\]</div>
+<p>and add a randomization and small ridge term yielding</p>
+<div class="math notranslate nohighlight">
+\[\text{minimize}_B \ell(B) + {\cal P}(B) - 
+\langle \omega, B \rangle + \frac{\epsilon}{2} \|B\|^2_2\]</div>
+<dl class="method">
+<dt id="selectinf.randomized.query.query.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">randomization</em>, <em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>randomization</strong> : <cite>selection.randomized.randomization.randomization</cite></p>
+<blockquote>
+<div><p>Instance of a randomization scheme. 
+Describes the law of <span class="math notranslate nohighlight">\(\omega\)</span>.</p>
+</div></blockquote>
+<p><strong>perturb</strong> : ndarray, optional</p>
+<blockquote>
+<div><p>Value of randomization vector, an instance of <span class="math notranslate nohighlight">\(\omega\)</span>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.query.randomize">
+<code class="sig-name descname">randomize</code><span class="sig-paren">(</span><em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query.randomize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query.randomize" title="Permalink to this definition">¶</a></dt>
+<dd><p>The actual randomization step.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>perturb</strong> : ndarray, optional</p>
+<blockquote>
+<div><p>Value of randomization vector, an instance of <span class="math notranslate nohighlight">\(\omega\)</span>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.query.get_sampler">
+<code class="sig-name descname">get_sampler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query.get_sampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query.get_sampler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.query.set_sampler">
+<code class="sig-name descname">set_sampler</code><span class="sig-paren">(</span><em class="sig-param">sampler</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query.set_sampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query.set_sampler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.query.sampler">
+<em class="property">property </em><code class="sig-name descname">sampler</code><a class="headerlink" href="#selectinf.randomized.query.query.sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sampler of optimization (augmented) variables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.query.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query.solve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.query.setup_sampler">
+<code class="sig-name descname">setup_sampler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query.setup_sampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query.setup_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup query to prepare for sampling.
+Should set a few key attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>observed_score_state</p></li>
+<li><p>observed_opt_state</p></li>
+<li><p>opt_transform</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.query.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">target_score_cov</em>, <em class="sig-param">alternatives</em>, <em class="sig-param">opt_sample=None</em>, <em class="sig-param">target_sample=None</em>, <em class="sig-param">parameter=None</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">ndraw=10000</em>, <em class="sig-param">burnin=2000</em>, <em class="sig-param">compute_intervals=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query.summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce p-values and confidence intervals for targets
+of model including selected features</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>target</strong> : one of [‘selected’, ‘full’]</p>
+<p><strong>features</strong> : np.bool</p>
+<blockquote>
+<div><p>Binary encoding of which features to use in final
+model and targets.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.array</p>
+<blockquote>
+<div><p>Hypothesized value for parameter – defaults to 0.</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>dispersion</strong> : float (optional)</p>
+<blockquote>
+<div><p>Use a known value for dispersion, or Pearson’s X^2?</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.query.query.selective_MLE">
+<code class="sig-name descname">selective_MLE</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">target_score_cov</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">solve_args={'tol': 1e-12}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#query.selective_MLE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.query.selective_MLE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>target_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covaraince of target.</p>
+</div></blockquote>
+<p><strong>target_score_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covariance of target and score of randomized query.</p>
+</div></blockquote>
+<p><strong>level</strong> : float, optional</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict, optional</p>
+<blockquote>
+<div><p>Arguments passed to solver.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.randomized.query.naive_confidence_intervals">
+<code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">naive_confidence_intervals</code><span class="sig-paren">(</span><em class="sig-param">diag_cov</em>, <em class="sig-param">observed</em>, <em class="sig-param">level=0.9</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#naive_confidence_intervals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.naive_confidence_intervals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute naive Gaussian based confidence
+intervals for target.
+Parameters
+———-</p>
+<p>diag_cov : diagonal of a covariance matrix</p>
+<dl class="simple">
+<dt>observed<span class="classifier">np.float</span></dt><dd><p>A vector of observed data of shape <cite>target.shape</cite></p>
+</dd>
+<dt>alpha<span class="classifier">float (optional)</span></dt><dd><p>1 - confidence level.</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>intervals</strong> : np.float</p>
+<blockquote>
+<div><p>Gaussian based confidence intervals.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.randomized.query.naive_pvalues">
+<code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">naive_pvalues</code><span class="sig-paren">(</span><em class="sig-param">diag_cov</em>, <em class="sig-param">observed</em>, <em class="sig-param">parameter</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#naive_pvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.naive_pvalues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.randomized.query.normalizing_constant">
+<code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">normalizing_constant</code><span class="sig-paren">(</span><em class="sig-param">target_parameter</em>, <em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">target_score_cov</em>, <em class="sig-param">feasible_point</em>, <em class="sig-param">cond_mean</em>, <em class="sig-param">cond_cov</em>, <em class="sig-param">logdens_linear</em>, <em class="sig-param">linear_part</em>, <em class="sig-param">offset</em>, <em class="sig-param">useC=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#normalizing_constant"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.normalizing_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Approximation of normalizing constant
+in affine constrained Gaussian.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>target_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covaraince of target.</p>
+</div></blockquote>
+<p><strong>target_score_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covariance of target and score of randomized query.</p>
+</div></blockquote>
+<p><strong>init_soln</strong> : ndarray</p>
+<blockquote>
+<div><p>Feasible point for optimization problem.</p>
+</div></blockquote>
+<p><strong>cond_mean</strong> : ndarray</p>
+<blockquote>
+<div><p>Conditional mean of optimization variables given target.</p>
+</div></blockquote>
+<p><strong>cond_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Conditional covariance of optimization variables given target.</p>
+</div></blockquote>
+<p><strong>logdens_linear</strong> : ndarray</p>
+<blockquote>
+<div><p>Describes how conditional mean of optimization
+variables varies with target.</p>
+</div></blockquote>
+<p><strong>linear_part</strong> : ndarray</p>
+<blockquote>
+<div><p>Linear part of affine constraints: <span class="math notranslate nohighlight">\(\{o:Ao \leq b\}\)</span></p>
+</div></blockquote>
+<p><strong>offset</strong> : ndarray</p>
+<blockquote>
+<div><p>Offset part of affine constraints: <span class="math notranslate nohighlight">\(\{o:Ao \leq b\}\)</span></p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict, optional</p>
+<blockquote>
+<div><p>Arguments passed to solver.</p>
+</div></blockquote>
+<p><strong>level</strong> : float, optional</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>useC</strong> : bool, optional</p>
+<blockquote>
+<div><p>Use python or C solver.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.randomized.query.selective_MLE">
+<code class="sig-prename descclassname">selectinf.randomized.query.</code><code class="sig-name descname">selective_MLE</code><span class="sig-paren">(</span><em class="sig-param">observed_target</em>, <em class="sig-param">target_cov</em>, <em class="sig-param">target_score_cov</em>, <em class="sig-param">init_soln</em>, <em class="sig-param">cond_mean</em>, <em class="sig-param">cond_cov</em>, <em class="sig-param">logdens_linear</em>, <em class="sig-param">linear_part</em>, <em class="sig-param">offset</em>, <em class="sig-param">solve_args={'tol': 1e-12}</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">useC=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/query.html#selective_MLE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.query.selective_MLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selective MLE based on approximation of
+CGF.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>target_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covaraince of target.</p>
+</div></blockquote>
+<p><strong>target_score_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covariance of target and score of randomized query.</p>
+</div></blockquote>
+<p><strong>init_soln</strong> : ndarray</p>
+<blockquote>
+<div><p>Feasible point for optimization problem.</p>
+</div></blockquote>
+<p><strong>cond_mean</strong> : ndarray</p>
+<blockquote>
+<div><p>Conditional mean of optimization variables given target.</p>
+</div></blockquote>
+<p><strong>cond_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Conditional covariance of optimization variables given target.</p>
+</div></blockquote>
+<p><strong>logdens_linear</strong> : ndarray</p>
+<blockquote>
+<div><p>Describes how conditional mean of optimization
+variables varies with target.</p>
+</div></blockquote>
+<p><strong>linear_part</strong> : ndarray</p>
+<blockquote>
+<div><p>Linear part of affine constraints: <span class="math notranslate nohighlight">\(\{o:Ao \leq b\}\)</span></p>
+</div></blockquote>
+<p><strong>offset</strong> : ndarray</p>
+<blockquote>
+<div><p>Offset part of affine constraints: <span class="math notranslate nohighlight">\(\{o:Ao \leq b\}\)</span></p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict, optional</p>
+<blockquote>
+<div><p>Arguments passed to solver.</p>
+</div></blockquote>
+<p><strong>level</strong> : float, optional</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>useC</strong> : bool, optional</p>
+<blockquote>
+<div><p>Use python or C solver.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.randomized.randomization.html" class="btn btn-neutral float-right" title="randomized.randomization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.randomized.modelQ.html" class="btn btn-neutral float-left" title="randomized.modelQ" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

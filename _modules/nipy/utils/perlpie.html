@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../utils.html">nipy.utils</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.utils.perlpie</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;Perform a global search and replace on the current directory *recursively*.</span>
+
+<span class="sd">This a small python wrapper around the `perl -p -i -e` functionality.</span>
+<span class="sd">I **strongly recommend** running `perlpie` on files under source</span>
+<span class="sd">control.  In this way it&#39;s easy to track your changes and if you</span>
+<span class="sd">discover your regular expression was wrong you can easily revert.  I</span>
+<span class="sd">also recommend using `grin` to test your regular expressions before</span>
+<span class="sd">running `perlpie`.</span>
+
+<span class="sd">Parameters</span>
+<span class="sd">----------</span>
+<span class="sd">regex : regular expression</span>
+<span class="sd">    Regular expression matching the string you want to replace</span>
+<span class="sd">newstring : string</span>
+<span class="sd">    The string you would like to replace the oldstring with.  Note</span>
+<span class="sd">    this is not a regular expression but the exact string. One</span>
+<span class="sd">    exception to this rule is the at symbol `@`.  This has special</span>
+<span class="sd">    meaning in perl, so you need an escape character for this.  See</span>
+<span class="sd">    Examples below.</span>
+
+<span class="sd">Requires</span>
+<span class="sd">--------</span>
+<span class="sd">perl : The underlying language we&#39;re using to perform the search and replace.</span>
+
+<span class="sd">`grin &lt;http://pypi.python.org/pypi/grin/&gt;`_ : Grin is a tool written</span>
+<span class="sd">by Robert Kern to wrap `grep` and `find` with python and easier</span>
+<span class="sd">command line options.</span>
+
+<span class="sd">Examples</span>
+<span class="sd">--------</span>
+<span class="sd">Replace all occurences of foo with bar::</span>
+
+<span class="sd">    perlpie foo bar</span>
+
+<span class="sd">Replace numpy.testing with nipy&#39;s testing framework::</span>
+
+<span class="sd">    perlpie &#39;from\s+numpy\.testing.*&#39; &#39;from nipy.testing import *&#39;</span>
+
+<span class="sd">Replace all @slow decorators in my code with @dec.super_slow.  Here we</span>
+<span class="sd">have to escape the @ symbol which has special meaning in perl::</span>
+<span class="sd">    </span>
+<span class="sd">    perlpie &#39;\@slow&#39; &#39;\@dec.super_slow&#39;</span>
+
+<span class="sd">Remove all occurences of importing make_doctest_suite::</span>
+
+<span class="sd">    perlpie &#39;from\snipy\.utils\.testutils.*make_doctest_suite&#39;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="c1"># notes on perl-dash-pie</span>
+<span class="c1"># perl -p -i -e &#39;s/oldstring/newstring/g&#39; *</span>
+<span class="c1"># find . -name &#39;*.html&#39; -print0 | xargs -0 perl -pi -e &#39;s/oldstring/newstring/g&#39;</span>
+
+<span class="kn">from</span> <span class="nn">optparse</span> <span class="k">import</span> <span class="n">OptionParser</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="n">usage_doc</span> <span class="o">=</span> <span class="s2">&quot;usage: %prog [options] regex newstring&quot;</span>
+
+<div class="viewcode-block" id="check_deps"><a class="viewcode-back" href="../../../api/generated/nipy.utils.perlpie.html#nipy.utils.perlpie.check_deps">[docs]</a><span class="k">def</span> <span class="nf">check_deps</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">grin</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;perlpie requires grin to operate.&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;You can find grin in the python package index:&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  http://pypi.python.org/pypi/grin/&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># assume they have perl for now</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="perl_dash_pie"><a class="viewcode-back" href="../../../api/generated/nipy.utils.perlpie.html#nipy.utils.perlpie.perl_dash_pie">[docs]</a><span class="k">def</span> <span class="nf">perl_dash_pie</span><span class="p">(</span><span class="n">oldstr</span><span class="p">,</span> <span class="n">newstr</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Use perl to replace the oldstr with the newstr.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    # To replace all occurences of &#39;import numpy as N&#39; with &#39;import numpy as np&#39;</span>
+<span class="sd">    from nipy.utils import perlpie</span>
+<span class="sd">    perlpie.perl_dash_pie(&#39;import\s+numpy\s+as\s+N&#39;, &#39;import numpy as np&#39;)</span>
+<span class="sd">    grind | xargs perl -pi -e &#39;s/import\s+numpy\s+as\s+N/import numpy as np/g&#39;</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;grind | xargs perl -p -e &#39;s/</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">/g&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">oldstr</span><span class="p">,</span> <span class="n">newstr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;grind | xargs perl -pi -e &#39;s/</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">/g&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">oldstr</span><span class="p">,</span> <span class="n">newstr</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Error while executing perl_dash_pie command:</span>
+<span class="s2">        </span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">        Error:</span>
+<span class="s2">        </span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">        &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="print_extended_help"><a class="viewcode-back" href="../../../api/generated/nipy.utils.perlpie.html#nipy.utils.perlpie.print_extended_help">[docs]</a><span class="k">def</span> <span class="nf">print_extended_help</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="n">opt_str</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="vm">__doc__</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../api/generated/nipy.utils.perlpie.html#nipy.utils.perlpie.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="vm">__doc__</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">usage</span> <span class="o">=</span> <span class="n">usage_doc</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">OptionParser</span><span class="p">(</span><span class="n">usage</span><span class="o">=</span><span class="n">usage</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-e&#39;</span><span class="p">,</span> <span class="s1">&#39;--extended-help&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;callback&#39;</span><span class="p">,</span> 
+                      <span class="n">callback</span><span class="o">=</span><span class="n">print_extended_help</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s1">&#39;print extended help including examples&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="s1">&#39;--dry-run&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;dry_run&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s1">&#39;send results to stdout without modifying files&#39;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">check_deps</span><span class="p">():</span>
+        <span class="n">oldstr</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">newstr</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">perl_dash_pie</span><span class="p">(</span><span class="n">oldstr</span><span class="p">,</span> <span class="n">newstr</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">dry_run</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,405 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.core.image.image_list</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.image</span> <span class="k">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">iter_axis</span><span class="p">,</span> <span class="n">is_image</span>
+<span class="kn">from</span> <span class="nn">..reference.coordinate_map</span> <span class="k">import</span> <span class="p">(</span><span class="n">drop_io_dim</span><span class="p">,</span> <span class="n">io_axis_indices</span><span class="p">,</span> <span class="n">AxisError</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">...externals.six</span> <span class="k">import</span> <span class="n">Iterator</span>
+
+
+<div class="viewcode-block" id="ImageList"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image_list.html#nipy.core.image.image_list.ImageList">[docs]</a><span class="k">class</span> <span class="nc">ImageList</span><span class="p">(</span><span class="n">Iterator</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Class to contain ND image as list of (N-1)D images &#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="ImageList.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image_list.html#nipy.core.image.image_list.ImageList.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        An implementation of a list of images.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        images : iterable</span>
+<span class="sd">           an iterable object whose items are meant to be images; this is</span>
+<span class="sd">           checked by asserting that each has a `coordmap` attribute and a</span>
+<span class="sd">           ``get_data`` method.  Note that Image objects are not iterable by</span>
+<span class="sd">           default; use the ``from_image`` classmethod or ``iter_axis`` function</span>
+<span class="sd">           to convert images to image lists - see examples below for the latter.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.testing import funcfile</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.core.api import Image, ImageList, iter_axis</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">        &gt;&gt;&gt; funcim = load_image(funcfile)</span>
+<span class="sd">        &gt;&gt;&gt; iterable_img = iter_axis(funcim, &#39;t&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; ilist = ImageList(iterable_img)</span>
+<span class="sd">        &gt;&gt;&gt; sublist = ilist[2:5]</span>
+
+<span class="sd">        Slicing an ImageList returns a new ImageList</span>
+
+<span class="sd">        &gt;&gt;&gt; isinstance(sublist, ImageList)</span>
+<span class="sd">        True</span>
+
+<span class="sd">        Indexing an ImageList returns a new Image</span>
+
+<span class="sd">        &gt;&gt;&gt; newimg = ilist[2]</span>
+<span class="sd">        &gt;&gt;&gt; isinstance(newimg, Image)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; isinstance(newimg, ImageList)</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; np.asarray(sublist).shape</span>
+<span class="sd">        (3, 17, 21, 3)</span>
+<span class="sd">        &gt;&gt;&gt; newimg.get_data().shape</span>
+<span class="sd">        (17, 21, 3)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">images</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">return</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_image</span><span class="p">(</span><span class="n">im</span><span class="p">)</span> <span class="k">for</span> <span class="n">im</span> <span class="ow">in</span> <span class="n">images</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expecting each element of images to have &quot;</span>
+                                 <span class="s2">&quot;the Image API&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="n">images</span></div>
+
+<div class="viewcode-block" id="ImageList.from_image"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image_list.html#nipy.core.image.image_list.ImageList.from_image">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_image</span><span class="p">(</span><span class="n">klass</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create an image list from an `image` by slicing over `axis`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image : object</span>
+<span class="sd">            object with ``coordmap`` attribute</span>
+<span class="sd">        axis : str or int</span>
+<span class="sd">            axis of `image` that should become the axis indexed by the image</span>
+<span class="sd">            list.</span>
+<span class="sd">        dropout : bool, optional</span>
+<span class="sd">            When taking slices from an image, we will leave an output dimension</span>
+<span class="sd">            to the coordmap that has no corresponding input dimension.  If</span>
+<span class="sd">            `dropout` is True, drop this output dimension.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ilist : ``ImageList`` instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Must specify image axis&#39;</span><span class="p">)</span>
+        <span class="c1"># Get corresponding input, output dimension indices</span>
+        <span class="n">in_ax</span><span class="p">,</span> <span class="n">out_ax</span> <span class="o">=</span> <span class="n">io_axis_indices</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">in_ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AxisError</span><span class="p">(</span><span class="s1">&#39;No correspnding input dimension for </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="n">dropout</span> <span class="o">=</span> <span class="n">dropout</span> <span class="ow">and</span> <span class="n">out_ax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">dropout</span><span class="p">:</span>
+            <span class="n">out_ax_name</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reference</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[</span><span class="n">out_ax</span><span class="p">]</span>
+        <span class="n">imlist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">iter_axis</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">in_ax</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">dropout</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="n">drop_io_dim</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">out_ax_name</span><span class="p">)</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">cmap</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+            <span class="n">imlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">klass</span><span class="p">(</span><span class="n">imlist</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        self.list[index] = value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Length of image list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        self.list[index]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Integer slices return elements</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="c1"># List etc slicing return new instances of self.__class__</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">images</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+
+<div class="viewcode-block" id="ImageList.get_list_data"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image_list.html#nipy.core.image.image_list.ImageList.get_list_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_list_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return data in ndarray with list dimension at position `axis`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        axis : int</span>
+<span class="sd">            `axis` specifies which axis of the output will take the role of the</span>
+<span class="sd">            list dimension. For example, 0 will put the list dimension in the</span>
+<span class="sd">            first axis of the result.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        data : ndarray</span>
+<span class="sd">            data in image list as array, with data across elements of the list</span>
+<span class="sd">            concetenated at dimension `axis` of the array.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.testing import funcfile</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">        &gt;&gt;&gt; funcim = load_image(funcfile)</span>
+<span class="sd">        &gt;&gt;&gt; ilist = ImageList.from_image(funcim, axis=&#39;t&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; ilist.get_list_data(axis=0).shape</span>
+<span class="sd">        (20, 17, 21, 3)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Must specify which axis of the output will take &#39;</span>
+                             <span class="s1">&#39;the role of the list dimension, eg 0 will put &#39;</span>
+                             <span class="s1">&#39;the list dimension in the first axis of the &#39;</span>
+                             <span class="s1">&#39;result&#39;</span><span class="p">)</span>
+        <span class="n">img_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ilen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">)</span>
+        <span class="n">out_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">img_shape</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">&gt;=</span> <span class="n">out_dim</span> <span class="ow">or</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">out_dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;I have only </span><span class="si">%d</span><span class="s1"> axes position, but axis </span><span class="si">%d</span><span class="s1"> asked &#39;</span>
+                             <span class="s1">&#39;for&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">out_dim</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="p">))</span>
+        <span class="c1"># tmp_shape is the shape of the output if axis is 0</span>
+        <span class="n">tmp_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">ilen</span><span class="p">,)</span> <span class="o">+</span> <span class="n">img_shape</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">tmp_shape</span><span class="p">)</span>
+        <span class="c1"># first put the data in an array, with list dimension in the first axis</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">im</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">):</span>
+            <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span> <span class="c1"># get_data method of an image has no axis</span>
+        <span class="c1"># then roll (and rock?) the axis to have axis in the right place</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">axis</span> <span class="o">+=</span> <span class="n">out_dim</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Check we got the expected shape</span>
+        <span class="n">target_shape</span> <span class="o">=</span> <span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">axis</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">ilen</span><span class="p">,)</span> <span class="o">+</span> <span class="n">img_shape</span><span class="p">[</span><span class="n">axis</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">target_shape</span> <span class="o">!=</span> <span class="n">res</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;We were not expecting this shape&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return data in ndarray.  Called through numpy.array.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.testing import funcfile</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">        &gt;&gt;&gt; funcim = load_image(funcfile)</span>
+<span class="sd">        &gt;&gt;&gt; ilist = ImageList.from_image(funcim, axis=&#39;t&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; np.asarray(ilist).shape</span>
+<span class="sd">        (20, 17, 21, 3)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Return data as a numpy array.&quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Please use get_list_data() instead - default &#39;</span>
+                      <span class="s1">&#39;conversion to array will be deprecated&#39;</span><span class="p">,</span>
+                      <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                      <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_list_data</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iter</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

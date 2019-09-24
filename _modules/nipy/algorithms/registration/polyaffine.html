@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.registration.polyaffine</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.transform</span> <span class="k">import</span> <span class="n">Transform</span>
+<span class="kn">from</span> <span class="nn">.affine</span> <span class="k">import</span> <span class="n">apply_affine</span>
+<span class="kn">from</span> <span class="nn">._registration</span> <span class="k">import</span> <span class="n">_apply_polyaffine</span>
+
+<span class="n">TINY_SIGMA</span> <span class="o">=</span> <span class="mf">1e-200</span>
+
+
+<div class="viewcode-block" id="PolyAffine"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.polyaffine.html#nipy.algorithms.registration.polyaffine.PolyAffine">[docs]</a><span class="k">class</span> <span class="nc">PolyAffine</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PolyAffine.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.polyaffine.html#nipy.algorithms.registration.polyaffine.PolyAffine.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">centers</span><span class="p">,</span> <span class="n">affines</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">glob_affine</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        centers: N times 3 array</span>
+
+<span class="sd">        We are given a set of affine transforms T_i with centers x_i,</span>
+<span class="sd">        all in homogeneous coordinates. The polyaffine transform is</span>
+<span class="sd">        defined, up to a right composition with a global affine, as:</span>
+
+<span class="sd">        T(x) = sum_i w_i(x) T_i x</span>
+
+<span class="sd">        where w_i(x) = g(x-x_i)/Z(x) are normalized Gaussian weights</span>
+<span class="sd">        that sum up to one for every x.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Format input arguments</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">centers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">centers</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">TINY_SIGMA</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">affines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;as_affine&#39;</span><span class="p">):</span>
+            <span class="n">affines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">as_affine</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">affines</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">affines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">affines</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">glob_affine</span><span class="p">,</span> <span class="s1">&#39;as_affine&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">glob_affine</span> <span class="o">=</span> <span class="n">glob_affine</span><span class="o">.</span><span class="n">as_affine</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">glob_affine</span> <span class="o">=</span> <span class="n">glob_affine</span>
+
+        <span class="c1"># Cache a (N, 12) matrix containing the affines coefficients,</span>
+        <span class="c1"># should be C-contiguous double.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_affines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centers</span><span class="p">),</span> <span class="mi">12</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_affines</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">affines</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:],</span>
+                                      <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centers</span><span class="p">),</span> <span class="mi">12</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="PolyAffine.affine"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.polyaffine.html#nipy.algorithms.registration.polyaffine.PolyAffine.affine">[docs]</a>    <span class="k">def</span> <span class="nf">affine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="n">aff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">aff</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_affines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">aff</span></div>
+
+<div class="viewcode-block" id="PolyAffine.affines"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.polyaffine.html#nipy.algorithms.registration.polyaffine.PolyAffine.affines">[docs]</a>    <span class="k">def</span> <span class="nf">affines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centers</span><span class="p">))]</span></div>
+
+<div class="viewcode-block" id="PolyAffine.apply"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.polyaffine.html#nipy.algorithms.registration.polyaffine.PolyAffine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xyz</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        xyz is an (N, 3) array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># txyz should be double C-contiguous for the the cython</span>
+        <span class="c1"># routine _apply_polyaffine</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">glob_affine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">txyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">txyz</span> <span class="o">=</span> <span class="n">apply_affine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">glob_affine</span><span class="p">,</span> <span class="n">xyz</span><span class="p">)</span>
+        <span class="n">_apply_polyaffine</span><span class="p">(</span><span class="n">txyz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">centers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_affines</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">txyz</span></div>
+
+<div class="viewcode-block" id="PolyAffine.compose"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.polyaffine.html#nipy.algorithms.registration.polyaffine.PolyAffine.compose">[docs]</a>    <span class="k">def</span> <span class="nf">compose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compose this transform onto another</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : Transform</span>
+<span class="sd">            transform that we compose onto</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        composed_transform : Transform</span>
+<span class="sd">            a transform implementing the composition of self on `other`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If other is not an Affine, use the generic compose method</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s1">&#39;as_affine&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">)</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+        <span class="c1"># Affine case: the result is a polyaffine transform with same</span>
+        <span class="c1"># local affines</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">glob_affine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">glob_affine</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">as_affine</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">glob_affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">glob_affine</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">as_affine</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affines</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
+                              <span class="n">glob_affine</span><span class="o">=</span><span class="n">glob_affine</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PolyAffine.left_compose"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.polyaffine.html#nipy.algorithms.registration.polyaffine.PolyAffine.left_compose">[docs]</a>    <span class="k">def</span> <span class="nf">left_compose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+
+        <span class="c1"># If other is not an Affine, use the generic compose method</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s1">&#39;as_affine&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Transform</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">apply</span><span class="p">)</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Affine case: the result is a polyaffine transform with same</span>
+        <span class="c1"># global affine</span>
+        <span class="n">other_affine</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">as_affine</span><span class="p">()</span>
+        <span class="n">affines</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">other_affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> \
+                       <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centers</span><span class="p">))]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centers</span><span class="p">,</span> <span class="n">affines</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
+                              <span class="n">glob_affine</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">glob_affine</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

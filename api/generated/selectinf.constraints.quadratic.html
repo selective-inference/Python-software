@@ -1,0 +1,711 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="constraints.quasi_affine" href="selectinf.constraints.quasi_affine.html" />
+    <link rel="prev" title="constraints.intervals" href="selectinf.constraints.intervals.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">constraints.quadratic</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-constraints-quadratic">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.quadratic</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.constraints.quadratic.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="constraints-quadratic">
+<h1>constraints.quadratic<a class="headerlink" href="#constraints-quadratic" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-constraints-quadratic">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.quadratic</span></code><a class="headerlink" href="#module-constraints-quadratic" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.constraints.quadratic</span></code>:</p>
+digraph inheritance6cc2edc5d8 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;constraints.base.constraints&quot; [URL=&quot;selectinf.constraints.base.html#selectinf.constraints.base.constraints&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;constraints.quadratic.constraints&quot; [URL=&quot;#selectinf.constraints.quadratic.constraints&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Object solving the problems of slices for quadratic and linear &quot;];
+  &quot;constraints.base.constraints&quot; -&gt; &quot;constraints.quadratic.constraints&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;constraints.quadratic.constraints_vecnorm&quot; [URL=&quot;#selectinf.constraints.quadratic.constraints_vecnorm&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;constraints.quadratic.constraints&quot; -&gt; &quot;constraints.quadratic.constraints_vecnorm&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-selectinf.constraints.quadratic"></span></div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="constraints">
+<h3><a class="reference internal" href="#selectinf.constraints.quadratic.constraints" title="selectinf.constraints.quadratic.constraints"><code class="xref py py-class docutils literal notranslate"><span class="pre">constraints</span></code></a><a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.constraints.quadratic.constraints">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.constraints.quadratic.</code><code class="sig-name descname">constraints</code><span class="sig-paren">(</span><em class="sig-param">quad_part</em>, <em class="sig-param">lin_part=None</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">covariance=None</em>, <em class="sig-param">mean=None</em>, <em class="sig-param">rank=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="selectinf.constraints.base.html#selectinf.constraints.base.constraints" title="selectinf.constraints.base.constraints"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.constraints.base.constraints</span></code></a></p>
+<p>Object solving the problems of slices for quadratic and linear 
+inequalities</p>
+<div class="math notranslate nohighlight">
+\[\forall i, y^T Q_i y + a_i^t &lt; b_i\]</div>
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">quad_part</em>, <em class="sig-param">lin_part=None</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">covariance=None</em>, <em class="sig-param">mean=None</em>, <em class="sig-param">rank=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new object for quadratic constraints</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>quad_part</strong> : np.float(l, p, p)</p>
+<blockquote>
+<div><p>3-dimensions array. The lines are some quadratic forms</p>
+</div></blockquote>
+<p><strong>lin_part</strong> : np.float(l, p)</p>
+<blockquote>
+<div><p>The lines are the vector of the linear forms in the inquality       
+Default to np.zeros(l, p)</p>
+</div></blockquote>
+<p><strong>offset</strong> : np.float(l)</p>
+<blockquote>
+<div><p>The offsets of all inequalities
+Defaults to np.zeros(l)</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float((p,p))</p>
+<blockquote>
+<div><p>Covariance matrix of Gaussian distribution to be 
+truncated. Defaults to <cite>np.identity(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>mean</strong> : np.float(p)</p>
+<blockquote>
+<div><p>Mean vector of Gaussian distribution to be 
+truncated. Defaults to <cite>np.zeros(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>rank</strong> : int</p>
+<blockquote>
+<div><p>If not None, this should specify
+the rank of the covariance matrix. Defaults
+to self.dim.</p>
+</div></blockquote>
+<p><strong>WARNING</strong> : The shapes of the three parameters must fit</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.bounds">
+<code class="sig-name descname">bounds</code><span class="sig-paren">(</span><em class="sig-param">nu</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the intervals of the slice in a direction nu, which 
+respects the inequality</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nu</strong> : np.float(p)</p>
+<blockquote>
+<div><p>The direction of the slice</p>
+</div></blockquote>
+<p><strong>y</strong> : np.float(p)</p>
+<blockquote>
+<div><p>A point on the affine slice</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>intervals</strong> : array of couples</p>
+<blockquote>
+<div><p>Array of (a, b), which means that the set is the union
+of [a, b]</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>The constraints are : 
+(x - 1)^2 + y ^ 2    &lt; 4
+10 * x^2  - 10 * y^2 &lt; -1
+(x + 1)^2 + y ^ 2    &lt; 4</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q1</span><span class="p">,</span> <span class="n">lin1</span><span class="p">,</span> <span class="n">off1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]),</span> <span class="mf">3.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q2</span><span class="p">,</span> <span class="n">lin2</span><span class="p">,</span> <span class="n">off2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">10.</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.</span><span class="p">]]),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="mf">1.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q3</span><span class="p">,</span> <span class="n">lin3</span><span class="p">,</span> <span class="n">off3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]),</span> <span class="mf">3.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cons</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">q1</span><span class="p">,</span> <span class="n">q2</span><span class="p">,</span> <span class="n">q3</span><span class="p">]),</span>                                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lin1</span><span class="p">,</span> <span class="n">lin2</span><span class="p">,</span> <span class="n">lin3</span><span class="p">]),</span>                                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">off1</span><span class="p">,</span> <span class="n">off2</span><span class="p">,</span> <span class="n">off3</span><span class="p">]))</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu1</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I1_expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">)],</span>                                      <span class="p">[</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I1 - I1_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu2</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">nu1</span>             <span class="c1">## Try with a nu not unitary</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu2</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I2_expected</span> <span class="o">=</span> <span class="n">I1_expected</span> <span class="o">/</span><span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I2 - I2_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu3</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I3_expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I3 - I3_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.bounds_unknownSigma">
+<code class="sig-name descname">bounds_unknownSigma</code><span class="sig-paren">(</span><em class="sig-param">P</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.bounds_unknownSigma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.bounds_unknownSigma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><em class="sig-param">n_sample</em>, <em class="sig-param">initial_point</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.sample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.sample_dum">
+<code class="sig-name descname">sample_dum</code><span class="sig-paren">(</span><em class="sig-param">n_sample</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.sample_dum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.sample_dum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.gen_p_value">
+<code class="sig-name descname">gen_p_value</code><span class="sig-paren">(</span><em class="sig-param">y</em>, <em class="sig-param">f</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">n_samples=1000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.gen_p_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.gen_p_value" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>f</strong> : z -&gt; x</p>
+<blockquote>
+<div><p>observed value</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.distr_norm_unknownSigma">
+<code class="sig-name descname">distr_norm_unknownSigma</code><span class="sig-paren">(</span><em class="sig-param">P</em>, <em class="sig-param">y</em>, <em class="sig-param">n</em>, <em class="sig-param">p</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.distr_norm_unknownSigma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.distr_norm_unknownSigma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.p_value_unknownSigma">
+<code class="sig-name descname">p_value_unknownSigma</code><span class="sig-paren">(</span><em class="sig-param">P</em>, <em class="sig-param">y</em>, <em class="sig-param">n</em>, <em class="sig-param">p</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.p_value_unknownSigma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.p_value_unknownSigma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.distr_norm">
+<code class="sig-name descname">distr_norm</code><span class="sig-paren">(</span><em class="sig-param">X_s</em>, <em class="sig-param">y</em>, <em class="sig-param">sigma=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.distr_norm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.distr_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the norm of X_s.T*y and an instance of truncated : 
+the distribution of X_s.T*y
+This is implementing the forward stepwise paper in the general case</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X_s</strong> : np.float(p, k):</p>
+<blockquote>
+<div><p>X_s is a full ranked matrix</p>
+</div></blockquote>
+<p><strong>y</strong> : np.float(p):</p>
+<blockquote>
+<div><p>y is the data, and satisfies the constraints</p>
+</div></blockquote>
+<p><strong>sigma: float</strong></p>
+<blockquote>
+<div><p>sigma is the variance of the normal distribution under wich
+y is chosen</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>distr</strong> : truncated_chi</p>
+<blockquote>
+<div><p>distr is an object used to study the distribution of
+np.linalg.norm(np.dot(X_s.T, y)), when y is a gaussian vector,
+chosen under the constraints and on the slice given by nu</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints.p_value">
+<code class="sig-name descname">p_value</code><span class="sig-paren">(</span><em class="sig-param">X_s</em>, <em class="sig-param">y</em>, <em class="sig-param">sigma=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints.p_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints.p_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="constraints-vecnorm">
+<h3><a class="reference internal" href="#selectinf.constraints.quadratic.constraints_vecnorm" title="selectinf.constraints.quadratic.constraints_vecnorm"><code class="xref py py-class docutils literal notranslate"><span class="pre">constraints_vecnorm</span></code></a><a class="headerlink" href="#constraints-vecnorm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.constraints.quadratic.</code><code class="sig-name descname">constraints_vecnorm</code><span class="sig-paren">(</span><em class="sig-param">alpha</em>, <em class="sig-param">beta</em>, <em class="sig-param">dim</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints_vecnorm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.constraints.quadratic.constraints" title="selectinf.constraints.quadratic.constraints"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.constraints.quadratic.constraints</span></code></a></p>
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">alpha</em>, <em class="sig-param">beta</em>, <em class="sig-param">dim</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints_vecnorm.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new object for quadratic constraints</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>quad_part</strong> : np.float(l, p, p)</p>
+<blockquote>
+<div><p>3-dimensions array. The lines are some quadratic forms</p>
+</div></blockquote>
+<p><strong>lin_part</strong> : np.float(l, p)</p>
+<blockquote>
+<div><p>The lines are the vector of the linear forms in the inquality       
+Default to np.zeros(l, p)</p>
+</div></blockquote>
+<p><strong>offset</strong> : np.float(l)</p>
+<blockquote>
+<div><p>The offsets of all inequalities
+Defaults to np.zeros(l)</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float((p,p))</p>
+<blockquote>
+<div><p>Covariance matrix of Gaussian distribution to be 
+truncated. Defaults to <cite>np.identity(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>mean</strong> : np.float(p)</p>
+<blockquote>
+<div><p>Mean vector of Gaussian distribution to be 
+truncated. Defaults to <cite>np.zeros(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>rank</strong> : int</p>
+<blockquote>
+<div><p>If not None, this should specify
+the rank of the covariance matrix. Defaults
+to self.dim.</p>
+</div></blockquote>
+<p><strong>WARNING</strong> : The shapes of the three parameters must fit</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.bounds">
+<code class="sig-name descname">bounds</code><span class="sig-paren">(</span><em class="sig-param">nu</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#constraints_vecnorm.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the intervals of the slice in a direction nu, which 
+respects the inequality</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nu</strong> : np.float(p)</p>
+<blockquote>
+<div><p>The direction of the slice</p>
+</div></blockquote>
+<p><strong>y</strong> : np.float(p)</p>
+<blockquote>
+<div><p>A point on the affine slice</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>intervals</strong> : array of couples</p>
+<blockquote>
+<div><p>Array of (a, b), which means that the set is the union
+of [a, b]</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>The constraints are : 
+(x - 1)^2 + y ^ 2    &lt; 4
+10 * x^2  - 10 * y^2 &lt; -1
+(x + 1)^2 + y ^ 2    &lt; 4</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q1</span><span class="p">,</span> <span class="n">lin1</span><span class="p">,</span> <span class="n">off1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]),</span> <span class="mf">3.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q2</span><span class="p">,</span> <span class="n">lin2</span><span class="p">,</span> <span class="n">off2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">10.</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.</span><span class="p">]]),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="mf">1.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q3</span><span class="p">,</span> <span class="n">lin3</span><span class="p">,</span> <span class="n">off3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]),</span> <span class="mf">3.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cons</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">q1</span><span class="p">,</span> <span class="n">q2</span><span class="p">,</span> <span class="n">q3</span><span class="p">]),</span>                                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lin1</span><span class="p">,</span> <span class="n">lin2</span><span class="p">,</span> <span class="n">lin3</span><span class="p">]),</span>                                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">off1</span><span class="p">,</span> <span class="n">off2</span><span class="p">,</span> <span class="n">off3</span><span class="p">]))</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu1</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I1_expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">)],</span>                                      <span class="p">[</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I1 - I1_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu2</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">nu1</span>             <span class="c1">## Try with a nu not unitary</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu2</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I2_expected</span> <span class="o">=</span> <span class="n">I1_expected</span> <span class="o">/</span><span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I2 - I2_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu3</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I3_expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I3 - I3_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.bounds_unknownSigma">
+<code class="sig-name descname">bounds_unknownSigma</code><span class="sig-paren">(</span><em class="sig-param">P</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.bounds_unknownSigma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.distr_norm">
+<code class="sig-name descname">distr_norm</code><span class="sig-paren">(</span><em class="sig-param">X_s</em>, <em class="sig-param">y</em>, <em class="sig-param">sigma=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.distr_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the norm of X_s.T*y and an instance of truncated : 
+the distribution of X_s.T*y
+This is implementing the forward stepwise paper in the general case</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X_s</strong> : np.float(p, k):</p>
+<blockquote>
+<div><p>X_s is a full ranked matrix</p>
+</div></blockquote>
+<p><strong>y</strong> : np.float(p):</p>
+<blockquote>
+<div><p>y is the data, and satisfies the constraints</p>
+</div></blockquote>
+<p><strong>sigma: float</strong></p>
+<blockquote>
+<div><p>sigma is the variance of the normal distribution under wich
+y is chosen</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>distr</strong> : truncated_chi</p>
+<blockquote>
+<div><p>distr is an object used to study the distribution of
+np.linalg.norm(np.dot(X_s.T, y)), when y is a gaussian vector,
+chosen under the constraints and on the slice given by nu</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.distr_norm_unknownSigma">
+<code class="sig-name descname">distr_norm_unknownSigma</code><span class="sig-paren">(</span><em class="sig-param">P</em>, <em class="sig-param">y</em>, <em class="sig-param">n</em>, <em class="sig-param">p</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.distr_norm_unknownSigma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.gen_p_value">
+<code class="sig-name descname">gen_p_value</code><span class="sig-paren">(</span><em class="sig-param">y</em>, <em class="sig-param">f</em>, <em class="sig-param">sigma=1.0</em>, <em class="sig-param">n_samples=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.gen_p_value" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>f</strong> : z -&gt; x</p>
+<blockquote>
+<div><p>observed value</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.p_value">
+<code class="sig-name descname">p_value</code><span class="sig-paren">(</span><em class="sig-param">X_s</em>, <em class="sig-param">y</em>, <em class="sig-param">sigma=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.p_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.p_value_unknownSigma">
+<code class="sig-name descname">p_value_unknownSigma</code><span class="sig-paren">(</span><em class="sig-param">P</em>, <em class="sig-param">y</em>, <em class="sig-param">n</em>, <em class="sig-param">p</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.p_value_unknownSigma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><em class="sig-param">n_sample</em>, <em class="sig-param">initial_point</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.sample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.quadratic.constraints_vecnorm.sample_dum">
+<code class="sig-name descname">sample_dum</code><span class="sig-paren">(</span><em class="sig-param">n_sample</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.quadratic.constraints_vecnorm.sample_dum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.constraints.quadratic.roots_poly2">
+<code class="sig-prename descclassname">selectinf.constraints.quadratic.</code><code class="sig-name descname">roots_poly2</code><span class="sig-paren">(</span><em class="sig-param">a</em>, <em class="sig-param">b</em>, <em class="sig-param">c</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#roots_poly2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.roots_poly2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.constraints.quadratic.stack">
+<code class="sig-prename descclassname">selectinf.constraints.quadratic.</code><code class="sig-name descname">stack</code><span class="sig-paren">(</span><em class="sig-param">*quad_cons</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/quadratic.html#stack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.quadratic.stack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.constraints.quasi_affine.html" class="btn btn-neutral float-right" title="constraints.quasi_affine" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.constraints.intervals.html" class="btn btn-neutral float-left" title="constraints.intervals" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

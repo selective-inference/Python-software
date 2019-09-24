@@ -1,0 +1,740 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.group.parcel_analysis</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Parcel-based group analysis of multi-subject image data.</span>
+
+<span class="sd">Routines implementing Bayesian inference on group-level effects</span>
+<span class="sd">assumed to be constant within given brain parcels. The model accounts</span>
+<span class="sd">for both estimation errors and localization uncertainty in reference</span>
+<span class="sd">space of first-level images.</span>
+
+<span class="sd">See:</span>
+
+<span class="sd">Keller, Merlin et al (2008). Dealing with Spatial Normalization Errors</span>
+<span class="sd">in fMRI Group Inference using Hierarchical Modeling. *Statistica</span>
+<span class="sd">Sinica*; 18(4).</span>
+
+<span class="sd">Keller, Merlin et al (2009). Anatomically Informed Bayesian Model</span>
+<span class="sd">Selection for fMRI Group Data Analysis. *In MICCAI&#39;09, Lecture Notes</span>
+<span class="sd">in Computer Science*; 5762:450--457.</span>
+
+<span class="sd">Roche, Alexis (2012). OHBM&#39;12 talk, slides at:</span>
+<span class="sd">https://sites.google.com/site/alexisroche/slides/Talk_Beijing12.pdf</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.ndimage</span> <span class="k">as</span> <span class="nn">nd</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">ss</span>
+<span class="kn">from</span> <span class="nn">..statistics.bayesian_mixed_effects</span> <span class="k">import</span> <span class="n">two_level_glm</span>
+<span class="kn">from</span> <span class="nn">..statistics.histogram</span> <span class="k">import</span> <span class="n">histogram</span>
+<span class="kn">from</span> <span class="nn">..registration</span> <span class="k">import</span> <span class="n">resample</span>
+<span class="kn">from</span> <span class="nn">..kernel_smooth</span> <span class="k">import</span> <span class="n">fwhm2sigma</span>
+<span class="kn">from</span> <span class="nn">...fixes.nibabel</span> <span class="k">import</span> <span class="n">io_orientation</span>
+<span class="kn">from</span> <span class="nn">...core.image.image_spaces</span> <span class="k">import</span> <span class="p">(</span><span class="n">make_xyz_image</span><span class="p">,</span>
+                                        <span class="n">xyz_affine</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">...</span> <span class="k">import</span> <span class="n">save_image</span>
+
+<span class="n">SIGMA_MIN</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<span class="n">NDIM</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># This will work for 3D images</span>
+
+
+<span class="k">def</span> <span class="nf">_gaussian_filter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Smooth a multidimensional array `x` using a Gaussian filter with</span>
+<span class="sd">    axis-wise standard deviations given by `sigma`, after padding `x`</span>
+<span class="sd">    with zeros within a mask `msk`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span><span class="p">[</span><span class="n">msk</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">gx</span> <span class="o">=</span> <span class="n">nd</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">norma</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">nd</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">msk</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">gx</span><span class="p">[</span><span class="o">~</span><span class="n">msk</span><span class="p">]</span> <span class="o">/=</span> <span class="n">norma</span><span class="p">[</span><span class="o">~</span><span class="n">msk</span><span class="p">]</span>
+    <span class="n">gx</span><span class="p">[</span><span class="n">msk</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="k">return</span> <span class="n">gx</span>
+
+
+<span class="k">def</span> <span class="nf">_gaussian_energy_1d</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the integral of a one-dimensional squared three-dimensional</span>
+<span class="sd">    Gaussian kernel with axis-wise standard deviation `sigma`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mask_half_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mi">5</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">mask_size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">mask_half_size</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mask_size</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">[</span><span class="n">mask_half_size</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">nd</span><span class="o">.</span><span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">K</span>
+
+
+<span class="k">def</span> <span class="nf">_gaussian_energy</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the integral of a squared three-dimensional Gaussian</span>
+<span class="sd">    kernel with axis-wise standard deviations `sigma`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sigma</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">NDIM</span><span class="p">)</span>
+    <span class="c1"># Use kernel separability to save memory</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="n">_gaussian_energy_1d</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sigma</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_smooth</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">vcon</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Integrate spatial uncertainty in standard space assuming that</span>
+<span class="sd">    localization errors follow a zero-mean Gaussian distribution with</span>
+<span class="sd">    axis-wise standard deviations `sigma` in voxel units. The expected</span>
+<span class="sd">    Euclidean norm of registration errors is sqrt(NDIM) * sigma.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scon</span> <span class="o">=</span> <span class="n">_gaussian_filter</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">svcon</span> <span class="o">=</span> <span class="n">_gaussian_filter</span><span class="p">(</span><span class="n">con</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">-</span> <span class="n">scon</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">vcon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">svcon</span> <span class="o">+=</span> <span class="n">_gaussian_filter</span><span class="p">(</span><span class="n">vcon</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scon</span><span class="p">,</span> <span class="n">svcon</span>
+
+
+<span class="k">def</span> <span class="nf">_smooth_spm</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">vcon</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a contrast image `con` and the corresponding variance image</span>
+<span class="sd">    `vcon`, both assumed to be estimated from non-smoothed first-level</span>
+<span class="sd">    data, compute what `con` and `vcon` would have been had the data</span>
+<span class="sd">    been smoothed with a Gaussian kernel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scon</span> <span class="o">=</span> <span class="n">_gaussian_filter</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">_gaussian_energy</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">vcon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">svcon</span> <span class="o">=</span> <span class="n">K</span> <span class="o">*</span> <span class="n">_gaussian_filter</span><span class="p">(</span><span class="n">vcon</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">svcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">con</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scon</span><span class="p">,</span> <span class="n">svcon</span>
+
+
+<span class="k">def</span> <span class="nf">_smooth_image_pair</span><span class="p">(</span><span class="n">con_img</span><span class="p">,</span> <span class="n">vcon_img</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Smooth an input image and associated variance image using either</span>
+<span class="sd">    the spatial uncertainty accounting method consistent with Keller</span>
+<span class="sd">    et al&#39;s model, or the SPM approach.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
+        <span class="n">smooth_fn</span> <span class="o">=</span> <span class="n">_smooth</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;spm&#39;</span><span class="p">:</span>
+        <span class="n">smooth_fn</span> <span class="o">=</span> <span class="n">_smooth_spm</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown smoothing method&#39;</span><span class="p">)</span>
+    <span class="n">con</span> <span class="o">=</span> <span class="n">con_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">vcon_img</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vcon</span> <span class="o">=</span> <span class="n">con_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vcon</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">msk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">con</span><span class="p">)</span>
+    <span class="n">scon</span><span class="p">,</span> <span class="n">svcon</span> <span class="o">=</span> <span class="n">smooth_fn</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">vcon</span><span class="p">,</span> <span class="n">msk</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">scon_img</span> <span class="o">=</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="n">scon</span><span class="p">,</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="n">con_img</span><span class="p">),</span>
+                              <span class="n">con_img</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span>
+    <span class="n">svcon_img</span> <span class="o">=</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="n">svcon</span><span class="p">,</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="n">con_img</span><span class="p">),</span>
+                               <span class="n">con_img</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scon_img</span><span class="p">,</span> <span class="n">svcon_img</span>
+
+
+<span class="k">def</span> <span class="nf">_save_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">save_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Could not write image: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">path</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ParcelAnalysis"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.group.parcel_analysis.html#nipy.algorithms.group.parcel_analysis.ParcelAnalysis">[docs]</a><span class="k">class</span> <span class="nc">ParcelAnalysis</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ParcelAnalysis.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.group.parcel_analysis.html#nipy.algorithms.group.parcel_analysis.ParcelAnalysis.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">con_imgs</span><span class="p">,</span> <span class="n">parcel_img</span><span class="p">,</span> <span class="n">parcel_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">msk_img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vcon_imgs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">design_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cvect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">fwhm</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">smooth_method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span>
+                 <span class="n">res_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">write_smoothed_images</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bayesian parcel-based analysis.</span>
+
+<span class="sd">        Given a sequence of independent images registered to a common</span>
+<span class="sd">        space (for instance, a set of contrast images from a</span>
+<span class="sd">        first-level fMRI analysis), perform a second-level analysis</span>
+<span class="sd">        assuming constant effects throughout parcels defined from a</span>
+<span class="sd">        given label image in reference space. Specifically, a model of</span>
+<span class="sd">        the following form is assumed:</span>
+
+<span class="sd">        Y = X * beta + variability,</span>
+
+<span class="sd">        where Y denotes the input image sequence, X is a design</span>
+<span class="sd">        matrix, and beta are parcel-wise parameter vectors. The</span>
+<span class="sd">        algorithm computes the Bayesian posterior probability of beta</span>
+<span class="sd">        in each parcel using an expectation propagation scheme.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        con_imgs: sequence of nipy-like images</span>
+<span class="sd">          Images input to the group analysis.</span>
+<span class="sd">        parcel_img: nipy-like image</span>
+<span class="sd">          Label image where each label codes for a parcel.</span>
+<span class="sd">        parcel_info: sequence of arrays, optional</span>
+<span class="sd">          A sequence of two arrays with same length equal to the</span>
+<span class="sd">          number of distinct parcels consistently with the</span>
+<span class="sd">          `parcel_img` argument. The first array gives parcel names</span>
+<span class="sd">          and the second, parcel values, i.e., corresponding</span>
+<span class="sd">          intensities in the associated parcel image. By default,</span>
+<span class="sd">          parcel values are taken as</span>
+<span class="sd">          `np.unique(parcel_img.get_data())` and parcel names are</span>
+<span class="sd">          these values converted to strings.</span>
+<span class="sd">        msk_img: nipy-like image, optional</span>
+<span class="sd">          Binary mask to restrict analysis. By default, analysis is</span>
+<span class="sd">          carried out on all parcels with nonzero value.</span>
+<span class="sd">        vcon_imgs: sequece of nipy-like images, optional</span>
+<span class="sd">          First-level variance estimates corresponding to</span>
+<span class="sd">          `con_imgs`. This is useful if the input images are</span>
+<span class="sd">          &quot;noisy&quot;. By default, first-level variances are assumed to be</span>
+<span class="sd">          zero.</span>
+<span class="sd">        design_matrix: array, optional</span>
+<span class="sd">          If None, a one-sample analysis model is used. Otherwise, an</span>
+<span class="sd">          array with shape (n, p) where `n` matches the number of</span>
+<span class="sd">          input scans, and `p` is the number of regressors.</span>
+<span class="sd">        cvect: array, optional</span>
+<span class="sd">          Contrast vector of interest. The method makes an inference</span>
+<span class="sd">          on the contrast defined as the dot product cvect&#39;*beta,</span>
+<span class="sd">          where beta are the unknown parcel-wise effects. If None,</span>
+<span class="sd">          `cvect` is assumed to be np.array((1,)). However, the</span>
+<span class="sd">          `cvect` argument is mandatory if `design_matrix` is</span>
+<span class="sd">          provided.</span>
+<span class="sd">        fwhm: float, optional</span>
+<span class="sd">          A parameter that represents the localization uncertainty in</span>
+<span class="sd">          reference space in terms of the full width at half maximum</span>
+<span class="sd">          of an isotropic Gaussian kernel.</span>
+<span class="sd">        smooth_method: str, optional</span>
+<span class="sd">          One of &#39;default&#39; and &#39;spm&#39;. Setting `smooth_method=spm`</span>
+<span class="sd">          results in simply smoothing the input images using a</span>
+<span class="sd">          Gaussian kernel, while the default method involves more</span>
+<span class="sd">          complex smoothing in order to propagate spatial uncertainty</span>
+<span class="sd">          into the inference process.</span>
+<span class="sd">        res_path: str, optional</span>
+<span class="sd">          An existing path to write output images. If None, no output</span>
+<span class="sd">          is written.</span>
+<span class="sd">        write_smoothed_images: bool, optional</span>
+<span class="sd">          Specify whether smoothed images computed throughout the</span>
+<span class="sd">          inference process are to be written on disk in `res_path`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smooth_method</span> <span class="o">=</span> <span class="n">smooth_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">con_imgs</span> <span class="o">=</span> <span class="n">con_imgs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vcon_imgs</span> <span class="o">=</span> <span class="n">vcon_imgs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_subjects</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">con_imgs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vcon_imgs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_subjects</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">vcon_imgs</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;List of contrasts and variances&#39;</span>
+                                 <span class="s1">&#39; do not have the same length&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">msk_img</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">msk</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">msk</span> <span class="o">=</span> <span class="n">msk_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res_path</span> <span class="o">=</span> <span class="n">res_path</span>
+
+        <span class="c1"># design matrix</span>
+        <span class="k">if</span> <span class="n">design_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_subjects</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cvect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,))</span>
+            <span class="k">if</span> <span class="n">cvect</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No contrast vector expected&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">design_matrix</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cvect</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`cvect` cannot be None with&#39;</span>
+                                 <span class="s1">&#39; provided design matrix&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cvect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cvect</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_subjects</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Design matrix shape is inconsistent&#39;</span>
+                                 <span class="s1">&#39; with number of input images&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cvect</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Design matrix shape is inconsistent&#39;</span>
+                                 <span class="s1">&#39; with provided `cvect`&#39;</span><span class="p">)</span>
+
+        <span class="c1"># load the parcellation and resample it at the appropriate</span>
+        <span class="c1"># resolution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">=</span> <span class="n">parcel_img</span><span class="o">.</span><span class="n">reference</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_full_res</span> <span class="o">=</span> <span class="n">parcel_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uintp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine_full_res</span> <span class="o">=</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="n">parcel_img</span><span class="p">)</span>
+        <span class="n">parcel_img</span> <span class="o">=</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_full_res</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">affine_full_res</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine</span> <span class="o">=</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">con_imgs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">parcel_img_rsp</span> <span class="o">=</span> <span class="n">resample</span><span class="p">(</span><span class="n">parcel_img</span><span class="p">,</span>
+                                  <span class="n">reference</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">con_imgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">),</span>
+                                  <span class="n">interp_order</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel</span> <span class="o">=</span> <span class="n">parcel_img_rsp</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uintp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">msk</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">msk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parcel</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="c1"># get parcel labels and values</span>
+        <span class="k">if</span> <span class="n">parcel_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parcel_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parcel_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parcel_values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parcel_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">parcel_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parcel_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">parcel_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># determine smoothing kernel size, which involves converting</span>
+        <span class="c1"># the input full-width-at-half-maximum parameter given in mm</span>
+        <span class="c1"># to standard deviation in voxel units.</span>
+        <span class="n">orient</span> <span class="o">=</span> <span class="n">io_orientation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="c1"># `orient` is an array, so this slicing leads to advanced indexing.</span>
+        <span class="n">voxsize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">[</span><span class="n">orient</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">fwhm2sigma</span><span class="p">(</span><span class="n">fwhm</span><span class="p">)</span> <span class="o">/</span> <span class="n">voxsize</span><span class="p">,</span> <span class="n">SIGMA_MIN</span><span class="p">)</span>
+
+        <span class="c1"># run approximate belief propagation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_smooth_images</span><span class="p">(</span><span class="n">write_smoothed_images</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_voxel_level_inference</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parcel_level_inference</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_smooth_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">write</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Smooth input contrast images to account for localization</span>
+<span class="sd">        uncertainty in reference space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cons</span><span class="p">,</span> <span class="n">vcons</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_subjects</span><span class="p">):</span>
+            <span class="n">con</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">con_imgs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vcon_imgs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">vcon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vcon_imgs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vcon</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">scon</span><span class="p">,</span> <span class="n">svcon</span> <span class="o">=</span> <span class="n">_smooth_image_pair</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">vcon</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
+                                             <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">smooth_method</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">write</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_save_image</span><span class="p">(</span><span class="n">scon</span><span class="p">,</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res_path</span><span class="p">,</span>
+                                       <span class="s1">&#39;scon&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.nii.gz&#39;</span><span class="p">))</span>
+                <span class="n">_save_image</span><span class="p">(</span><span class="n">svcon</span><span class="p">,</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res_path</span><span class="p">,</span>
+                                        <span class="s1">&#39;svcon&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.nii.gz&#39;</span><span class="p">))</span>
+            <span class="n">cons</span> <span class="o">+=</span> <span class="p">[</span><span class="n">scon</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">msk</span><span class="p">]]</span>
+            <span class="n">vcons</span> <span class="o">+=</span> <span class="p">[</span><span class="n">svcon</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">msk</span><span class="p">]]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vcons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vcons</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_voxel_level_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mfx</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimate voxel-level group parameters using mixed effects</span>
+<span class="sd">        variational Bayes algorithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">beta</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">dof</span> <span class="o">=</span> <span class="n">two_level_glm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vcons</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cvect</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vbeta</span> <span class="o">=</span> <span class="n">s2</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cvect</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>\
+                                   <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">design_matrix</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vbeta</span> <span class="o">=</span> <span class="n">s2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cvect</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cvect</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">dof</span>
+
+    <span class="k">def</span> <span class="nf">_parcel_level_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimate parcel-level group parameters using mixed effects</span>
+<span class="sd">        variational Bayes algorithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parcel_masked</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parcel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">msk</span><span class="p">]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">histogram</span><span class="p">(</span><span class="n">parcel_masked</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="n">prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># For each parcel, estimate parcel-level parameters using a</span>
+        <span class="c1"># mxf model</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)):</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">parcel_masked</span> <span class="o">==</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+            <span class="n">vy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbeta</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+            <span class="n">npts</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">s2</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dof</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">two_level_glm</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">npts</span><span class="p">))</span>
+                <span class="n">prob</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">s2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">npts</span><span class="p">)),</span>
+                                   <span class="n">dof</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">prob</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parcel_values</span> <span class="o">==</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">labels</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_parcel_labels</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span>
+
+        <span class="c1"># Sort labels by ascending order of mean values</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_values</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">labels</span><span class="p">)[</span><span class="n">I</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_prob</span> <span class="o">=</span> <span class="n">prob</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_mu</span> <span class="o">=</span> <span class="n">mu</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_s2</span> <span class="o">=</span> <span class="n">s2</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_dof</span> <span class="o">=</span> <span class="n">dof</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ParcelAnalysis.dump_results"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.group.parcel_analysis.html#nipy.algorithms.group.parcel_analysis.ParcelAnalysis.dump_results">[docs]</a>    <span class="k">def</span> <span class="nf">dump_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save parcel analysis information in NPZ file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;parcel_analysis.npz&#39;</span><span class="p">),</span>
+                 <span class="n">values</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_values</span><span class="p">,</span>
+                 <span class="n">labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_labels</span><span class="p">,</span>
+                 <span class="n">prob</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_prob</span><span class="p">,</span>
+                 <span class="n">mu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_mu</span><span class="p">,</span>
+                 <span class="n">s2</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_s2</span><span class="p">,</span>
+                 <span class="n">dof</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_dof</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ParcelAnalysis.t_map"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.group.parcel_analysis.html#nipy.algorithms.group.parcel_analysis.ParcelAnalysis.t_map">[docs]</a>    <span class="k">def</span> <span class="nf">t_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute voxel-wise t-statistic map. This map is different from</span>
+<span class="sd">        what you would get from an SPM-style mass univariate analysis</span>
+<span class="sd">        because the method accounts for both spatial uncertainty in</span>
+<span class="sd">        reference space and possibly errors on first-level inputs (if</span>
+<span class="sd">        variance images are provided).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tmap_img: nipy image</span>
+<span class="sd">          t-statistic map.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">msk</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vbeta</span>
+        <span class="n">tmap</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">msk</span><span class="p">]</span> <span class="o">=</span> <span class="n">beta</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+        <span class="n">tmap_img</span> <span class="o">=</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="n">tmap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_save_image</span><span class="p">(</span><span class="n">tmap_img</span><span class="p">,</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res_path</span><span class="p">,</span> <span class="s1">&#39;tmap.nii.gz&#39;</span><span class="p">))</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">msk</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">tmp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">msk</span><span class="p">]</span> <span class="o">=</span> <span class="n">beta</span>
+            <span class="n">_save_image</span><span class="p">(</span><span class="n">make_xyz_image</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">),</span>
+                        <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res_path</span><span class="p">,</span> <span class="s1">&#39;beta.nii.gz&#39;</span><span class="p">))</span>
+            <span class="n">tmp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">msk</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span>
+            <span class="n">_save_image</span><span class="p">(</span><span class="n">make_xyz_image</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">),</span>
+                        <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res_path</span><span class="p">,</span> <span class="s1">&#39;vbeta.nii.gz&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">tmap_img</span></div>
+
+<div class="viewcode-block" id="ParcelAnalysis.parcel_maps"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.group.parcel_analysis.html#nipy.algorithms.group.parcel_analysis.ParcelAnalysis.parcel_maps">[docs]</a>    <span class="k">def</span> <span class="nf">parcel_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_res</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute parcel-based posterior contrast means and positive</span>
+<span class="sd">        contrast probabilities.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        full_res: boolean</span>
+<span class="sd">         If True, the output images will be at the same resolution as</span>
+<span class="sd">         the parcel image. Otherwise, resolution will match the</span>
+<span class="sd">         first-level images.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pmap_mu_img: nipy image</span>
+<span class="sd">          Image of posterior contrast means for each parcel.</span>
+<span class="sd">        pmap_prob_img: nipy image</span>
+<span class="sd">          Corresponding image of posterior probabilities of positive</span>
+<span class="sd">          contrast.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">full_res</span><span class="p">:</span>
+            <span class="n">parcel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parcel_full_res</span>
+            <span class="n">affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine_full_res</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parcel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parcel</span>
+            <span class="n">affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span>
+        <span class="n">pmap_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">parcel</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">pmap_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">parcel</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">prob</span><span class="p">,</span> <span class="n">mu</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_values</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">parcel_prob</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">parcel_mu</span><span class="p">):</span>
+            <span class="n">pmap_prob</span><span class="p">[</span><span class="n">parcel</span> <span class="o">==</span> <span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob</span>
+            <span class="n">pmap_mu</span><span class="p">[</span><span class="n">parcel</span> <span class="o">==</span> <span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span>
+
+        <span class="n">pmap_prob_img</span> <span class="o">=</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="n">pmap_prob</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span>
+        <span class="n">pmap_mu_img</span> <span class="o">=</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="n">pmap_mu</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_save_image</span><span class="p">(</span><span class="n">pmap_prob_img</span><span class="p">,</span>
+                        <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res_path</span><span class="p">,</span> <span class="s1">&#39;parcel_prob.nii.gz&#39;</span><span class="p">))</span>
+            <span class="n">_save_image</span><span class="p">(</span><span class="n">pmap_mu_img</span><span class="p">,</span>
+                        <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res_path</span><span class="p">,</span> <span class="s1">&#39;parcel_mu.nii.gz&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">pmap_mu_img</span><span class="p">,</span> <span class="n">pmap_prob_img</span></div></div>
+
+
+<div class="viewcode-block" id="parcel_analysis"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.group.parcel_analysis.html#nipy.algorithms.group.parcel_analysis.parcel_analysis">[docs]</a><span class="k">def</span> <span class="nf">parcel_analysis</span><span class="p">(</span><span class="n">con_imgs</span><span class="p">,</span> <span class="n">parcel_img</span><span class="p">,</span>
+                    <span class="n">msk_img</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vcon_imgs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">design_matrix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cvect</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">fwhm</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">smooth_method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span>
+                    <span class="n">res_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function for Bayesian parcel-based analysis.</span>
+
+<span class="sd">    Given a sequence of independent images registered to a common</span>
+<span class="sd">    space (for instance, a set of contrast images from a first-level</span>
+<span class="sd">    fMRI analysis), perform a second-level analysis assuming constant</span>
+<span class="sd">    effects throughout parcels defined from a given label image in</span>
+<span class="sd">    reference space. Specifically, a model of the following form is</span>
+<span class="sd">    assumed:</span>
+
+<span class="sd">    Y = X * beta + variability,</span>
+
+<span class="sd">    where Y denotes the input image sequence, X is a design matrix,</span>
+<span class="sd">    and beta are parcel-wise parameter vectors. The algorithm computes</span>
+<span class="sd">    the Bayesian posterior probability of cvect&#39;*beta, where cvect is</span>
+<span class="sd">    a given contrast vector, in each parcel using an expectation</span>
+<span class="sd">    propagation scheme.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    con_imgs: sequence of nipy-like images</span>
+<span class="sd">      Images input to the group analysis.</span>
+<span class="sd">    parcel_img: nipy-like image</span>
+<span class="sd">      Label image where each label codes for a parcel.</span>
+<span class="sd">    msk_img: nipy-like image, optional</span>
+<span class="sd">      Binary mask to restrict analysis. By default, analysis is</span>
+<span class="sd">      carried out on all parcels with nonzero value.</span>
+<span class="sd">    vcon_imgs: sequece of nipy-like images, optional</span>
+<span class="sd">      First-level variance estimates corresponding to `con_imgs`. This</span>
+<span class="sd">      is useful if the input images are &quot;noisy&quot;. By default,</span>
+<span class="sd">      first-level variances are assumed to be zero.</span>
+<span class="sd">    design_matrix: array, optional</span>
+<span class="sd">      If None, a one-sample analysis model is used. Otherwise, an</span>
+<span class="sd">      array with shape (n, p) where `n` matches the number of input</span>
+<span class="sd">      scans, and `p` is the number of regressors.</span>
+<span class="sd">    cvect: array, optional</span>
+<span class="sd">      Contrast vector of interest. The method makes an inference on</span>
+<span class="sd">      the contrast defined as the dot product cvect&#39;*beta, where beta</span>
+<span class="sd">      are the unknown parcel-wise effects. If None, `cvect` is assumed</span>
+<span class="sd">      to be np.array((1,)). However, the `cvect` argument is mandatory</span>
+<span class="sd">      if `design_matrix` is provided.</span>
+<span class="sd">    fwhm: float, optional</span>
+<span class="sd">      A parameter that represents the localization uncertainty in</span>
+<span class="sd">      reference space in terms of the full width at half maximum of an</span>
+<span class="sd">      isotropic Gaussian kernel.</span>
+<span class="sd">    smooth_method: str, optional</span>
+<span class="sd">      One of &#39;default&#39; and &#39;spm&#39;. Setting `smooth_method=spm` results</span>
+<span class="sd">      in simply smoothing the input images using a Gaussian kernel,</span>
+<span class="sd">      while the default method involves more complex smoothing in</span>
+<span class="sd">      order to propagate spatial uncertainty into the inference</span>
+<span class="sd">      process.</span>
+<span class="sd">    res_path: str, optional</span>
+<span class="sd">      An existing path to write output images. If None, no output is</span>
+<span class="sd">      written.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pmap_mu_img: nipy image</span>
+<span class="sd">      Image of posterior contrast means for each parcel.</span>
+<span class="sd">    pmap_prob_img: nipy image</span>
+<span class="sd">      Corresponding image of posterior probabilities of positive</span>
+<span class="sd">      contrast.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">ParcelAnalysis</span><span class="p">(</span><span class="n">con_imgs</span><span class="p">,</span> <span class="n">parcel_img</span><span class="p">,</span> <span class="n">parcel_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">msk_img</span><span class="o">=</span><span class="n">msk_img</span><span class="p">,</span> <span class="n">vcon_imgs</span><span class="o">=</span><span class="n">vcon_imgs</span><span class="p">,</span>
+                       <span class="n">design_matrix</span><span class="o">=</span><span class="n">design_matrix</span><span class="p">,</span> <span class="n">cvect</span><span class="o">=</span><span class="n">cvect</span><span class="p">,</span>
+                       <span class="n">fwhm</span><span class="o">=</span><span class="n">fwhm</span><span class="p">,</span> <span class="n">smooth_method</span><span class="o">=</span><span class="n">smooth_method</span><span class="p">,</span>
+                       <span class="n">res_path</span><span class="o">=</span><span class="n">res_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">parcel_maps</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

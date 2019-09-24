@@ -1,0 +1,365 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.registration.resample</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">...fixes.scipy.ndimage</span> <span class="k">import</span> <span class="n">affine_transform</span><span class="p">,</span> <span class="n">map_coordinates</span>
+
+<span class="kn">from</span> <span class="nn">nibabel.casting</span> <span class="k">import</span> <span class="n">shared_range</span>
+
+<span class="kn">from</span> <span class="nn">...core.image.image_spaces</span> <span class="k">import</span> <span class="p">(</span><span class="n">make_xyz_image</span><span class="p">,</span>
+                                        <span class="n">as_xyz_image</span><span class="p">,</span>
+                                        <span class="n">xyz_affine</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.affine</span> <span class="k">import</span> <span class="n">inverse_affine</span><span class="p">,</span> <span class="n">Affine</span>
+<span class="kn">from</span> <span class="nn">._registration</span> <span class="k">import</span> <span class="p">(</span><span class="n">_cspline_transform</span><span class="p">,</span>
+                            <span class="n">_cspline_sample3d</span><span class="p">,</span>
+                            <span class="n">_cspline_resample3d</span><span class="p">)</span>
+
+
+<span class="n">INTERP_ORDER</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<div class="viewcode-block" id="cast_array"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.resample.html#nipy.algorithms.registration.resample.cast_array">[docs]</a><span class="k">def</span> <span class="nf">cast_array</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    arr : array</span>
+<span class="sd">      Input array</span>
+
+<span class="sd">    dtype : dtype</span>
+<span class="sd">      Desired dtype</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;iu&#39;</span><span class="p">:</span>
+        <span class="n">mn</span><span class="p">,</span> <span class="n">mx</span> <span class="o">=</span> <span class="n">shared_range</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">arr</span><span class="p">),</span> <span class="n">mn</span><span class="p">,</span> <span class="n">mx</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">arr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="resample"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.resample.html#nipy.algorithms.registration.resample.resample">[docs]</a><span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="n">moving</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">mov_voxel_coords</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ref_voxel_coords</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interp_order</span><span class="o">=</span><span class="n">INTERP_ORDER</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="n">cval</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Resample `movimg` into voxel space of `reference` using `transform`</span>
+
+<span class="sd">    Apply a transformation to the image considered as &#39;moving&#39; to</span>
+<span class="sd">    bring it into the same grid as a given `reference` image.  The</span>
+<span class="sd">    transformation usually maps world space in `reference` to world space in</span>
+<span class="sd">    `movimg`, but can also be a voxel to voxel mapping (see parameters below).</span>
+
+<span class="sd">    This function uses scipy.ndimage except for the case `interp_order==3`,</span>
+<span class="sd">    where a fast cubic spline implementation is used.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    moving: nipy-like image</span>
+<span class="sd">        Image to be resampled.</span>
+<span class="sd">    transform: transform object or None</span>
+<span class="sd">        Represents a transform that goes from the `reference` image to the</span>
+<span class="sd">        `moving` image. None means an identity transform. Otherwise, it should</span>
+<span class="sd">        have either an `apply` method, or an `as_affine` method or be a shape</span>
+<span class="sd">        (4, 4) array. By default, `transform` maps between the output (world)</span>
+<span class="sd">        space of `reference` and the output (world) space of `moving`.  If</span>
+<span class="sd">        `mov_voxel_coords` is True, maps to the *voxel* space of `moving` and</span>
+<span class="sd">        if `ref_vox_coords` is True, maps from the *voxel* space of</span>
+<span class="sd">        `reference`.</span>
+<span class="sd">    reference : None or nipy-like image or tuple, optional</span>
+<span class="sd">        The reference image defines the image dimensions and xyz affine to</span>
+<span class="sd">        which to resample. It can be input as a nipy-like image or as a tuple</span>
+<span class="sd">        (shape, affine). If None, use `movimg` to define these.</span>
+<span class="sd">    mov_voxel_coords : boolean, optional</span>
+<span class="sd">        True if the transform maps to voxel coordinates, False if it maps to</span>
+<span class="sd">        world coordinates.</span>
+<span class="sd">    ref_voxel_coords : boolean, optional</span>
+<span class="sd">        True if the transform maps from voxel coordinates, False if it maps</span>
+<span class="sd">        from world coordinates.</span>
+<span class="sd">    interp_order: int, optional</span>
+<span class="sd">        Spline interpolation order, defaults to 3.</span>
+<span class="sd">    mode : str, optional</span>
+<span class="sd">        Points outside the boundaries of the input are filled according to the</span>
+<span class="sd">        given mode (&#39;constant&#39;, &#39;nearest&#39;, &#39;reflect&#39; or &#39;wrap&#39;). Default is</span>
+<span class="sd">        &#39;constant&#39;.</span>
+<span class="sd">    cval : scalar, optional</span>
+<span class="sd">        Value used for points outside the boundaries of the input if</span>
+<span class="sd">        mode=&#39;constant&#39;. Default is 0.0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    aligned_img : Image</span>
+<span class="sd">        Image resliced to `reference` with reference-to-movimg transform</span>
+<span class="sd">        `transform`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Function assumes xyz_affine for inputs</span>
+    <span class="n">moving</span> <span class="o">=</span> <span class="n">as_xyz_image</span><span class="p">(</span><span class="n">moving</span><span class="p">)</span>
+    <span class="n">mov_aff</span> <span class="o">=</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="n">moving</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">reference</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">moving</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="n">ref_shape</span><span class="p">,</span> <span class="n">ref_aff</span> <span class="o">=</span> <span class="n">reference</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Expecting image. Must be an image that can make an xyz_affine</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="n">as_xyz_image</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+        <span class="n">ref_shape</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ref_aff</span> <span class="o">=</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">ref_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">ref_aff</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input image should be 3D&#39;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">moving</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="c1"># Assume identity transform by default</span>
+    <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">Affine</span><span class="p">()</span>
+
+    <span class="c1"># Detect what kind of input transform</span>
+    <span class="n">affine</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="s1">&#39;as_affine&#39;</span><span class="p">):</span>
+        <span class="n">Tv</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">as_affine</span><span class="p">()</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Tv</span> <span class="o">=</span> <span class="n">transform</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Tv</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">Tv</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="n">affine</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Case: affine transform</span>
+    <span class="k">if</span> <span class="n">affine</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ref_voxel_coords</span><span class="p">:</span>
+            <span class="n">Tv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Tv</span><span class="p">,</span> <span class="n">ref_aff</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mov_voxel_coords</span><span class="p">:</span>
+            <span class="n">Tv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">inverse_affine</span><span class="p">(</span><span class="n">mov_aff</span><span class="p">),</span> <span class="n">Tv</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">interp_order</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">cval</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># we can use short cut</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ref_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">cast_array</span><span class="p">(</span><span class="n">_cspline_resample3d</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">ref_shape</span><span class="p">,</span> <span class="n">Tv</span><span class="p">),</span> <span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ref_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">affine_transform</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Tv</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="n">offset</span><span class="o">=</span><span class="n">Tv</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+                             <span class="n">order</span><span class="o">=</span><span class="n">interp_order</span><span class="p">,</span> 
+                             <span class="n">output_shape</span><span class="o">=</span><span class="n">ref_shape</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                             <span class="n">cval</span><span class="o">=</span><span class="n">cval</span><span class="p">)</span>
+
+    <span class="c1"># Case: non-affine transform</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ref_voxel_coords</span><span class="p">:</span>
+            <span class="n">Tv</span> <span class="o">=</span> <span class="n">Tv</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">Affine</span><span class="p">(</span><span class="n">ref_aff</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mov_voxel_coords</span><span class="p">:</span>
+            <span class="n">Tv</span> <span class="o">=</span> <span class="n">Affine</span><span class="p">(</span><span class="n">inverse_affine</span><span class="p">(</span><span class="n">mov_aff</span><span class="p">))</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">Tv</span><span class="p">)</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">ref_shape</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">ref_shape</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">Tv</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">interp_order</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">cval</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># we can use short cut</span>
+            <span class="n">cbspline</span> <span class="o">=</span> <span class="n">_cspline_transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ref_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">cast_array</span><span class="p">(</span><span class="n">_cspline_sample3d</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">cbspline</span><span class="p">,</span> <span class="o">*</span><span class="n">coords</span><span class="p">),</span>
+                                <span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># No short-cut, use map_coordinates</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">map_coordinates</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">interp_order</span><span class="p">,</span>
+                                     <span class="n">output</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">cval</span><span class="o">=</span><span class="n">cval</span><span class="p">)</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">ref_shape</span>
+
+    <span class="k">return</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">ref_aff</span><span class="p">,</span> <span class="s1">&#39;scanner&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

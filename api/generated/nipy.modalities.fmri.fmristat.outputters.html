@@ -1,0 +1,424 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.modalities.fmri.fmristat.outputters.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="modalities-fmri-fmristat-outputters">
+<h1>modalities.fmri.fmristat.outputters<a class="headerlink" href="#modalities-fmri-fmristat-outputters" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-modalities-fmri-fmristat-outputters">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">modalities.fmri.fmristat.outputters</span></code><a class="headerlink" href="#module-modalities-fmri-fmristat-outputters" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.modalities.fmri.fmristat.outputters</span></code>:</p>
+digraph inheritance7a05f38b18 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;fmristat.outputters.RegressionOutput&quot; [URL=&quot;#nipy.modalities.fmri.fmristat.outputters.RegressionOutput&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A class to output things in GLM passes through arrays of data.&quot;];
+  &quot;fmristat.outputters.RegressionOutputList&quot; [URL=&quot;#nipy.modalities.fmri.fmristat.outputters.RegressionOutputList&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A class to output more than one thing&quot;];
+  &quot;fmristat.outputters.TOutput&quot; [URL=&quot;#nipy.modalities.fmri.fmristat.outputters.TOutput&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Output contrast related to a T contrast from a GLM pass through data.&quot;];
+  &quot;fmristat.outputters.RegressionOutputList&quot; -&gt; &quot;fmristat.outputters.TOutput&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.modalities.fmri.fmristat.outputters"></span><p>Convenience functions and classes for statistics on images.</p>
+<p>These functions and classes support the return of statistical test results from
+iterations through data.</p>
+<p>The basic container here is the RegressionOutput.  This does two basic things:</p>
+<ul class="simple">
+<li><p>via __call__, processes a result object from a regression to produce
+something, usually an array</p></li>
+<li><p>via slicing (__setitem__), it can store stuff, usually arrays.</p></li>
+</ul>
+<p>We use these by other objects (see algorithms.statistics.fmri.fmristat) slicing
+data out of images, fitting models to the data to create results objects, and
+then passing them to these here <code class="docutils literal notranslate"><span class="pre">RegressionOutput</span></code> containers via call, to get
+useful arrays, and then putting the results back into the <code class="docutils literal notranslate"><span class="pre">RegressionOutput</span></code>
+containers via slicing (__setitem__).</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="regressionoutput">
+<h3><a class="reference internal" href="#nipy.modalities.fmri.fmristat.outputters.RegressionOutput" title="nipy.modalities.fmri.fmristat.outputters.RegressionOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegressionOutput</span></code></a><a class="headerlink" href="#regressionoutput" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.modalities.fmri.fmristat.outputters.RegressionOutput">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.fmristat.outputters.</code><code class="sig-name descname">RegressionOutput</code><span class="sig-paren">(</span><em class="sig-param">img</em>, <em class="sig-param">fn</em>, <em class="sig-param">output_shape=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#RegressionOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.RegressionOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class to output things in GLM passes through arrays of data.</p>
+<dl class="method">
+<dt id="nipy.modalities.fmri.fmristat.outputters.RegressionOutput.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">img</em>, <em class="sig-param">fn</em>, <em class="sig-param">output_shape=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#RegressionOutput.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.RegressionOutput.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>img</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code> instance</p>
+<blockquote>
+<div><p>The output Image</p>
+</div></blockquote>
+<p><strong>fn</strong> : callable</p>
+<blockquote>
+<div><p>A function that is applied to a
+models.model.LikelihoodModelResults instance</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="regressionoutputlist">
+<h3><a class="reference internal" href="#nipy.modalities.fmri.fmristat.outputters.RegressionOutputList" title="nipy.modalities.fmri.fmristat.outputters.RegressionOutputList"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegressionOutputList</span></code></a><a class="headerlink" href="#regressionoutputlist" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.modalities.fmri.fmristat.outputters.RegressionOutputList">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.fmristat.outputters.</code><code class="sig-name descname">RegressionOutputList</code><span class="sig-paren">(</span><em class="sig-param">imgs</em>, <em class="sig-param">fn</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#RegressionOutputList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.RegressionOutputList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class to output more than one thing
+from a GLM pass through arrays of data.</p>
+<dl class="method">
+<dt id="nipy.modalities.fmri.fmristat.outputters.RegressionOutputList.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">imgs</em>, <em class="sig-param">fn</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#RegressionOutputList.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.RegressionOutputList.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize regression output list</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>imgs</strong> : list</p>
+<blockquote>
+<div><p>The list of output images</p>
+</div></blockquote>
+<p><strong>fn</strong> : callable</p>
+<blockquote>
+<div><p>A function that is applied to a
+models.model.LikelihoodModelResults instance</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="toutput">
+<h3><a class="reference internal" href="#nipy.modalities.fmri.fmristat.outputters.TOutput" title="nipy.modalities.fmri.fmristat.outputters.TOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">TOutput</span></code></a><a class="headerlink" href="#toutput" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.modalities.fmri.fmristat.outputters.TOutput">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.fmristat.outputters.</code><code class="sig-name descname">TOutput</code><span class="sig-paren">(</span><em class="sig-param">contrast</em>, <em class="sig-param">effect=None</em>, <em class="sig-param">sd=None</em>, <em class="sig-param">t=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#TOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.TOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.modalities.fmri.fmristat.outputters.RegressionOutputList" title="nipy.modalities.fmri.fmristat.outputters.RegressionOutputList"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.modalities.fmri.fmristat.outputters.RegressionOutputList</span></code></a></p>
+<p>Output contrast related to a T contrast from a GLM pass through data.</p>
+<dl class="method">
+<dt id="nipy.modalities.fmri.fmristat.outputters.TOutput.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">contrast</em>, <em class="sig-param">effect=None</em>, <em class="sig-param">sd=None</em>, <em class="sig-param">t=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#TOutput.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.TOutput.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize regression output list</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>imgs</strong> : list</p>
+<blockquote>
+<div><p>The list of output images</p>
+</div></blockquote>
+<p><strong>fn</strong> : callable</p>
+<blockquote>
+<div><p>A function that is applied to a
+models.model.LikelihoodModelResults instance</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.modalities.fmri.fmristat.outputters.output_AR1">
+<code class="sig-prename descclassname">nipy.modalities.fmri.fmristat.outputters.</code><code class="sig-name descname">output_AR1</code><span class="sig-paren">(</span><em class="sig-param">results</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#output_AR1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.output_AR1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the usual AR(1) parameter on
+the residuals from a regression.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.fmristat.outputters.output_F">
+<code class="sig-prename descclassname">nipy.modalities.fmri.fmristat.outputters.</code><code class="sig-name descname">output_F</code><span class="sig-paren">(</span><em class="sig-param">results</em>, <em class="sig-param">contrast</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#output_F"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.output_F" title="Permalink to this definition">¶</a></dt>
+<dd><p>This convenience function outputs the results of an Fcontrast
+from a regression</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>results</strong> : object</p>
+<blockquote>
+<div><p>implementing Tcontrast method</p>
+</div></blockquote>
+<p><strong>contrast</strong> : array</p>
+<blockquote>
+<div><p>contrast matrix</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>F</strong> : array</p>
+<blockquote>
+<div><p>array of F values</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.fmristat.outputters.output_T">
+<code class="sig-prename descclassname">nipy.modalities.fmri.fmristat.outputters.</code><code class="sig-name descname">output_T</code><span class="sig-paren">(</span><em class="sig-param">results</em>, <em class="sig-param">contrast</em>, <em class="sig-param">retvals=('effect'</em>, <em class="sig-param">'sd'</em>, <em class="sig-param">'t')</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#output_T"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.output_T" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to collect t contrast results</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>results</strong> : object</p>
+<blockquote>
+<div><p>implementing Tcontrast method</p>
+</div></blockquote>
+<p><strong>contrast</strong> : array</p>
+<blockquote>
+<div><p>contrast matrix</p>
+</div></blockquote>
+<p><strong>retvals</strong> : sequence, optional</p>
+<blockquote>
+<div><p>None or more of strings ‘effect’, ‘sd’, ‘t’, where the presence of the
+string means that that output will be returned.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>res_list</strong> : list</p>
+<blockquote>
+<div><p>List of results.  It will have the same length as <cite>retvals</cite> and the
+elements will be in the same order as retvals</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.fmristat.outputters.output_resid">
+<code class="sig-prename descclassname">nipy.modalities.fmri.fmristat.outputters.</code><code class="sig-name descname">output_resid</code><span class="sig-paren">(</span><em class="sig-param">results</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/fmristat/outputters.html#output_resid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.fmristat.outputters.output_resid" title="Permalink to this definition">¶</a></dt>
+<dd><p>This convenience function outputs the residuals
+from a regression</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

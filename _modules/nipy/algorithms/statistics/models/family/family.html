@@ -1,0 +1,468 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../../" src="../../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.statistics.models.family.family</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">links</span> <span class="k">as</span> <span class="n">L</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">varfuncs</span> <span class="k">as</span> <span class="n">V</span>
+
+<div class="viewcode-block" id="Family"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Family">[docs]</a><span class="k">class</span> <span class="nc">Family</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to model one-parameter exponential</span>
+<span class="sd">    families.</span>
+
+<span class="sd">    INPUTS:</span>
+<span class="sd">       link      -- a Link instance</span>
+<span class="sd">       variance  -- a variance function (models means as a function</span>
+<span class="sd">                    of mean)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">valid</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
+
+    <span class="n">tol</span> <span class="o">=</span> <span class="mf">1.0e-05</span>
+    <span class="n">links</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">_setlink</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_link</span> <span class="o">=</span> <span class="n">link</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;links&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">link</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;invalid link for family, should be in </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getlink</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_link</span>
+
+    <span class="n">link</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getlink</span><span class="p">,</span> <span class="n">_setlink</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Family.__init__"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Family.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="p">,</span> <span class="n">variance</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">variance</span></div>
+
+<div class="viewcode-block" id="Family.weights"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Family.weights">[docs]</a>    <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Weights for IRLS step.</span>
+
+<span class="sd">        w = 1 / (link&#39;(mu)**2 * variance(mu))</span>
+
+<span class="sd">        INPUTS:</span>
+<span class="sd">           mu  -- mean parameter in exponential family</span>
+
+<span class="sd">        OUTPUTS:</span>
+<span class="sd">           w   -- weights used in WLS step of GLM/GAM fit</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">deriv</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">(</span><span class="n">mu</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Family.deviance"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Family.deviance">[docs]</a>    <span class="k">def</span> <span class="nf">deviance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deviance of (Y,mu) pair. Deviance is usually defined</span>
+<span class="sd">        as the difference</span>
+
+<span class="sd">        DEV = (SUM_i -2 log Likelihood(Y_i,mu_i) + 2 log Likelihood(mu_i,mu_i)) / scale</span>
+
+<span class="sd">        INPUTS:</span>
+<span class="sd">           Y     -- response variable</span>
+<span class="sd">           mu    -- mean parameter</span>
+<span class="sd">           scale -- optional scale in denominator of deviance</span>
+
+<span class="sd">        OUTPUTS: dev</span>
+<span class="sd">           dev   -- DEV, as described aboce</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">devresid</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">mu</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">scale</span></div>
+
+<div class="viewcode-block" id="Family.devresid"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Family.devresid">[docs]</a>    <span class="k">def</span> <span class="nf">devresid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The deviance residuals, defined as the residuals</span>
+<span class="sd">        in the deviance.</span>
+
+<span class="sd">        Without knowing the link, they default to Pearson residuals</span>
+
+<span class="sd">        resid_P = (Y - mu) * sqrt(weight(mu))</span>
+
+<span class="sd">        INPUTS:</span>
+<span class="sd">           Y     -- response variable</span>
+<span class="sd">           mu    -- mean parameter</span>
+
+<span class="sd">        OUTPUTS: resid</span>
+<span class="sd">           resid -- deviance residuals</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">Y</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">(</span><span class="n">mu</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Family.fitted"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Family.fitted">[docs]</a>    <span class="k">def</span> <span class="nf">fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eta</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fitted values based on linear predictors eta.</span>
+
+<span class="sd">        INPUTS:</span>
+<span class="sd">           eta  -- values of linear predictors, say,</span>
+<span class="sd">                   X beta in a generalized linear model.</span>
+
+<span class="sd">        OUTPUTS: mu</span>
+<span class="sd">           mu   -- link.inverse(eta), mean parameter based on eta</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">eta</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Family.predict"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Family.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Linear predictors based on given mu values.</span>
+
+<span class="sd">        INPUTS:</span>
+<span class="sd">           mu   -- mean parameter of one-parameter exponential family</span>
+
+<span class="sd">        OUTPUTS: eta</span>
+<span class="sd">           eta  -- link(mu), linear predictors, based on</span>
+<span class="sd">                   mean parameters mu</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="Poisson"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Poisson">[docs]</a><span class="k">class</span> <span class="nc">Poisson</span><span class="p">(</span><span class="n">Family</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Poisson exponential family.</span>
+
+<span class="sd">    INPUTS:</span>
+<span class="sd">       link      -- a Link instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="n">L</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">sqrt</span><span class="p">]</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">mu</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Poisson.__init__"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Poisson.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">L</span><span class="o">.</span><span class="n">log</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">Poisson</span><span class="o">.</span><span class="n">variance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span></div>
+
+<div class="viewcode-block" id="Poisson.devresid"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Poisson.devresid">[docs]</a>    <span class="k">def</span> <span class="nf">devresid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Poisson deviance residual</span>
+
+<span class="sd">        INPUTS:</span>
+<span class="sd">           Y     -- response variable</span>
+<span class="sd">           mu    -- mean parameter</span>
+
+<span class="sd">        OUTPUTS: resid</span>
+<span class="sd">           resid -- deviance residuals</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">Y</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Y</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">Y</span> <span class="o">/</span> <span class="n">mu</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">Y</span> <span class="o">-</span> <span class="n">mu</span><span class="p">))</span></div></div>
+
+<div class="viewcode-block" id="Gaussian"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Gaussian">[docs]</a><span class="k">class</span> <span class="nc">Gaussian</span><span class="p">(</span><span class="n">Family</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gaussian exponential family.</span>
+
+<span class="sd">    INPUTS:</span>
+<span class="sd">       link      -- a Link instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="n">L</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">inverse</span><span class="p">]</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">constant</span>
+
+<div class="viewcode-block" id="Gaussian.__init__"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Gaussian.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">L</span><span class="o">.</span><span class="n">identity</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">Gaussian</span><span class="o">.</span><span class="n">variance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span></div>
+
+<div class="viewcode-block" id="Gaussian.devresid"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Gaussian.devresid">[docs]</a>    <span class="k">def</span> <span class="nf">devresid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gaussian deviance residual</span>
+
+<span class="sd">        INPUTS:</span>
+<span class="sd">           Y     -- response variable</span>
+<span class="sd">           mu    -- mean parameter</span>
+<span class="sd">           scale -- optional scale in denominator (after taking sqrt)</span>
+
+<span class="sd">        OUTPUTS: resid</span>
+<span class="sd">           resid -- deviance residuals</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">Y</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="Gamma"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Gamma">[docs]</a><span class="k">class</span> <span class="nc">Gamma</span><span class="p">(</span><span class="n">Family</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gamma exponential family.</span>
+
+<span class="sd">    INPUTS:</span>
+<span class="sd">       link      -- a Link instance</span>
+
+<span class="sd">    BUGS:</span>
+<span class="sd">       no deviance residuals?</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="n">L</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">inverse</span><span class="p">]</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">mu_squared</span>
+
+<div class="viewcode-block" id="Gamma.__init__"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Gamma.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">L</span><span class="o">.</span><span class="n">identity</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">Gamma</span><span class="o">.</span><span class="n">variance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span></div></div>
+
+
+<div class="viewcode-block" id="Binomial"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Binomial">[docs]</a><span class="k">class</span> <span class="nc">Binomial</span><span class="p">(</span><span class="n">Family</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Binomial exponential family.</span>
+
+<span class="sd">    INPUTS:</span>
+<span class="sd">       link      -- a Link instance</span>
+<span class="sd">       n         -- number of trials for Binomial</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="n">L</span><span class="o">.</span><span class="n">logit</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">probit</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">cauchy</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">cloglog</span><span class="p">]</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">binary</span>
+
+<div class="viewcode-block" id="Binomial.__init__"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Binomial.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">L</span><span class="o">.</span><span class="n">logit</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">Binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span></div>
+
+<div class="viewcode-block" id="Binomial.devresid"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.Binomial.devresid">[docs]</a>    <span class="k">def</span> <span class="nf">devresid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Binomial deviance residual</span>
+
+<span class="sd">        INPUTS:</span>
+<span class="sd">           Y     -- response variable</span>
+<span class="sd">           mu    -- mean parameter</span>
+
+<span class="sd">        OUTPUTS: resid</span>
+<span class="sd">           resid -- deviance residuals</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">Y</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">Y</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">mu</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">-</span> <span class="n">Y</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)))</span></div></div>
+
+<div class="viewcode-block" id="InverseGaussian"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.InverseGaussian">[docs]</a><span class="k">class</span> <span class="nc">InverseGaussian</span><span class="p">(</span><span class="n">Family</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    InverseGaussian exponential family.</span>
+
+<span class="sd">    INPUTS:</span>
+<span class="sd">       link      -- a Link instance</span>
+<span class="sd">       n         -- number of trials for Binomial</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="n">L</span><span class="o">.</span><span class="n">inverse_squared</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">inverse</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">log</span><span class="p">]</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">mu_cubed</span>
+
+<div class="viewcode-block" id="InverseGaussian.__init__"><a class="viewcode-back" href="../../../../../../api/generated/nipy.algorithms.statistics.models.family.family.html#nipy.algorithms.statistics.models.family.family.InverseGaussian.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">L</span><span class="o">.</span><span class="n">identity</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">InverseGaussian</span><span class="o">.</span><span class="n">variance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

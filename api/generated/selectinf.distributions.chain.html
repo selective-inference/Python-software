@@ -1,0 +1,520 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="distributions.chisq" href="selectinf.distributions.chisq.html" />
+    <link rel="prev" title="constraints.quasi_affine" href="selectinf.constraints.quasi_affine.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">distributions.chain</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-distributions-chain">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.chain</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.distributions.chain.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="distributions-chain">
+<h1>distributions.chain<a class="headerlink" href="#distributions-chain" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-distributions-chain">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.chain</span></code><a class="headerlink" href="#module-distributions-chain" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.distributions.chain</span></code>:</p>
+digraph inheritance1f333bfbce {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;distributions.chain.markov_chain&quot; [URL=&quot;#selectinf.distributions.chain.markov_chain&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Abstract implementation of a Markov chain.&quot;];
+  &quot;distributions.chain.reversible_markov_chain&quot; [URL=&quot;#selectinf.distributions.chain.reversible_markov_chain&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;An abstract representation of a Markov chain that&quot;];
+  &quot;distributions.chain.markov_chain&quot; -&gt; &quot;distributions.chain.reversible_markov_chain&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-selectinf.distributions.chain"></span><p>A simple implementation of Besag and Clifford’s generalized
+Monte Carlo Significance Tests.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="markov-chain">
+<h3><a class="reference internal" href="#selectinf.distributions.chain.markov_chain" title="selectinf.distributions.chain.markov_chain"><code class="xref py py-class docutils literal notranslate"><span class="pre">markov_chain</span></code></a><a class="headerlink" href="#markov-chain" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.distributions.chain.markov_chain">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.distributions.chain.</code><code class="sig-name descname">markov_chain</code><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#markov_chain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.markov_chain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Abstract implementation of a Markov chain.</p>
+<dl class="method">
+<dt id="selectinf.distributions.chain.markov_chain.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">$self</em>, <em class="sig-param">/</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.distributions.chain.markov_chain.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.markov_chain.forward_step">
+<code class="sig-name descname">forward_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#markov_chain.forward_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.markov_chain.forward_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.markov_chain.backward_step">
+<code class="sig-name descname">backward_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#markov_chain.backward_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.markov_chain.backward_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.markov_chain.get_state">
+<code class="sig-name descname">get_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#markov_chain.get_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.markov_chain.get_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.markov_chain.set_state">
+<code class="sig-name descname">set_state</code><span class="sig-paren">(</span><em class="sig-param">state</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#markov_chain.set_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.markov_chain.set_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.markov_chain.state">
+<em class="property">property </em><code class="sig-name descname">state</code><a class="headerlink" href="#selectinf.distributions.chain.markov_chain.state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.markov_chain.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#markov_chain.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.markov_chain.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="reversible-markov-chain">
+<h3><a class="reference internal" href="#selectinf.distributions.chain.reversible_markov_chain" title="selectinf.distributions.chain.reversible_markov_chain"><code class="xref py py-class docutils literal notranslate"><span class="pre">reversible_markov_chain</span></code></a><a class="headerlink" href="#reversible-markov-chain" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.distributions.chain.reversible_markov_chain">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.distributions.chain.</code><code class="sig-name descname">reversible_markov_chain</code><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#reversible_markov_chain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.distributions.chain.markov_chain" title="selectinf.distributions.chain.markov_chain"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.distributions.chain.markov_chain</span></code></a></p>
+<p>An abstract representation of a Markov chain that
+is reversible with respect to some stationary
+distribution.</p>
+<dl class="method">
+<dt id="selectinf.distributions.chain.reversible_markov_chain.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">$self</em>, <em class="sig-param">/</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.reversible_markov_chain.step">
+<code class="sig-name descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#reversible_markov_chain.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain.step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.reversible_markov_chain.forward_step">
+<code class="sig-name descname">forward_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#reversible_markov_chain.forward_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain.forward_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a reversible chain, a forward_step is just a step.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.reversible_markov_chain.backward_step">
+<code class="sig-name descname">backward_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#reversible_markov_chain.backward_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain.backward_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a reversible chain, a backward_step is just a step.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.reversible_markov_chain.get_state">
+<code class="sig-name descname">get_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain.get_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.reversible_markov_chain.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.reversible_markov_chain.set_state">
+<code class="sig-name descname">set_state</code><span class="sig-paren">(</span><em class="sig-param">state</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain.set_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.chain.reversible_markov_chain.state">
+<em class="property">property </em><code class="sig-name descname">state</code><a class="headerlink" href="#selectinf.distributions.chain.reversible_markov_chain.state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.distributions.chain.parallel_test">
+<code class="sig-prename descclassname">selectinf.distributions.chain.</code><code class="sig-name descname">parallel_test</code><span class="sig-paren">(</span><em class="sig-param">reversible_chain</em>, <em class="sig-param">null_state</em>, <em class="sig-param">test_statistic</em>, <em class="sig-param">ndraw=20</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#parallel_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.parallel_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Besag and Clifford’s parallel test for reversible
+Markov chains.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>reversible_chain</strong> : iterable</p>
+<blockquote>
+<div><p>An object implementing a Markov chain,
+with <cite>forward_step</cite> and <cite>backward_step</cite> methods.</p>
+</div></blockquote>
+<p><strong>null_state</strong> : object</p>
+<blockquote>
+<div><p>An object nominally drawn from the
+stationary distribution.</p>
+</div></blockquote>
+<p><strong>test_statistic</strong> : callable</p>
+<blockquote>
+<div><p>A test statistic to compute on each state
+of the chain. The overall
+test statistic is the ranking of
+<cite>test_statistic(null_state)</cite> in a sample
+of <cite>ndraw</cite> steps of the chain.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int</p>
+<blockquote>
+<div><p>How many total draws of the chain should be made?
+Includes <cite>null_state</cite> as one of these draws.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rank</strong> : int</p>
+<blockquote>
+<div><p>How many of the draws had a test statistic
+less than the observed value? 
+Ties are handled by randomization.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The attribute <cite>chain.state</cite> is reset to its initial value
+after running.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.distributions.chain.serial_test">
+<code class="sig-prename descclassname">selectinf.distributions.chain.</code><code class="sig-name descname">serial_test</code><span class="sig-paren">(</span><em class="sig-param">reversible_chain</em>, <em class="sig-param">null_state</em>, <em class="sig-param">test_statistic</em>, <em class="sig-param">ndraw=20</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/chain.html#serial_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.chain.serial_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Besag and Clifford’s parallel test for reversible
+Markov chains.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>reversible_chain</strong> : iterable</p>
+<blockquote>
+<div><p>An object implementing a Markov chain,
+with next method returning current state.</p>
+</div></blockquote>
+<p><strong>null_state</strong> : object</p>
+<blockquote>
+<div><p>An object nominally drawn from the
+stationary distribution.</p>
+</div></blockquote>
+<p><strong>test_statistic</strong> : callable</p>
+<blockquote>
+<div><p>A test statistic to compute on each state
+of the chain. The overall
+test statistic is the ranking of
+<cite>test_statistic(null_state)</cite> in a sample
+of <cite>ndraw</cite> steps of the chain.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int</p>
+<blockquote>
+<div><p>How many total draws of the chain should be made?
+Includes <cite>null_state</cite> as one of these draws.
+Ties are handled by randomization.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rank</strong> : int</p>
+<blockquote>
+<div><p>How many of the draws had a test statistic
+less than the observed value?</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The attribute <cite>chain.state</cite> is reset to its initial value
+after running.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.distributions.chisq.html" class="btn btn-neutral float-right" title="distributions.chisq" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.constraints.quasi_affine.html" class="btn btn-neutral float-left" title="constraints.quasi_affine" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

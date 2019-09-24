@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.viz_tools.activation_maps.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-viz-tools-activation-maps">
+<h1>labs.viz_tools.activation_maps<a class="headerlink" href="#labs-viz-tools-activation-maps" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.labs.viz_tools.activation_maps">
+<span id="module-labs-viz-tools-activation-maps"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.viz_tools.activation_maps</span></code><a class="headerlink" href="#module-nipy.labs.viz_tools.activation_maps" title="Permalink to this headline">¶</a></h2>
+<p>Functions to do automatic visualization of activation-like maps.</p>
+<p>For 2D-only visualization, only matplotlib is required.
+For 3D visualization, Mayavi, version 3.0 or greater, is required.</p>
+<p>For a demo, see the ‘demo_plot_map’ function.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.viz_tools.activation_maps.demo_plot_map">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.activation_maps.</code><code class="sig-name descname">demo_plot_map</code><span class="sig-paren">(</span><em class="sig-param">do3d=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/activation_maps.html#demo_plot_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.activation_maps.demo_plot_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Demo activation map plotting.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.activation_maps.plot_anat">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.activation_maps.</code><code class="sig-name descname">plot_anat</code><span class="sig-paren">(</span><em class="sig-param">anat=None</em>, <em class="sig-param">anat_affine=None</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">slicer='ortho'</em>, <em class="sig-param">figure=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">title=None</em>, <em class="sig-param">annotate=True</em>, <em class="sig-param">draw_cross=True</em>, <em class="sig-param">black_bg=False</em>, <em class="sig-param">dim=False</em>, <em class="sig-param">cmap=&lt;matplotlib.colors.LinearSegmentedColormap object&gt;</em>, <em class="sig-param">**imshow_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/activation_maps.html#plot_anat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.activation_maps.plot_anat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot three cuts of an anatomical image (Frontal, Axial, and Lateral)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>anat</strong> : 3D ndarray, optional</p>
+<blockquote>
+<div><p>The anatomical image to be used as a background. If None is
+given, nipy tries to find a T1 template.</p>
+</div></blockquote>
+<p><strong>anat_affine</strong> : 4x4 ndarray, optional</p>
+<blockquote>
+<div><p>The affine matrix going from the anatomical image voxel space to 
+MNI space. This parameter is not used when the default 
+anatomical is used, but it is compulsory when using an
+explicite anatomical image.</p>
+</div></blockquote>
+<p><strong>figure</strong> : integer or matplotlib figure, optional</p>
+<blockquote>
+<div><p>Matplotlib figure used or its number. If None is given, a
+new figure is created.</p>
+</div></blockquote>
+<p><strong>cut_coords: None, or a tuple of floats</strong></p>
+<blockquote>
+<div><p>The MNI coordinates of the point where the cut is performed, in
+MNI coordinates and order.
+If slicer is ‘ortho’, this should be a 3-tuple: (x, y, z)
+For slicer == ‘x’, ‘y’, or ‘z’, then these are the
+coordinates of each cut in the corresponding direction.
+If None is given, the cuts is calculated automaticaly.</p>
+</div></blockquote>
+<p><strong>slicer: {‘ortho’, ‘x’, ‘y’, ‘z’}</strong></p>
+<blockquote>
+<div><p>Choose the direction of the cuts. With ‘ortho’ three cuts are
+performed in orthogonal directions</p>
+</div></blockquote>
+<p><strong>figure</strong> : integer or matplotlib figure, optional</p>
+<blockquote>
+<div><p>Matplotlib figure used or its number. If None is given, a
+new figure is created.</p>
+</div></blockquote>
+<p><strong>axes</strong> : matplotlib axes or 4 tuple of float: (xmin, ymin, width, height), optional</p>
+<blockquote>
+<div><p>The axes, or the coordinates, in matplotlib figure space,
+of the axes used to display the plot. If None, the complete
+figure is used.</p>
+</div></blockquote>
+<p><strong>title</strong> : string, optional</p>
+<blockquote>
+<div><p>The title dispayed on the figure.</p>
+</div></blockquote>
+<p><strong>annotate: boolean, optional</strong></p>
+<blockquote>
+<div><p>If annotate is True, positions and left/right annotation
+are added to the plot.</p>
+</div></blockquote>
+<p><strong>draw_cross: boolean, optional</strong></p>
+<blockquote>
+<div><p>If draw_cross is True, a cross is drawn on the plot to
+indicate the cut plosition.</p>
+</div></blockquote>
+<p><strong>black_bg: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, the background of the image is set to be black. If
+you whish to save figures with a black background, you
+will need to pass “facecolor=’k’, edgecolor=’k’” to pylab’s
+savefig.</p>
+</div></blockquote>
+<p><strong>dim: float, optional</strong></p>
+<blockquote>
+<div><p>If set, dim the anatomical image, such that
+vmax = vmean + (1+dim)*ptp if black_bg is set to True, or
+vmin = vmean - (1+dim)*ptp otherwise, where
+ptp = .5*(vmax - vmin)</p>
+</div></blockquote>
+<p><strong>cmap: matplotlib colormap, optional</strong></p>
+<blockquote>
+<div><p>The colormap for the anat</p>
+</div></blockquote>
+<p><strong>imshow_kwargs: extra keyword arguments, optional</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments passed to pylab.imshow</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Arrays should be passed in numpy convention: (x, y, z)
+ordered.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.activation_maps.plot_map">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.activation_maps.</code><code class="sig-name descname">plot_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">anat=None</em>, <em class="sig-param">anat_affine=None</em>, <em class="sig-param">slicer='ortho'</em>, <em class="sig-param">figure=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">title=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">annotate=True</em>, <em class="sig-param">draw_cross=True</em>, <em class="sig-param">do3d=False</em>, <em class="sig-param">threshold_3d=None</em>, <em class="sig-param">view_3d=(38.5</em>, <em class="sig-param">70.5</em>, <em class="sig-param">300</em>, <em class="sig-param">(-2.7</em>, <em class="sig-param">-12</em>, <em class="sig-param">9.1))</em>, <em class="sig-param">black_bg=False</em>, <em class="sig-param">**imshow_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/activation_maps.html#plot_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.activation_maps.plot_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot three cuts of a given activation map (Frontal, Axial, and Lateral)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map</strong> : 3D ndarray</p>
+<blockquote>
+<div><p>The activation map, as a 3D image.</p>
+</div></blockquote>
+<p><strong>affine</strong> : 4x4 ndarray</p>
+<blockquote>
+<div><p>The affine matrix going from image voxel space to MNI space.</p>
+</div></blockquote>
+<p><strong>cut_coords: None, int, or a tuple of floats</strong></p>
+<blockquote>
+<div><p>The MNI coordinates of the point where the cut is performed, in
+MNI coordinates and order.
+If slicer is ‘ortho’, this should be a 3-tuple: (x, y, z)
+For slicer == ‘x’, ‘y’, or ‘z’, then these are the
+coordinates of each cut in the corresponding direction.
+If None or an int is given, then a maximally separated sequence (
+with exactly cut_coords elements if cut_coords is not None) of
+cut coordinates along the slicer axis is computed automatically</p>
+</div></blockquote>
+<p><strong>anat</strong> : 3D ndarray or False, optional</p>
+<blockquote>
+<div><p>The anatomical image to be used as a background. If None, the
+MNI152 T1 1mm template is used. If False, no anat is displayed.</p>
+</div></blockquote>
+<p><strong>anat_affine</strong> : 4x4 ndarray, optional</p>
+<blockquote>
+<div><p>The affine matrix going from the anatomical image voxel space to
+MNI space. This parameter is not used when the default
+anatomical is used, but it is compulsory when using an
+explicite anatomical image.</p>
+</div></blockquote>
+<p><strong>slicer: {‘ortho’, ‘x’, ‘y’, ‘z’}</strong></p>
+<blockquote>
+<div><p>Choose the direction of the cuts. With ‘ortho’ three cuts are
+performed in orthogonal directions</p>
+</div></blockquote>
+<p><strong>figure</strong> : integer or matplotlib figure, optional</p>
+<blockquote>
+<div><p>Matplotlib figure used or its number. If None is given, a
+new figure is created.</p>
+</div></blockquote>
+<p><strong>axes</strong> : matplotlib axes or 4 tuple of float: (xmin, ymin, width, height), optional</p>
+<blockquote>
+<div><p>The axes, or the coordinates, in matplotlib figure space,
+of the axes used to display the plot. If None, the complete
+figure is used.</p>
+</div></blockquote>
+<p><strong>title</strong> : string, optional</p>
+<blockquote>
+<div><p>The title dispayed on the figure.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : a number, None, or ‘auto’</p>
+<blockquote>
+<div><p>If None is given, the maps are not thresholded.
+If a number is given, it is used to threshold the maps:
+values below the threshold are plotted as transparent. If
+auto is given, the threshold is determined magically by
+analysis of the map.</p>
+</div></blockquote>
+<p><strong>annotate: boolean, optional</strong></p>
+<blockquote>
+<div><p>If annotate is True, positions and left/right annotation
+are added to the plot.</p>
+</div></blockquote>
+<p><strong>draw_cross: boolean, optional</strong></p>
+<blockquote>
+<div><p>If draw_cross is True, a cross is drawn on the plot to
+indicate the cut plosition.</p>
+</div></blockquote>
+<p><strong>do3d: {True, False or ‘interactive’}, optional</strong></p>
+<blockquote>
+<div><p>If True, Mayavi is used to plot a 3D view of the
+map in addition to the slicing. If ‘interactive’, the
+3D visualization is displayed in an additional interactive
+window.</p>
+</div></blockquote>
+<p><strong>threshold_3d:</strong></p>
+<blockquote>
+<div><p>The threshold to use for the 3D view (if any). Defaults to
+the same threshold as that used for the 2D view.</p>
+</div></blockquote>
+<p><strong>view_3d: tuple,</strong></p>
+<blockquote>
+<div><p>The view used to take the screenshot: azimuth, elevation,
+distance and focalpoint, see the docstring of mlab.view.</p>
+</div></blockquote>
+<p><strong>black_bg: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, the background of the image is set to be black. If
+you whish to save figures with a black background, you
+will need to pass “facecolor=’k’, edgecolor=’k’” to pylab’s
+savefig.</p>
+</div></blockquote>
+<p><strong>imshow_kwargs: extra keyword arguments, optional</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments passed to pylab.imshow</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Arrays should be passed in numpy convention: (x, y, z)
+ordered.</p>
+<p>Use masked arrays to create transparency:</p>
+<blockquote>
+<div><p>import numpy as np
+map = np.ma.masked_less(map, 0.5)
+plot_map(map, affine)</p>
+</div></blockquote>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

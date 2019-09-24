@@ -1,0 +1,668 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.randomized.modelQ</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">functools</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">regreg.api</span> <span class="k">as</span> <span class="nn">rr</span>
+<span class="kn">from</span> <span class="nn">..constraints.affine</span> <span class="k">import</span> <span class="n">constraints</span>
+
+<span class="kn">from</span> <span class="nn">.query</span> <span class="k">import</span> <span class="n">gaussian_query</span>
+<span class="kn">from</span> <span class="nn">.randomization</span> <span class="k">import</span> <span class="n">randomization</span>
+
+<div class="viewcode-block" id="modelQ"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.modelQ.html#selectinf.randomized.modelQ.modelQ">[docs]</a><span class="k">class</span> <span class="nc">modelQ</span><span class="p">(</span><span class="n">gaussian_query</span><span class="p">):</span>
+
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for the randomized LASSO for post-selection inference.</span>
+<span class="sd">    The problem solved is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \text{minimize}_{\beta} -X^Ty + \frac{1}{2} \beta^TQ\beta + </span>
+<span class="sd">            \sum_{i=1}^p \lambda_i |\beta_i\| - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2</span>
+
+<span class="sd">    where $\lambda$ is `lam`, $\omega$ is a randomization generated below</span>
+<span class="sd">    and the last term is a small ridge penalty. Each static method</span>
+<span class="sd">    forms $\ell$ as well as the $\ell_1$ penalty. The generic class</span>
+<span class="sd">    forms the remaining two terms in the objective.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="modelQ.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.modelQ.html#selectinf.randomized.modelQ.modelQ.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">Q</span><span class="p">,</span>
+                 <span class="n">X</span><span class="p">,</span> 
+                 <span class="n">y</span><span class="p">,</span>
+                 <span class="n">feature_weights</span><span class="p">,</span>
+                 <span class="n">ridge_term</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">randomizer_scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Create a new post-selection object for the LASSO problem</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        loglike : `regreg.smooth.glm.glm`</span>
+<span class="sd">            A (negative) log-likelihood as implemented in `regreg`.</span>
+
+<span class="sd">        feature_weights : np.ndarray</span>
+<span class="sd">            Feature weights for L-1 penalty. If a float,</span>
+<span class="sd">            it is brodcast to all features.</span>
+
+<span class="sd">        ridge_term : float</span>
+<span class="sd">            How big a ridge term to add?</span>
+
+<span class="sd">        randomizer_scale : float</span>
+<span class="sd">            Scale for IID components of randomization.</span>
+
+<span class="sd">        perturb : np.ndarray</span>
+<span class="sd">            Random perturbation subtracted as a linear</span>
+<span class="sd">            term in the objective function.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">quadratic_loss</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Q</span><span class="o">=</span><span class="n">Q</span><span class="p">)</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span> <span class="o">=</span> <span class="n">p</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="n">feature_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">loglike</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">feature_weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feature_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">feature_weights</span><span class="p">)</span>
+
+        <span class="n">mean_diag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ridge_term</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ridge_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">randomizer_scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomizer_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_diag</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="n">p</span><span class="p">,),</span> <span class="n">randomizer_scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span> <span class="o">=</span> <span class="n">ridge_term</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">weighted_l1norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_weights</span><span class="p">,</span> <span class="n">lagrange</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="o">=</span> <span class="n">perturb</span> <span class="c1"># random perturbation</span></div>
+
+<div class="viewcode-block" id="modelQ.fit"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.modelQ.html#selectinf.randomized.modelQ.modelQ.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+            <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tol&#39;</span><span class="p">:</span><span class="mf">1.e-12</span><span class="p">,</span> <span class="s1">&#39;min_its&#39;</span><span class="p">:</span><span class="mi">50</span><span class="p">},</span> 
+            <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the randomized lasso using `regreg`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        solve_args : keyword args</span>
+<span class="sd">             Passed to `regreg.problems.simple_problem.solve`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        signs : np.float</span>
+<span class="sd">             Support and non-zero signs of randomized lasso solution.</span>
+<span class="sd">             </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span>
+
+        <span class="c1"># take a new perturbation if supplied</span>
+        <span class="k">if</span> <span class="n">perturb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="o">=</span> <span class="n">perturb</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomizer</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+
+        <span class="n">quad</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">identity_quadratic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">quad_data</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">identity_quadratic</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">problem</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">simple_problem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">quad</span> <span class="o">+</span> <span class="n">quad_data</span><span class="p">,</span> <span class="o">**</span><span class="n">solve_args</span><span class="p">)</span>
+
+        <span class="n">active_signs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">)</span>
+        <span class="n">active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="n">active_signs</span> <span class="o">!=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lagrange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="o">.</span><span class="n">weights</span>
+        <span class="n">unpenalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lagrange</span> <span class="o">==</span> <span class="mi">0</span>
+
+        <span class="n">active</span> <span class="o">*=</span> <span class="o">~</span><span class="n">unpenalized</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_overall</span> <span class="o">=</span> <span class="n">overall</span> <span class="o">=</span> <span class="p">(</span><span class="n">active</span> <span class="o">+</span> <span class="n">unpenalized</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inactive</span> <span class="o">=</span> <span class="n">inactive</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">_overall</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unpenalized</span> <span class="o">=</span> <span class="n">unpenalized</span>
+
+        <span class="n">_active_signs</span> <span class="o">=</span> <span class="n">active_signs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">_active_signs</span><span class="p">[</span><span class="n">unpenalized</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="c1"># don&#39;t release sign of unpenalized variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sign&#39;</span><span class="p">:</span><span class="n">_active_signs</span><span class="p">,</span>
+                                   <span class="s1">&#39;variables&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">_overall</span><span class="p">}</span>
+
+        <span class="c1"># initial state for opt variables</span>
+
+        <span class="n">initial_subgrad</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)</span> <span class="o">+</span> 
+                            <span class="n">quad_data</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)</span> <span class="o">+</span>
+                            <span class="n">quad</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">))</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_subgrad</span> <span class="o">=</span> <span class="n">initial_subgrad</span>
+
+        <span class="n">initial_scalings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">[</span><span class="n">active</span><span class="p">])</span>
+        <span class="n">initial_unpenalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_unpenalized</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">initial_scalings</span><span class="p">,</span>
+                                                  <span class="n">initial_unpenalized</span><span class="p">])</span>
+
+        <span class="n">E</span> <span class="o">=</span> <span class="n">overall</span>
+        <span class="n">Q_E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">[</span><span class="n">E</span><span class="p">][:,</span><span class="n">E</span><span class="p">]</span>
+        <span class="n">_beta_unpenalized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Q_E</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">[:,</span><span class="n">E</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">beta_bar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">beta_bar</span><span class="p">[</span><span class="n">overall</span><span class="p">]</span> <span class="o">=</span> <span class="n">_beta_unpenalized</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beta_full</span> <span class="o">=</span> <span class="n">beta_bar</span>
+
+        <span class="c1"># observed state for score in internal coordinates</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_internal_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">_beta_unpenalized</span><span class="p">,</span>
+                                                  <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">beta_bar</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)[</span><span class="n">inactive</span><span class="p">]</span> <span class="o">+</span> 
+                                                  <span class="n">quad_data</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">beta_bar</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)[</span><span class="n">inactive</span><span class="p">]])</span>
+
+        <span class="c1"># form linear part</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})</span>
+        <span class="c1"># E for active</span>
+        <span class="c1"># U for unpenalized</span>
+        <span class="c1"># -E for inactive</span>
+
+        <span class="n">_opt_linear_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">))</span>
+        <span class="n">_score_linear_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">))</span>
+
+        <span class="c1"># \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator</span>
+
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span>
+        <span class="n">_hessian_active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">[:,</span> <span class="n">active</span><span class="p">]</span>
+        <span class="n">_hessian_unpen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">[:,</span> <span class="n">unpenalized</span><span class="p">]</span>
+
+        <span class="n">_score_linear_term</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">_hessian_active</span><span class="p">,</span> <span class="n">_hessian_unpen</span><span class="p">])</span>
+
+        <span class="c1"># set the observed score (data dependent) state</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span> <span class="o">=</span> <span class="n">_score_linear_term</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">_beta_unpenalized</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span><span class="p">[</span><span class="n">inactive</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">beta_bar</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)[</span><span class="n">inactive</span><span class="p">]</span> <span class="o">+</span> 
+                                                <span class="n">quad_data</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">beta_bar</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)[</span><span class="n">inactive</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">signed_basis_vector</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="n">active_directions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">signed_basis_vector</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">active_signs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">active</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="n">scaling_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">active</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">active</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">_opt_hessian</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_opt_hessian</span> <span class="o">=</span> <span class="n">_hessian_active</span> <span class="o">*</span> <span class="n">active_signs</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">active</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span> <span class="o">*</span> <span class="n">active_directions</span>
+        <span class="n">_opt_linear_term</span><span class="p">[:,</span> <span class="n">scaling_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">_opt_hessian</span>
+
+        <span class="c1"># beta_U piece</span>
+
+        <span class="n">unpenalized_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">active</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+        <span class="n">unpenalized_directions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">signed_basis_vector</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">unpenalized</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">if</span> <span class="n">unpenalized</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+            <span class="n">_opt_linear_term</span><span class="p">[:,</span> <span class="n">unpenalized_slice</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">_hessian_unpen</span>
+                                                      <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ridge_term</span> <span class="o">*</span> <span class="n">unpenalized_directions</span><span class="p">)</span> 
+
+        <span class="c1"># two transforms that encode score and optimization</span>
+        <span class="c1"># variable roles </span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_transform</span> <span class="o">=</span> <span class="p">(</span><span class="n">_opt_linear_term</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_subgrad</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">score_transform</span> <span class="o">=</span> <span class="p">(</span><span class="n">_score_linear_term</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">_score_linear_term</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="c1"># now store everything needed for the projections</span>
+        <span class="c1"># the projection acts only on the optimization</span>
+        <span class="c1"># variables</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaling_slice</span> <span class="o">=</span> <span class="n">scaling_slice</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unpenalized_slice</span> <span class="o">=</span> <span class="n">unpenalized_slice</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># compute implied mean and covariance</span>
+
+        <span class="n">opt_linear</span><span class="p">,</span> <span class="n">opt_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_transform</span>
+
+        <span class="n">A_scaling</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+        <span class="n">b_scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler</span><span class="p">(</span><span class="n">A_scaling</span><span class="p">,</span>
+                            <span class="n">b_scaling</span><span class="p">,</span>
+                            <span class="n">opt_linear</span><span class="p">,</span>
+                            <span class="n">opt_offset</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">active_signs</span></div>
+
+<div class="viewcode-block" id="modelQ.summary"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.modelQ.html#selectinf.randomized.modelQ.modelQ.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">target</span><span class="o">=</span><span class="s2">&quot;selected&quot;</span><span class="p">,</span>
+                <span class="n">features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">parameter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                <span class="n">ndraw</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> 
+                <span class="n">burnin</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+                <span class="n">compute_intervals</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">dispersion</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Produce p-values and confidence intervals for targets</span>
+<span class="sd">        of model including selected features</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        target : one of [&#39;selected&#39;, &#39;full&#39;]</span>
+
+<span class="sd">        features : np.bool</span>
+<span class="sd">            Binary encoding of which features to use in final</span>
+<span class="sd">            model and targets.</span>
+
+<span class="sd">        parameter : np.array</span>
+<span class="sd">            Hypothesized value for parameter -- defaults to 0.</span>
+
+<span class="sd">        level : float</span>
+<span class="sd">            Confidence level.</span>
+
+<span class="sd">        ndraw : int (optional)</span>
+<span class="sd">            Defaults to 1000.</span>
+
+<span class="sd">        burnin : int (optional)</span>
+<span class="sd">            Defaults to 1000.</span>
+
+<span class="sd">        compute_intervals : bool</span>
+<span class="sd">            Compute confidence intervals?</span>
+
+<span class="sd">        dispersion : float (optional)</span>
+<span class="sd">            Use a known value for dispersion, or Pearson&#39;s X^2?</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">parameter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">target</span> <span class="o">==</span> <span class="s1">&#39;selected&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">observed_target</span><span class="p">,</span> 
+             <span class="n">cov_target</span><span class="p">,</span> 
+             <span class="n">cov_target_score</span><span class="p">,</span> 
+             <span class="n">alternatives</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_targets</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> 
+                                                   <span class="n">dispersion</span><span class="o">=</span><span class="n">dispersion</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="n">p</span> <span class="ow">and</span> <span class="n">target</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span><span class="p">:</span>
+                <span class="p">(</span><span class="n">observed_target</span><span class="p">,</span> 
+                 <span class="n">cov_target</span><span class="p">,</span> 
+                 <span class="n">cov_target_score</span><span class="p">,</span> 
+                 <span class="n">alternatives</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_targets</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> 
+                                                   <span class="n">dispersion</span><span class="o">=</span><span class="n">dispersion</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+                <span class="p">(</span><span class="n">observed_target</span><span class="p">,</span> 
+                 <span class="n">cov_target</span><span class="p">,</span> 
+                 <span class="n">cov_target_score</span><span class="p">,</span> 
+                 <span class="n">alternatives</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">debiased_targets</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> 
+                                                       <span class="n">dispersion</span><span class="o">=</span><span class="n">dispersion</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_overall</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">opt_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">ndraw</span><span class="p">,</span>  <span class="n">burnin</span><span class="p">)</span>
+
+            <span class="n">pivots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">coefficient_pvalues</span><span class="p">(</span><span class="n">observed_target</span><span class="p">,</span> 
+                                                      <span class="n">cov_target</span><span class="p">,</span> 
+                                                      <span class="n">cov_target_score</span><span class="p">,</span> 
+                                                      <span class="n">parameter</span><span class="o">=</span><span class="n">parameter</span><span class="p">,</span> 
+                                                      <span class="n">sample</span><span class="o">=</span><span class="n">opt_sample</span><span class="p">,</span> 
+                                                      <span class="n">alternatives</span><span class="o">=</span><span class="n">alternatives</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">parameter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">pvalues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">coefficient_pvalues</span><span class="p">(</span><span class="n">observed_target</span><span class="p">,</span> 
+                                                           <span class="n">cov_target</span><span class="p">,</span> 
+                                                           <span class="n">cov_target_score</span><span class="p">,</span> 
+                                                           <span class="n">parameter</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">parameter</span><span class="p">),</span> 
+                                                           <span class="n">sample</span><span class="o">=</span><span class="n">opt_sample</span><span class="p">,</span> 
+                                                           <span class="n">alternatives</span><span class="o">=</span><span class="n">alternatives</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pvalues</span> <span class="o">=</span> <span class="n">pivots</span>
+
+            <span class="n">intervals</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">compute_intervals</span><span class="p">:</span>
+                <span class="n">intervals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">confidence_intervals</span><span class="p">(</span><span class="n">observed_target</span><span class="p">,</span> 
+                                                              <span class="n">cov_target</span><span class="p">,</span> 
+                                                              <span class="n">cov_target_score</span><span class="p">,</span>
+                                                              <span class="n">sample</span><span class="o">=</span><span class="n">opt_sample</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">pivots</span><span class="p">,</span> <span class="n">pvalues</span><span class="p">,</span> <span class="n">intervals</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="modelQ.selective_MLE"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.modelQ.html#selectinf.randomized.modelQ.modelQ.selective_MLE">[docs]</a>    <span class="k">def</span> <span class="nf">selective_MLE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                      <span class="n">target</span><span class="o">=</span><span class="s2">&quot;selected&quot;</span><span class="p">,</span>
+                      <span class="n">features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">parameter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">level</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                      <span class="n">compute_intervals</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="n">dispersion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">solve_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tol&#39;</span><span class="p">:</span><span class="mf">1.e-12</span><span class="p">}):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        target : one of [&#39;selected&#39;, &#39;full&#39;]</span>
+
+<span class="sd">        features : np.bool</span>
+<span class="sd">            Binary encoding of which features to use in final</span>
+<span class="sd">            model and targets.</span>
+
+<span class="sd">        parameter : np.array</span>
+<span class="sd">            Hypothesized value for parameter -- defaults to 0.</span>
+
+<span class="sd">        level : float</span>
+<span class="sd">            Confidence level.</span>
+
+<span class="sd">        ndraw : int (optional)</span>
+<span class="sd">            Defaults to 1000.</span>
+
+<span class="sd">        burnin : int (optional)</span>
+<span class="sd">            Defaults to 1000.</span>
+
+<span class="sd">        compute_intervals : bool</span>
+<span class="sd">            Compute confidence intervals?</span>
+
+<span class="sd">        dispersion : float (optional)</span>
+<span class="sd">            Use a known value for dispersion, or Pearson&#39;s X^2?</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">parameter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span><span class="p">,</span> <span class="n">cov_target_score</span><span class="p">,</span> <span class="n">alternatives</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_targets</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> <span class="n">dispersion</span><span class="o">=</span><span class="n">dispersion</span><span class="p">)</span>
+
+        <span class="c1"># working out conditional law of opt variables given</span>
+        <span class="c1"># target after decomposing score wrt target</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">selective_MLE</span><span class="p">(</span><span class="n">observed_target</span><span class="p">,</span> 
+                                          <span class="n">cov_target</span><span class="p">,</span> 
+                                          <span class="n">cov_target_score</span><span class="p">,</span> 
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span><span class="p">,</span>
+                                          <span class="n">solve_args</span><span class="o">=</span><span class="n">solve_args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="modelQ.selected_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.modelQ.html#selectinf.randomized.modelQ.modelQ.selected_targets">[docs]</a>    <span class="k">def</span> <span class="nf">selected_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dispersion</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="k">if</span> <span class="n">features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span>
+            <span class="n">unpenalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unpenalized</span>
+            <span class="n">noverall</span> <span class="o">=</span> <span class="n">active</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">+</span> <span class="n">unpenalized</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">overall</span> <span class="o">=</span> <span class="n">active</span> <span class="o">+</span> <span class="n">unpenalized</span>
+
+            <span class="n">Xfeat</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span><span class="n">overall</span><span class="p">]</span>
+            <span class="n">score_linear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_transform</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">Q</span> <span class="o">=</span> <span class="o">-</span><span class="n">score_linear</span><span class="p">[</span><span class="n">overall</span><span class="p">]</span>
+            <span class="n">Qi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+            <span class="n">cov_target</span> <span class="o">=</span> <span class="n">Qi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Xfeat</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Xfeat</span><span class="p">))</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Qi</span><span class="p">)</span> <span class="c1"># sandwich estimator</span>
+            <span class="n">observed_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beta_full</span><span class="p">[</span><span class="n">overall</span><span class="p">]</span>
+            <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="n">score_linear</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">cov_target</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">cov_target</span><span class="p">[:</span><span class="mi">5</span><span class="p">][:,:</span><span class="mi">5</span><span class="p">])</span>
+            <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[{</span><span class="mi">1</span><span class="p">:</span><span class="s1">&#39;greater&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="s1">&#39;less&#39;</span><span class="p">}[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span><span class="p">[</span><span class="s1">&#39;sign&#39;</span><span class="p">][</span><span class="n">active</span><span class="p">]]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">unpenalized</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">features_b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_overall</span><span class="p">)</span>
+            <span class="n">features_b</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="n">features_b</span>
+
+            <span class="n">Xfeat</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span><span class="n">features</span><span class="p">]</span>
+            <span class="n">Qfeat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">[</span><span class="n">features</span><span class="p">][:,</span><span class="n">features</span><span class="p">]</span>
+            <span class="n">Gfeat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)[</span><span class="n">features</span><span class="p">]</span> <span class="o">-</span> <span class="n">Xfeat</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">Qfeat_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Qfeat</span><span class="p">)</span>
+            <span class="n">one_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">-</span> <span class="n">Qfeat_inv</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Gfeat</span><span class="p">)</span>
+            <span class="n">cov_target</span> <span class="o">=</span> <span class="n">Qfeat_inv</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Xfeat</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Xfeat</span><span class="p">))</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Qfeat_inv</span><span class="p">)</span>
+            <span class="n">_score_linear</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">[</span><span class="n">features</span><span class="p">]</span>
+            <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="n">_score_linear</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">cov_target</span><span class="p">)</span>
+            <span class="n">observed_target</span> <span class="o">=</span> <span class="n">one_step</span>
+            <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">dispersion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># use Pearson&#39;s X^2</span>
+            <span class="n">relaxed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">Xfeat</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">dispersion</span> <span class="o">=</span> <span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">Xfeat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">relaxed</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">Xfeat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">dispersion</span><span class="p">,</span> <span class="s1">&#39;dispersion&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">crosscov_target_score</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">alternatives</span></div>
+
+<div class="viewcode-block" id="modelQ.full_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.modelQ.html#selectinf.randomized.modelQ.modelQ.full_targets">[docs]</a>    <span class="k">def</span> <span class="nf">full_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dispersion</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_overall</span>
+        <span class="n">features_bool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_overall</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+        <span class="n">features_bool</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">features_bool</span>
+
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="c1"># target is one-step estimator</span>
+
+        <span class="n">Qfull</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">Qfull_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Qfull</span><span class="p">)</span>
+        <span class="n">one_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_soln</span> <span class="o">-</span> <span class="n">Qfull_inv</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+        <span class="n">cov_target</span> <span class="o">=</span> <span class="n">Qfull_inv</span><span class="p">[</span><span class="n">features</span><span class="p">][:,</span><span class="n">features</span><span class="p">]</span>
+        <span class="n">observed_target</span> <span class="o">=</span> <span class="n">one_step</span><span class="p">[</span><span class="n">features</span><span class="p">]</span>
+        <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="n">cov_target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">crosscov_target_score</span><span class="p">[</span><span class="n">features</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">cov_target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">dispersion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># use Pearson&#39;s X^2</span>
+            <span class="n">dispersion</span> <span class="o">=</span> <span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglike</span><span class="o">.</span><span class="n">saturated_loss</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">one_step</span><span class="p">)))</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_W</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span>
+
+        <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">crosscov_target_score</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">alternatives</span></div></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

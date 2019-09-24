@@ -1,0 +1,402 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.modalities.fmri.fmristat.hrf</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; Computation of the canonical HRF used in fMRIstat, both the 2-term</span>
+<span class="sd">spectral approximation and the Taylor series approximation, to a shifted</span>
+<span class="sd">version of the canonical Glover HRF.</span>
+
+<span class="sd">References</span>
+<span class="sd">----------</span>
+<span class="sd">Liao, C.H., Worsley, K.J., Poline, J-B., Aston, J.A.D., Duncan, G.H.,</span>
+<span class="sd">    Evans, A.C. (2002). \&#39;Estimating the delay of the response in fMRI</span>
+<span class="sd">    data.\&#39; NeuroImage, 16:593-606.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="k">as</span> <span class="nn">npl</span>
+
+<span class="kn">from</span> <span class="nn">sympy.utilities.lambdify</span> <span class="k">import</span> <span class="n">implemented_function</span>
+
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">T</span><span class="p">,</span> <span class="n">lambdify_t</span><span class="p">,</span> <span class="n">Interp1dNumeric</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">hrf</span>
+<span class="kn">from</span> <span class="nn">.invert</span> <span class="k">import</span> <span class="n">invertR</span>
+
+<div class="viewcode-block" id="spectral_decomposition"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.hrf.html#nipy.modalities.fmri.fmristat.hrf.spectral_decomposition">[docs]</a><span class="k">def</span> <span class="nf">spectral_decomposition</span><span class="p">(</span><span class="n">hrf2decompose</span><span class="p">,</span>
+                           <span class="n">time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">delta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">ncomp</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; PCA decomposition of symbolic HRF shifted over time</span>
+
+<span class="sd">    Perform a PCA expansion of a symbolic HRF, time shifted over the</span>
+<span class="sd">    values in delta, returning the first ncomp components.</span>
+
+<span class="sd">    This smooths out the HRF as compared to using a Taylor series</span>
+<span class="sd">    approximation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hrf2decompose : sympy expression</span>
+<span class="sd">        An expression that can be lambdified as a function of &#39;t&#39;. This</span>
+<span class="sd">        is the HRF to be expanded in PCA</span>
+<span class="sd">    time : None or np.ndarray, optional</span>
+<span class="sd">        None gives default value of np.linspace(-15,50,3251) chosen to</span>
+<span class="sd">        match fMRIstat implementation.  This corresponds to a time</span>
+<span class="sd">        interval of 0.02.  Presumed to be equally spaced.</span>
+<span class="sd">    delta : None or np.ndarray, optional</span>
+<span class="sd">        None results in default value of np.arange(-4.5, 4.6, 0.1)</span>
+<span class="sd">        chosen to match fMRIstat implementation.</span>
+<span class="sd">    ncomp : int, optional</span>
+<span class="sd">        Number of principal components to retain.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hrf : [sympy expressions]</span>
+<span class="sd">        A sequence length `ncomp` of symbolic HRFs that are the</span>
+<span class="sd">        principal components.</span>
+<span class="sd">    approx : </span>
+<span class="sd">        TODO</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">3251</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">delta</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mf">4.5</span><span class="p">,</span> <span class="mf">4.6</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+    <span class="c1"># make numerical implementation from hrf function and symbol t.</span>
+    <span class="c1"># hrft returns function values when called with values for time as</span>
+    <span class="c1"># input.</span>
+    <span class="n">hrft</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">hrf2decompose</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+    <span class="c1"># Create stack of time-shifted HRFs.  Time varies over row, delta</span>
+    <span class="c1"># over column.</span>
+    <span class="n">ts_hrf_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">hrft</span><span class="p">(</span><span class="n">time</span> <span class="o">-</span> <span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">delta</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">ts_hrf_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">ts_hrf_vals</span><span class="p">)</span>
+    <span class="c1"># PCA </span>
+    <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">npl</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">ts_hrf_vals</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># make interpolators from the generated bases</span>
+    <span class="n">basis</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncomp</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">Interp1dNumeric</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">U</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="c1"># normalize components witn integral of abs of first component</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> 
+            <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">((</span><span class="n">b</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">y</span> <span class="o">/=</span> <span class="n">d</span>
+        <span class="n">basis</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="c1"># reconstruct time courses for all bases</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">basis</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># regress basis time courses against original time shifted time</span>
+    <span class="c1"># courses, ncomps by len(delta) parameter matrix</span>
+    <span class="n">WH</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">npl</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">W</span><span class="p">),</span> <span class="n">ts_hrf_vals</span><span class="p">)</span>
+    <span class="c1"># put these into interpolators to get estimated coefficients for any</span>
+    <span class="c1"># value of delta</span>
+    <span class="n">coef</span> <span class="o">=</span> <span class="p">[</span><span class="n">Interp1dNumeric</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">WH</span><span class="p">]</span>
+    <span class="c1"># swap sign of first component to match that of input HRF.  Swap</span>
+    <span class="c1"># other components if we swap the first, to standardize signs of</span>
+    <span class="c1"># components across SVD implementations.</span>
+    <span class="k">if</span> <span class="n">coef</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="mi">0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># coefficient at time shift of 0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncomp</span><span class="p">):</span>
+            <span class="n">coef</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.</span>
+            <span class="n">basis</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.</span>
+
+    <span class="k">def</span> <span class="nf">approx</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncomp</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">+=</span> <span class="n">coef</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">delta</span><span class="p">)</span> <span class="o">*</span> <span class="n">basis</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">time</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="n">approx</span><span class="o">.</span><span class="n">coef</span> <span class="o">=</span> <span class="n">coef</span>
+    <span class="n">approx</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="n">basis</span>
+    <span class="p">(</span><span class="n">approx</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span>
+     <span class="n">approx</span><span class="o">.</span><span class="n">inverse</span><span class="p">,</span>
+     <span class="n">approx</span><span class="o">.</span><span class="n">dinverse</span><span class="p">,</span>
+     <span class="n">approx</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span>
+     <span class="n">approx</span><span class="o">.</span><span class="n">dforward</span><span class="p">)</span> <span class="o">=</span> <span class="n">invertR</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">approx</span><span class="o">.</span><span class="n">coef</span><span class="p">)</span>
+    <span class="c1"># construct aliased functions from bases</span>
+    <span class="n">symbasis</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">basis</span><span class="p">):</span>
+        <span class="n">symbasis</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">implemented_function</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">hrf2decompose</span><span class="p">),</span> <span class="n">i</span><span class="p">),</span> <span class="n">b</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">symbasis</span><span class="p">,</span> <span class="n">approx</span></div>
+
+
+<div class="viewcode-block" id="taylor_approx"><a class="viewcode-back" href="../../../../../api/generated/nipy.modalities.fmri.fmristat.hrf.html#nipy.modalities.fmri.fmristat.hrf.taylor_approx">[docs]</a><span class="k">def</span> <span class="nf">taylor_approx</span><span class="p">(</span><span class="n">hrf2decompose</span><span class="p">,</span>
+                  <span class="n">time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">delta</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A Taylor series approximation of an HRF shifted by times `delta`</span>
+
+<span class="sd">    Returns original HRF and gradient of HRF</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hrf2decompose : sympy expression</span>
+<span class="sd">        An expression that can be lambdified as a function of &#39;t&#39;. This</span>
+<span class="sd">        is the HRF to be expanded in PCA</span>
+<span class="sd">    time : None or np.ndarray, optional</span>
+<span class="sd">        None gives default value of np.linspace(-15,50,3251) chosen to</span>
+<span class="sd">        match fMRIstat implementation.  This corresponds to a time</span>
+<span class="sd">        interval of 0.02.  Presumed to be equally spaced.</span>
+<span class="sd">    delta : None or np.ndarray, optional</span>
+<span class="sd">        None results in default value of np.arange(-4.5, 4.6, 0.1)</span>
+<span class="sd">        chosen to match fMRIstat implementation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hrf : [sympy expressions]</span>
+<span class="sd">        Sequence length 2 comprising (`hrf2decompose`, ``dhrf``) where</span>
+<span class="sd">        ``dhrf`` is the first derivative of `hrf2decompose`.</span>
+<span class="sd">    approx : </span>
+<span class="sd">        TODO</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Liao, C.H., Worsley, K.J., Poline, J-B., Aston, J.A.D., Duncan, G.H.,</span>
+<span class="sd">    Evans, A.C. (2002). \&#39;Estimating the delay of the response in fMRI</span>
+<span class="sd">    data.\&#39; NeuroImage, 16:593-606.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">3251</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">delta</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mf">4.5</span><span class="p">,</span> <span class="mf">4.6</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+    <span class="c1"># make numerical implementation from hrf function and symbol t.</span>
+    <span class="c1"># hrft returns function values when called with values for time as</span>
+    <span class="c1"># input.</span>
+    <span class="n">hrft</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">hrf2decompose</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+    <span class="c1"># interpolator for negative gradient of hrf</span>
+    <span class="n">dhrft</span> <span class="o">=</span> <span class="n">Interp1dNumeric</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">hrft</span><span class="p">(</span><span class="n">time</span><span class="p">),</span> <span class="n">dt</span><span class="p">),</span>
+                            <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+    <span class="n">dhrft</span><span class="o">.</span><span class="n">y</span> <span class="o">*=</span> <span class="mi">2</span>
+    <span class="c1"># Create stack of time-shifted HRFs.  Time varies over row, delta</span>
+    <span class="c1"># over column.</span>
+    <span class="n">ts_hrf_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">hrft</span><span class="p">(</span><span class="n">time</span> <span class="o">-</span> <span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">delta</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># hrf, dhrf</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">hrft</span><span class="p">(</span><span class="n">time</span><span class="p">),</span> <span class="n">dhrft</span><span class="p">(</span><span class="n">time</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># regress hrf, dhrf at times against stack of time-shifted hrfs</span>
+    <span class="n">WH</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">npl</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">W</span><span class="p">),</span> <span class="n">ts_hrf_vals</span><span class="p">)</span>
+    <span class="c1"># put these into interpolators to get estimated coefficients for any</span>
+    <span class="c1"># value of delta</span>
+    <span class="n">coef</span> <span class="o">=</span> <span class="p">[</span><span class="n">Interp1dNumeric</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">WH</span><span class="p">]</span>
+            
+    <span class="k">def</span> <span class="nf">approx</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="n">coef</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">delta</span><span class="p">)</span> <span class="o">*</span> <span class="n">hrft</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+                 <span class="o">+</span> <span class="n">coef</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="n">delta</span><span class="p">)</span> <span class="o">*</span> <span class="n">dhrft</span><span class="p">(</span><span class="n">time</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="n">approx</span><span class="o">.</span><span class="n">coef</span> <span class="o">=</span> <span class="n">coef</span>
+    <span class="n">approx</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">hrft</span><span class="p">,</span> <span class="n">dhrft</span><span class="p">]</span>
+    <span class="p">(</span><span class="n">approx</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span>
+     <span class="n">approx</span><span class="o">.</span><span class="n">inverse</span><span class="p">,</span>
+     <span class="n">approx</span><span class="o">.</span><span class="n">dinverse</span><span class="p">,</span>
+     <span class="n">approx</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span>
+     <span class="n">approx</span><span class="o">.</span><span class="n">dforward</span><span class="p">)</span> <span class="o">=</span> <span class="n">invertR</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="n">approx</span><span class="o">.</span><span class="n">coef</span><span class="p">)</span>
+    <span class="n">dhrf</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="s1">&#39;d</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">hrf2decompose</span><span class="p">),</span> <span class="n">dhrft</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">hrf2decompose</span><span class="p">,</span> <span class="n">dhrf</span><span class="p">],</span> <span class="n">approx</span></div>
+
+
+<span class="n">canonical</span><span class="p">,</span> <span class="n">canonical_approx</span> <span class="o">=</span> <span class="n">taylor_approx</span><span class="p">(</span><span class="n">hrf</span><span class="o">.</span><span class="n">glover</span><span class="p">)</span>
+<span class="n">spectral</span><span class="p">,</span> <span class="n">spectral_approx</span> <span class="o">=</span> <span class="n">spectral_decomposition</span><span class="p">(</span><span class="n">hrf</span><span class="o">.</span><span class="n">glover</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

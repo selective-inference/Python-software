@@ -1,0 +1,322 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.registration.resample.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-registration-resample">
+<h1>algorithms.registration.resample<a class="headerlink" href="#algorithms-registration-resample" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.algorithms.registration.resample">
+<span id="module-algorithms-registration-resample"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.registration.resample</span></code><a class="headerlink" href="#module-nipy.algorithms.registration.resample" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.registration.resample.cast_array">
+<code class="sig-prename descclassname">nipy.algorithms.registration.resample.</code><code class="sig-name descname">cast_array</code><span class="sig-paren">(</span><em class="sig-param">arr</em>, <em class="sig-param">dtype</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/resample.html#cast_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.resample.cast_array" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>arr<span class="classifier">array</span></dt><dd><p>Input array</p>
+</dd>
+<dt>dtype<span class="classifier">dtype</span></dt><dd><p>Desired dtype</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.registration.resample.resample">
+<code class="sig-prename descclassname">nipy.algorithms.registration.resample.</code><code class="sig-name descname">resample</code><span class="sig-paren">(</span><em class="sig-param">moving</em>, <em class="sig-param">transform=None</em>, <em class="sig-param">reference=None</em>, <em class="sig-param">mov_voxel_coords=False</em>, <em class="sig-param">ref_voxel_coords=False</em>, <em class="sig-param">dtype=None</em>, <em class="sig-param">interp_order=3</em>, <em class="sig-param">mode='constant'</em>, <em class="sig-param">cval=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/resample.html#resample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.resample.resample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resample <cite>movimg</cite> into voxel space of <cite>reference</cite> using <cite>transform</cite></p>
+<p>Apply a transformation to the image considered as ‘moving’ to
+bring it into the same grid as a given <cite>reference</cite> image.  The
+transformation usually maps world space in <cite>reference</cite> to world space in
+<cite>movimg</cite>, but can also be a voxel to voxel mapping (see parameters below).</p>
+<p>This function uses scipy.ndimage except for the case <cite>interp_order==3</cite>,
+where a fast cubic spline implementation is used.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>moving: nipy-like image</strong></p>
+<blockquote>
+<div><p>Image to be resampled.</p>
+</div></blockquote>
+<p><strong>transform: transform object or None</strong></p>
+<blockquote>
+<div><p>Represents a transform that goes from the <cite>reference</cite> image to the
+<cite>moving</cite> image. None means an identity transform. Otherwise, it should
+have either an <cite>apply</cite> method, or an <cite>as_affine</cite> method or be a shape
+(4, 4) array. By default, <cite>transform</cite> maps between the output (world)
+space of <cite>reference</cite> and the output (world) space of <cite>moving</cite>.  If
+<cite>mov_voxel_coords</cite> is True, maps to the <em>voxel</em> space of <cite>moving</cite> and
+if <cite>ref_vox_coords</cite> is True, maps from the <em>voxel</em> space of
+<cite>reference</cite>.</p>
+</div></blockquote>
+<p><strong>reference</strong> : None or nipy-like image or tuple, optional</p>
+<blockquote>
+<div><p>The reference image defines the image dimensions and xyz affine to
+which to resample. It can be input as a nipy-like image or as a tuple
+(shape, affine). If None, use <cite>movimg</cite> to define these.</p>
+</div></blockquote>
+<p><strong>mov_voxel_coords</strong> : boolean, optional</p>
+<blockquote>
+<div><p>True if the transform maps to voxel coordinates, False if it maps to
+world coordinates.</p>
+</div></blockquote>
+<p><strong>ref_voxel_coords</strong> : boolean, optional</p>
+<blockquote>
+<div><p>True if the transform maps from voxel coordinates, False if it maps
+from world coordinates.</p>
+</div></blockquote>
+<p><strong>interp_order: int, optional</strong></p>
+<blockquote>
+<div><p>Spline interpolation order, defaults to 3.</p>
+</div></blockquote>
+<p><strong>mode</strong> : str, optional</p>
+<blockquote>
+<div><p>Points outside the boundaries of the input are filled according to the
+given mode (‘constant’, ‘nearest’, ‘reflect’ or ‘wrap’). Default is
+‘constant’.</p>
+</div></blockquote>
+<p><strong>cval</strong> : scalar, optional</p>
+<blockquote>
+<div><p>Value used for points outside the boundaries of the input if
+mode=’constant’. Default is 0.0.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>aligned_img</strong> : Image</p>
+<blockquote>
+<div><p>Image resliced to <cite>reference</cite> with reference-to-movimg transform
+<cite>transform</cite></p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,715 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.core.reference.spaces</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Useful neuroimaging coordinate map makers and utilities &quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nibabel.affines</span> <span class="k">import</span> <span class="n">from_matvec</span>
+
+<span class="kn">from</span> <span class="nn">...fixes.nibabel</span> <span class="k">import</span> <span class="n">io_orientation</span>
+
+<span class="kn">from</span> <span class="nn">.coordinate_system</span> <span class="k">import</span> <span class="n">CoordSysMaker</span><span class="p">,</span> <span class="n">is_coordsys</span><span class="p">,</span> <span class="n">is_coordsys_maker</span>
+<span class="kn">from</span> <span class="nn">.coordinate_map</span> <span class="k">import</span> <span class="n">CoordMapMaker</span>
+
+<span class="kn">from</span> <span class="nn">...externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<span class="c1"># Legacy repr printing from numpy.</span>
+<span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">legacy_printing</span> <span class="k">as</span> <span class="n">setup_module</span>  <span class="c1"># noqa</span>
+
+
+<div class="viewcode-block" id="XYZSpace"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.XYZSpace">[docs]</a><span class="k">class</span> <span class="nc">XYZSpace</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Class contains logic for spaces with XYZ coordinate systems</span>
+
+<span class="sd">    &gt;&gt;&gt; sp = XYZSpace(&#39;hijo&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; print(sp)</span>
+<span class="sd">    hijo: [(&#39;x&#39;, &#39;hijo-x=L-&gt;R&#39;), (&#39;y&#39;, &#39;hijo-y=P-&gt;A&#39;), (&#39;z&#39;, &#39;hijo-z=I-&gt;S&#39;)]</span>
+<span class="sd">    &gt;&gt;&gt; csm = sp.to_coordsys_maker()</span>
+<span class="sd">    &gt;&gt;&gt; cs = csm(3)</span>
+<span class="sd">    &gt;&gt;&gt; cs</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;hijo-x=L-&gt;R&#39;, &#39;hijo-y=P-&gt;A&#39;, &#39;hijo-z=I-&gt;S&#39;), name=&#39;hijo&#39;, coord_dtype=float64)</span>
+<span class="sd">    &gt;&gt;&gt; cs in sp</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x_suffix</span> <span class="o">=</span> <span class="s1">&#39;x=L-&gt;R&#39;</span>
+    <span class="n">y_suffix</span> <span class="o">=</span> <span class="s1">&#39;y=P-&gt;A&#39;</span>
+    <span class="n">z_suffix</span> <span class="o">=</span> <span class="s1">&#39;z=I-&gt;S&#39;</span>
+
+<div class="viewcode-block" id="XYZSpace.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.XYZSpace.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; x-space coordinate name &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_suffix</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; y-space coordinate name &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_suffix</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; z-space coordinate name &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">z_suffix</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(&#39;</span><span class="si">%s</span><span class="s2">&#39;)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_map</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Equality defined as having the same xyz names &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">otuple</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">as_tuple</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_tuple</span><span class="p">()</span> <span class="o">==</span> <span class="n">otuple</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+
+<div class="viewcode-block" id="XYZSpace.as_tuple"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.XYZSpace.as_tuple">[docs]</a>    <span class="k">def</span> <span class="nf">as_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return xyz names as tuple</span>
+
+<span class="sd">        &gt;&gt;&gt; sp = XYZSpace(&#39;hijo&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; sp.as_tuple()</span>
+<span class="sd">        (&#39;hijo-x=L-&gt;R&#39;, &#39;hijo-y=P-&gt;A&#39;, &#39;hijo-z=I-&gt;S&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span></div>
+
+<div class="viewcode-block" id="XYZSpace.as_map"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.XYZSpace.as_map">[docs]</a>    <span class="k">def</span> <span class="nf">as_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return xyz names as dictionary</span>
+
+<span class="sd">        &gt;&gt;&gt; sp = XYZSpace(&#39;hijo&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; sorted(sp.as_map().items())</span>
+<span class="sd">        [(&#39;x&#39;, &#39;hijo-x=L-&gt;R&#39;), (&#39;y&#39;, &#39;hijo-y=P-&gt;A&#39;), (&#39;z&#39;, &#39;hijo-z=I-&gt;S&#39;)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_tuple</span><span class="p">()))</span></div>
+
+<div class="viewcode-block" id="XYZSpace.register_to"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.XYZSpace.register_to">[docs]</a>    <span class="k">def</span> <span class="nf">register_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Update `mapping` with key=self.x, value=&#39;x&#39; etc pairs</span>
+
+<span class="sd">        The mapping will then have keys that are names we (``self``) identify as</span>
+<span class="sd">        being x, or y, or z, values are &#39;x&#39; or &#39;y&#39; or &#39;z&#39;.</span>
+
+<span class="sd">        Note that this is the opposite way round for keys, values, compared to</span>
+<span class="sd">        the ``as_map`` method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mapping : mapping</span>
+<span class="sd">            such as a dict</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; sp = XYZSpace(&#39;hijo&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; mapping = {}</span>
+<span class="sd">        &gt;&gt;&gt; sp.register_to(mapping)</span>
+<span class="sd">        &gt;&gt;&gt; sorted(mapping.items())</span>
+<span class="sd">        [(&#39;hijo-x=L-&gt;R&#39;, &#39;x&#39;), (&#39;hijo-y=P-&gt;A&#39;, &#39;y&#39;), (&#39;hijo-z=I-&gt;S&#39;, &#39;z&#39;)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mapping</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_tuple</span><span class="p">(),</span> <span class="s1">&#39;xyz&#39;</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="XYZSpace.to_coordsys_maker"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.XYZSpace.to_coordsys_maker">[docs]</a>    <span class="k">def</span> <span class="nf">to_coordsys_maker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extras</span><span class="o">=</span><span class="p">()):</span>
+        <span class="sd">&quot;&quot;&quot; Make a coordinate system maker for this space</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        extra : sequence</span>
+<span class="sd">            names for any further axes after x, y, z</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        csm : CoordinateSystemMaker</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; sp = XYZSpace(&#39;hijo&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; csm = sp.to_coordsys_maker()</span>
+<span class="sd">        &gt;&gt;&gt; csm(3)</span>
+<span class="sd">        CoordinateSystem(coord_names=(&#39;hijo-x=L-&gt;R&#39;, &#39;hijo-y=P-&gt;A&#39;, &#39;hijo-z=I-&gt;S&#39;), name=&#39;hijo&#39;, coord_dtype=float64)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">CoordSysMaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_tuple</span><span class="p">()</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">extras</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; True if `obj` can be thought of as being &#39;in&#39; this space</span>
+
+<span class="sd">        `obj` is an object that is in some kind of space - it can be a</span>
+<span class="sd">        coordinate system, a coordinate map, or an object with a ``coordmap``</span>
+<span class="sd">        attribute.  We test the output coordinate system of `obj` against our</span>
+<span class="sd">        own space definition.</span>
+
+<span class="sd">        A coordinate system is in our space if it has all the axes of our space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : object</span>
+<span class="sd">            Usually a coordinate system, a coordinate map, or an Image (with a</span>
+<span class="sd">            ``coordmap`` attribute)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tf : bool</span>
+<span class="sd">            True if `obj` is &#39;in&#39; this space</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.core.api import Image, AffineTransform, CoordinateSystem</span>
+<span class="sd">        &gt;&gt;&gt; sp = XYZSpace(&#39;hijo&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; names = sp.as_tuple()</span>
+<span class="sd">        &gt;&gt;&gt; cs = CoordinateSystem(names)</span>
+<span class="sd">        &gt;&gt;&gt; cs in sp</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; cs = CoordinateSystem(names + (&#39;another_name&#39;,))</span>
+<span class="sd">        &gt;&gt;&gt; cs in sp</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; cmap = AffineTransform(&#39;ijk&#39;, names, np.eye(4))</span>
+<span class="sd">        &gt;&gt;&gt; cmap in sp</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; img = Image(np.zeros((3,4,5)), cmap)</span>
+<span class="sd">        &gt;&gt;&gt; img in sp</span>
+<span class="sd">        True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">coordmap</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">function_range</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="n">my_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_tuple</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">my_names</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">coord_names</span><span class="p">)</span></div>
+
+
+<span class="c1"># Generic coordinate map maker for voxels (function_domain). Unlike nifti</span>
+<span class="c1"># loading, by default the 4th axis is not time (because we don&#39;t know what it</span>
+<span class="c1"># is).</span>
+<span class="n">voxel_csm</span> <span class="o">=</span> <span class="n">CoordSysMaker</span><span class="p">(</span><span class="s1">&#39;ijklmnop&#39;</span><span class="p">,</span> <span class="s1">&#39;voxels&#39;</span><span class="p">)</span>
+
+<span class="c1"># Module level mapping from key=name to values in &#39;x&#39; or &#39;y&#39; or &#39;z&#39;</span>
+<span class="n">known_names</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">known_spaces</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Standard spaces defined</span>
+<span class="k">for</span> <span class="n">_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;unknown&#39;</span><span class="p">,</span> <span class="s1">&#39;scanner&#39;</span><span class="p">,</span> <span class="s1">&#39;aligned&#39;</span><span class="p">,</span> <span class="s1">&#39;mni&#39;</span><span class="p">,</span> <span class="s1">&#39;talairach&#39;</span><span class="p">):</span>
+    <span class="n">_space</span> <span class="o">=</span> <span class="n">XYZSpace</span><span class="p">(</span><span class="n">_name</span><span class="p">)</span>
+    <span class="n">known_spaces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_space</span><span class="p">)</span>
+    <span class="n">_space</span><span class="o">.</span><span class="n">register_to</span><span class="p">(</span><span class="n">known_names</span><span class="p">)</span>
+    <span class="n">_csm</span> <span class="o">=</span> <span class="n">_space</span><span class="o">.</span><span class="n">to_coordsys_maker</span><span class="p">(</span><span class="s1">&#39;tuvw&#39;</span><span class="p">)</span>
+    <span class="n">_cmm</span> <span class="o">=</span> <span class="n">CoordMapMaker</span><span class="p">(</span><span class="n">voxel_csm</span><span class="p">,</span> <span class="n">_csm</span><span class="p">)</span>
+    <span class="c1"># Put these into the module namespace</span>
+    <span class="n">exec</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_space = _space&#39;</span> <span class="o">%</span> <span class="n">_name</span><span class="p">)</span>
+    <span class="n">exec</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_csm = _csm&#39;</span> <span class="o">%</span> <span class="n">_name</span><span class="p">)</span>
+    <span class="n">exec</span><span class="p">(</span><span class="s1">&#39;vox2</span><span class="si">%s</span><span class="s1"> = _cmm&#39;</span> <span class="o">%</span> <span class="n">_name</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="known_space"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.known_space">[docs]</a><span class="k">def</span> <span class="nf">known_space</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">spaces</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; If `obj` is in a known space, return the space, otherwise return None</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obj : object</span>
+<span class="sd">        Object that can be tested against an XYZSpace with ``obj in sp``</span>
+<span class="sd">    spaces : None or sequence, optional</span>
+<span class="sd">        spaces to test against.  If None, use the module level ``known_spaces``</span>
+<span class="sd">        list to test against.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sp : None or XYZSpace</span>
+<span class="sd">        If `obj` is not in any of the `known_spaces`, return None.  Otherwise</span>
+<span class="sd">        return the first matching space in `known_spaces`</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.core.api import CoordinateSystem</span>
+<span class="sd">    &gt;&gt;&gt; sp0 = XYZSpace(&#39;hijo&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; sp1 = XYZSpace(&#39;hija&#39;)</span>
+
+<span class="sd">    Make a matching coordinate system</span>
+
+<span class="sd">    &gt;&gt;&gt; cs = sp0.to_coordsys_maker()(3)</span>
+
+<span class="sd">    Test whether this coordinate system is in either of ``(sp0, sp1)``</span>
+
+<span class="sd">    &gt;&gt;&gt; known_space(cs, (sp0, sp1))</span>
+<span class="sd">    XYZSpace(&#39;hijo&#39;)</span>
+
+<span class="sd">    So, yes, it&#39;s in ``sp0``. How about another generic CoordinateSystem?</span>
+
+<span class="sd">    &gt;&gt;&gt; known_space(CoordinateSystem(&#39;xyz&#39;), (sp0, sp1)) is None</span>
+<span class="sd">    True</span>
+
+<span class="sd">    So, no, that is not in either of ``(sp0, sp1)``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">spaces</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># use module level global</span>
+        <span class="n">spaces</span> <span class="o">=</span> <span class="n">known_spaces</span>
+    <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">spaces</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">sp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sp</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="get_world_cs"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.get_world_cs">[docs]</a><span class="k">def</span> <span class="nf">get_world_cs</span><span class="p">(</span><span class="n">world_id</span><span class="p">,</span> <span class="n">ndim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">extras</span><span class="o">=</span><span class="s1">&#39;tuvw&#39;</span><span class="p">,</span> <span class="n">spaces</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Get world coordinate system from `world_id`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    world_id : str, XYZSPace, CoordSysMaker or CoordinateSystem</span>
+<span class="sd">        Object defining a world output system.  If str, then should be a name of</span>
+<span class="sd">        an XYZSpace in the list `spaces`.</span>
+<span class="sd">    ndim : int, optional</span>
+<span class="sd">        Number of dimensions in this world.  Default is 3</span>
+<span class="sd">    extras : sequence, optional</span>
+<span class="sd">        Coordinate (axis) names for axes &gt; 3 that are not named by `world_id`</span>
+<span class="sd">    spaces : None or sequence, optional</span>
+<span class="sd">        List of known (named) spaces to compare a str `world_id` to.  If None,</span>
+<span class="sd">        use the module level ``known_spaces``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    world_cs : CoordinateSystem</span>
+<span class="sd">        A world coordinate system</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; get_world_cs(&#39;mni&#39;)</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;mni-x=L-&gt;R&#39;, &#39;mni-y=P-&gt;A&#39;, &#39;mni-z=I-&gt;S&#39;), name=&#39;mni&#39;, coord_dtype=float64)</span>
+
+<span class="sd">    &gt;&gt;&gt; get_world_cs(mni_space, 4)</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;mni-x=L-&gt;R&#39;, &#39;mni-y=P-&gt;A&#39;, &#39;mni-z=I-&gt;S&#39;, &#39;t&#39;), name=&#39;mni&#39;, coord_dtype=float64)</span>
+
+<span class="sd">    &gt;&gt;&gt; from nipy.core.api import CoordinateSystem</span>
+<span class="sd">    &gt;&gt;&gt; get_world_cs(CoordinateSystem(&#39;xyz&#39;))</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;, &#39;z&#39;), name=&#39;&#39;, coord_dtype=float64)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_coordsys</span><span class="p">(</span><span class="n">world_id</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">world_id</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="n">ndim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SpaceError</span><span class="p">(</span><span class="s2">&quot;Need </span><span class="si">%d</span><span class="s2">-dimensional CoordinateSystem&quot;</span> <span class="o">%</span> <span class="n">ndim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">world_id</span>
+    <span class="k">if</span> <span class="n">spaces</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">spaces</span> <span class="o">=</span> <span class="n">known_spaces</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">world_id</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="n">space_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">spaces</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">world_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">space_names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SpaceError</span><span class="p">(</span><span class="s1">&#39;Unkown space &quot;</span><span class="si">%s</span><span class="s1">&quot;; known spaces are </span><span class="si">%s</span><span class="s1">&#39;</span>
+                                    <span class="o">%</span> <span class="p">(</span><span class="n">world_id</span><span class="p">,</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">space_names</span><span class="p">)))</span>
+        <span class="n">world_id</span> <span class="o">=</span> <span class="n">spaces</span><span class="p">[</span><span class="n">space_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">world_id</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">is_xyz_space</span><span class="p">(</span><span class="n">world_id</span><span class="p">):</span>
+        <span class="n">world_id</span> <span class="o">=</span> <span class="n">world_id</span><span class="o">.</span><span class="n">to_coordsys_maker</span><span class="p">(</span><span class="n">extras</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_coordsys_maker</span><span class="p">(</span><span class="n">world_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">world_id</span><span class="p">(</span><span class="n">ndim</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting CoordinateSystem, CoordSysMaker, &#39;</span>
+                     <span class="s1">&#39;XYZSpace, or str, got </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">world_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpaceError"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.SpaceError">[docs]</a><span class="k">class</span> <span class="nc">SpaceError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="SpaceTypeError"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.SpaceTypeError">[docs]</a><span class="k">class</span> <span class="nc">SpaceTypeError</span><span class="p">(</span><span class="n">SpaceError</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AxesError"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.AxesError">[docs]</a><span class="k">class</span> <span class="nc">AxesError</span><span class="p">(</span><span class="n">SpaceError</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AffineError"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.AffineError">[docs]</a><span class="k">class</span> <span class="nc">AffineError</span><span class="p">(</span><span class="n">SpaceError</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="xyz_affine"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.xyz_affine">[docs]</a><span class="k">def</span> <span class="nf">xyz_affine</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">name2xyz</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return (4, 4) affine mapping voxel coordinates to XYZ from `coordmap`</span>
+
+<span class="sd">    If no (4, 4) affine &quot;makes sense&quot;(TM) for this `coordmap` then raise errors</span>
+<span class="sd">    listed below.  A (4, 4) affine makes sense if the first three output axes</span>
+<span class="sd">    are recognizably X, Y, and Z in that order AND they there are corresponding</span>
+<span class="sd">    input dimensions, AND the corresponding input dimensions are the first three</span>
+<span class="sd">    input dimension (in any order).  Thus the input axes have to be 3D.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coordmap : ``CoordinateMap`` instance</span>
+<span class="sd">    name2xyz : None or mapping, optional</span>
+<span class="sd">        Object such that ``name2xyz[ax_name]`` returns &#39;x&#39;, or &#39;y&#39; or &#39;z&#39; or</span>
+<span class="sd">        raises a KeyError for a str ``ax_name``.  None means use module default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xyz_aff : (4,4) array</span>
+<span class="sd">        voxel to X, Y, Z affine mapping</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    SpaceTypeError : if this is not an affine coordinate map</span>
+<span class="sd">    AxesError : if not all of x, y, z recognized in `coordmap` output, or they</span>
+<span class="sd">    are in the wrong order, or the x, y, z axes do not correspond to the first</span>
+<span class="sd">    three input axes.</span>
+<span class="sd">    AffineError : if axes dropped from the affine contribute to x, y, z</span>
+<span class="sd">    coordinates.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    We could also try and &quot;make sense&quot; (TM) of a coordmap that had X, Y and Z</span>
+<span class="sd">    outputs, but not in that order, nor all in the first three axes.  In that</span>
+<span class="sd">    case we could just permute the affine to get the output order we need.  But,</span>
+<span class="sd">    that could become confusing if the returned affine has different output</span>
+<span class="sd">    coordinates than the passed `coordmap`.  And it&#39;s more complicated.  So,</span>
+<span class="sd">    let&#39;s not do that for now.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; cmap = vox2mni(np.diag([2,3,4,5,1]))</span>
+<span class="sd">    &gt;&gt;&gt; cmap</span>
+<span class="sd">    AffineTransform(</span>
+<span class="sd">       function_domain=CoordinateSystem(coord_names=(&#39;i&#39;, &#39;j&#39;, &#39;k&#39;, &#39;l&#39;), name=&#39;voxels&#39;, coord_dtype=float64),</span>
+<span class="sd">       function_range=CoordinateSystem(coord_names=(&#39;mni-x=L-&gt;R&#39;, &#39;mni-y=P-&gt;A&#39;, &#39;mni-z=I-&gt;S&#39;, &#39;t&#39;), name=&#39;mni&#39;, coord_dtype=float64),</span>
+<span class="sd">       affine=array([[ 2.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  3.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  4.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  5.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  0.,  1.]])</span>
+<span class="sd">    )</span>
+<span class="sd">    &gt;&gt;&gt; xyz_affine(cmap)</span>
+<span class="sd">    array([[ 2.,  0.,  0.,  0.],</span>
+<span class="sd">           [ 0.,  3.,  0.,  0.],</span>
+<span class="sd">           [ 0.,  0.,  4.,  0.],</span>
+<span class="sd">           [ 0.,  0.,  0.,  1.]])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">name2xyz</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name2xyz</span> <span class="o">=</span> <span class="n">known_names</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">affine</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SpaceTypeError</span><span class="p">(</span><span class="s1">&#39;Need affine coordinate map&#39;</span><span class="p">)</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">xyz_order</span><span class="p">(</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_range</span><span class="p">,</span> <span class="n">name2xyz</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">order</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="n">AxesError</span><span class="p">(</span><span class="s1">&#39;First 3 output axes must be X, Y, Z&#39;</span><span class="p">)</span>
+    <span class="c1"># Check equivalent input axes</span>
+    <span class="n">ornt</span> <span class="o">=</span> <span class="n">io_orientation</span><span class="p">(</span><span class="n">affine</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">ornt</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="n">AxesError</span><span class="p">(</span><span class="s1">&#39;First 3 input axes must correspond to X, Y, Z&#39;</span><span class="p">)</span>
+    <span class="c1"># Check that dropped dimensions don&#39;t provide xyz coordinate info</span>
+    <span class="n">extra_cols</span> <span class="o">=</span> <span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">extra_cols</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">AffineError</span><span class="p">(</span><span class="s1">&#39;Dropped dimensions not orthogonal to xyz&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">from_matvec</span><span class="p">(</span><span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,:</span><span class="mi">3</span><span class="p">],</span> <span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="xyz_order"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.xyz_order">[docs]</a><span class="k">def</span> <span class="nf">xyz_order</span><span class="p">(</span><span class="n">coordsys</span><span class="p">,</span> <span class="n">name2xyz</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Vector of orders for sorting coordsys axes in xyz first order</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coordsys : ``CoordinateSystem`` instance</span>
+<span class="sd">    name2xyz : None or mapping, optional</span>
+<span class="sd">        Object such that ``name2xyz[ax_name]`` returns &#39;x&#39;, or &#39;y&#39; or &#39;z&#39; or</span>
+<span class="sd">        raises a KeyError for a str ``ax_name``.  None means use module default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xyz_order : list</span>
+<span class="sd">        Ordering of axes to get xyz first ordering.  See the examples.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    AxesError : if there are not all of x, y and z axes</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.core.api import CoordinateSystem</span>
+<span class="sd">    &gt;&gt;&gt; xyzt_cs = mni_csm(4) # coordsys with t (time) last</span>
+<span class="sd">    &gt;&gt;&gt; xyzt_cs</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;mni-x=L-&gt;R&#39;, &#39;mni-y=P-&gt;A&#39;, &#39;mni-z=I-&gt;S&#39;, &#39;t&#39;), name=&#39;mni&#39;, coord_dtype=float64)</span>
+<span class="sd">    &gt;&gt;&gt; xyz_order(xyzt_cs)</span>
+<span class="sd">    [0, 1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; tzyx_cs = CoordinateSystem(xyzt_cs.coord_names[::-1], &#39;reversed&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; tzyx_cs</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;t&#39;, &#39;mni-z=I-&gt;S&#39;, &#39;mni-y=P-&gt;A&#39;, &#39;mni-x=L-&gt;R&#39;), name=&#39;reversed&#39;, coord_dtype=float64)</span>
+<span class="sd">    &gt;&gt;&gt; xyz_order(tzyx_cs)</span>
+<span class="sd">    [3, 2, 1, 0]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">name2xyz</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name2xyz</span> <span class="o">=</span> <span class="n">known_names</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">coordsys</span><span class="o">.</span><span class="n">coord_names</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="n">axvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">xyz_char</span> <span class="o">=</span> <span class="n">name2xyz</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">axvals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">N</span><span class="o">+</span><span class="n">i</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">axvals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;xyz&#39;</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">xyz_char</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">axvals</span><span class="p">)</span><span class="o">.</span><span class="n">issuperset</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="n">AxesError</span><span class="p">(</span><span class="s2">&quot;Not all of x, y, z recognized in coordinate map&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">axvals</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="is_xyz_space"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.is_xyz_space">[docs]</a><span class="k">def</span> <span class="nf">is_xyz_space</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; True if `obj` appears to be an XYZ space definition &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;to_coordsys_maker&#39;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="is_xyz_affable"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.spaces.html#nipy.core.reference.spaces.is_xyz_affable">[docs]</a><span class="k">def</span> <span class="nf">is_xyz_affable</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">name2xyz</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return True if the coordap has an xyz affine</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coordmap : ``CoordinateMap`` instance</span>
+<span class="sd">        Coordinate map to test</span>
+<span class="sd">    name2xyz : None or mapping, optional</span>
+<span class="sd">        Object such that ``name2xyz[ax_name]`` returns &#39;x&#39;, or &#39;y&#39; or &#39;z&#39; or</span>
+<span class="sd">        raises a KeyError for a str ``ax_name``.  None means use module default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tf : bool</span>
+<span class="sd">        True if `coordmap` has an xyz affine, False otherwise</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; cmap = vox2mni(np.diag([2,3,4,5,1]))</span>
+<span class="sd">    &gt;&gt;&gt; cmap</span>
+<span class="sd">    AffineTransform(</span>
+<span class="sd">       function_domain=CoordinateSystem(coord_names=(&#39;i&#39;, &#39;j&#39;, &#39;k&#39;, &#39;l&#39;), name=&#39;voxels&#39;, coord_dtype=float64),</span>
+<span class="sd">       function_range=CoordinateSystem(coord_names=(&#39;mni-x=L-&gt;R&#39;, &#39;mni-y=P-&gt;A&#39;, &#39;mni-z=I-&gt;S&#39;, &#39;t&#39;), name=&#39;mni&#39;, coord_dtype=float64),</span>
+<span class="sd">       affine=array([[ 2.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  3.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  4.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  5.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  0.,  1.]])</span>
+<span class="sd">    )</span>
+<span class="sd">    &gt;&gt;&gt; is_xyz_affable(cmap)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; time0_cmap = cmap.reordered_domain([3,0,1,2])</span>
+<span class="sd">    &gt;&gt;&gt; time0_cmap</span>
+<span class="sd">    AffineTransform(</span>
+<span class="sd">       function_domain=CoordinateSystem(coord_names=(&#39;l&#39;, &#39;i&#39;, &#39;j&#39;, &#39;k&#39;), name=&#39;voxels&#39;, coord_dtype=float64),</span>
+<span class="sd">       function_range=CoordinateSystem(coord_names=(&#39;mni-x=L-&gt;R&#39;, &#39;mni-y=P-&gt;A&#39;, &#39;mni-z=I-&gt;S&#39;, &#39;t&#39;), name=&#39;mni&#39;, coord_dtype=float64),</span>
+<span class="sd">       affine=array([[ 0.,  2.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  3.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  4.,  0.],</span>
+<span class="sd">                     [ 5.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  0.,  1.]])</span>
+<span class="sd">    )</span>
+<span class="sd">    &gt;&gt;&gt; is_xyz_affable(time0_cmap)</span>
+<span class="sd">    False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">xyz_affine</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">name2xyz</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">SpaceError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

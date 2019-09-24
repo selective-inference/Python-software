@@ -1,0 +1,653 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.statistical_mapping</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">sp_stats</span>
+
+<span class="c1"># Use the nibabel image object</span>
+<span class="kn">from</span> <span class="nn">nibabel</span> <span class="k">import</span> <span class="n">Nifti1Image</span> <span class="k">as</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">nibabel.affines</span> <span class="k">import</span> <span class="n">apply_affine</span>
+
+<span class="kn">from</span> <span class="nn">..io.nibcompat</span> <span class="k">import</span> <span class="n">get_affine</span>
+<span class="kn">from</span> <span class="nn">..algorithms.graph.field</span> <span class="k">import</span> <span class="n">field_from_graph_and_data</span>
+<span class="kn">from</span> <span class="nn">..algorithms.graph.graph</span> <span class="k">import</span> <span class="n">wgraph_from_3d_grid</span>
+<span class="kn">from</span> <span class="nn">..algorithms.statistics</span> <span class="k">import</span> <span class="n">empirical_pvalue</span>
+<span class="kn">from</span> <span class="nn">.glm</span> <span class="k">import</span> <span class="n">glm</span>
+<span class="kn">from</span> <span class="nn">.group.permutation_test</span> <span class="k">import</span> \
+     <span class="n">permutation_test_onesample</span><span class="p">,</span> <span class="n">permutation_test_twosample</span>
+
+<span class="c1"># FIXME: rename permutation_test_onesample class</span>
+<span class="c1">#so that name starts with upper case</span>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># Cluster statistics</span>
+<span class="c1">###############################################################################</span>
+
+
+<div class="viewcode-block" id="bonferroni"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.bonferroni">[docs]</a><span class="k">def</span> <span class="nf">bonferroni</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="n">p</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="simulated_pvalue"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.simulated_pvalue">[docs]</a><span class="k">def</span> <span class="nf">simulated_pvalue</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">simu_t</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">simu_t</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">simu_t</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="cluster_stats"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.cluster_stats">[docs]</a><span class="k">def</span> <span class="nf">cluster_stats</span><span class="p">(</span><span class="n">zimg</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">height_th</span><span class="p">,</span> <span class="n">height_control</span><span class="o">=</span><span class="s1">&#39;fpr&#39;</span><span class="p">,</span>
+                  <span class="n">cluster_th</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nulls</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return a list of clusters, each cluster being represented by a</span>
+<span class="sd">    dictionary. Clusters are sorted by descending size order. Within</span>
+<span class="sd">    each cluster, local maxima are sorted by descending depth order.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    zimg: z-score image</span>
+<span class="sd">    mask: mask image</span>
+<span class="sd">    height_th: cluster forming threshold</span>
+<span class="sd">    height_control: string</span>
+<span class="sd">            false positive control meaning of cluster forming</span>
+<span class="sd">            threshold: &#39;fpr&#39;|&#39;fdr&#39;|&#39;bonferroni&#39;|&#39;none&#39;</span>
+<span class="sd">    cluster_th: cluster size threshold</span>
+<span class="sd">    null_s : cluster-level calibration method: None|&#39;rft&#39;|array</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    This works only with three dimensional data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Masking</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mask</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+        <span class="n">zmap</span> <span class="o">=</span> <span class="n">zimg</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()[</span><span class="n">xyz</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">zmap</span> <span class="o">=</span> <span class="n">zimg</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">xyz</span><span class="p">]</span>
+
+    <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">nvoxels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Thresholding</span>
+    <span class="k">if</span> <span class="n">height_control</span> <span class="o">==</span> <span class="s1">&#39;fpr&#39;</span><span class="p">:</span>
+        <span class="n">zth</span> <span class="o">=</span> <span class="n">sp_stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">isf</span><span class="p">(</span><span class="n">height_th</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">height_control</span> <span class="o">==</span> <span class="s1">&#39;fdr&#39;</span><span class="p">:</span>
+        <span class="n">zth</span> <span class="o">=</span> <span class="n">empirical_pvalue</span><span class="o">.</span><span class="n">gaussian_fdr_threshold</span><span class="p">(</span><span class="n">zmap</span><span class="p">,</span> <span class="n">height_th</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">height_control</span> <span class="o">==</span> <span class="s1">&#39;bonferroni&#39;</span><span class="p">:</span>
+        <span class="n">zth</span> <span class="o">=</span> <span class="n">sp_stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">isf</span><span class="p">(</span><span class="n">height_th</span> <span class="o">/</span> <span class="n">nvoxels</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1">## Brute-force thresholding</span>
+        <span class="n">zth</span> <span class="o">=</span> <span class="n">height_th</span>
+    <span class="n">pth</span> <span class="o">=</span> <span class="n">sp_stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">zth</span><span class="p">)</span>
+    <span class="n">above_th</span> <span class="o">=</span> <span class="n">zmap</span> <span class="o">&gt;</span> <span class="n">zth</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">above_th</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span> <span class="c1">## FIXME</span>
+    <span class="n">zmap_th</span> <span class="o">=</span> <span class="n">zmap</span><span class="p">[</span><span class="n">above_th</span><span class="p">]</span>
+    <span class="n">xyz_th</span> <span class="o">=</span> <span class="n">xyz</span><span class="p">[</span><span class="n">above_th</span><span class="p">]</span>
+
+    <span class="c1"># Clustering</span>
+    <span class="c1">## Extract local maxima and connex components above some threshold</span>
+    <span class="n">ff</span> <span class="o">=</span> <span class="n">field_from_graph_and_data</span><span class="p">(</span><span class="n">wgraph_from_3d_grid</span><span class="p">(</span><span class="n">xyz_th</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">18</span><span class="p">),</span> <span class="n">zmap_th</span><span class="p">)</span>
+    <span class="n">maxima</span><span class="p">,</span> <span class="n">depth</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">get_local_maxima</span><span class="p">(</span><span class="n">th</span><span class="o">=</span><span class="n">zth</span><span class="p">)</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span>
+    <span class="c1">## Make list of clusters, each cluster being a dictionary</span>
+    <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">labels</span> <span class="o">==</span> <span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;=</span> <span class="n">cluster_th</span><span class="p">:</span>
+            <span class="n">in_cluster</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">maxima</span><span class="p">]</span> <span class="o">==</span> <span class="n">k</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">maxima</span><span class="p">[</span><span class="n">in_cluster</span><span class="p">]</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">depth</span><span class="p">[</span><span class="n">in_cluster</span><span class="p">]</span>
+            <span class="nb">sorted</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+                             <span class="s1">&#39;maxima&#39;</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="nb">sorted</span><span class="p">],</span>
+                             <span class="s1">&#39;depth&#39;</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="nb">sorted</span><span class="p">]})</span>
+
+    <span class="c1">## Sort clusters by descending size order</span>
+    <span class="n">clusters</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span> <span class="p">:</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># FDR-corrected p-values</span>
+    <span class="n">fdr_pvalue</span> <span class="o">=</span> <span class="n">empirical_pvalue</span><span class="o">.</span><span class="n">gaussian_fdr</span><span class="p">(</span><span class="n">zmap</span><span class="p">)[</span><span class="n">above_th</span><span class="p">]</span>
+
+    <span class="c1"># Default &quot;nulls&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;zmax&#39;</span> <span class="ow">in</span> <span class="n">nulls</span><span class="p">:</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;zmax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;bonferroni&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;smax&#39;</span> <span class="ow">in</span> <span class="n">nulls</span><span class="p">:</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;smax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;s&#39;</span> <span class="ow">in</span> <span class="n">nulls</span><span class="p">:</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Report significance levels in each cluster</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">:</span>
+        <span class="n">maxima</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;maxima&#39;</span><span class="p">]</span>
+        <span class="n">zscore</span> <span class="o">=</span> <span class="n">zmap_th</span><span class="p">[</span><span class="n">maxima</span><span class="p">]</span>
+        <span class="n">pval</span> <span class="o">=</span> <span class="n">sp_stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">zscore</span><span class="p">)</span>
+        <span class="c1"># Replace array indices with real coordinates</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;maxima&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">apply_affine</span><span class="p">(</span><span class="n">get_affine</span><span class="p">(</span><span class="n">zimg</span><span class="p">),</span> <span class="n">xyz_th</span><span class="p">[</span><span class="n">maxima</span><span class="p">])</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;zscore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">zscore</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pvalue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pval</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;fdr_pvalue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fdr_pvalue</span><span class="p">[</span><span class="n">maxima</span><span class="p">]</span>
+
+        <span class="c1"># Voxel-level corrected p-values</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;zmax&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">simulated_pvalue</span><span class="p">(</span><span class="n">zscore</span><span class="p">,</span> <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;zmax&#39;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;zmax&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bonferroni&#39;</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">bonferroni</span><span class="p">(</span><span class="n">pval</span><span class="p">,</span> <span class="n">nvoxels</span><span class="p">)</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;fwer_pvalue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+
+        <span class="c1"># Cluster-level p-values (corrected)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;smax&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">simulated_pvalue</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">],</span> <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;smax&#39;</span><span class="p">])</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;cluster_fwer_pvalue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+
+        <span class="c1"># Cluster-level p-values (uncorrected)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;s&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">simulated_pvalue</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">],</span> <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;s&#39;</span><span class="p">])</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;cluster_pvalue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+
+    <span class="c1"># General info</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;nvoxels&#39;</span><span class="p">:</span> <span class="n">nvoxels</span><span class="p">,</span>
+            <span class="s1">&#39;threshold_z&#39;</span><span class="p">:</span> <span class="n">zth</span><span class="p">,</span>
+            <span class="s1">&#39;threshold_p&#39;</span><span class="p">:</span> <span class="n">pth</span><span class="p">,</span>
+            <span class="s1">&#39;threshold_pcorr&#39;</span><span class="p">:</span> <span class="n">bonferroni</span><span class="p">(</span><span class="n">pth</span><span class="p">,</span> <span class="n">nvoxels</span><span class="p">)}</span>
+
+    <span class="k">return</span> <span class="n">clusters</span><span class="p">,</span> <span class="n">info</span></div>
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># Peak_extraction</span>
+<span class="c1">###############################################################################</span>
+
+
+<div class="viewcode-block" id="get_3d_peaks"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.get_3d_peaks">[docs]</a><span class="k">def</span> <span class="nf">get_3d_peaks</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">order_th</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns all the peaks of image that are with the mask</span>
+<span class="sd">    and above the provided threshold</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image, (3d) test image</span>
+<span class="sd">    mask=None, (3d) mask image</span>
+<span class="sd">        By default no masking is performed</span>
+<span class="sd">    threshold=0., float, threshold value above which peaks are considered</span>
+<span class="sd">    nn=18, int, number of neighbours of the topological spatial model</span>
+<span class="sd">    order_th=0, int, threshold on topological order to validate the peaks</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    peaks, a list of dictionaries, where each dict has the fields:</span>
+<span class="sd">    vals, map value at the peak</span>
+<span class="sd">    order, topological order of the peak</span>
+<span class="sd">    ijk, array of shape (1,3) grid coordinate of the peak</span>
+<span class="sd">    pos, array of shape (n_maxima,3) mm coordinates (mapped by affine)</span>
+<span class="sd">        of the peaks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Masking</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bmask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="n">bmask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bmask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Extract local maxima and connex components above some threshold</span>
+    <span class="n">ff</span> <span class="o">=</span> <span class="n">field_from_graph_and_data</span><span class="p">(</span><span class="n">wgraph_from_3d_grid</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">18</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">maxima</span><span class="p">,</span> <span class="n">order</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">get_local_maxima</span><span class="p">(</span><span class="n">th</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
+
+    <span class="c1"># retain only the maxima greater than the specified order</span>
+    <span class="n">maxima</span> <span class="o">=</span> <span class="n">maxima</span><span class="p">[</span><span class="n">order</span> <span class="o">&gt;</span> <span class="n">order_th</span><span class="p">]</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="n">order</span> <span class="o">&gt;</span> <span class="n">order_th</span><span class="p">]</span>
+
+    <span class="n">n_maxima</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">maxima</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_maxima</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># should not occur ?</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># reorder the maxima to have decreasing peak value</span>
+    <span class="n">vals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">maxima</span><span class="p">]</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span> <span class="n">vals</span><span class="p">)</span>
+    <span class="n">maxima</span> <span class="o">=</span> <span class="n">maxima</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="n">vals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">maxima</span><span class="p">]</span>
+    <span class="n">ijk</span> <span class="o">=</span> <span class="n">xyz</span><span class="p">[</span><span class="n">maxima</span><span class="p">]</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">ijk</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_maxima</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))),</span> <span class="n">affine</span><span class="o">.</span><span class="n">T</span><span class="p">)[:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;val&#39;</span><span class="p">:</span> <span class="n">vals</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">order</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="s1">&#39;ijk&#39;</span><span class="p">:</span> <span class="n">ijk</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="s1">&#39;pos&#39;</span><span class="p">:</span> <span class="n">pos</span><span class="p">[</span><span class="n">k</span><span class="p">]}</span>
+             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_maxima</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">peaks</span></div>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># Statistical tests</span>
+<span class="c1">###############################################################################</span>
+
+
+<div class="viewcode-block" id="prepare_arrays"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.prepare_arrays">[docs]</a><span class="k">def</span> <span class="nf">prepare_arrays</span><span class="p">(</span><span class="n">data_images</span><span class="p">,</span> <span class="n">vardata_images</span><span class="p">,</span> <span class="n">mask_images</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">.mask</span> <span class="k">import</span> <span class="n">intersect_masks</span>
+    <span class="c1"># Compute mask intersection</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">intersect_masks</span><span class="p">(</span><span class="n">mask_images</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+     <span class="c1"># Compute xyz coordinates from mask</span>
+    <span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="c1"># Prepare data &amp; vardata arrays</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">d</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">xyz</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xyz</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xyz</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data_images</span><span class="p">])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">vardata_images</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vardata</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vardata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">d</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">xyz</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xyz</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xyz</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+                            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">vardata_images</span><span class="p">])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">xyz</span><span class="p">,</span> <span class="n">mask</span></div>
+
+
+<div class="viewcode-block" id="onesample_test"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.onesample_test">[docs]</a><span class="k">def</span> <span class="nf">onesample_test</span><span class="p">(</span><span class="n">data_images</span><span class="p">,</span> <span class="n">vardata_images</span><span class="p">,</span> <span class="n">mask_images</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span>
+                   <span class="n">permutations</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cluster_forming_th</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function for permutation-based mass univariate onesample</span>
+<span class="sd">    group analysis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Prepare arrays</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">xyz</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">prepare_arrays</span><span class="p">(</span><span class="n">data_images</span><span class="p">,</span> <span class="n">vardata_images</span><span class="p">,</span>
+                                              <span class="n">mask_images</span><span class="p">)</span>
+
+    <span class="c1"># Create one-sample permutation test instance</span>
+    <span class="n">ptest</span> <span class="o">=</span> <span class="n">permutation_test_onesample</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xyz</span><span class="p">,</span> <span class="n">vardata</span><span class="o">=</span><span class="n">vardata</span><span class="p">,</span>
+                                       <span class="n">stat_id</span><span class="o">=</span><span class="n">stat_id</span><span class="p">)</span>
+
+    <span class="c1"># Compute z-map image</span>
+    <span class="n">zmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">data_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="n">zmap</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">xyz</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ptest</span><span class="o">.</span><span class="n">zscore</span><span class="p">()</span>
+    <span class="n">zimg</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">zmap</span><span class="p">,</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">data_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="c1"># Compute mask image</span>
+    <span class="n">maskimg</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">),</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">data_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="c1"># Multiple comparisons</span>
+    <span class="k">if</span> <span class="n">permutations</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">zimg</span><span class="p">,</span> <span class="n">maskimg</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Cluster definition: (threshold, diameter)</span>
+        <span class="n">cluster_def</span> <span class="o">=</span> <span class="p">(</span><span class="n">ptest</span><span class="o">.</span><span class="n">height_threshold</span><span class="p">(</span><span class="n">cluster_forming_th</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Calibration</span>
+        <span class="n">voxel_res</span><span class="p">,</span> <span class="n">cluster_res</span><span class="p">,</span> <span class="n">region_res</span> <span class="o">=</span> \
+            <span class="n">ptest</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">nperms</span><span class="o">=</span><span class="n">permutations</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="p">[</span><span class="n">cluster_def</span><span class="p">])</span>
+        <span class="n">nulls</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;zmax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ptest</span><span class="o">.</span><span class="n">zscore</span><span class="p">(</span><span class="n">voxel_res</span><span class="p">[</span><span class="s1">&#39;perm_maxT_values&#39;</span><span class="p">])</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_res</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;perm_size_values&#39;</span><span class="p">]</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;smax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_res</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;perm_maxsize_values&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Return z-map image, mask image and dictionary of null distribution</span>
+        <span class="c1"># for cluster sizes (s), max cluster size (smax) and max z-score (zmax)</span>
+        <span class="k">return</span> <span class="n">zimg</span><span class="p">,</span> <span class="n">maskimg</span><span class="p">,</span> <span class="n">nulls</span></div>
+
+
+<div class="viewcode-block" id="twosample_test"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.twosample_test">[docs]</a><span class="k">def</span> <span class="nf">twosample_test</span><span class="p">(</span><span class="n">data_images</span><span class="p">,</span> <span class="n">vardata_images</span><span class="p">,</span> <span class="n">mask_images</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span>
+                   <span class="n">permutations</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cluster_forming_th</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function for permutation-based mass univariate twosample group</span>
+<span class="sd">    analysis. Labels is a binary vector (1-2). Regions more active for group</span>
+<span class="sd">    1 than group 2 are inferred.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Prepare arrays</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">xyz</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">prepare_arrays</span><span class="p">(</span><span class="n">data_images</span><span class="p">,</span> <span class="n">vardata_images</span><span class="p">,</span>
+                                              <span class="n">mask_images</span><span class="p">)</span>
+
+    <span class="c1"># Create two-sample permutation test instance</span>
+    <span class="k">if</span> <span class="n">vardata_images</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ptest</span> <span class="o">=</span> <span class="n">permutation_test_twosample</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">2</span><span class="p">],</span> <span class="n">xyz</span><span class="p">,</span> <span class="n">stat_id</span><span class="o">=</span><span class="n">stat_id</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ptest</span> <span class="o">=</span> <span class="n">permutation_test_twosample</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">2</span><span class="p">],</span> <span class="n">xyz</span><span class="p">,</span>
+            <span class="n">vardata1</span><span class="o">=</span><span class="n">vardata</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">],</span> <span class="n">vardata2</span><span class="o">=</span><span class="n">vardata</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="n">stat_id</span><span class="o">=</span><span class="n">stat_id</span><span class="p">)</span>
+
+    <span class="c1"># Compute z-map image</span>
+    <span class="n">zmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">data_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="n">zmap</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">xyz</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ptest</span><span class="o">.</span><span class="n">zscore</span><span class="p">()</span>
+    <span class="n">zimg</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">zmap</span><span class="p">,</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">data_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="c1"># Compute mask image</span>
+    <span class="n">maskimg</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">data_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="c1"># Multiple comparisons</span>
+    <span class="k">if</span> <span class="n">permutations</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">zimg</span><span class="p">,</span> <span class="n">maskimg</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Cluster definition: (threshold, diameter)</span>
+        <span class="n">cluster_def</span> <span class="o">=</span> <span class="p">(</span><span class="n">ptest</span><span class="o">.</span><span class="n">height_threshold</span><span class="p">(</span><span class="n">cluster_forming_th</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Calibration</span>
+        <span class="n">voxel_res</span><span class="p">,</span> <span class="n">cluster_res</span><span class="p">,</span> <span class="n">region_res</span> <span class="o">=</span> \
+            <span class="n">ptest</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">nperms</span><span class="o">=</span><span class="n">permutations</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="p">[</span><span class="n">cluster_def</span><span class="p">])</span>
+        <span class="n">nulls</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;zmax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ptest</span><span class="o">.</span><span class="n">zscore</span><span class="p">(</span><span class="n">voxel_res</span><span class="p">[</span><span class="s1">&#39;perm_maxT_values&#39;</span><span class="p">])</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_res</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;perm_size_values&#39;</span><span class="p">]</span>
+        <span class="n">nulls</span><span class="p">[</span><span class="s1">&#39;smax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_res</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;perm_maxsize_values&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Return z-map image, mask image and dictionary of null</span>
+        <span class="c1"># distribution for cluster sizes (s), max cluster size (smax)</span>
+        <span class="c1"># and max z-score (zmax)</span>
+        <span class="k">return</span> <span class="n">zimg</span><span class="p">,</span> <span class="n">maskimg</span><span class="p">,</span> <span class="n">nulls</span></div>
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># Linear model</span>
+<span class="c1">###############################################################################</span>
+
+
+<div class="viewcode-block" id="linear_model_fit"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.linear_model_fit">[docs]</a><span class="k">def</span> <span class="nf">linear_model_fit</span><span class="p">(</span><span class="n">data_images</span><span class="p">,</span> <span class="n">mask_images</span><span class="p">,</span> <span class="n">design_matrix</span><span class="p">,</span> <span class="n">vector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function for group data analysis using arbitrary design matrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Prepare arrays</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">xyz</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">prepare_arrays</span><span class="p">(</span><span class="n">data_images</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">mask_images</span><span class="p">)</span>
+
+    <span class="c1"># Create glm instance</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">glm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">design_matrix</span><span class="p">)</span>
+
+    <span class="c1"># Compute requested contrast</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">contrast</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+
+    <span class="c1"># Compute z-map image</span>
+    <span class="n">zmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">data_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="n">zmap</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">xyz</span><span class="p">)]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">zscore</span><span class="p">()</span>
+    <span class="n">zimg</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">zmap</span><span class="p">,</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">data_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="k">return</span> <span class="n">zimg</span></div>
+
+
+<div class="viewcode-block" id="LinearModel"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.LinearModel">[docs]</a><span class="k">class</span> <span class="nc">LinearModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">def_model</span> <span class="o">=</span> <span class="s1">&#39;spherical&#39;</span>
+    <span class="n">def_niter</span> <span class="o">=</span> <span class="mi">2</span>
+
+<div class="viewcode-block" id="LinearModel.__init__"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.LinearModel.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">design_matrix</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">model</span><span class="o">=</span><span class="n">def_model</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">def_niter</span><span class="p">):</span>
+
+        <span class="c1"># Convert input data and design into sequences</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">design_matrix</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">):</span>
+            <span class="n">design_matrix</span> <span class="o">=</span> <span class="p">[</span><span class="n">design_matrix</span><span class="p">]</span>
+
+        <span class="c1"># configure spatial properties</span>
+        <span class="c1"># the &#39;sampling&#39; direction is assumed to be the last</span>
+        <span class="c1"># TODO: check that all input images have the same shape and</span>
+        <span class="c1"># that it&#39;s consistent with the mask</span>
+        <span class="n">nomask</span> <span class="o">=</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">nomask</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">spatial_shape</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">glm</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">design_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid design matrix&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nomask</span><span class="p">:</span>
+                <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">]</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">design_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">glm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">glm</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">,</span>
+                                <span class="n">formula</span><span class="o">=</span><span class="n">formula</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">niter</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="LinearModel.dump"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.LinearModel.dump">[docs]</a>    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Dump GLM fit as npz file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">glm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">models</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">glm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">models</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">glm</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="LinearModel.contrast"><a class="viewcode-back" href="../../../api/generated/nipy.labs.statistical_mapping.html#nipy.labs.statistical_mapping.LinearModel.contrast">[docs]</a>    <span class="k">def</span> <span class="nf">contrast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute images of contrast and contrast variance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Compute the overall contrast across models</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">glm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">contrast</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">glm</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">c</span> <span class="o">+=</span> <span class="n">g</span><span class="o">.</span><span class="n">contrast</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">affect_inmask</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">xyz</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">xyz</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">dest</span> <span class="o">=</span> <span class="n">src</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dest</span><span class="p">[</span><span class="n">xyz</span><span class="p">]</span> <span class="o">=</span> <span class="n">src</span>
+            <span class="k">return</span> <span class="n">dest</span>
+
+        <span class="n">con</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_shape</span><span class="p">)</span>
+        <span class="n">con_img</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">affect_inmask</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">effect</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+        <span class="n">vcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_shape</span><span class="p">)</span>
+        <span class="n">vcon_img</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">affect_inmask</span><span class="p">(</span><span class="n">vcon</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">variance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">),</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spatial_shape</span><span class="p">)</span>
+        <span class="n">z_img</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">affect_inmask</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">zscore</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">xyz</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">dof</span>
+        <span class="k">return</span> <span class="n">con_img</span><span class="p">,</span> <span class="n">vcon_img</span><span class="p">,</span> <span class="n">z_img</span><span class="p">,</span> <span class="n">dof</span></div></div>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># Hack to have nose skip onesample_test, which is not a unit test</span>
+<span class="n">onesample_test</span><span class="o">.</span><span class="n">__test__</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">twosample_test</span><span class="o">.</span><span class="n">__test__</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

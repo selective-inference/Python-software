@@ -1,0 +1,1586 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../numpy.html">numpy</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for numpy.lib.polynomial</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to operate on polynomials.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;poly&#39;</span><span class="p">,</span> <span class="s1">&#39;roots&#39;</span><span class="p">,</span> <span class="s1">&#39;polyint&#39;</span><span class="p">,</span> <span class="s1">&#39;polyder&#39;</span><span class="p">,</span> <span class="s1">&#39;polyadd&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;polysub&#39;</span><span class="p">,</span> <span class="s1">&#39;polymul&#39;</span><span class="p">,</span> <span class="s1">&#39;polydiv&#39;</span><span class="p">,</span> <span class="s1">&#39;polyval&#39;</span><span class="p">,</span> <span class="s1">&#39;poly1d&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;polyfit&#39;</span><span class="p">,</span> <span class="s1">&#39;RankWarning&#39;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy.core.numeric</span> <span class="k">as</span> <span class="nn">NX</span>
+
+<span class="kn">from</span> <span class="nn">numpy.core</span> <span class="k">import</span> <span class="p">(</span><span class="n">isscalar</span><span class="p">,</span> <span class="nb">abs</span><span class="p">,</span> <span class="n">finfo</span><span class="p">,</span> <span class="n">atleast_1d</span><span class="p">,</span> <span class="n">hstack</span><span class="p">,</span> <span class="n">dot</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span>
+                        <span class="n">ones</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">numpy.core</span> <span class="k">import</span> <span class="n">overrides</span>
+<span class="kn">from</span> <span class="nn">numpy.core.overrides</span> <span class="k">import</span> <span class="n">set_module</span>
+<span class="kn">from</span> <span class="nn">numpy.lib.twodim_base</span> <span class="k">import</span> <span class="n">diag</span><span class="p">,</span> <span class="n">vander</span>
+<span class="kn">from</span> <span class="nn">numpy.lib.function_base</span> <span class="k">import</span> <span class="n">trim_zeros</span>
+<span class="kn">from</span> <span class="nn">numpy.lib.type_check</span> <span class="k">import</span> <span class="n">iscomplex</span><span class="p">,</span> <span class="n">real</span><span class="p">,</span> <span class="n">imag</span><span class="p">,</span> <span class="n">mintypecode</span>
+<span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">eigvals</span><span class="p">,</span> <span class="n">lstsq</span><span class="p">,</span> <span class="n">inv</span>
+
+
+<span class="n">array_function_dispatch</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+    <span class="n">overrides</span><span class="o">.</span><span class="n">array_function_dispatch</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="s1">&#39;numpy&#39;</span><span class="p">)</span>
+
+
+<span class="nd">@set_module</span><span class="p">(</span><span class="s1">&#39;numpy&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RankWarning</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Issued by `polyfit` when the Vandermonde matrix is rank deficient.</span>
+
+<span class="sd">    For more information, a way to suppress the warning, and an example of</span>
+<span class="sd">    `RankWarning` being issued, see `polyfit`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">_poly_dispatcher</span><span class="p">(</span><span class="n">seq_of_zeros</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">seq_of_zeros</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_poly_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">poly</span><span class="p">(</span><span class="n">seq_of_zeros</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the coefficients of a polynomial with the given sequence of roots.</span>
+
+<span class="sd">    Returns the coefficients of the polynomial whose leading coefficient</span>
+<span class="sd">    is one for the given sequence of zeros (multiple roots must be included</span>
+<span class="sd">    in the sequence as many times as their multiplicity; see Examples).</span>
+<span class="sd">    A square matrix (or array, which will be treated as a matrix) can also</span>
+<span class="sd">    be given, in which case the coefficients of the characteristic polynomial</span>
+<span class="sd">    of the matrix are returned.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seq_of_zeros : array_like, shape (N,) or (N, N)</span>
+<span class="sd">        A sequence of polynomial roots, or a square array or matrix object.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    c : ndarray</span>
+<span class="sd">        1D array of polynomial coefficients from highest to lowest degree:</span>
+
+<span class="sd">        ``c[0] * x**(N) + c[1] * x**(N-1) + ... + c[N-1] * x + c[N]``</span>
+<span class="sd">        where c[0] always equals 1.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If input is the wrong shape (the input must be a 1-D or square</span>
+<span class="sd">        2-D array).</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    polyval : Compute polynomial values.</span>
+<span class="sd">    roots : Return the roots of a polynomial.</span>
+<span class="sd">    polyfit : Least squares polynomial fit.</span>
+<span class="sd">    poly1d : A one-dimensional polynomial class.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Specifying the roots of a polynomial still leaves one degree of</span>
+<span class="sd">    freedom, typically represented by an undetermined leading</span>
+<span class="sd">    coefficient. [1]_ In the case of this function, that coefficient -</span>
+<span class="sd">    the first one in the returned array - is always taken as one. (If</span>
+<span class="sd">    for some reason you have one other point, the only automatic way</span>
+<span class="sd">    presently to leverage that information is to use ``polyfit``.)</span>
+
+<span class="sd">    The characteristic polynomial, :math:`p_a(t)`, of an `n`-by-`n`</span>
+<span class="sd">    matrix **A** is given by</span>
+
+<span class="sd">        :math:`p_a(t) = \\mathrm{det}(t\\, \\mathbf{I} - \\mathbf{A})`,</span>
+
+<span class="sd">    where **I** is the `n`-by-`n` identity matrix. [2]_</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] M. Sullivan and M. Sullivan, III, &quot;Algebra and Trignometry,</span>
+<span class="sd">       Enhanced With Graphing Utilities,&quot; Prentice-Hall, pg. 318, 1996.</span>
+
+<span class="sd">    .. [2] G. Strang, &quot;Linear Algebra and Its Applications, 2nd Edition,&quot;</span>
+<span class="sd">       Academic Press, pg. 182, 1980.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Given a sequence of a polynomial&#39;s zeros:</span>
+
+<span class="sd">    &gt;&gt;&gt; np.poly((0, 0, 0)) # Multiple root example</span>
+<span class="sd">    array([1., 0., 0., 0.])</span>
+
+<span class="sd">    The line above represents z**3 + 0*z**2 + 0*z + 0.</span>
+
+<span class="sd">    &gt;&gt;&gt; np.poly((-1./2, 0, 1./2))</span>
+<span class="sd">    array([ 1.  ,  0.  , -0.25,  0.  ])</span>
+
+<span class="sd">    The line above represents z**3 - z/4</span>
+
+<span class="sd">    &gt;&gt;&gt; np.poly((np.random.random(1)[0], 0, np.random.random(1)[0]))</span>
+<span class="sd">    array([ 1.        , -0.77086955,  0.08618131,  0.        ]) # random</span>
+
+<span class="sd">    Given a square array object:</span>
+
+<span class="sd">    &gt;&gt;&gt; P = np.array([[0, 1./3], [-1./2, 0]])</span>
+<span class="sd">    &gt;&gt;&gt; np.poly(P)</span>
+<span class="sd">    array([1.        , 0.        , 0.16666667])</span>
+
+<span class="sd">    Note how in all cases the leading coefficient is always 1.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seq_of_zeros</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">seq_of_zeros</span><span class="p">)</span>
+    <span class="n">sh</span> <span class="o">=</span> <span class="n">seq_of_zeros</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sh</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">sh</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sh</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">sh</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">seq_of_zeros</span> <span class="o">=</span> <span class="n">eigvals</span><span class="p">(</span><span class="n">seq_of_zeros</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sh</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">seq_of_zeros</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="c1"># Let object arrays slip through, e.g. for arbitrary precision</span>
+        <span class="k">if</span> <span class="n">dt</span> <span class="o">!=</span> <span class="nb">object</span><span class="p">:</span>
+            <span class="n">seq_of_zeros</span> <span class="o">=</span> <span class="n">seq_of_zeros</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">mintypecode</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">char</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;input must be 1d or non-empty square 2d array.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq_of_zeros</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">seq_of_zeros</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq_of_zeros</span><span class="p">)):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="n">seq_of_zeros</span><span class="p">[</span><span class="n">k</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dt</span><span class="p">),</span>
+                        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">NX</span><span class="o">.</span><span class="n">complexfloating</span><span class="p">):</span>
+        <span class="c1"># if complex roots are all complex conjugates, the roots are real.</span>
+        <span class="n">roots</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq_of_zeros</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">NX</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">NX</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">roots</span><span class="p">)</span> <span class="o">==</span> <span class="n">NX</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">roots</span><span class="o">.</span><span class="n">conjugate</span><span class="p">())):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">a</span>
+
+
+<span class="k">def</span> <span class="nf">_roots_dispatcher</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">p</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_roots_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">roots</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the roots of a polynomial with coefficients given in p.</span>
+
+<span class="sd">    The values in the rank-1 array `p` are coefficients of a polynomial.</span>
+<span class="sd">    If the length of `p` is n+1 then the polynomial is described by::</span>
+
+<span class="sd">      p[0] * x**n + p[1] * x**(n-1) + ... + p[n-1]*x + p[n]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : array_like</span>
+<span class="sd">        Rank-1 array of polynomial coefficients.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : ndarray</span>
+<span class="sd">        An array containing the roots of the polynomial.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        When `p` cannot be converted to a rank-1 array.</span>
+
+<span class="sd">    See also</span>
+<span class="sd">    --------</span>
+<span class="sd">    poly : Find the coefficients of a polynomial with a given sequence</span>
+<span class="sd">           of roots.</span>
+<span class="sd">    polyval : Compute polynomial values.</span>
+<span class="sd">    polyfit : Least squares polynomial fit.</span>
+<span class="sd">    poly1d : A one-dimensional polynomial class.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The algorithm relies on computing the eigenvalues of the</span>
+<span class="sd">    companion matrix [1]_.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] R. A. Horn &amp; C. R. Johnson, *Matrix Analysis*.  Cambridge, UK:</span>
+<span class="sd">        Cambridge University Press, 1999, pp. 146-7.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; coeff = [3.2, 2, 1]</span>
+<span class="sd">    &gt;&gt;&gt; np.roots(coeff)</span>
+<span class="sd">    array([-0.3125+0.46351241j, -0.3125-0.46351241j])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If input is scalar, this makes it an array</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input must be a rank-1 array.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># find non-zero array entries</span>
+    <span class="n">non_zero</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">NX</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">p</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Return an empty array if polynomial is all zeros</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_zero</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">NX</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+    <span class="c1"># find the number of trailing zeros -- this is the number of roots at 0.</span>
+    <span class="n">trailing_zeros</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="n">non_zero</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># strip leading and trailing zeros</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">non_zero</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span><span class="nb">int</span><span class="p">(</span><span class="n">non_zero</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># casting: if incoming array isn&#39;t floating point, make it floating point.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="p">(</span><span class="n">NX</span><span class="o">.</span><span class="n">floating</span><span class="p">,</span> <span class="n">NX</span><span class="o">.</span><span class="n">complexfloating</span><span class="p">)):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">N</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># build companion matrix and find its eigenvalues (the roots)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">diag</span><span class="p">(</span><span class="n">NX</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">,),</span> <span class="n">p</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="o">-</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">roots</span> <span class="o">=</span> <span class="n">eigvals</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">roots</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+    <span class="c1"># tack any zeros onto the back of the array</span>
+    <span class="n">roots</span> <span class="o">=</span> <span class="n">hstack</span><span class="p">((</span><span class="n">roots</span><span class="p">,</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">trailing_zeros</span><span class="p">,</span> <span class="n">roots</span><span class="o">.</span><span class="n">dtype</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">roots</span>
+
+
+<span class="k">def</span> <span class="nf">_polyint_dispatcher</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">p</span><span class="p">,)</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_polyint_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polyint</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return an antiderivative (indefinite integral) of a polynomial.</span>
+
+<span class="sd">    The returned order `m` antiderivative `P` of polynomial `p` satisfies</span>
+<span class="sd">    :math:`\\frac{d^m}{dx^m}P(x) = p(x)` and is defined up to `m - 1`</span>
+<span class="sd">    integration constants `k`. The constants determine the low-order</span>
+<span class="sd">    polynomial part</span>
+
+<span class="sd">    .. math:: \\frac{k_{m-1}}{0!} x^0 + \\ldots + \\frac{k_0}{(m-1)!}x^{m-1}</span>
+
+<span class="sd">    of `P` so that :math:`P^{(j)}(0) = k_{m-j-1}`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : array_like or poly1d</span>
+<span class="sd">        Polynomial to integrate.</span>
+<span class="sd">        A sequence is interpreted as polynomial coefficients, see `poly1d`.</span>
+<span class="sd">    m : int, optional</span>
+<span class="sd">        Order of the antiderivative. (Default: 1)</span>
+<span class="sd">    k : list of `m` scalars or scalar, optional</span>
+<span class="sd">        Integration constants. They are given in the order of integration:</span>
+<span class="sd">        those corresponding to highest-order terms come first.</span>
+
+<span class="sd">        If ``None`` (default), all constants are assumed to be zero.</span>
+<span class="sd">        If `m = 1`, a single scalar can be given instead of a list.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    polyder : derivative of a polynomial</span>
+<span class="sd">    poly1d.integ : equivalent method</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    The defining property of the antiderivative:</span>
+
+<span class="sd">    &gt;&gt;&gt; p = np.poly1d([1,1,1])</span>
+<span class="sd">    &gt;&gt;&gt; P = np.polyint(p)</span>
+<span class="sd">    &gt;&gt;&gt; P</span>
+<span class="sd">     poly1d([ 0.33333333,  0.5       ,  1.        ,  0.        ]) # may vary</span>
+<span class="sd">    &gt;&gt;&gt; np.polyder(P) == p</span>
+<span class="sd">    True</span>
+
+<span class="sd">    The integration constants default to zero, but can be specified:</span>
+
+<span class="sd">    &gt;&gt;&gt; P = np.polyint(p, 3)</span>
+<span class="sd">    &gt;&gt;&gt; P(0)</span>
+<span class="sd">    0.0</span>
+<span class="sd">    &gt;&gt;&gt; np.polyder(P)(0)</span>
+<span class="sd">    0.0</span>
+<span class="sd">    &gt;&gt;&gt; np.polyder(P, 2)(0)</span>
+<span class="sd">    0.0</span>
+<span class="sd">    &gt;&gt;&gt; P = np.polyint(p, 3, k=[6,5,3])</span>
+<span class="sd">    &gt;&gt;&gt; P</span>
+<span class="sd">    poly1d([ 0.01666667,  0.04166667,  0.16666667,  3. ,  5. ,  3. ]) # may vary</span>
+
+<span class="sd">    Note that 3 = 6 / 2!, and that the constants are given in the order of</span>
+<span class="sd">    integrations. Constant of the highest-order polynomial term comes first:</span>
+
+<span class="sd">    &gt;&gt;&gt; np.polyder(P, 2)(0)</span>
+<span class="sd">    6.0</span>
+<span class="sd">    &gt;&gt;&gt; np.polyder(P, 1)(0)</span>
+<span class="sd">    5.0</span>
+<span class="sd">    &gt;&gt;&gt; P(0)</span>
+<span class="sd">    3.0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Order of integral must be positive (see polyder)&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">NX</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">m</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+              <span class="s2">&quot;k must be a scalar or a rank-1 array of length 1 or &gt;m.&quot;</span><span class="p">)</span>
+
+    <span class="n">truepoly</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">truepoly</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Note: this must work also with object and integer arrays</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">p</span><span class="o">.</span><span class="fm">__truediv__</span><span class="p">(</span><span class="n">NX</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]]))</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">polyint</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="k">if</span> <span class="n">truepoly</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+
+<span class="k">def</span> <span class="nf">_polyder_dispatcher</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">p</span><span class="p">,)</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_polyder_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polyder</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the derivative of the specified order of a polynomial.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : poly1d or sequence</span>
+<span class="sd">        Polynomial to differentiate.</span>
+<span class="sd">        A sequence is interpreted as polynomial coefficients, see `poly1d`.</span>
+<span class="sd">    m : int, optional</span>
+<span class="sd">        Order of differentiation (default: 1)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    der : poly1d</span>
+<span class="sd">        A new polynomial representing the derivative.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    polyint : Anti-derivative of a polynomial.</span>
+<span class="sd">    poly1d : Class for one-dimensional polynomials.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    The derivative of the polynomial :math:`x^3 + x^2 + x^1 + 1` is:</span>
+
+<span class="sd">    &gt;&gt;&gt; p = np.poly1d([1,1,1,1])</span>
+<span class="sd">    &gt;&gt;&gt; p2 = np.polyder(p)</span>
+<span class="sd">    &gt;&gt;&gt; p2</span>
+<span class="sd">    poly1d([3, 2, 1])</span>
+
+<span class="sd">    which evaluates to:</span>
+
+<span class="sd">    &gt;&gt;&gt; p2(2.)</span>
+<span class="sd">    17.0</span>
+
+<span class="sd">    We can verify this, approximating the derivative with</span>
+<span class="sd">    ``(f(x + h) - f(x))/h``:</span>
+
+<span class="sd">    &gt;&gt;&gt; (p(2. + 0.001) - p(2.)) / 0.001</span>
+<span class="sd">    17.007000999997857</span>
+
+<span class="sd">    The fourth-order derivative of a 3rd-order polynomial is zero:</span>
+
+<span class="sd">    &gt;&gt;&gt; np.polyder(p, 2)</span>
+<span class="sd">    poly1d([6, 2])</span>
+<span class="sd">    &gt;&gt;&gt; np.polyder(p, 3)</span>
+<span class="sd">    poly1d([6])</span>
+<span class="sd">    &gt;&gt;&gt; np.polyder(p, 4)</span>
+<span class="sd">    poly1d([0.])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Order of derivative must be positive (see polyint)&quot;</span><span class="p">)</span>
+
+    <span class="n">truepoly</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">p</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">NX</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">p</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">polyder</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">m</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">truepoly</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">val</span>
+
+
+<span class="k">def</span> <span class="nf">_polyfit_dispatcher</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">deg</span><span class="p">,</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_polyfit_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polyfit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">deg</span><span class="p">,</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Least squares polynomial fit.</span>
+
+<span class="sd">    Fit a polynomial ``p(x) = p[0] * x**deg + ... + p[deg]`` of degree `deg`</span>
+<span class="sd">    to points `(x, y)`. Returns a vector of coefficients `p` that minimises</span>
+<span class="sd">    the squared error in the order `deg`, `deg-1`, ... `0`.</span>
+
+<span class="sd">    The `Polynomial.fit &lt;numpy.polynomial.polynomial.Polynomial.fit&gt;` class</span>
+<span class="sd">    method is recommended for new code as it is more stable numerically. See</span>
+<span class="sd">    the documentation of the method for more information.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : array_like, shape (M,)</span>
+<span class="sd">        x-coordinates of the M sample points ``(x[i], y[i])``.</span>
+<span class="sd">    y : array_like, shape (M,) or (M, K)</span>
+<span class="sd">        y-coordinates of the sample points. Several data sets of sample</span>
+<span class="sd">        points sharing the same x-coordinates can be fitted at once by</span>
+<span class="sd">        passing in a 2D-array that contains one dataset per column.</span>
+<span class="sd">    deg : int</span>
+<span class="sd">        Degree of the fitting polynomial</span>
+<span class="sd">    rcond : float, optional</span>
+<span class="sd">        Relative condition number of the fit. Singular values smaller than</span>
+<span class="sd">        this relative to the largest singular value will be ignored. The</span>
+<span class="sd">        default value is len(x)*eps, where eps is the relative precision of</span>
+<span class="sd">        the float type, about 2e-16 in most cases.</span>
+<span class="sd">    full : bool, optional</span>
+<span class="sd">        Switch determining nature of return value. When it is False (the</span>
+<span class="sd">        default) just the coefficients are returned, when True diagnostic</span>
+<span class="sd">        information from the singular value decomposition is also returned.</span>
+<span class="sd">    w : array_like, shape (M,), optional</span>
+<span class="sd">        Weights to apply to the y-coordinates of the sample points. For</span>
+<span class="sd">        gaussian uncertainties, use 1/sigma (not 1/sigma**2).</span>
+<span class="sd">    cov : bool or str, optional</span>
+<span class="sd">        If given and not `False`, return not just the estimate but also its</span>
+<span class="sd">        covariance matrix. By default, the covariance are scaled by</span>
+<span class="sd">        chi2/sqrt(N-dof), i.e., the weights are presumed to be unreliable</span>
+<span class="sd">        except in a relative sense and everything is scaled such that the</span>
+<span class="sd">        reduced chi2 is unity. This scaling is omitted if ``cov=&#39;unscaled&#39;``,</span>
+<span class="sd">        as is relevant for the case that the weights are 1/sigma**2, with</span>
+<span class="sd">        sigma known to be a reliable estimate of the uncertainty.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    p : ndarray, shape (deg + 1,) or (deg + 1, K)</span>
+<span class="sd">        Polynomial coefficients, highest power first.  If `y` was 2-D, the</span>
+<span class="sd">        coefficients for `k`-th data set are in ``p[:,k]``.</span>
+
+<span class="sd">    residuals, rank, singular_values, rcond</span>
+<span class="sd">        Present only if `full` = True.  Residuals of the least-squares fit,</span>
+<span class="sd">        the effective rank of the scaled Vandermonde coefficient matrix,</span>
+<span class="sd">        its singular values, and the specified value of `rcond`. For more</span>
+<span class="sd">        details, see `linalg.lstsq`.</span>
+
+<span class="sd">    V : ndarray, shape (M,M) or (M,M,K)</span>
+<span class="sd">        Present only if `full` = False and `cov`=True.  The covariance</span>
+<span class="sd">        matrix of the polynomial coefficient estimates.  The diagonal of</span>
+<span class="sd">        this matrix are the variance estimates for each coefficient.  If y</span>
+<span class="sd">        is a 2-D array, then the covariance matrix for the `k`-th data set</span>
+<span class="sd">        are in ``V[:,:,k]``</span>
+
+
+<span class="sd">    Warns</span>
+<span class="sd">    -----</span>
+<span class="sd">    RankWarning</span>
+<span class="sd">        The rank of the coefficient matrix in the least-squares fit is</span>
+<span class="sd">        deficient. The warning is only raised if `full` = False.</span>
+
+<span class="sd">        The warnings can be turned off by</span>
+
+<span class="sd">        &gt;&gt;&gt; import warnings</span>
+<span class="sd">        &gt;&gt;&gt; warnings.simplefilter(&#39;ignore&#39;, np.RankWarning)</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    polyval : Compute polynomial values.</span>
+<span class="sd">    linalg.lstsq : Computes a least-squares fit.</span>
+<span class="sd">    scipy.interpolate.UnivariateSpline : Computes spline fits.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The solution minimizes the squared error</span>
+
+<span class="sd">    .. math ::</span>
+<span class="sd">        E = \\sum_{j=0}^k |p(x_j) - y_j|^2</span>
+
+<span class="sd">    in the equations::</span>
+
+<span class="sd">        x[0]**n * p[0] + ... + x[0] * p[n-1] + p[n] = y[0]</span>
+<span class="sd">        x[1]**n * p[0] + ... + x[1] * p[n-1] + p[n] = y[1]</span>
+<span class="sd">        ...</span>
+<span class="sd">        x[k]**n * p[0] + ... + x[k] * p[n-1] + p[n] = y[k]</span>
+
+<span class="sd">    The coefficient matrix of the coefficients `p` is a Vandermonde matrix.</span>
+
+<span class="sd">    `polyfit` issues a `RankWarning` when the least-squares fit is badly</span>
+<span class="sd">    conditioned. This implies that the best fit is not well-defined due</span>
+<span class="sd">    to numerical error. The results may be improved by lowering the polynomial</span>
+<span class="sd">    degree or by replacing `x` by `x` - `x`.mean(). The `rcond` parameter</span>
+<span class="sd">    can also be set to a value smaller than its default, but the resulting</span>
+<span class="sd">    fit may be spurious: including contributions from the small singular</span>
+<span class="sd">    values can add numerical noise to the result.</span>
+
+<span class="sd">    Note that fitting polynomial coefficients is inherently badly conditioned</span>
+<span class="sd">    when the degree of the polynomial is large or the interval of sample points</span>
+<span class="sd">    is badly centered. The quality of the fit should always be checked in these</span>
+<span class="sd">    cases. When polynomial fits are not satisfactory, splines may be a good</span>
+<span class="sd">    alternative.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Wikipedia, &quot;Curve fitting&quot;,</span>
+<span class="sd">           https://en.wikipedia.org/wiki/Curve_fitting</span>
+<span class="sd">    .. [2] Wikipedia, &quot;Polynomial interpolation&quot;,</span>
+<span class="sd">           https://en.wikipedia.org/wiki/Polynomial_interpolation</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import warnings</span>
+<span class="sd">    &gt;&gt;&gt; x = np.array([0.0, 1.0, 2.0, 3.0,  4.0,  5.0])</span>
+<span class="sd">    &gt;&gt;&gt; y = np.array([0.0, 0.8, 0.9, 0.1, -0.8, -1.0])</span>
+<span class="sd">    &gt;&gt;&gt; z = np.polyfit(x, y, 3)</span>
+<span class="sd">    &gt;&gt;&gt; z</span>
+<span class="sd">    array([ 0.08703704, -0.81349206,  1.69312169, -0.03968254]) # may vary</span>
+
+<span class="sd">    It is convenient to use `poly1d` objects for dealing with polynomials:</span>
+
+<span class="sd">    &gt;&gt;&gt; p = np.poly1d(z)</span>
+<span class="sd">    &gt;&gt;&gt; p(0.5)</span>
+<span class="sd">    0.6143849206349179 # may vary</span>
+<span class="sd">    &gt;&gt;&gt; p(3.5)</span>
+<span class="sd">    -0.34732142857143039 # may vary</span>
+<span class="sd">    &gt;&gt;&gt; p(10)</span>
+<span class="sd">    22.579365079365115 # may vary</span>
+
+<span class="sd">    High-order polynomials may oscillate wildly:</span>
+
+<span class="sd">    &gt;&gt;&gt; with warnings.catch_warnings():</span>
+<span class="sd">    ...     warnings.simplefilter(&#39;ignore&#39;, np.RankWarning)</span>
+<span class="sd">    ...     p30 = np.poly1d(np.polyfit(x, y, 30))</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; p30(4)</span>
+<span class="sd">    -0.80000000000000204 # may vary</span>
+<span class="sd">    &gt;&gt;&gt; p30(5)</span>
+<span class="sd">    -0.99999999999999445 # may vary</span>
+<span class="sd">    &gt;&gt;&gt; p30(4.5)</span>
+<span class="sd">    -0.10547061179440398 # may vary</span>
+
+<span class="sd">    Illustration:</span>
+
+<span class="sd">    &gt;&gt;&gt; import matplotlib.pyplot as plt</span>
+<span class="sd">    &gt;&gt;&gt; xp = np.linspace(-2, 6, 100)</span>
+<span class="sd">    &gt;&gt;&gt; _ = plt.plot(x, y, &#39;.&#39;, xp, p(xp), &#39;-&#39;, xp, p30(xp), &#39;--&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; plt.ylim(-2,2)</span>
+<span class="sd">    (-2, 2)</span>
+<span class="sd">    &gt;&gt;&gt; plt.show()</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">deg</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.0</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.0</span>
+
+    <span class="c1"># check arguments.</span>
+    <span class="k">if</span> <span class="n">deg</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;expected deg &gt;= 0&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;expected 1D vector for x&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;expected non-empty vector for x&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;expected 1D or 2D array for y&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;expected x and y to have same length&quot;</span><span class="p">)</span>
+
+    <span class="c1"># set rcond</span>
+    <span class="k">if</span> <span class="n">rcond</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rcond</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="n">finfo</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+
+    <span class="c1"># set up least squares equation for powers of x</span>
+    <span class="n">lhs</span> <span class="o">=</span> <span class="n">vander</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+    <span class="n">rhs</span> <span class="o">=</span> <span class="n">y</span>
+
+    <span class="c1"># apply weighting</span>
+    <span class="k">if</span> <span class="n">w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;expected a 1-d array for weights&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;expected w and y to have the same length&quot;</span><span class="p">)</span>
+        <span class="n">lhs</span> <span class="o">*=</span> <span class="n">w</span><span class="p">[:,</span> <span class="n">NX</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">rhs</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">rhs</span> <span class="o">*=</span> <span class="n">w</span><span class="p">[:,</span> <span class="n">NX</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rhs</span> <span class="o">*=</span> <span class="n">w</span>
+
+    <span class="c1"># scale lhs to improve condition number and solve</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">lhs</span><span class="o">*</span><span class="n">lhs</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">lhs</span> <span class="o">/=</span> <span class="n">scale</span>
+    <span class="n">c</span><span class="p">,</span> <span class="n">resids</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">lstsq</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">rcond</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">T</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># broadcast scale coefficients</span>
+
+    <span class="c1"># warn on rank reduction, which indicates an ill conditioned matrix</span>
+    <span class="k">if</span> <span class="n">rank</span> <span class="o">!=</span> <span class="n">order</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">full</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Polyfit may be poorly conditioned&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">RankWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">c</span><span class="p">,</span> <span class="n">resids</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">rcond</span>
+    <span class="k">elif</span> <span class="n">cov</span><span class="p">:</span>
+        <span class="n">Vbase</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">lhs</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">lhs</span><span class="p">))</span>
+        <span class="n">Vbase</span> <span class="o">/=</span> <span class="n">NX</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cov</span> <span class="o">==</span> <span class="s2">&quot;unscaled&quot;</span><span class="p">:</span>
+            <span class="n">fac</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">order</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;the number of data points must exceed order &quot;</span>
+                                 <span class="s2">&quot;to scale the covariance matrix&quot;</span><span class="p">)</span>
+            <span class="c1"># note, this used to be: fac = resids / (len(x) - order - 2.0)</span>
+            <span class="c1"># it was deciced that the &quot;- 2&quot; (originally justified by &quot;Bayesian</span>
+            <span class="c1"># uncertainty analysis&quot;) is not was the user expects</span>
+            <span class="c1"># (see gh-11196 and gh-11197)</span>
+            <span class="n">fac</span> <span class="o">=</span> <span class="n">resids</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">order</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">c</span><span class="p">,</span> <span class="n">Vbase</span> <span class="o">*</span> <span class="n">fac</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">c</span><span class="p">,</span> <span class="n">Vbase</span><span class="p">[:,:,</span> <span class="n">NX</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">fac</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">c</span>
+
+
+<span class="k">def</span> <span class="nf">_polyval_dispatcher</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_polyval_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polyval</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate a polynomial at specific values.</span>
+
+<span class="sd">    If `p` is of length N, this function returns the value:</span>
+
+<span class="sd">        ``p[0]*x**(N-1) + p[1]*x**(N-2) + ... + p[N-2]*x + p[N-1]``</span>
+
+<span class="sd">    If `x` is a sequence, then `p(x)` is returned for each element of `x`.</span>
+<span class="sd">    If `x` is another polynomial then the composite polynomial `p(x(t))`</span>
+<span class="sd">    is returned.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p : array_like or poly1d object</span>
+<span class="sd">       1D array of polynomial coefficients (including coefficients equal</span>
+<span class="sd">       to zero) from highest degree to the constant term, or an</span>
+<span class="sd">       instance of poly1d.</span>
+<span class="sd">    x : array_like or poly1d object</span>
+<span class="sd">       A number, an array of numbers, or an instance of poly1d, at</span>
+<span class="sd">       which to evaluate `p`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    values : ndarray or poly1d</span>
+<span class="sd">       If `x` is a poly1d instance, the result is the composition of the two</span>
+<span class="sd">       polynomials, i.e., `x` is &quot;substituted&quot; in `p` and the simplified</span>
+<span class="sd">       result is returned. In addition, the type of `x` - array_like or</span>
+<span class="sd">       poly1d - governs the type of the output: `x` array_like =&gt; `values`</span>
+<span class="sd">       array_like, `x` a poly1d object =&gt; `values` is also.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    poly1d: A polynomial class.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Horner&#39;s scheme [1]_ is used to evaluate the polynomial. Even so,</span>
+<span class="sd">    for polynomials of high degree the values may be inaccurate due to</span>
+<span class="sd">    rounding errors. Use carefully.</span>
+
+<span class="sd">    If `x` is a subtype of `ndarray` the return value will be of the same type.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] I. N. Bronshtein, K. A. Semendyayev, and K. A. Hirsch (Eng.</span>
+<span class="sd">       trans. Ed.), *Handbook of Mathematics*, New York, Van Nostrand</span>
+<span class="sd">       Reinhold Co., 1985, pg. 720.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; np.polyval([3,0,1], 5)  # 3 * 5**2 + 0 * 5**1 + 1</span>
+<span class="sd">    76</span>
+<span class="sd">    &gt;&gt;&gt; np.polyval([3,0,1], np.poly1d(5))</span>
+<span class="sd">    poly1d([76.])</span>
+<span class="sd">    &gt;&gt;&gt; np.polyval(np.poly1d([3,0,1]), 5)</span>
+<span class="sd">    76</span>
+<span class="sd">    &gt;&gt;&gt; np.polyval(np.poly1d([3,0,1]), np.poly1d(5))</span>
+<span class="sd">    poly1d([76.])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">asanyarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">y</span>
+
+
+<span class="k">def</span> <span class="nf">_binary_op_dispatcher</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">)</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_binary_op_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polyadd</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the sum of two polynomials.</span>
+
+<span class="sd">    Returns the polynomial resulting from the sum of two input polynomials.</span>
+<span class="sd">    Each input must be either a poly1d object or a 1D sequence of polynomial</span>
+<span class="sd">    coefficients, from highest to lowest degree.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a1, a2 : array_like or poly1d object</span>
+<span class="sd">        Input polynomials.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : ndarray or poly1d object</span>
+<span class="sd">        The sum of the inputs. If either input is a poly1d object, then the</span>
+<span class="sd">        output is also a poly1d object. Otherwise, it is a 1D array of</span>
+<span class="sd">        polynomial coefficients from highest to lowest degree.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    poly1d : A one-dimensional polynomial class.</span>
+<span class="sd">    poly, polyadd, polyder, polydiv, polyfit, polyint, polysub, polyval</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; np.polyadd([1, 2], [9, 5, 4])</span>
+<span class="sd">    array([9, 6, 6])</span>
+
+<span class="sd">    Using poly1d objects:</span>
+
+<span class="sd">    &gt;&gt;&gt; p1 = np.poly1d([1, 2])</span>
+<span class="sd">    &gt;&gt;&gt; p2 = np.poly1d([9, 5, 4])</span>
+<span class="sd">    &gt;&gt;&gt; print(p1)</span>
+<span class="sd">    1 x + 2</span>
+<span class="sd">    &gt;&gt;&gt; print(p2)</span>
+<span class="sd">       2</span>
+<span class="sd">    9 x + 5 x + 4</span>
+<span class="sd">    &gt;&gt;&gt; print(np.polyadd(p1, p2))</span>
+<span class="sd">       2</span>
+<span class="sd">    9 x + 6 x + 6</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">truepoly</span> <span class="o">=</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">))</span>
+    <span class="n">a1</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">a1</span><span class="p">)</span>
+    <span class="n">a2</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">a2</span><span class="p">)</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a2</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">a1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">diff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">a1</span> <span class="o">+</span> <span class="n">a2</span>
+    <span class="k">elif</span> <span class="n">diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">zr</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">a1</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">zr</span><span class="p">,</span> <span class="n">a1</span><span class="p">))</span> <span class="o">+</span> <span class="n">a2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">zr</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">),</span> <span class="n">a2</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">a1</span> <span class="o">+</span> <span class="n">NX</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">zr</span><span class="p">,</span> <span class="n">a2</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">truepoly</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">val</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_binary_op_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polysub</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Difference (subtraction) of two polynomials.</span>
+
+<span class="sd">    Given two polynomials `a1` and `a2`, returns ``a1 - a2``.</span>
+<span class="sd">    `a1` and `a2` can be either array_like sequences of the polynomials&#39;</span>
+<span class="sd">    coefficients (including coefficients equal to zero), or `poly1d` objects.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a1, a2 : array_like or poly1d</span>
+<span class="sd">        Minuend and subtrahend polynomials, respectively.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : ndarray or poly1d</span>
+<span class="sd">        Array or `poly1d` object of the difference polynomial&#39;s coefficients.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    polyval, polydiv, polymul, polyadd</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    .. math:: (2 x^2 + 10 x - 2) - (3 x^2 + 10 x -4) = (-x^2 + 2)</span>
+
+<span class="sd">    &gt;&gt;&gt; np.polysub([2, 10, -2], [3, 10, -4])</span>
+<span class="sd">    array([-1,  0,  2])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">truepoly</span> <span class="o">=</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">))</span>
+    <span class="n">a1</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">a1</span><span class="p">)</span>
+    <span class="n">a2</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">a2</span><span class="p">)</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a2</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">a1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">diff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">a1</span> <span class="o">-</span> <span class="n">a2</span>
+    <span class="k">elif</span> <span class="n">diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">zr</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">a1</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">zr</span><span class="p">,</span> <span class="n">a1</span><span class="p">))</span> <span class="o">-</span> <span class="n">a2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">zr</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">),</span> <span class="n">a2</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">a1</span> <span class="o">-</span> <span class="n">NX</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">zr</span><span class="p">,</span> <span class="n">a2</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">truepoly</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">val</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_binary_op_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polymul</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the product of two polynomials.</span>
+
+<span class="sd">    Finds the polynomial resulting from the multiplication of the two input</span>
+<span class="sd">    polynomials. Each input must be either a poly1d object or a 1D sequence</span>
+<span class="sd">    of polynomial coefficients, from highest to lowest degree.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a1, a2 : array_like or poly1d object</span>
+<span class="sd">        Input polynomials.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : ndarray or poly1d object</span>
+<span class="sd">        The polynomial resulting from the multiplication of the inputs. If</span>
+<span class="sd">        either inputs is a poly1d object, then the output is also a poly1d</span>
+<span class="sd">        object. Otherwise, it is a 1D array of polynomial coefficients from</span>
+<span class="sd">        highest to lowest degree.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    poly1d : A one-dimensional polynomial class.</span>
+<span class="sd">    poly, polyadd, polyder, polydiv, polyfit, polyint, polysub, polyval</span>
+<span class="sd">    convolve : Array convolution. Same output as polymul, but has parameter</span>
+<span class="sd">               for overlap mode.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; np.polymul([1, 2, 3], [9, 5, 1])</span>
+<span class="sd">    array([ 9, 23, 38, 17,  3])</span>
+
+<span class="sd">    Using poly1d objects:</span>
+
+<span class="sd">    &gt;&gt;&gt; p1 = np.poly1d([1, 2, 3])</span>
+<span class="sd">    &gt;&gt;&gt; p2 = np.poly1d([9, 5, 1])</span>
+<span class="sd">    &gt;&gt;&gt; print(p1)</span>
+<span class="sd">       2</span>
+<span class="sd">    1 x + 2 x + 3</span>
+<span class="sd">    &gt;&gt;&gt; print(p2)</span>
+<span class="sd">       2</span>
+<span class="sd">    9 x + 5 x + 1</span>
+<span class="sd">    &gt;&gt;&gt; print(np.polymul(p1, p2))</span>
+<span class="sd">       4      3      2</span>
+<span class="sd">    9 x + 23 x + 38 x + 17 x + 3</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">truepoly</span> <span class="o">=</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">))</span>
+    <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">a1</span><span class="p">),</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">a2</span><span class="p">)</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">truepoly</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">val</span>
+
+
+<span class="k">def</span> <span class="nf">_polydiv_dispatcher</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+
+<span class="nd">@array_function_dispatch</span><span class="p">(</span><span class="n">_polydiv_dispatcher</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polydiv</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the quotient and remainder of polynomial division.</span>
+
+<span class="sd">    The input arrays are the coefficients (including any coefficients</span>
+<span class="sd">    equal to zero) of the &quot;numerator&quot; (dividend) and &quot;denominator&quot;</span>
+<span class="sd">    (divisor) polynomials, respectively.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    u : array_like or poly1d</span>
+<span class="sd">        Dividend polynomial&#39;s coefficients.</span>
+
+<span class="sd">    v : array_like or poly1d</span>
+<span class="sd">        Divisor polynomial&#39;s coefficients.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    q : ndarray</span>
+<span class="sd">        Coefficients, including those equal to zero, of the quotient.</span>
+<span class="sd">    r : ndarray</span>
+<span class="sd">        Coefficients, including those equal to zero, of the remainder.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    poly, polyadd, polyder, polydiv, polyfit, polyint, polymul, polysub</span>
+<span class="sd">    polyval</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Both `u` and `v` must be 0-d or 1-d (ndim = 0 or 1), but `u.ndim` need</span>
+<span class="sd">    not equal `v.ndim`. In other words, all four possible combinations -</span>
+<span class="sd">    ``u.ndim = v.ndim = 0``, ``u.ndim = v.ndim = 1``,</span>
+<span class="sd">    ``u.ndim = 1, v.ndim = 0``, and ``u.ndim = 0, v.ndim = 1`` - work.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    .. math:: \\frac{3x^2 + 5x + 2}{2x + 1} = 1.5x + 1.75, remainder 0.25</span>
+
+<span class="sd">    &gt;&gt;&gt; x = np.array([3.0, 5.0, 2.0])</span>
+<span class="sd">    &gt;&gt;&gt; y = np.array([2.0, 1.0])</span>
+<span class="sd">    &gt;&gt;&gt; np.polydiv(x, y)</span>
+<span class="sd">    (array([1.5 , 1.75]), array([0.25]))</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">truepoly</span> <span class="o">=</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">))</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.0</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.0</span>
+    <span class="c1"># w has the common type</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">max</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),),</span> <span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">m</span><span class="o">-</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">q</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+        <span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">d</span><span class="o">*</span><span class="n">v</span>
+    <span class="k">while</span> <span class="n">NX</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-14</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">if</span> <span class="n">truepoly</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">q</span><span class="p">),</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">q</span><span class="p">,</span> <span class="n">r</span>
+
+<span class="n">_poly_mat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;[*][*]([0-9]*)&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_raise_power</span><span class="p">(</span><span class="n">astr</span><span class="p">,</span> <span class="n">wrap</span><span class="o">=</span><span class="mi">70</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">line1</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">line2</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">_poly_mat</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">astr</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">span</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">span</span><span class="p">()</span>
+        <span class="n">power</span> <span class="o">=</span> <span class="n">mat</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">partstr</span> <span class="o">=</span> <span class="n">astr</span><span class="p">[</span><span class="n">n</span><span class="p">:</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">toadd2</span> <span class="o">=</span> <span class="n">partstr</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">*</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">power</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">toadd1</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">*</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">partstr</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">power</span>
+        <span class="k">if</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">line2</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">toadd2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">wrap</span><span class="p">)</span> <span class="ow">or</span>
+                <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">line1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">toadd1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">wrap</span><span class="p">)):</span>
+            <span class="n">output</span> <span class="o">+=</span> <span class="n">line1</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">line2</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> &quot;</span>
+            <span class="n">line1</span> <span class="o">=</span> <span class="n">toadd1</span>
+            <span class="n">line2</span> <span class="o">=</span> <span class="n">toadd2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">line2</span> <span class="o">+=</span> <span class="n">partstr</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">*</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">power</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">line1</span> <span class="o">+=</span> <span class="s1">&#39; &#39;</span><span class="o">*</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">partstr</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">power</span>
+    <span class="n">output</span> <span class="o">+=</span> <span class="n">line1</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">line2</span>
+    <span class="k">return</span> <span class="n">output</span> <span class="o">+</span> <span class="n">astr</span><span class="p">[</span><span class="n">n</span><span class="p">:]</span>
+
+
+<span class="nd">@set_module</span><span class="p">(</span><span class="s1">&#39;numpy&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">poly1d</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A one-dimensional polynomial class.</span>
+
+<span class="sd">    A convenience class, used to encapsulate &quot;natural&quot; operations on</span>
+<span class="sd">    polynomials so that said operations may take on their customary</span>
+<span class="sd">    form in code (see Examples).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    c_or_r : array_like</span>
+<span class="sd">        The polynomial&#39;s coefficients, in decreasing powers, or if</span>
+<span class="sd">        the value of the second parameter is True, the polynomial&#39;s</span>
+<span class="sd">        roots (values where the polynomial evaluates to 0).  For example,</span>
+<span class="sd">        ``poly1d([1, 2, 3])`` returns an object that represents</span>
+<span class="sd">        :math:`x^2 + 2x + 3`, whereas ``poly1d([1, 2, 3], True)`` returns</span>
+<span class="sd">        one that represents :math:`(x-1)(x-2)(x-3) = x^3 - 6x^2 + 11x -6`.</span>
+<span class="sd">    r : bool, optional</span>
+<span class="sd">        If True, `c_or_r` specifies the polynomial&#39;s roots; the default</span>
+<span class="sd">        is False.</span>
+<span class="sd">    variable : str, optional</span>
+<span class="sd">        Changes the variable used when printing `p` from `x` to `variable`</span>
+<span class="sd">        (see Examples).</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Construct the polynomial :math:`x^2 + 2x + 3`:</span>
+
+<span class="sd">    &gt;&gt;&gt; p = np.poly1d([1, 2, 3])</span>
+<span class="sd">    &gt;&gt;&gt; print(np.poly1d(p))</span>
+<span class="sd">       2</span>
+<span class="sd">    1 x + 2 x + 3</span>
+
+<span class="sd">    Evaluate the polynomial at :math:`x = 0.5`:</span>
+
+<span class="sd">    &gt;&gt;&gt; p(0.5)</span>
+<span class="sd">    4.25</span>
+
+<span class="sd">    Find the roots:</span>
+
+<span class="sd">    &gt;&gt;&gt; p.r</span>
+<span class="sd">    array([-1.+1.41421356j, -1.-1.41421356j])</span>
+<span class="sd">    &gt;&gt;&gt; p(p.r)</span>
+<span class="sd">    array([ -4.44089210e-16+0.j,  -4.44089210e-16+0.j]) # may vary</span>
+
+<span class="sd">    These numbers in the previous line represent (0, 0) to machine precision</span>
+
+<span class="sd">    Show the coefficients:</span>
+
+<span class="sd">    &gt;&gt;&gt; p.c</span>
+<span class="sd">    array([1, 2, 3])</span>
+
+<span class="sd">    Display the order (the leading zero-coefficients are removed):</span>
+
+<span class="sd">    &gt;&gt;&gt; p.order</span>
+<span class="sd">    2</span>
+
+<span class="sd">    Show the coefficient of the k-th power in the polynomial</span>
+<span class="sd">    (which is equivalent to ``p.c[-(i+1)]``):</span>
+
+<span class="sd">    &gt;&gt;&gt; p[1]</span>
+<span class="sd">    2</span>
+
+<span class="sd">    Polynomials can be added, subtracted, multiplied, and divided</span>
+<span class="sd">    (returns quotient and remainder):</span>
+
+<span class="sd">    &gt;&gt;&gt; p * p</span>
+<span class="sd">    poly1d([ 1,  4, 10, 12,  9])</span>
+
+<span class="sd">    &gt;&gt;&gt; (p**3 + 4) / p</span>
+<span class="sd">    (poly1d([ 1.,  4., 10., 12.,  9.]), poly1d([4.]))</span>
+
+<span class="sd">    ``asarray(p)`` gives the coefficient array, so polynomials can be</span>
+<span class="sd">    used in all functions that accept arrays:</span>
+
+<span class="sd">    &gt;&gt;&gt; p**2 # square of polynomial</span>
+<span class="sd">    poly1d([ 1,  4, 10, 12,  9])</span>
+
+<span class="sd">    &gt;&gt;&gt; np.square(p) # square of individual coefficients</span>
+<span class="sd">    array([1, 4, 9])</span>
+
+<span class="sd">    The variable used in the string representation of `p` can be modified,</span>
+<span class="sd">    using the `variable` parameter:</span>
+
+<span class="sd">    &gt;&gt;&gt; p = np.poly1d([1,2,3], variable=&#39;z&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; print(p)</span>
+<span class="sd">       2</span>
+<span class="sd">    1 z + 2 z + 3</span>
+
+<span class="sd">    Construct a polynomial from its roots:</span>
+
+<span class="sd">    &gt;&gt;&gt; np.poly1d([1, 2], True)</span>
+<span class="sd">    poly1d([ 1., -3.,  2.])</span>
+
+<span class="sd">    This is the same polynomial as obtained by:</span>
+
+<span class="sd">    &gt;&gt;&gt; np.poly1d([1, -1]) * np.poly1d([1, -2])</span>
+<span class="sd">    poly1d([ 1, -3,  2])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="fm">__hash__</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">coeffs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The polynomial coefficients &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coeffs</span>
+
+    <span class="nd">@coeffs</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">coeffs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># allowing this makes p.coeffs *= 2 legal</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coeffs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Cannot set attribute&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">variable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The name of the polynomial variable &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable</span>
+
+    <span class="c1"># calculated attributes</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">order</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The order or degree of the polynomial &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_coeffs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">roots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The roots of the polynomial, where self(x) == 0 &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">roots</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_coeffs</span><span class="p">)</span>
+
+    <span class="c1"># our internal _coeffs property need to be backed by __dict__[&#39;coeffs&#39;] for</span>
+    <span class="c1"># scipy to work correctly.</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_coeffs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">]</span>
+    <span class="nd">@_coeffs</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">_coeffs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coeffs</span>
+
+    <span class="c1"># alias attributes</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">roots</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">coef</span> <span class="o">=</span> <span class="n">coefficients</span> <span class="o">=</span> <span class="n">coeffs</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="n">order</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_or_r</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c_or_r</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_variable</span> <span class="o">=</span> <span class="n">c_or_r</span><span class="o">.</span><span class="n">_variable</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_coeffs</span> <span class="o">=</span> <span class="n">c_or_r</span><span class="o">.</span><span class="n">_coeffs</span>
+
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">c_or_r</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;In the future extra properties will not be copied &quot;</span>
+                       <span class="s2">&quot;across when constructing one poly1d from another&quot;</span><span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="ne">FutureWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">c_or_r</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">variable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_variable</span> <span class="o">=</span> <span class="n">variable</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">c_or_r</span> <span class="o">=</span> <span class="n">poly</span><span class="p">(</span><span class="n">c_or_r</span><span class="p">)</span>
+        <span class="n">c_or_r</span> <span class="o">=</span> <span class="n">atleast_1d</span><span class="p">(</span><span class="n">c_or_r</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">c_or_r</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Polynomial must be 1d only.&quot;</span><span class="p">)</span>
+        <span class="n">c_or_r</span> <span class="o">=</span> <span class="n">trim_zeros</span><span class="p">(</span><span class="n">c_or_r</span><span class="p">,</span> <span class="n">trim</span><span class="o">=</span><span class="s1">&#39;f&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_or_r</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">c_or_r</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coeffs</span> <span class="o">=</span> <span class="n">c_or_r</span>
+        <span class="k">if</span> <span class="n">variable</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">variable</span> <span class="o">=</span> <span class="s1">&#39;x&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_variable</span> <span class="o">=</span> <span class="n">variable</span>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">NX</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">)</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s2">&quot;poly1d(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="n">vals</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">thestr</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span>
+
+        <span class="c1"># Remove leading zeros</span>
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">[</span><span class="n">NX</span><span class="o">.</span><span class="n">logical_or</span><span class="o">.</span><span class="n">accumulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)]</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">def</span> <span class="nf">fmt_float</span><span class="p">(</span><span class="n">q</span><span class="p">):</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%.4g</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">q</span>
+            <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.0000&#39;</span><span class="p">):</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">s</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">iscomplex</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+                <span class="n">coefstr</span> <span class="o">=</span> <span class="n">fmt_float</span><span class="p">(</span><span class="n">real</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="k">elif</span> <span class="n">real</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">coefstr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">j&#39;</span> <span class="o">%</span> <span class="n">fmt_float</span><span class="p">(</span><span class="n">imag</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">coefstr</span> <span class="o">=</span> <span class="s1">&#39;(</span><span class="si">%s</span><span class="s1"> + </span><span class="si">%s</span><span class="s1">j)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fmt_float</span><span class="p">(</span><span class="n">real</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">k</span><span class="p">])),</span>
+                                          <span class="n">fmt_float</span><span class="p">(</span><span class="n">imag</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">k</span><span class="p">])))</span>
+
+            <span class="n">power</span> <span class="o">=</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="n">k</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">coefstr</span> <span class="o">!=</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+                    <span class="n">newstr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">coefstr</span><span class="p">,)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">newstr</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">newstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">elif</span> <span class="n">power</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">coefstr</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+                    <span class="n">newstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">elif</span> <span class="n">coefstr</span> <span class="o">==</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span>
+                    <span class="n">newstr</span> <span class="o">=</span> <span class="n">var</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">newstr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">coefstr</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">coefstr</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+                    <span class="n">newstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">elif</span> <span class="n">coefstr</span> <span class="o">==</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span>
+                    <span class="n">newstr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">**</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">power</span><span class="p">,)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">newstr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">**</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">coefstr</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">power</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">newstr</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">newstr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">):</span>
+                        <span class="n">thestr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> - </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thestr</span><span class="p">,</span> <span class="n">newstr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">thestr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> + </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">thestr</span><span class="p">,</span> <span class="n">newstr</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">thestr</span> <span class="o">=</span> <span class="n">newstr</span>
+        <span class="k">return</span> <span class="n">_raise_power</span><span class="p">(</span><span class="n">thestr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">polyval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__pos__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span> <span class="o">*</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">polymul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeffs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">polymul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeffs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">polyadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeffs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">polyadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeffs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">!=</span> <span class="n">val</span> <span class="ow">or</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Power to non-negative integers only.&quot;</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">polymul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">polysub</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeffs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">polysub</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="o">/</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">polydiv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="fm">__truediv__</span> <span class="o">=</span> <span class="n">__div__</span>
+
+    <span class="k">def</span> <span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">polydiv</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="fm">__rtruediv__</span> <span class="o">=</span> <span class="n">__rdiv__</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">coeffs</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">coeffs</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">poly1d</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">-</span> <span class="n">val</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">-</span> <span class="n">key</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Does not support negative powers.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">:</span>
+            <span class="n">zr</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">key</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_coeffs</span> <span class="o">=</span> <span class="n">NX</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">zr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">))</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coeffs</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">integ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an antiderivative (indefinite integral) of this polynomial.</span>
+
+<span class="sd">        Refer to `polyint` for full documentation.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        polyint : equivalent function</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">polyint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">deriv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a derivative of this polynomial.</span>
+
+<span class="sd">        Refer to `polyder` for full documentation.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        polyder : equivalent function</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">poly1d</span><span class="p">(</span><span class="n">polyder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">))</span>
+
+<span class="c1"># Stuff to do on module import</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="n">RankWarning</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

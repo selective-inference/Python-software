@@ -1,0 +1,1079 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.graph.graph.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-graph-graph">
+<h1>algorithms.graph.graph<a class="headerlink" href="#algorithms-graph-graph" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-graph-graph">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.graph.graph</span></code><a class="headerlink" href="#module-algorithms-graph-graph" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.graph.graph</span></code>:</p>
+digraph inheritance76eca50020 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;graph.graph.Graph&quot; [URL=&quot;#nipy.algorithms.graph.graph.Graph&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Basic topological (non-weighted) directed Graph class&quot;];
+  &quot;graph.graph.WeightedGraph&quot; [URL=&quot;#nipy.algorithms.graph.graph.WeightedGraph&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Basic weighted, directed graph class&quot;];
+  &quot;graph.graph.Graph&quot; -&gt; &quot;graph.graph.WeightedGraph&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.algorithms.graph.graph"></span><p>This module implements two graph classes:</p>
+<p>Graph: basic topological graph, i.e. vertices and edges. This kind of
+object only has topological properties</p>
+<p>WeightedGraph (Graph): also has a value associated with edges, called
+weights, that are used in some computational procedures (e.g. path
+length computation).  Importantly these objects are equivalent to
+square sparse matrices, which is used to perform certain computations.</p>
+<p>This module also provides several functions to
+instantiate WeightedGraphs from data:
+- k nearest neighbours (where samples are rows of a 2D-array)
+- epsilon-neighbors (where sample rows of a 2D-array)
+- representation of the neighbors on a 3d grid (6-, 18- and 26-neighbors)
+- Minimum Spanning Tree (where samples are rows of a 2D-array)</p>
+<p>Author: Bertrand Thirion, 2006–2011</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="graph">
+<h3><a class="reference internal" href="#nipy.algorithms.graph.graph.Graph" title="nipy.algorithms.graph.graph.Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a><a class="headerlink" href="#graph" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.graph.graph.Graph">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">Graph</code><span class="sig-paren">(</span><em class="sig-param">V</em>, <em class="sig-param">E=0</em>, <em class="sig-param">edges=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Basic topological (non-weighted) directed Graph class</p>
+<p>Member variables:</p>
+<ul class="simple">
+<li><p>V (int &gt; 0): the number of vertices</p></li>
+<li><p>E (int &gt;= 0): the number of edges</p></li>
+</ul>
+<p>Properties:</p>
+<ul class="simple">
+<li><p>vertices (list, type=int, shape=(V,))  vertices id</p></li>
+<li><p>edges (list, type=int, shape=(E,2)): edges as vertices id tuples</p></li>
+</ul>
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">V</em>, <em class="sig-param">E=0</em>, <em class="sig-param">edges=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>V</strong> : int</p>
+<blockquote>
+<div><p>the number of vertices</p>
+</div></blockquote>
+<p><strong>E</strong> : int, optional</p>
+<blockquote>
+<div><p>the number of edges</p>
+</div></blockquote>
+<p><strong>edges</strong> : None or shape (E, 2) array, optional</p>
+<blockquote>
+<div><p>edges of graph</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.get_vertices">
+<code class="sig-name descname">get_vertices</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.get_vertices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.get_vertices" title="Permalink to this definition">¶</a></dt>
+<dd><p>To get the graph’s vertices (as id)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.get_edges">
+<code class="sig-name descname">get_edges</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.get_edges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.get_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>To get the graph’s edges</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.get_V">
+<code class="sig-name descname">get_V</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.get_V"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.get_V" title="Permalink to this definition">¶</a></dt>
+<dd><p>To get the number of vertices in the graph</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.get_E">
+<code class="sig-name descname">get_E</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.get_E"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.get_E" title="Permalink to this definition">¶</a></dt>
+<dd><p>To get the number of edges in the graph</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.set_edges">
+<code class="sig-name descname">set_edges</code><span class="sig-paren">(</span><em class="sig-param">edges</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.set_edges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.set_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the graph’s edges</p>
+<p>Preconditions:</p>
+<ul class="simple">
+<li><p>edges has a correct size</p></li>
+<li><p>edges take values in [1..V]</p></li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.adjacency">
+<code class="sig-name descname">adjacency</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.adjacency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.adjacency" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the adjacency matrix of the graph as a sparse coo matrix</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>adj: scipy.sparse matrix instance,</p>
+<blockquote>
+<div><p>that encodes the adjacency matrix of self</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.cc">
+<code class="sig-name descname">cc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.cc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compte the different connected components of the graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>label: array of shape(self.V), labelling of the vertices</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.degrees">
+<code class="sig-name descname">degrees</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.degrees"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.degrees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the degree of the graph vertices.</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>rdegree: (array, type=int, shape=(self.V,)), the right degrees</p>
+<p>ldegree: (array, type=int, shape=(self.V,)), the left degrees</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.main_cc">
+<code class="sig-name descname">main_cc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.main_cc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.main_cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indexes of the vertices within the main cc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>idx: array of shape (sizeof main cc)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.to_coo_matrix">
+<code class="sig-name descname">to_coo_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.to_coo_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.to_coo_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return adjacency matrix as coo sparse</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>sp: scipy.sparse matrix instance,</p>
+<blockquote>
+<div><p>that encodes the adjacency matrix of self</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.Graph.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><em class="sig-param">ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#Graph.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.Graph.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the graph as a planar one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ax, axis handle</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ax, axis handle</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="weightedgraph">
+<h3><a class="reference internal" href="#nipy.algorithms.graph.graph.WeightedGraph" title="nipy.algorithms.graph.graph.WeightedGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeightedGraph</span></code></a><a class="headerlink" href="#weightedgraph" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">WeightedGraph</code><span class="sig-paren">(</span><em class="sig-param">V</em>, <em class="sig-param">edges=None</em>, <em class="sig-param">weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.graph.graph.Graph" title="nipy.algorithms.graph.graph.Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.graph.graph.Graph</span></code></a></p>
+<p>Basic weighted, directed graph class</p>
+<p>Member variables:</p>
+<ul class="simple">
+<li><p>V (int): the number of vertices</p></li>
+<li><p>E (int): the number of edges</p></li>
+</ul>
+<p>Methods</p>
+<ul class="simple">
+<li><p>vertices (list, type=int, shape=(V,)): vertices id</p></li>
+<li><p>edges (list, type=int, shape=(E,2)): edges as vertices id tuples</p></li>
+<li><p>weights (list, type=int, shape=(E,)): weights / lengths
+of the graph’s edges</p></li>
+</ul>
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">V</em>, <em class="sig-param">edges=None</em>, <em class="sig-param">weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>V</strong> : int</p>
+<blockquote>
+<div><p>(int &gt; 0) the number of vertices</p>
+</div></blockquote>
+<p><strong>edges</strong> : (E, 2) array, type int</p>
+<blockquote>
+<div><p>edges of the graph</p>
+</div></blockquote>
+<p><strong>weights</strong> : (E, 2) array, type=int</p>
+<blockquote>
+<div><p>weights/lenghts of the edges</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.set_weights">
+<code class="sig-name descname">set_weights</code><span class="sig-paren">(</span><em class="sig-param">weights</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.set_weights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.set_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set edge weights</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>weights: array</strong></p>
+<blockquote>
+<div><p>array shape(self.V): edges weights</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.get_weights">
+<code class="sig-name descname">get_weights</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.get_weights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.get_weights" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.from_3d_grid">
+<code class="sig-name descname">from_3d_grid</code><span class="sig-paren">(</span><em class="sig-param">xyz</em>, <em class="sig-param">k=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.from_3d_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.from_3d_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the graph to be the topological neighbours graph
+of the three-dimensional coordinates set xyz,
+in the k-connectivity scheme</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>xyz: array of shape (self.V, 3) and type np.int,</strong></p>
+<p><strong>k = 18: the number of neighbours considered. (6, 18 or 26)</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>E(int): the number of edges of self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.cut_redundancies">
+<code class="sig-name descname">cut_redundancies</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.cut_redundancies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.cut_redundancies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a graph with redundant edges removed:
+ecah edge (ab) is present ony once in the edge matrix:
+the correspondng weights are added.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the resulting WeightedGraph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.dijkstra">
+<code class="sig-name descname">dijkstra</code><span class="sig-paren">(</span><em class="sig-param">seed=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.dijkstra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.dijkstra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all the [graph] geodesic distances starting from seed
+x</p>
+<blockquote>
+<div><dl class="simple">
+<dt>seed (int, &gt;-1, &lt;self.V) or array of shape(p)</dt><dd><p>edge(s) from which the distances are computed</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dg: array of shape (self.V),</p>
+<blockquote>
+<div><p>the graph distance dg from ant vertex to the nearest seed</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>It is mandatory that the graph weights are non-negative</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.compact_neighb">
+<code class="sig-name descname">compact_neighb</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.compact_neighb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.compact_neighb" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a compact representation of self</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>idx: array of of shape(self.V + 1):</p>
+<blockquote>
+<div><p>the positions where to find the neighors of each node
+within neighb and weights</p>
+</div></blockquote>
+<p>neighb: array of shape(self.E), concatenated list of neighbors</p>
+<p>weights: array of shape(self.E), concatenated list of weights</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.floyd">
+<code class="sig-name descname">floyd</code><span class="sig-paren">(</span><em class="sig-param">seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.floyd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.floyd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute all the geodesic distances starting from seeds</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>seed= None: array of shape (nbseed), type np.int</strong></p>
+<blockquote>
+<div><p>vertex indexes from which the distances are computed
+if seed==None, then every edge is a seed point</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dg array of shape (nbseed, self.V)</p>
+<blockquote>
+<div><p>the graph distance dg from each seed to any vertex</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>It is mandatory that the graph weights are non-negative. The algorithm
+proceeds by repeating Dijkstra’s algo for each seed. Floyd’s algo is not
+used (O(self.V)^3 complexity…)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.normalize">
+<code class="sig-name descname">normalize</code><span class="sig-paren">(</span><em class="sig-param">c=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.normalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalize the graph according to the index c
+Normalization means that the sum of the edges values
+that go into or out each vertex must sum to 1</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>c=0 in {0, 1, 2}, optional: index that designates the way</strong></p>
+<blockquote>
+<div><p>according to which D is normalized
+c == 0 =&gt; for each vertex a, sum{edge[e, 0]=a} D[e]=1
+c == 1 =&gt; for each vertex b, sum{edge[e, 1]=b} D[e]=1
+c == 2 =&gt; symmetric (‘l2’) normalization</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Note that when sum_{edge[e, .] == a } D[e] = 0, nothing is performed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.set_euclidian">
+<code class="sig-name descname">set_euclidian</code><span class="sig-paren">(</span><em class="sig-param">X</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.set_euclidian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.set_euclidian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the weights of the graph as the distances between the
+corresponding rows of X, which represents an embdedding of self</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X array of shape (self.V, edim),</strong></p>
+<blockquote>
+<div><p>the coordinate matrix of the embedding</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.set_gaussian">
+<code class="sig-name descname">set_gaussian</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">sigma=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.set_gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.set_gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the weights  of the graph as a gaussian function
+of the distance  between the corresponding rows of X,
+which represents an embdedding of self</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X array of shape (self.V, dim)</strong></p>
+<blockquote>
+<div><p>the coordinate matrix of the embedding</p>
+</div></blockquote>
+<p><strong>sigma=0, float: the parameter of the gaussian function</strong></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>When sigma == 0, the following value is used: <code class="docutils literal notranslate"><span class="pre">sigma</span> <span class="pre">=</span>
+<span class="pre">sqrt(mean(||X[self.edges[:,</span> <span class="pre">0],</span> <span class="pre">:]-X[self.edges[:,</span> <span class="pre">1],</span> <span class="pre">:]||^2))</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.symmeterize">
+<code class="sig-name descname">symmeterize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.symmeterize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.symmeterize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Symmeterize self, modify edges and weights so that
+self.adjacency becomes the symmetric part of the current
+self.adjacency.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.anti_symmeterize">
+<code class="sig-name descname">anti_symmeterize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.anti_symmeterize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.anti_symmeterize" title="Permalink to this definition">¶</a></dt>
+<dd><p>anti-symmeterize self, i.e. produces the graph
+whose adjacency matrix would be the antisymmetric part of
+its current adjacency matrix</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.voronoi_labelling">
+<code class="sig-name descname">voronoi_labelling</code><span class="sig-paren">(</span><em class="sig-param">seed</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.voronoi_labelling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.voronoi_labelling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a voronoi labelling of the graph</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>seed: array of shape (nseeds), type (np.int),</strong></p>
+<blockquote>
+<div><p>vertices from which the cells are built</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>labels: array of shape (self.V) the labelling of the vertices</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.cliques">
+<code class="sig-name descname">cliques</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.cliques"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.cliques" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extraction of the graphe cliques
+these are defined using replicator dynamics equations</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>cliques: array of shape (self.V), type (np.int)</p>
+<blockquote>
+<div><p>labelling of the vertices according to the clique they belong to</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.remove_trivial_edges">
+<code class="sig-name descname">remove_trivial_edges</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.remove_trivial_edges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.remove_trivial_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes trivial edges, i.e. edges that are (vv)-like
+self.weights and self.E are corrected accordingly</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>self.E (int): The number of edges</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.subgraph">
+<code class="sig-name descname">subgraph</code><span class="sig-paren">(</span><em class="sig-param">valid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.subgraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.subgraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a subgraph with the vertices for which valid&gt;0
+and with the correponding set of edges</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>valid, array of shape (self.V): nonzero for vertices to be retained</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>G, WeightedGraph instance, the desired subgraph of self</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The vertices are renumbered as [1..p] where p = sum(valid&gt;0) when
+sum(valid==0) then None is returned</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.kruskal">
+<code class="sig-name descname">kruskal</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.kruskal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.kruskal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the Minimum Spanning Tree of self using Kruskal’s algo.
+efficient is self is sparse</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>K, WeightedGraph instance: the resulting MST</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If self contains several connected components, will have the same number
+k of connected components</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.voronoi_diagram">
+<code class="sig-name descname">voronoi_diagram</code><span class="sig-paren">(</span><em class="sig-param">seeds</em>, <em class="sig-param">samples</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.voronoi_diagram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.voronoi_diagram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the graph as the Voronoi diagram (VD)
+that links the seeds.
+The VD is defined using the sample points.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>seeds: array of shape (self.V, dim)</strong></p>
+<p><strong>samples: array of shape (nsamples, dim)</strong></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>By default, the weights are a Gaussian function of the distance The
+implementation is not optimal</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><em class="sig-param">X=None</em>, <em class="sig-param">ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the current graph in 2D</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> : None or array of shape (self.V, 2)</p>
+<blockquote>
+<div><p>a set of coordinates that can be used to embed the vertices in 2D.
+If X.shape[1]&gt;2, a svd reduces X for display. By default, the graph
+is presented on a circle</p>
+</div></blockquote>
+<p><strong>ax: None or int, optional</strong></p>
+<blockquote>
+<div><p>ax handle</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ax: axis handle</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This should be used only for small graphs.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.remove_edges">
+<code class="sig-name descname">remove_edges</code><span class="sig-paren">(</span><em class="sig-param">valid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.remove_edges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.remove_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes all the edges for which valid==0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>valid</strong> : (self.E,) array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.list_of_neighbors">
+<code class="sig-name descname">list_of_neighbors</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.list_of_neighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.list_of_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the set of neighbors of self as a list of arrays</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a copy of self</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.left_incidence">
+<code class="sig-name descname">left_incidence</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.left_incidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.left_incidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return left incidence matrix</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>left_incid: list</p>
+<blockquote>
+<div><p>the left incidence matrix of self as a list of lists: i.e. the
+list[[e.0.0, .., e.0.i(0)], .., [e.V.0, E.V.i(V)]] where e.i.j is
+the set of edge indexes so that e.i.j[0] = i</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.right_incidence">
+<code class="sig-name descname">right_incidence</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.right_incidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.right_incidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return right incidence matrix</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>right_incid: list</p>
+<blockquote>
+<div><p>the right incidence matrix of self as a list of lists: i.e. the
+list[[e.0.0, .., e.0.i(0)], .., [e.V.0, E.V.i(V)]] where e.i.j is
+the set of edge indexes so that e.i.j[1] = i</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.is_connected">
+<code class="sig-name descname">is_connected</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.is_connected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.is_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>States whether self is connected or not</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.to_coo_matrix">
+<code class="sig-name descname">to_coo_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#WeightedGraph.to_coo_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.to_coo_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return adjacency matrix as coo sparse</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>sp: scipy.sparse matrix instance</p>
+<blockquote>
+<div><p>that encodes the adjacency matrix of self</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.adjacency">
+<code class="sig-name descname">adjacency</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.adjacency" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the adjacency matrix of the graph as a sparse coo matrix</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>adj: scipy.sparse matrix instance,</p>
+<blockquote>
+<div><p>that encodes the adjacency matrix of self</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.cc">
+<code class="sig-name descname">cc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compte the different connected components of the graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>label: array of shape(self.V), labelling of the vertices</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.degrees">
+<code class="sig-name descname">degrees</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.degrees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the degree of the graph vertices.</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>rdegree: (array, type=int, shape=(self.V,)), the right degrees</p>
+<p>ldegree: (array, type=int, shape=(self.V,)), the left degrees</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.get_E">
+<code class="sig-name descname">get_E</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.get_E" title="Permalink to this definition">¶</a></dt>
+<dd><p>To get the number of edges in the graph</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.get_V">
+<code class="sig-name descname">get_V</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.get_V" title="Permalink to this definition">¶</a></dt>
+<dd><p>To get the number of vertices in the graph</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.get_edges">
+<code class="sig-name descname">get_edges</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.get_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>To get the graph’s edges</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.get_vertices">
+<code class="sig-name descname">get_vertices</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.get_vertices" title="Permalink to this definition">¶</a></dt>
+<dd><p>To get the graph’s vertices (as id)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.main_cc">
+<code class="sig-name descname">main_cc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.main_cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indexes of the vertices within the main cc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>idx: array of shape (sizeof main cc)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.graph.graph.WeightedGraph.set_edges">
+<code class="sig-name descname">set_edges</code><span class="sig-paren">(</span><em class="sig-param">edges</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.graph.graph.WeightedGraph.set_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the graph’s edges</p>
+<p>Preconditions:</p>
+<ul class="simple">
+<li><p>edges has a correct size</p></li>
+<li><p>edges take values in [1..V]</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.complete_graph">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">complete_graph</code><span class="sig-paren">(</span><em class="sig-param">n</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#complete_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.complete_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a complete graph with n vertices</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.concatenate_graphs">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">concatenate_graphs</code><span class="sig-paren">(</span><em class="sig-param">G1</em>, <em class="sig-param">G2</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#concatenate_graphs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.concatenate_graphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns  the concatenation of the graphs G1 and G2
+It is thus assumed that the vertices of G1 and G2 represent disjoint sets</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>G1, G2: the two WeightedGraph instances  to be concatenated</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>G, WeightedGraph, the concatenated graph</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This implies that the vertices of G corresponding to G2 are labeled [G1.V ..
+G1.V+G2.V]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.eps_nn">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">eps_nn</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">eps=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#eps_nn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.eps_nn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the eps-nearest-neighbours graph of the data</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X, array of shape (n_samples, n_features), input data</strong></p>
+<p><strong>eps, float, optional: the neighborhood width</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the resulting graph instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.graph_3d_grid">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">graph_3d_grid</code><span class="sig-paren">(</span><em class="sig-param">xyz</em>, <em class="sig-param">k=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#graph_3d_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.graph_3d_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility that computes the six neighbors on a 3d grid</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>xyz: array of shape (n_samples, 3); grid coordinates of the points</strong></p>
+<p><strong>k: neighboring system, equal to 6, 18, or 26</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>i, j, d 3 arrays of shape (E),</p>
+<blockquote>
+<div><p>where E is the number of edges in the resulting graph
+(i, j) represent the edges, d their weights</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.knn">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">knn</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">k=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#knn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.knn" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the k-nearest-neighbours graph of the data</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X, array of shape (n_samples, n_features): the input data</strong></p>
+<p><strong>k, int, optional:  is the number of neighbours considered</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the corresponding WeightedGraph instance</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The knn system is symmeterized: if (ab) is one of the edges then (ba) is
+also included</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.lil_cc">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">lil_cc</code><span class="sig-paren">(</span><em class="sig-param">lil</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#lil_cc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.lil_cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the connected comonents of a graph represented as a
+list of lists</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lil: a list of list representing the graph neighbors</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>label a vector of shape len(lil): connected components labelling</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Dramatically slow for non-sparse graphs</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.mst">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">mst</code><span class="sig-paren">(</span><em class="sig-param">X</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#mst"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.mst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the WeightedGraph that is the minimum Spanning Tree of X</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X: data array, of shape(n_samples, n_features)</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the corresponding WeightedGraph instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.wgraph_from_3d_grid">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">wgraph_from_3d_grid</code><span class="sig-paren">(</span><em class="sig-param">xyz</em>, <em class="sig-param">k=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#wgraph_from_3d_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.wgraph_from_3d_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create graph as the set of topological neighbours
+of the three-dimensional coordinates set xyz,
+in the k-connectivity scheme</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>xyz: array of shape (nsamples, 3) and type np.int,</strong></p>
+<p><strong>k = 18: the number of neighbours considered. (6, 18 or 26)</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the WeightedGraph instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.wgraph_from_adjacency">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">wgraph_from_adjacency</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#wgraph_from_adjacency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.wgraph_from_adjacency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiates a weighted graph from a square 2D array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: 2D array instance, the input array</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>wg: WeightedGraph instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.graph.graph.wgraph_from_coo_matrix">
+<code class="sig-prename descclassname">nipy.algorithms.graph.graph.</code><code class="sig-name descname">wgraph_from_coo_matrix</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/graph/graph.html#wgraph_from_coo_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.graph.graph.wgraph_from_coo_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiates a weighted graph from a (sparse) coo_matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: scipy.sparse.coo_matrix instance, the input matrix</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>wg: WeightedGraph instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,930 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nose.plugins.base</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">optparse</span> <span class="k">import</span> <span class="n">OptionConflictError</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+<span class="kn">from</span> <span class="nn">nose.util</span> <span class="k">import</span> <span class="n">tolist</span>
+
+<span class="k">class</span> <span class="nc">Plugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for nose plugins. It&#39;s recommended but not *necessary* to</span>
+<span class="sd">    subclass this class to create a plugin, but all plugins *must* implement</span>
+<span class="sd">    `options(self, parser, env)` and `configure(self, options, conf)`, and</span>
+<span class="sd">    must have the attributes `enabled`, `name` and `score`.  The `name`</span>
+<span class="sd">    attribute may contain hyphens (&#39;-&#39;).</span>
+
+<span class="sd">    Plugins should not be enabled by default.</span>
+
+<span class="sd">    Subclassing Plugin (and calling the superclass methods in</span>
+<span class="sd">    __init__, configure, and options, if you override them) will give</span>
+<span class="sd">    your plugin some friendly default behavior:</span>
+
+<span class="sd">    * A --with-$name option will be added to the command line interface</span>
+<span class="sd">      to enable the plugin, and a corresponding environment variable</span>
+<span class="sd">      will be used as the default value. The plugin class&#39;s docstring</span>
+<span class="sd">      will be used as the help for this option.</span>
+<span class="sd">    * The plugin will not be enabled unless this option is selected by</span>
+<span class="sd">      the user.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">can_configure</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">enabled</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">enableOpt</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="mi">100</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enableOpt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enableOpt</span> <span class="o">=</span> <span class="s2">&quot;enable_plugin_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">addOptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add command-line options for this plugin.</span>
+
+<span class="sd">        The base plugin class adds --with-$name by default, used to enable the</span>
+<span class="sd">        plugin.</span>
+
+<span class="sd">        .. warning :: Don&#39;t implement addOptions unless you want to override</span>
+<span class="sd">                      all default option handling behavior, including</span>
+<span class="sd">                      warnings for conflicting options. Implement</span>
+<span class="sd">                      :meth:`options</span>
+<span class="sd">                      &lt;nose.plugins.base.IPluginInterface.options&gt;`</span>
+<span class="sd">                      instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_options</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Non-camel-case version of func name for backwards compatibility.</span>
+
+<span class="sd">        .. warning ::</span>
+
+<span class="sd">           DEPRECATED: Do not use this method,</span>
+<span class="sd">           use :meth:`options &lt;nose.plugins.base.IPluginInterface.options&gt;`</span>
+<span class="sd">           instead.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># FIXME raise deprecation warning if wasn&#39;t called by wrapper</span>
+        <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">can_configure</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">OptionConflictError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Plugin </span><span class="si">%s</span><span class="s2"> has conflicting option string: </span><span class="si">%s</span><span class="s2"> and will &quot;</span>
+                 <span class="s2">&quot;be disabled&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">),</span> <span class="ne">RuntimeWarning</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">can_configure</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register commandline options.</span>
+
+<span class="sd">        Implement this method for normal options behavior with protection from</span>
+<span class="sd">        OptionConflictErrors. If you override this method and want the default</span>
+<span class="sd">        --with-$name option to be registered, be sure to call super().</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">env_opt</span> <span class="o">=</span> <span class="s1">&#39;NOSE_WITH_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="n">env_opt</span> <span class="o">=</span> <span class="n">env_opt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;--with-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                          <span class="n">dest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">enableOpt</span><span class="p">,</span>
+                          <span class="n">default</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">env_opt</span><span class="p">),</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Enable plugin </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> [</span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span>
+                          <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">help</span><span class="p">(),</span> <span class="n">env_opt</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">conf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Configure the plugin and system, based on selected options.</span>
+
+<span class="sd">        The base plugin class sets the plugin to enabled if the enable option</span>
+<span class="sd">        for the plugin (self.enableOpt) is true.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_configure</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conf</span> <span class="o">=</span> <span class="n">conf</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enableOpt</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enableOpt</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">help</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return help for this plugin. This will be output as the help</span>
+<span class="sd">        section of the --with-$name option that enables the plugin.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">:</span>
+            <span class="c1"># doc sections are often indented; compress the spaces</span>
+            <span class="k">return</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;(no help available)&quot;</span>
+
+    <span class="c1"># Compatiblity shim</span>
+    <span class="k">def</span> <span class="nf">tolist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Plugin.tolist is deprecated. Use nose.util.tolist instead&quot;</span><span class="p">,</span>
+             <span class="ne">DeprecationWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tolist</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">IPluginInterface</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    IPluginInterface describes the plugin API. Do not subclass or use this</span>
+<span class="sd">    class directly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;IPluginInterface class is for documentation only&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">addOptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called to allow plugin to register command-line options with the</span>
+<span class="sd">        parser. DO NOT return a value from this method unless you want to stop</span>
+<span class="sd">        all other plugins from setting their options.</span>
+
+<span class="sd">        .. warning ::</span>
+
+<span class="sd">           DEPRECATED -- implement</span>
+<span class="sd">           :meth:`options &lt;nose.plugins.base.IPluginInterface.options&gt;` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">add_options</span> <span class="o">=</span> <span class="n">addOptions</span>
+    <span class="n">add_options</span><span class="o">.</span><span class="n">deprecated</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">addDeprecated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when a deprecated test is seen. DO NOT return a value</span>
+<span class="sd">        unless you want to stop other plugins from seeing the deprecated</span>
+<span class="sd">        test.</span>
+
+<span class="sd">        .. warning :: DEPRECATED -- check error class in addError instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">addDeprecated</span><span class="o">.</span><span class="n">deprecated</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">addError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when a test raises an uncaught exception. DO NOT return a</span>
+<span class="sd">        value unless you want to stop other plugins from seeing that the</span>
+<span class="sd">        test has raised an error.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`            </span>
+<span class="sd">        :param err: sys.exc_info() tuple</span>
+<span class="sd">        :type err: 3-tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">addError</span><span class="o">.</span><span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">addFailure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when a test fails. DO NOT return a value unless you</span>
+<span class="sd">        want to stop other plugins from seeing that the test has failed.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        :param err: 3-tuple</span>
+<span class="sd">        :type err: sys.exc_info() tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">addFailure</span><span class="o">.</span><span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">addSkip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when a test is skipped. DO NOT return a value unless</span>
+<span class="sd">        you want to stop other plugins from seeing the skipped test.</span>
+
+<span class="sd">        .. warning:: DEPRECATED -- check error class in addError instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">addSkip</span><span class="o">.</span><span class="n">deprecated</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">addSuccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when a test passes. DO NOT return a value unless you</span>
+<span class="sd">        want to stop other plugins from seeing the passing test.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">addSuccess</span><span class="o">.</span><span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">afterContext</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after a context (generally a module) has been</span>
+<span class="sd">        lazy-loaded, imported, setup, had its tests loaded and</span>
+<span class="sd">        executed, and torn down.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">afterContext</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">afterDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after all tests have been loaded from directory at path</span>
+<span class="sd">        and run.</span>
+
+<span class="sd">        :param path: the directory that has finished processing</span>
+<span class="sd">        :type path: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">afterDirectory</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">afterImport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after module is imported from filename. afterImport</span>
+<span class="sd">        is called even if the import failed.</span>
+
+<span class="sd">        :param filename: The file that was loaded</span>
+<span class="sd">        :type filename: string</span>
+<span class="sd">        :param module: The name of the module</span>
+<span class="sd">        :type module: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">afterImport</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">afterTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after the test has been run and the result recorded</span>
+<span class="sd">        (after stopTest).</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">afterTest</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">beforeContext</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before a context (generally a module) is</span>
+<span class="sd">        examined. Because the context is not yet loaded, plugins don&#39;t</span>
+<span class="sd">        get to know what the context is; so any context operations</span>
+<span class="sd">        should use a stack that is pushed in `beforeContext` and popped</span>
+<span class="sd">        in `afterContext` to ensure they operate symmetrically.</span>
+
+<span class="sd">        `beforeContext` and `afterContext` are mainly useful for tracking</span>
+<span class="sd">        and restoring global state around possible changes from within a</span>
+<span class="sd">        context, whatever the context may be. If you need to operate on</span>
+<span class="sd">        contexts themselves, see `startContext` and `stopContext`, which</span>
+<span class="sd">        are passed the context in question, but are called after</span>
+<span class="sd">        it has been loaded (imported in the module case).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">beforeContext</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">beforeDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before tests are loaded from directory at path.</span>
+
+<span class="sd">        :param path: the directory that is about to be processed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">beforeDirectory</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">beforeImport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before module is imported from filename.</span>
+
+<span class="sd">        :param filename: The file that will be loaded</span>
+<span class="sd">        :param module: The name of the module found in file</span>
+<span class="sd">        :type module: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="n">beforeImport</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">beforeTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before the test is run (before startTest).</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">beforeTest</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+ 
+    <span class="k">def</span> <span class="nf">begin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before any tests are collected or run. Use this to</span>
+<span class="sd">        perform any setup needed before testing begins.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">conf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after the command line has been parsed, with the</span>
+<span class="sd">        parsed options and the config container. Here, implement any</span>
+<span class="sd">        config storage or changes to state or operation that are set</span>
+<span class="sd">        by command line options.</span>
+
+<span class="sd">        DO NOT return a value from this method unless you want to</span>
+<span class="sd">        stop all other plugins from being configured.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after all report output, including output from all</span>
+<span class="sd">        plugins, has been sent to the stream. Use this to print final</span>
+<span class="sd">        test results or perform final cleanup. Return None to allow</span>
+<span class="sd">        other plugins to continue printing, or any other value to stop</span>
+<span class="sd">        them.</span>
+
+<span class="sd">        :param result: test result object</span>
+<span class="sd">        </span>
+<span class="sd">        .. Note:: When tests are run under a test runner other than</span>
+<span class="sd">           :class:`nose.core.TextTestRunner`, such as</span>
+<span class="sd">           via ``python setup.py test``, this method may be called</span>
+<span class="sd">           **before** the default report output is sent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">describeTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a test description.</span>
+
+<span class="sd">        Called by :meth:`nose.case.Test.shortDescription`.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">describeTest</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">formatError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called in result.addError, before plugin.addError. If you</span>
+<span class="sd">        want to replace or modify the error tuple, return a new error</span>
+<span class="sd">        tuple, otherwise return err, the original error tuple.</span>
+<span class="sd">        </span>
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        :param err: sys.exc_info() tuple</span>
+<span class="sd">        :type err: 3-tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">formatError</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">formatError</span><span class="o">.</span><span class="n">chainable</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># test arg is not chainable</span>
+    <span class="n">formatError</span><span class="o">.</span><span class="n">static_args</span> <span class="o">=</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">formatFailure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called in result.addFailure, before plugin.addFailure. If you</span>
+<span class="sd">        want to replace or modify the error tuple, return a new error</span>
+<span class="sd">        tuple, otherwise return err, the original error tuple.</span>
+<span class="sd">        </span>
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        :param err: sys.exc_info() tuple</span>
+<span class="sd">        :type err: 3-tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">formatFailure</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">formatFailure</span><span class="o">.</span><span class="n">chainable</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># test arg is not chainable</span>
+    <span class="n">formatFailure</span><span class="o">.</span><span class="n">static_args</span> <span class="o">=</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">handleError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called on addError. To handle the error yourself and prevent normal</span>
+<span class="sd">        error processing, return a true value.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        :param err: sys.exc_info() tuple</span>
+<span class="sd">        :type err: 3-tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">handleError</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">handleFailure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">err</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called on addFailure. To handle the failure yourself and</span>
+<span class="sd">        prevent normal failure processing, return a true value.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        :param err: sys.exc_info() tuple</span>
+<span class="sd">        :type err: 3-tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">handleFailure</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">loadTestsFromDir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return iterable of tests from a directory. May be a</span>
+<span class="sd">        generator.  Each item returned must be a runnable</span>
+<span class="sd">        unittest.TestCase (or subclass) instance or suite instance.</span>
+<span class="sd">        Return None if your plugin cannot collect any tests from</span>
+<span class="sd">        directory.</span>
+
+<span class="sd">        :param  path: The path to the directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">loadTestsFromDir</span><span class="o">.</span><span class="n">generative</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">loadTestsFromDir</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    
+    <span class="k">def</span> <span class="nf">loadTestsFromModule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return iterable of tests in a module. May be a</span>
+<span class="sd">        generator. Each item returned must be a runnable</span>
+<span class="sd">        unittest.TestCase (or subclass) instance.</span>
+<span class="sd">        Return None if your plugin cannot</span>
+<span class="sd">        collect any tests from module.</span>
+
+<span class="sd">        :param module: The module object</span>
+<span class="sd">        :type module: python module</span>
+<span class="sd">        :param path: the path of the module to search, to distinguish from</span>
+<span class="sd">            namespace package modules</span>
+
+<span class="sd">            .. note::</span>
+
+<span class="sd">               NEW. The ``path`` parameter will only be passed by nose 0.11</span>
+<span class="sd">               or above.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">loadTestsFromModule</span><span class="o">.</span><span class="n">generative</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">loadTestsFromName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">importPath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return tests in this file or module. Return None if you are not able</span>
+<span class="sd">        to load any tests, or an iterable if you are. May be a</span>
+<span class="sd">        generator.</span>
+
+<span class="sd">        :param name: The test name. May be a file or module name plus a test</span>
+<span class="sd">            callable. Use split_test_name to split into parts. Or it might</span>
+<span class="sd">            be some crazy name of your own devising, in which case, do</span>
+<span class="sd">            whatever you want.</span>
+<span class="sd">        :param module: Module from which the name is to be loaded</span>
+<span class="sd">        :param importPath: Path from which file (must be a python module) was</span>
+<span class="sd">            found</span>
+
+<span class="sd">            .. warning:: DEPRECATED: this argument will NOT be passed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">loadTestsFromName</span><span class="o">.</span><span class="n">generative</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">loadTestsFromNames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a tuple of (tests loaded, remaining names). Return</span>
+<span class="sd">        None if you are not able to load any tests. Multiple plugins</span>
+<span class="sd">        may implement loadTestsFromNames; the remaining name list from</span>
+<span class="sd">        each will be passed to the next as input.</span>
+
+<span class="sd">        :param names: List of test names.</span>
+<span class="sd">        :type names: iterable</span>
+<span class="sd">        :param module: Module from which the names are to be loaded</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">loadTestsFromNames</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">loadTestsFromNames</span><span class="o">.</span><span class="n">chainable</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">loadTestsFromFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return tests in this file. Return None if you are not</span>
+<span class="sd">        interested in loading any tests, or an iterable if you are and</span>
+<span class="sd">        can load some. May be a generator. *If you are interested in</span>
+<span class="sd">        loading tests from the file and encounter no errors, but find</span>
+<span class="sd">        no tests, yield False or return [False].*</span>
+
+<span class="sd">        .. Note:: This method replaces loadTestsFromPath from the 0.9</span>
+<span class="sd">                  API.</span>
+
+<span class="sd">        :param filename: The full path to the file or directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">loadTestsFromFile</span><span class="o">.</span><span class="n">generative</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">loadTestsFromFile</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">loadTestsFromPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. warning:: DEPRECATED -- use loadTestsFromFile instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">loadTestsFromPath</span><span class="o">.</span><span class="n">deprecated</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">loadTestsFromTestCase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return tests in this test case class. Return None if you are</span>
+<span class="sd">        not able to load any tests, or an iterable if you are. May be a</span>
+<span class="sd">        generator.</span>
+
+<span class="sd">        :param cls: The test case class. Must be subclass of</span>
+<span class="sd">           :class:`unittest.TestCase`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">loadTestsFromTestCase</span><span class="o">.</span><span class="n">generative</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">loadTestsFromTestClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return tests in this test class. Class will *not* be a</span>
+<span class="sd">        unittest.TestCase subclass. Return None if you are not able to</span>
+<span class="sd">        load any tests, an iterable if you are. May be a generator.</span>
+
+<span class="sd">        :param cls: The test case class. Must be **not** be subclass of</span>
+<span class="sd">           :class:`unittest.TestCase`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">loadTestsFromTestClass</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">loadTestsFromTestClass</span><span class="o">.</span><span class="n">generative</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">makeTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given an object and its parent, return or yield one or more</span>
+<span class="sd">        test cases. Each test must be a unittest.TestCase (or subclass)</span>
+<span class="sd">        instance. This is called before default test loading to allow</span>
+<span class="sd">        plugins to load an alternate test case or cases for an</span>
+<span class="sd">        object. May be a generator.</span>
+
+<span class="sd">        :param obj: The object to be made into a test</span>
+<span class="sd">        :param parent: The parent of obj (eg, for a method, the class)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">makeTest</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">makeTest</span><span class="o">.</span><span class="n">generative</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called to allow plugin to register command line</span>
+<span class="sd">        options with the parser.</span>
+
+<span class="sd">        DO NOT return a value from this method unless you want to stop</span>
+<span class="sd">        all other plugins from setting their options.</span>
+
+<span class="sd">        :param parser: options parser instance</span>
+<span class="sd">        :type parser: :class:`ConfigParser.ConfigParser`</span>
+<span class="sd">        :param env: environment, default is os.environ</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">prepareTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before the test is run by the test runner. Please</span>
+<span class="sd">        note the article *the* in the previous sentence: prepareTest</span>
+<span class="sd">        is called *only once*, and is passed the test case or test</span>
+<span class="sd">        suite that the test runner will execute. It is *not* called</span>
+<span class="sd">        for each individual test case. If you return a non-None value,</span>
+<span class="sd">        that return value will be run as the test. Use this hook to</span>
+<span class="sd">        wrap or decorate the test with another function. If you need</span>
+<span class="sd">        to modify or wrap individual test cases, use `prepareTestCase`</span>
+<span class="sd">        instead.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">prepareTestCase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prepare or wrap an individual test case. Called before</span>
+<span class="sd">        execution of the test. The test passed here is a</span>
+<span class="sd">        nose.case.Test instance; the case to be executed is in the</span>
+<span class="sd">        test attribute of the passed case. To modify the test to be</span>
+<span class="sd">        run, you should return a callable that takes one argument (the</span>
+<span class="sd">        test result object) -- it is recommended that you *do not*</span>
+<span class="sd">        side-effect the nose.case.Test instance you have been passed.</span>
+
+<span class="sd">        Keep in mind that when you replace the test callable you are</span>
+<span class="sd">        replacing the run() method of the test case -- including the</span>
+<span class="sd">        exception handling and result calls, etc.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">prepareTestCase</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    
+    <span class="k">def</span> <span class="nf">prepareTestLoader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loader</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before tests are loaded. To replace the test loader,</span>
+<span class="sd">        return a test loader. To allow other plugins to process the</span>
+<span class="sd">        test loader, return None. Only one plugin may replace the test</span>
+<span class="sd">        loader. Only valid when using nose.TestProgram.</span>
+
+<span class="sd">        :param loader: :class:`nose.loader.TestLoader` </span>
+<span class="sd">             (or other loader) instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">prepareTestLoader</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">prepareTestResult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before the first test is run. To use a different</span>
+<span class="sd">        test result handler for all tests than the given result,</span>
+<span class="sd">        return a test result handler. NOTE however that this handler</span>
+<span class="sd">        will only be seen by tests, that is, inside of the result</span>
+<span class="sd">        proxy system. The TestRunner and TestProgram -- whether nose&#39;s</span>
+<span class="sd">        or other -- will continue to see the original result</span>
+<span class="sd">        handler. For this reason, it is usually better to monkeypatch</span>
+<span class="sd">        the result (for instance, if you want to handle some</span>
+<span class="sd">        exceptions in a unique way). Only one plugin may replace the</span>
+<span class="sd">        result, but many may monkeypatch it. If you want to</span>
+<span class="sd">        monkeypatch and stop other plugins from doing so, monkeypatch</span>
+<span class="sd">        and return the patched result.</span>
+
+<span class="sd">        :param result: :class:`nose.result.TextTestResult` </span>
+<span class="sd">             (or other result) instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">prepareTestResult</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">prepareTestRunner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">runner</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before tests are run. To replace the test runner,</span>
+<span class="sd">        return a test runner. To allow other plugins to process the</span>
+<span class="sd">        test runner, return None. Only valid when using nose.TestProgram.</span>
+
+<span class="sd">        :param runner: :class:`nose.core.TextTestRunner` </span>
+<span class="sd">             (or other runner) instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">prepareTestRunner</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+        
+    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after all error output has been printed. Print your</span>
+<span class="sd">        plugin&#39;s report to the provided stream. Return None to allow</span>
+<span class="sd">        other plugins to print reports, any other value to stop them.</span>
+
+<span class="sd">        :param stream: stream object; send your output here</span>
+<span class="sd">        :type stream: file-like object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">setOutputStream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before test output begins. To direct test output to a</span>
+<span class="sd">        new stream, return a stream object, which must implement a</span>
+<span class="sd">        `write(msg)` method. If you only want to note the stream, not</span>
+<span class="sd">        capture or redirect it, then return None.</span>
+
+<span class="sd">        :param stream: stream object; send your output here</span>
+<span class="sd">        :type stream: file-like object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">startContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before context setup and the running of tests in the</span>
+<span class="sd">        context. Note that tests have already been *loaded* from the</span>
+<span class="sd">        context before this call.</span>
+
+<span class="sd">        :param context: the context about to be setup. May be a module or</span>
+<span class="sd">             class, or any other object that contains tests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">startContext</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    
+    <span class="k">def</span> <span class="nf">startTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before each test is run. DO NOT return a value unless</span>
+<span class="sd">        you want to stop other plugins from seeing the test start.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">stopContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after the tests in a context have run and the</span>
+<span class="sd">        context has been torn down.</span>
+
+<span class="sd">        :param context: the context that has been torn down. May be a module or</span>
+<span class="sd">             class, or any other object that contains tests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">stopContext</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+    
+    <span class="k">def</span> <span class="nf">stopTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after each test is run. DO NOT return a value unless</span>
+<span class="sd">        you want to stop other plugins from seeing that the test has stopped.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">testName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a short test name. Called by `nose.case.Test.__str__`.</span>
+
+<span class="sd">        :param test: the test case</span>
+<span class="sd">        :type test: :class:`nose.case.Test`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">testName</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">wantClass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return true if you want the main test selector to collect</span>
+<span class="sd">        tests from this class, false if you don&#39;t, and None if you don&#39;t</span>
+<span class="sd">        care.</span>
+
+<span class="sd">        :param cls: The class being examined by the selector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">wantDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return true if you want test collection to descend into this</span>
+<span class="sd">        directory, false if you do not, and None if you don&#39;t care.</span>
+
+<span class="sd">        :param dirname: Full path to directory being examined by the selector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">wantFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return true if you want to collect tests from this file,</span>
+<span class="sd">        false if you do not and None if you don&#39;t care.</span>
+
+<span class="sd">        Change from 0.9: The optional package parameter is no longer passed.</span>
+
+<span class="sd">        :param file: Full path to file being examined by the selector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">wantFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return true to collect this function as a test, false to</span>
+<span class="sd">        prevent it from being collected, and None if you don&#39;t care.</span>
+
+<span class="sd">        :param function: The function object being examined by the selector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">wantMethod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return true to collect this method as a test, false to</span>
+<span class="sd">        prevent it from being collected, and None if you don&#39;t care.</span>
+<span class="sd">        </span>
+<span class="sd">        :param method: The method object being examined by the selector</span>
+<span class="sd">        :type method: unbound method</span>
+<span class="sd">        &quot;&quot;&quot;</span>    
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">wantModule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return true if you want to collection to descend into this</span>
+<span class="sd">        module, false to prevent the collector from descending into the</span>
+<span class="sd">        module, and None if you don&#39;t care.</span>
+
+<span class="sd">        :param module: The module object being examined by the selector</span>
+<span class="sd">        :type module: python module</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">wantModuleTests</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. warning:: DEPRECATED -- this method will not be called, it has</span>
+<span class="sd">                     been folded into wantModule.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    <span class="n">wantModuleTests</span><span class="o">.</span><span class="n">deprecated</span> <span class="o">=</span> <span class="kc">True</span>
+    
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

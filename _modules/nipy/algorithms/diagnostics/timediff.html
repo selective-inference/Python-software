@@ -1,0 +1,407 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.diagnostics.timediff</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&#39;&#39;&#39; Time series diagnostics</span>
+
+<span class="sd">These started life as ``tsdiffana.m`` - see</span>
+<span class="sd">http://imaging.mrc-cbu.cam.ac.uk/imaging/DataDiagnostics</span>
+
+<span class="sd">Oliver Josephs (FIL) gave me (MB) the idea of time-point to time-point</span>
+<span class="sd">subtraction as a diagnostic for motion and other sudden image changes.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">...io.api</span> <span class="k">import</span> <span class="n">as_image</span>
+
+<span class="kn">from</span> <span class="nn">...core.reference.coordinate_map</span> <span class="k">import</span> <span class="p">(</span><span class="n">io_axis_indices</span><span class="p">,</span> <span class="n">drop_io_dim</span><span class="p">,</span> <span class="n">AxisError</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="time_slice_diffs"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.diagnostics.timediff.html#nipy.algorithms.diagnostics.timediff.time_slice_diffs">[docs]</a><span class="k">def</span> <span class="nf">time_slice_diffs</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">time_axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">slice_axis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Time-point to time-point differences over volumes and slices</span>
+
+<span class="sd">    We think of the passed array as an image.  The image has a &quot;time&quot;</span>
+<span class="sd">    dimension given by `time_axis` and a &quot;slice&quot; dimension, given by</span>
+<span class="sd">    `slice_axis`, and one or more other dimensions.  In the case of imaging</span>
+<span class="sd">    there will usually be two more dimensions (the dimensions defining the size</span>
+<span class="sd">    of an image slice). A single slice in the time dimension we call a &quot;volume&quot;.</span>
+<span class="sd">    A single entry in `arr` is a &quot;voxel&quot;.  For example, if `time_axis` == 0,</span>
+<span class="sd">    then ``v = arr[0]`` would be the first volume in the series.  The volume</span>
+<span class="sd">    ``v`` above has ``v.size`` voxels.  If, in addition, `slice_axis` == 1, then</span>
+<span class="sd">    for the volume ``v`` (above) ``s = v[0]`` would be a &quot;slice&quot;, with</span>
+<span class="sd">    ``s.size`` voxels. These are obviously terms from neuroimaging.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arr : array_like</span>
+<span class="sd">       Array over which to calculate time and slice differences.  We&#39;ll</span>
+<span class="sd">       call this array an &#39;image&#39; in this doc.</span>
+<span class="sd">    time_axis : int, optional</span>
+<span class="sd">       axis of `arr` that varies over time. Default is last</span>
+<span class="sd">    slice_axis : None or int, optional</span>
+<span class="sd">       axis of `arr` that varies over image slice.  None gives last non-time</span>
+<span class="sd">       axis.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    results : dict</span>
+
+<span class="sd">        ``T`` is the number of time points (``arr.shape[time_axis]``)</span>
+
+<span class="sd">        ``S`` is the number of slices (``arr.shape[slice_axis]``)</span>
+
+<span class="sd">        ``v`` is the shape of a volume (``rollimg(arr, time_axis)[0].shape``)</span>
+
+<span class="sd">        ``d2[t]`` is the volume of squared differences between voxels at</span>
+<span class="sd">        time point ``t`` and time point ``t+1``</span>
+
+<span class="sd">        `results` has keys:</span>
+
+<span class="sd">        * &#39;volume_mean_diff2&#39; : (T-1,) array</span>
+<span class="sd">           array containing the mean (over voxels in volume) of the</span>
+<span class="sd">           squared difference from one time point to the next</span>
+<span class="sd">        * &#39;slice_mean_diff2&#39; : (T-1, S) array</span>
+<span class="sd">           giving the mean (over voxels in slice) of the difference from</span>
+<span class="sd">           one time point to the next, one value per slice, per</span>
+<span class="sd">           timepoint</span>
+<span class="sd">        * &#39;volume_means&#39; : (T,) array</span>
+<span class="sd">           mean over voxels for each volume ``vol[t] for t in 0:T``</span>
+<span class="sd">        * &#39;slice_diff2_max_vol&#39; : v[:] array</span>
+<span class="sd">           volume, of same shape as input time point volumes, where each slice</span>
+<span class="sd">           is is the slice from ``d2[t]`` for t in 0:T-1, that has the largest</span>
+<span class="sd">           variance across ``t``.  Thus each slice in the volume may well result</span>
+<span class="sd">           from a different difference time point.</span>
+<span class="sd">        * &#39;diff2_mean_vol`` : v[:] array</span>
+<span class="sd">           volume with the mean of ``d2[t]`` across t for t in 0:T-1.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError : if `time_axis` refers to same axis as `slice_axis`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+    <span class="n">ndim</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="c1"># roll time axis to 0, slice axis to 1 for convenience</span>
+    <span class="k">if</span> <span class="n">time_axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">time_axis</span> <span class="o">+=</span> <span class="n">ndim</span>
+    <span class="k">if</span> <span class="n">slice_axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">slice_axis</span> <span class="o">=</span> <span class="n">ndim</span><span class="o">-</span><span class="mi">2</span> <span class="k">if</span> <span class="n">time_axis</span> <span class="o">==</span> <span class="n">ndim</span><span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">ndim</span><span class="o">-</span><span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">slice_axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">slice_axis</span> <span class="o">+=</span> <span class="n">ndim</span>
+    <span class="k">if</span> <span class="n">time_axis</span> <span class="o">==</span> <span class="n">slice_axis</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Time axis refers to same axis as slice axis&#39;</span><span class="p">)</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">time_axis</span><span class="p">)</span>
+    <span class="c1"># we may have changed the position of slice_axis</span>
+    <span class="k">if</span> <span class="n">time_axis</span> <span class="o">&gt;</span> <span class="n">slice_axis</span><span class="p">:</span>
+        <span class="n">slice_axis</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">slice_axis</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># shapes of things</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">vol_shape</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="c1"># loop over time points to save memory</span>
+    <span class="n">volds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">T</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+    <span class="n">sliceds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">T</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">S</span><span class="p">))</span>
+    <span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">T</span><span class="p">,))</span>
+    <span class="n">diff_mean_vol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">vol_shape</span><span class="p">)</span>
+    <span class="n">slice_diff_max_vol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">vol_shape</span><span class="p">)</span>
+    <span class="n">slice_diff_maxes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+    <span class="n">last_tp</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">means</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_tp</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">dtpi</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">T</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">tp</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">dtpi</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># shape vol_shape</span>
+        <span class="n">means</span><span class="p">[</span><span class="n">dtpi</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">dtp_diff2</span> <span class="o">=</span> <span class="p">(</span><span class="n">tp</span> <span class="o">-</span> <span class="n">last_tp</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">diff_mean_vol</span> <span class="o">+=</span> <span class="n">dtp_diff2</span>
+        <span class="n">sliceds</span><span class="p">[</span><span class="n">dtpi</span><span class="p">]</span> <span class="o">=</span> <span class="n">dtp_diff2</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># check whether we have found a highest-diff slice</span>
+        <span class="n">sdmx_higher</span> <span class="o">=</span> <span class="n">sliceds</span><span class="p">[</span><span class="n">dtpi</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">slice_diff_maxes</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sdmx_higher</span><span class="p">):</span>
+            <span class="n">slice_diff_maxes</span><span class="p">[</span><span class="n">sdmx_higher</span><span class="p">]</span> <span class="o">=</span> <span class="n">sliceds</span><span class="p">[</span><span class="n">dtpi</span><span class="p">][</span><span class="n">sdmx_higher</span><span class="p">]</span>
+            <span class="n">slice_diff_max_vol</span><span class="p">[</span><span class="n">sdmx_higher</span><span class="p">]</span> <span class="o">=</span> <span class="n">dtp_diff2</span><span class="p">[</span><span class="n">sdmx_higher</span><span class="p">]</span>
+        <span class="n">last_tp</span> <span class="o">=</span> <span class="n">tp</span>
+    <span class="n">volds</span> <span class="o">=</span> <span class="n">sliceds</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">diff_mean_vol</span> <span class="o">/=</span> <span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># roll vol shapes back to match input</span>
+    <span class="n">diff_mean_vol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">diff_mean_vol</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">slice_axis</span><span class="p">)</span>
+    <span class="n">slice_diff_max_vol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">slice_diff_max_vol</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">slice_axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;volume_mean_diff2&#39;</span><span class="p">:</span> <span class="n">volds</span><span class="p">,</span>
+            <span class="s1">&#39;slice_mean_diff2&#39;</span><span class="p">:</span> <span class="n">sliceds</span><span class="p">,</span>
+            <span class="s1">&#39;volume_means&#39;</span><span class="p">:</span> <span class="n">means</span><span class="p">,</span>
+            <span class="s1">&#39;diff2_mean_vol&#39;</span><span class="p">:</span> <span class="n">diff_mean_vol</span><span class="p">,</span>
+            <span class="s1">&#39;slice_diff2_max_vol&#39;</span><span class="p">:</span> <span class="n">slice_diff_max_vol</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="time_slice_diffs_image"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.diagnostics.timediff.html#nipy.algorithms.diagnostics.timediff.time_slice_diffs_image">[docs]</a><span class="k">def</span> <span class="nf">time_slice_diffs_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">time_axis</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">slice_axis</span><span class="o">=</span><span class="s1">&#39;slice&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Time-point to time-point differences over volumes and slices of image</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : Image</span>
+<span class="sd">        The image on which to perform time-point differences</span>
+<span class="sd">    time_axis : str or int, optional</span>
+<span class="sd">        Axis indexing time-points. Default is &#39;t&#39;. If `time_axis` is an integer,</span>
+<span class="sd">        gives the index of the input (domain) axis of `img`. If `time_axis` is a str,</span>
+<span class="sd">        can be an input (domain) name, or an output (range) name, that maps to</span>
+<span class="sd">        an input (domain) name.</span>
+<span class="sd">    slice_axis : str or int, optional</span>
+<span class="sd">        Axis indexing MRI slices. If `slice_axis` is an integer, gives the</span>
+<span class="sd">        index of the input (domain) axis of `img`. If `slice_axis` is a str,</span>
+<span class="sd">        can be an input (domain) name, or an output (range) name, that maps to</span>
+<span class="sd">        an input (domain) name.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    results : dict</span>
+
+<span class="sd">        `arr` refers to the array as loaded from `img`</span>
+
+<span class="sd">        ``T`` is the number of time points (``img.shape[time_axis]``)</span>
+
+<span class="sd">        ``S`` is the number of slices (``img.shape[slice_axis]``)</span>
+
+<span class="sd">        ``v`` is the shape of a volume (``rollimg(img, time_axis)[0].shape``)</span>
+
+<span class="sd">        ``d2[t]`` is the volume of squared differences between voxels at</span>
+<span class="sd">        time point ``t`` and time point ``t+1``</span>
+
+<span class="sd">        `results` has keys:</span>
+
+<span class="sd">        * &#39;volume_mean_diff2&#39; : (T-1,) array</span>
+<span class="sd">           array containing the mean (over voxels in volume) of the</span>
+<span class="sd">           squared difference from one time point to the next</span>
+<span class="sd">        * &#39;slice_mean_diff2&#39; : (T-1, S) array</span>
+<span class="sd">           giving the mean (over voxels in slice) of the difference from</span>
+<span class="sd">           one time point to the next, one value per slice, per</span>
+<span class="sd">           timepoint</span>
+<span class="sd">        * &#39;volume_means&#39; : (T,) array</span>
+<span class="sd">           mean over voxels for each volume ``vol[t] for t in 0:T``</span>
+<span class="sd">        * &#39;slice_diff2_max_vol&#39; : v[:] image</span>
+<span class="sd">           image volume, of same shape as input time point volumes, where each</span>
+<span class="sd">           slice is is the slice from ``d2[t]`` for t in 0:T-1, that has the</span>
+<span class="sd">           largest variance across ``t``.  Thus each slice in the volume may</span>
+<span class="sd">           well result from a different difference time point.</span>
+<span class="sd">        * &#39;diff2_mean_vol`` : v[:] image</span>
+<span class="sd">           image volume with the mean of ``d2[t]`` across t for t in 0:T-1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">as_image</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">img_class</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="vm">__class__</span>
+    <span class="n">time_in_ax</span><span class="p">,</span> <span class="n">time_out_ax</span> <span class="o">=</span> <span class="n">io_axis_indices</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">time_axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="p">(</span><span class="n">time_in_ax</span><span class="p">,</span> <span class="n">time_out_ax</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">AxisError</span><span class="p">(</span><span class="s1">&#39;Cannot identify matching input output axes with &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                        <span class="o">%</span> <span class="n">time_axis</span><span class="p">)</span>
+    <span class="n">slice_in_ax</span><span class="p">,</span> <span class="n">slice_out_ax</span> <span class="o">=</span> <span class="n">io_axis_indices</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">slice_axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="p">(</span><span class="n">slice_in_ax</span><span class="p">,</span> <span class="n">slice_out_ax</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">AxisError</span><span class="p">(</span><span class="s1">&#39;Cannot identify matching input output axes with &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                        <span class="o">%</span> <span class="n">slice_axis</span><span class="p">)</span>
+    <span class="n">vol_coordmap</span> <span class="o">=</span> <span class="n">drop_io_dim</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">time_axis</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">time_slice_diffs</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">time_in_ax</span><span class="p">,</span> <span class="n">slice_in_ax</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;slice_diff2_max_vol&#39;</span><span class="p">,</span> <span class="s1">&#39;diff2_mean_vol&#39;</span><span class="p">):</span>
+        <span class="n">vol</span> <span class="o">=</span> <span class="n">img_class</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">vol_coordmap</span><span class="p">)</span>
+        <span class="n">results</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">vol</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

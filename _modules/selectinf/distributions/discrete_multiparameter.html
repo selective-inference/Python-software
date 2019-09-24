@@ -1,0 +1,526 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.distributions.discrete_multiparameter</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">This module contains a class for discrete </span>
+<span class="sd">multiparameter exponential families. The main</span>
+<span class="sd">use for this is (post-selection)</span>
+<span class="sd">maximum likelihood estimation.</span>
+
+<span class="sd">Unlike the single parameter family, </span>
+<span class="sd">we do not provide tools for exact</span>
+<span class="sd">hypothesis tests and selection intervals.</span>
+
+<span class="sd">Approximate (Wald) tests and intervals are </span>
+<span class="sd">possible after estimation.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<div class="viewcode-block" id="multiparameter_family"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family">[docs]</a><span class="k">class</span> <span class="nc">multiparameter_family</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="multiparameter_family.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sufficient_stat</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A  discrete multi-parameter dimensional</span>
+<span class="sd">        exponential family with reference measure $\sum_j w_j \delta_{X_j}$</span>
+<span class="sd">        and sufficient statistic `sufficient_stat`. </span>
+<span class="sd">        For any $\theta$, the distribution is</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">        </span>
+<span class="sd">            P_{\theta} = \sum_{j} e^{\theta X_j - \Lambda(\theta)} w_j \delta_{X_j}</span>
+
+<span class="sd">        where</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \Lambda(\theta) = \log \left(\sum_j w_j e^{\theta X_j} \right).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        sufficient_stat : `np.float((n,k))`</span>
+
+<span class="sd">        weights : `np.float(n)`</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        The weights are normalized to sum to 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">sufficient_stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sufficient_stat</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">sufficient_stat</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting weights to have same number of rows as sufficient_stat&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sufficient_stat</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">theta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The natural parameter of the family.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_theta</span>
+
+    <span class="nd">@theta</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">theta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_theta</span><span class="p">):</span>
+        <span class="n">_theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">_theta</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">_theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_theta</span><span class="p">)):</span>
+            <span class="n">_thetaX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sufficient_stat</span><span class="p">,</span> <span class="n">_theta</span><span class="p">)</span>
+            <span class="n">_largest</span> <span class="o">=</span> <span class="n">_thetaX</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">4</span> <span class="c1"># try to avoid over/under flow, 4 seems arbitrary</span>
+            <span class="n">_exp_thetaX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">_thetaX</span> <span class="o">-</span> <span class="n">_largest</span><span class="p">)</span>
+            <span class="n">_prod</span> <span class="o">=</span> <span class="n">_exp_thetaX</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">_prod</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pdf</span> <span class="o">=</span> <span class="n">_prod</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">_largest</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_theta</span> <span class="o">=</span> <span class="n">_theta</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">partition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Partition function at `self.theta`:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \sum_j e^{\theta X_j} w_j</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_partition&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sufficient_stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sufficient statistics of the exponential family.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Weights of the exponential family.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w</span>
+
+<div class="viewcode-block" id="multiparameter_family.pdf"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family.pdf">[docs]</a>    <span class="k">def</span> <span class="nf">pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Density of $P_{\theta}$ with respect to $P_0$.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        theta : float</span>
+<span class="sd">             Natural parameter.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        pdf : np.float</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">theta</span> <span class="c1"># compute partition if necessary</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pdf</span></div>
+
+<div class="viewcode-block" id="multiparameter_family.E"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family.E">[docs]</a>    <span class="k">def</span> <span class="nf">E</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Expectation of `func` under $P_{\theta}$</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        theta : float</span>
+<span class="sd">             Natural parameter.</span>
+
+<span class="sd">        func : callable</span>
+<span class="sd">             Assumed to be vectorized.</span>
+
+<span class="sd">        gamma : float(optional)</span>
+<span class="sd">             Weight given at `x`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        E : np.float</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sufficient_stat</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="multiparameter_family.Var"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family.Var">[docs]</a>    <span class="k">def</span> <span class="nf">Var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Variance of `func` under $P_{\theta}$</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        theta : float</span>
+<span class="sd">             Natural parameter.</span>
+
+<span class="sd">        func : callable</span>
+<span class="sd">             Assumed to be vectorized.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        var : np.float</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="multiparameter_family.Cov"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family.Cov">[docs]</a>    <span class="k">def</span> <span class="nf">Cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">func1</span><span class="p">,</span> <span class="n">func2</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Covariance of `func1` and `func2` under $P_{\theta}$</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        theta : float</span>
+<span class="sd">             Natural parameter.</span>
+
+<span class="sd">        func1, func2 : callable</span>
+<span class="sd">             Assumed to be vectorized.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        cov : np.float</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">mu1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">func1</span><span class="p">)</span>
+        <span class="n">mu2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">func2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">func1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">mu1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">func2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">mu2</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="multiparameter_family.mean"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Mean parameter of family at natural</span>
+<span class="sd">        parameter `theta`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        theta : np.float(k)</span>
+<span class="sd">             Natural parameter.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        mean : np.float(k)</span>
+<span class="sd">             Expected value of sufficient statistic at theta.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sufficient_stat</span> <span class="o">*</span> <span class="n">pdf</span><span class="p">[:,</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="multiparameter_family.information"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family.information">[docs]</a>    <span class="k">def</span> <span class="nf">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Compute mean and Fisher information </span>
+<span class="sd">        of family at natural parameter `theta`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        theta : np.float(k)</span>
+<span class="sd">             Natural parameter.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        mean : np.float(k)</span>
+<span class="sd">             Expected value of sufficient statistic at theta.</span>
+
+<span class="sd">        information : np.float((k,k))</span>
+<span class="sd">             Covariance matrix of sufficient statistic at theta.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">outer_prods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ij,ik-&gt;ijk&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sufficient_stat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sufficient_stat</span><span class="p">)</span>
+        <span class="n">information</span> <span class="o">=</span> <span class="p">(</span><span class="n">outer_prods</span> <span class="o">*</span> <span class="n">pdf</span><span class="p">[:,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">mean</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">information</span></div>
+
+<div class="viewcode-block" id="multiparameter_family.MLE"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.discrete_multiparameter.html#selectinf.distributions.discrete_multiparameter.multiparameter_family.MLE">[docs]</a>    <span class="k">def</span> <span class="nf">MLE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observed_sufficient</span><span class="p">,</span>
+            <span class="n">min_iters</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="n">max_iters</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> 
+            <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-6</span><span class="p">,</span>
+            <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Compute mean and Fisher information </span>
+<span class="sd">        of family at natural parameter `theta`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        observed_sufficient : np.float(k)</span>
+<span class="sd">            Observed sufficient statistic.</span>
+
+<span class="sd">        min_iters : int</span>
+<span class="sd">            Minimum number of Newton steps.</span>
+
+<span class="sd">        max_iters : int</span>
+<span class="sd">            How many Newton steps?</span>
+
+<span class="sd">        tol : float</span>
+<span class="sd">            Relative tolerance for objective value.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        theta_hat : np.float(k)</span>
+<span class="sd">            Maximum likelihood estimate.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_old_theta</span><span class="p">,</span> <span class="n">_old_pdf</span><span class="p">,</span> <span class="n">_old_partition</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_theta</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> 
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">_pdf</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> 
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">initial</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">)):</span>
+                <span class="n">initial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">initial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">initial</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iters</span><span class="p">):</span>
+            <span class="n">mean</span><span class="p">,</span> <span class="n">hess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">-</span> <span class="n">observed_sufficient</span>
+
+            <span class="n">direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">hess</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span>
+            <span class="n">step_size</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">proposed_theta</span> <span class="o">=</span>  <span class="n">theta</span> <span class="o">-</span> <span class="n">step_size</span> <span class="o">*</span> <span class="n">direction</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">proposed_theta</span>
+                <span class="n">proposed_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partition</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">*</span> <span class="n">observed_sufficient</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">proposed_value</span> <span class="o">&lt;</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">step_size</span> <span class="o">*=</span> <span class="mf">0.9</span>
+
+            <span class="c1"># when do we stop?</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="n">min_iters</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">((</span><span class="n">value</span> <span class="o">-</span> <span class="n">proposed_value</span><span class="p">)</span> <span class="o">/</span> <span class="n">value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="k">break</span>
+ 
+            <span class="n">value</span> <span class="o">=</span> <span class="n">proposed_value</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">proposed_theta</span>
+
+        <span class="c1"># reset old values -- should we?</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pdf</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition</span> <span class="o">=</span> <span class="p">(</span><span class="n">_old_theta</span><span class="p">,</span>
+                                                   <span class="n">_old_pdf</span><span class="p">,</span>
+                                                   <span class="n">_old_partition</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">theta</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

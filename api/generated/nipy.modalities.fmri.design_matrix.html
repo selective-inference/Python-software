@@ -1,0 +1,458 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.modalities.fmri.design_matrix.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="modalities-fmri-design-matrix">
+<h1>modalities.fmri.design_matrix<a class="headerlink" href="#modalities-fmri-design-matrix" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-modalities-fmri-design-matrix">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">modalities.fmri.design_matrix</span></code><a class="headerlink" href="#module-modalities-fmri-design-matrix" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.modalities.fmri.design_matrix</span></code>:</p>
+digraph inheritancef43feb9e66 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;fmri.design_matrix.DesignMatrix&quot; [URL=&quot;#nipy.modalities.fmri.design_matrix.DesignMatrix&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;This is a container for a light-weight class for design matrices&quot;];
+}
+<span class="target" id="module-nipy.modalities.fmri.design_matrix"></span><p>This module implements fMRI Design Matrix creation.</p>
+<p>The DesignMatrix object is just a container that represents the design matrix.
+Computations of the different parts of the design matrix are confined
+to the make_dmtx() function, that instantiates the DesignMatrix object.
+All the remainder are just ancillary functions.</p>
+<p>Design matrices contain three different types of regressors:</p>
+<ol class="arabic simple">
+<li><p>Task-related regressors, that result from the convolution
+of the experimental paradigm regressors with hemodynamic models</p></li>
+<li><p>User-specified regressors, that represent information available on
+the data, e.g. motion parameters, physiological data resampled at
+the acquisition rate, or sinusoidal regressors that model the
+signal at a frequency of interest.</p></li>
+<li><p>Drift regressors, that represent low_frequency phenomena of no
+interest in the data; they need to be included to reduce variance
+estimates.</p></li>
+</ol>
+<p>Author: Bertrand Thirion, 2009-2011</p>
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="designmatrix">
+<h2><a class="reference internal" href="#nipy.modalities.fmri.design_matrix.DesignMatrix" title="nipy.modalities.fmri.design_matrix.DesignMatrix"><code class="xref py py-class docutils literal notranslate"><span class="pre">DesignMatrix</span></code></a><a class="headerlink" href="#designmatrix" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.modalities.fmri.design_matrix.DesignMatrix">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.design_matrix.</code><code class="sig-name descname">DesignMatrix</code><span class="sig-paren">(</span><em class="sig-param">matrix</em>, <em class="sig-param">names</em>, <em class="sig-param">frametimes=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design_matrix.html#DesignMatrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design_matrix.DesignMatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This is a container for a light-weight class for design matrices</p>
+<p>This class is only used to make IO and visualization.</p>
+<p class="rubric">Attributes</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 54%" />
+<col style="width: 46%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>matrix: array of shape (n_scans, n_regressors)</strong></p></td>
+<td><p>the numerical specification of the matrix.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>names: list of len (n_regressors)</strong></p></td>
+<td><p>the names associated with the columns.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>frametimes: array of shape (n_scans), optional</strong></p></td>
+<td><p>the occurrence time of the matrix rows.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nipy.modalities.fmri.design_matrix.DesignMatrix.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">matrix</em>, <em class="sig-param">names</em>, <em class="sig-param">frametimes=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design_matrix.html#DesignMatrix.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design_matrix.DesignMatrix.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.modalities.fmri.design_matrix.DesignMatrix.write_csv">
+<code class="sig-name descname">write_csv</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design_matrix.html#DesignMatrix.write_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design_matrix.DesignMatrix.write_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>write self.matrix as a csv file with appropriate column names</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path: string, path of the resulting csv file</strong></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The frametimes are not written</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.modalities.fmri.design_matrix.DesignMatrix.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><em class="sig-param">rescale=True</em>, <em class="sig-param">ax=None</em>, <em class="sig-param">cmap=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design_matrix.html#DesignMatrix.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design_matrix.DesignMatrix.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualization of a design matrix</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>rescale: bool, optional</strong></p>
+<blockquote>
+<div><p>rescale columns magnitude for visualization or not.</p>
+</div></blockquote>
+<p><strong>ax: axis handle, optional</strong></p>
+<blockquote>
+<div><p>Handle to axis onto which we will draw design matrix.</p>
+</div></blockquote>
+<p><strong>cmap: colormap, optional</strong></p>
+<blockquote>
+<div><p>Matplotlib colormap to use, passed to <cite>imshow</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ax: axis handle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.modalities.fmri.design_matrix.DesignMatrix.show_contrast">
+<code class="sig-name descname">show_contrast</code><span class="sig-paren">(</span><em class="sig-param">contrast</em>, <em class="sig-param">ax=None</em>, <em class="sig-param">cmap=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design_matrix.html#DesignMatrix.show_contrast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design_matrix.DesignMatrix.show_contrast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a contrast for a design matrix.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>contrast</strong> : np.float</p>
+<blockquote>
+<div><p>Array forming contrast with respect to the design matrix.</p>
+</div></blockquote>
+<p><strong>ax: axis handle, optional</strong></p>
+<blockquote>
+<div><p>Handle to axis onto which we will draw design matrix.</p>
+</div></blockquote>
+<p><strong>cmap: colormap, optional</strong></p>
+<blockquote>
+<div><p>Matplotlib colormap to use, passed to <cite>imshow</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ax: axis handle</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.modalities.fmri.design_matrix.dmtx_from_csv">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design_matrix.</code><code class="sig-name descname">dmtx_from_csv</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">frametimes=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design_matrix.html#dmtx_from_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design_matrix.dmtx_from_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a DesignMatrix instance from  a csv file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path: string, path of the .csv file</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A DesignMatrix instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design_matrix.dmtx_light">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design_matrix.</code><code class="sig-name descname">dmtx_light</code><span class="sig-paren">(</span><em class="sig-param">frametimes, paradigm=None, hrf_model='canonical', drift_model='cosine', hfcut=128, drift_order=1, fir_delays=[0], add_regs=None, add_reg_names=None, min_onset=-24, path=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design_matrix.html#dmtx_light"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design_matrix.dmtx_light" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a design matrix while avoiding framework</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>see make_dmtx, plus</strong></p>
+<p><strong>path: string, optional: a path to write the output</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dmtx array of shape(nreg, nbframes):</p>
+<blockquote>
+<div><p>the sampled design matrix</p>
+</div></blockquote>
+<p>names list of strings of len (nreg)</p>
+<blockquote>
+<div><p>the names of the columns of the design matrix</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design_matrix.make_dmtx">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design_matrix.</code><code class="sig-name descname">make_dmtx</code><span class="sig-paren">(</span><em class="sig-param">frametimes, paradigm=None, hrf_model='canonical', drift_model='cosine', hfcut=128, drift_order=1, fir_delays=[0], add_regs=None, add_reg_names=None, min_onset=-24</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design_matrix.html#make_dmtx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design_matrix.make_dmtx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a design matrix from the input parameters</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frametimes: array of shape(nbframes), the timing of the scans</strong></p>
+<p><strong>paradigm: Paradigm instance, optional</strong></p>
+<blockquote>
+<div><p>description of the experimental paradigm</p>
+</div></blockquote>
+<p><strong>hrf_model: string, optional,</strong></p>
+<blockquote>
+<div><p>that specifies the hemodynamic response function.
+Can be one of {‘canonical’, ‘canonical with derivative’,
+‘fir’, ‘spm’, ‘spm_time’, ‘spm_time_dispersion’}.</p>
+</div></blockquote>
+<p><strong>drift_model: string, optional</strong></p>
+<blockquote>
+<div><p>specifies the desired drift model,
+to be chosen among ‘polynomial’, ‘cosine’, ‘blank’</p>
+</div></blockquote>
+<p><strong>hfcut: float, optional</strong></p>
+<blockquote>
+<div><p>cut period of the low-pass filter</p>
+</div></blockquote>
+<p><strong>drift_order: int, optional</strong></p>
+<blockquote>
+<div><p>order of the drift model (in case it is polynomial)</p>
+</div></blockquote>
+<p><strong>fir_delays: array of shape(nb_onsets) or list, optional,</strong></p>
+<blockquote>
+<div><p>in case of FIR design, yields the array of delays
+used in the FIR model</p>
+</div></blockquote>
+<p><strong>add_regs: array of shape(nbframes, naddreg), optional</strong></p>
+<blockquote>
+<div><p>additional user-supplied regressors</p>
+</div></blockquote>
+<p><strong>add_reg_names: list of (naddreg) regressor names, optional</strong></p>
+<blockquote>
+<div><p>if None, while naddreg&gt;0, these will be termed
+‘reg_%i’,i=0..naddreg-1</p>
+</div></blockquote>
+<p><strong>min_onset: float, optional</strong></p>
+<blockquote>
+<div><p>minimal onset relative to frametimes[0] (in seconds)
+events that start before frametimes[0] + min_onset are not considered</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DesignMatrix instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,608 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for regreg.problems.composite</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">asarray</span><span class="p">,</span> <span class="nb">any</span> <span class="k">as</span> <span class="n">npany</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
+
+<span class="c1"># local imports</span>
+
+<span class="kn">from</span> <span class="nn">..identity_quadratic</span> <span class="k">import</span> <span class="n">identity_quadratic</span> <span class="k">as</span> <span class="n">sq</span>
+<span class="kn">from</span> <span class="nn">..algorithms</span> <span class="k">import</span> <span class="n">FISTA</span>
+
+<span class="kn">from</span> <span class="nn">..objdoctemplates</span> <span class="k">import</span> <span class="n">objective_doc_templater</span>
+<span class="kn">from</span> <span class="nn">..doctemplates</span> <span class="k">import</span> <span class="p">(</span><span class="n">doc_template_user</span><span class="p">,</span> <span class="n">doc_template_provider</span><span class="p">)</span>
+
+<span class="nd">@objective_doc_templater</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">composite</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A generic way to specify a problem in composite form.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objective_template</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;&quot;&quot;f(</span><span class="si">%(var)s</span><span class="s2">)&quot;&quot;&quot;</span>
+    <span class="n">objective_vars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;var&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\beta&#39;</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">:</span><span class="s1">&#39;p&#39;</span><span class="p">,</span> <span class="s1">&#39;offset&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;\alpha&#39;</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+
+        <span class="k">if</span> <span class="n">quadratic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">=</span> <span class="n">quadratic</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">=</span> <span class="n">sq</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">initial</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">asarray</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">npany</span><span class="p">(</span><span class="n">value</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offset</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_offset</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">get_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_offset&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_offset</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offset</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_offset</span><span class="p">,</span> <span class="n">set_offset</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">latexify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">template_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objective_vars</span><span class="p">)</span>
+        <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;idx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;var&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;offset&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">npany</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;var&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="si">%(var)s</span><span class="s1"> - </span><span class="si">%(offset)s</span><span class="s1">_{</span><span class="si">%(idx)s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">template_dict</span><span class="p">)</span>
+
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objective_template</span> <span class="o">%</span> <span class="n">template_dict</span>
+        <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;obj&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">iszero</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39; + &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">latexify</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="n">var</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">def</span> <span class="nf">_repr_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;$$&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">latexify</span><span class="p">()</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;$$&#39;</span>
+
+    <span class="k">def</span> <span class="nf">nonsmooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;func&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        The smooth_objective and the quadratic_objective combined.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;func&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="n">check_feasibility</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonsmooth_objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="n">check_feasibility</span><span class="p">)</span>
+
+    <span class="nd">@doc_template_provider</span>
+    <span class="k">def</span> <span class="nf">proximal_optimum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadratic</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute a proximal step, and return the minimizer</span>
+<span class="sd">        and nonsmooth objective the value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">argmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proximal</span><span class="p">(</span><span class="n">quadratic</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">argmin</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">argmin</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonsmooth_objective</span><span class="p">(</span><span class="n">argmin</span><span class="p">)</span> 
+        <span class="k">else</span><span class="p">:</span> 
+            <span class="k">return</span> <span class="n">argmin</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">argmin</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonsmooth_objective</span><span class="p">(</span><span class="n">argmin</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">argmin</span><span class="p">,</span> <span class="s1">&#39;func&#39;</span><span class="p">)</span> 
+
+    <span class="k">def</span> <span class="nf">proximal_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadratic</span><span class="p">,</span> <span class="n">prox_control</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the proximal optimization</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        prox_control: [None, dict]</span>
+<span class="sd">            If not None, then a dictionary of parameters for the prox procedure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># This seems like a null op -- if all proximals accept optional prox_control</span>
+        <span class="k">if</span> <span class="n">prox_control</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">proximal</span><span class="p">(</span><span class="n">quadratic</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">proximal</span><span class="p">(</span><span class="n">quadratic</span><span class="p">,</span> <span class="n">prox_control</span><span class="o">=</span><span class="n">prox_control</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">apply_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If self.offset is not None, return x-self.offset, else return x.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+    <span class="k">def</span> <span class="nf">set_quadratic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadratic</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the quadratic part of the composite.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quadratic</span> <span class="o">=</span> <span class="n">quadratic</span>
+
+    <span class="k">def</span> <span class="nf">get_quadratic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the quadratic part of the composite.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_quadratic&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_quadratic</span> <span class="o">=</span> <span class="n">sq</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quadratic</span>
+    <span class="n">quadratic</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_quadratic</span><span class="p">,</span> <span class="n">set_quadratic</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Quadratic part of the object, instance of `regreg.identity_quadratic.identity_quadratic`.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">smoothed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smoothing_quadratic</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Add quadratic smoothing term</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">conjugate_atom</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conjugate</span><span class="p">)</span>
+        <span class="n">sq</span> <span class="o">=</span> <span class="n">smoothing_quadratic</span>
+        <span class="k">if</span> <span class="n">sq</span><span class="o">.</span><span class="n">coef</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;quadratic term of smoothing_quadratic must be non 0&#39;</span><span class="p">)</span>
+        <span class="n">total_q</span> <span class="o">=</span> <span class="n">sq</span>
+
+        <span class="k">if</span> <span class="n">conjugate_atom</span><span class="o">.</span><span class="n">quadratic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">total_q</span> <span class="o">=</span> <span class="n">sq</span> <span class="o">+</span> <span class="n">conjugate_atom</span><span class="o">.</span><span class="n">quadratic</span>
+        <span class="n">conjugate_atom</span><span class="o">.</span><span class="n">set_quadratic</span><span class="p">(</span><span class="n">total_q</span><span class="p">)</span>
+        <span class="n">smoothed_atom</span> <span class="o">=</span> <span class="n">conjugate_atom</span><span class="o">.</span><span class="n">conjugate</span>
+        <span class="k">return</span> <span class="n">smoothed_atom</span>
+
+    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_optimum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_args</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;subclasses must implement their own solve methods&#39;</span><span class="p">)</span>
+
+<span class="nd">@objective_doc_templater</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">nonsmooth</span><span class="p">(</span><span class="n">composite</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A composite subclass that explicitly returns 0</span>
+<span class="sd">    as smooth_objective.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        The zero function.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;both&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;func&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mode not specified correctly&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_optimum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">quadratic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">quadratic</span> <span class="o">=</span> <span class="n">sq</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proximal</span><span class="p">(</span><span class="n">quadratic</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_optimum</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coefs</span><span class="p">)</span> <span class="o">+</span> <span class="n">quadratic</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coefs</span><span class="p">,</span> <span class="s1">&#39;func&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span>
+
+<span class="nd">@objective_doc_templater</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">smooth</span><span class="p">(</span><span class="n">composite</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A composite subclass that has 0 as </span>
+<span class="sd">    nonsmooth_objective and the proximal</span>
+<span class="sd">    is a null-op.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objective_vars</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">composite</span><span class="o">.</span><span class="n">objective_vars</span><span class="p">)</span>
+    <span class="n">objective_vars</span><span class="p">[</span><span class="s1">&#39;coef&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;C&#39;</span>
+
+    <span class="k">def</span> <span class="nf">get_lipschitz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_lipschitz&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lipschitz</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">coef</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">coef</span>
+
+    <span class="k">def</span> <span class="nf">set_lipschitz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Lipschitz constant must be non-negative&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lipschitz</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="n">lipschitz</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_lipschitz</span><span class="p">,</span> <span class="n">set_lipschitz</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;func&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_smooth_objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="n">check_feasibility</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">proximal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadratic</span><span class="p">):</span>
+        <span class="n">totalq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">+</span> <span class="n">quadratic</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">totalq</span><span class="o">.</span><span class="n">linear_term</span> <span class="o">/</span> <span class="n">totalq</span><span class="o">.</span><span class="n">coef</span>
+
+    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_optimum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">quadratic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">quadratic</span> <span class="o">=</span> <span class="n">sq</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">oldq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">+</span> <span class="n">quadratic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solver</span> <span class="o">=</span> <span class="n">FISTA</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="o">**</span><span class="n">fit_args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">=</span> <span class="n">oldq</span>
+
+        <span class="k">if</span> <span class="n">return_optimum</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coefs</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span>
+
+<span class="k">class</span> <span class="nc">smooth_conjugate</span><span class="p">(</span><span class="n">smooth</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">,</span> <span class="n">smoothing_quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given an atom,</span>
+<span class="sd">        compute the conjugate of this atom plus </span>
+<span class="sd">        an identity_quadratic which will be </span>
+<span class="sd">        a smooth version of the conjugate of the atom.</span>
+
+<span class="sd">        should we have an argument &quot;collapse&quot; that makes a copy?</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># this holds a pointer to the original atom,</span>
+        <span class="c1"># but will be replaced later</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">atom</span>
+        <span class="k">if</span> <span class="n">smoothing_quadratic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">smoothing_quadratic</span> <span class="o">=</span> <span class="n">sq</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span> <span class="o">=</span> <span class="n">smoothing_quadratic</span>
+        <span class="n">total_quadratic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span>
+
+        <span class="k">if</span> <span class="n">total_quadratic</span><span class="o">.</span><span class="n">coef</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;the atom must have non-zero quadratic term to compute ensure smooth conjugate&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lipschitz</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">total_quadratic</span><span class="o">.</span><span class="n">coef</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="c1"># A smooth conjugate is the conjugate of some $f$ with an identity quadratic added to it, or</span>
+        <span class="c1"># $$</span>
+        <span class="c1"># h(u) = \sup_x \left( u^Tx - \frac{\kappa}{2} \|x\|^2_2 - \beta^Tx-c-f(x) \right).</span>
+        <span class="c1"># $$</span>
+        <span class="c1"># Suppose we add a quadratic to $h$ to get</span>
+        <span class="c1"># $$</span>
+        <span class="c1"># \tilde{h}(u) = \frac{r}{2} \|u\|^2_2 + u^T\gamma + a + h(u)$$</span>
+        <span class="c1"># and take the conjugate again:</span>
+        <span class="c1"># $$</span>
+        <span class="c1"># \begin{aligned}</span>
+        <span class="c1"># g(v) &amp;= \sup_{u} u^Tv - \tilde{h}(u) \\</span>
+        <span class="c1"># &amp;= \sup_u u^Tv -  \frac{r}{2} \|u\|^2_2 - u^T\gamma-a - h(u) \\</span>
+        <span class="c1"># &amp;=  \sup_u u^Tv - \frac{r}{2} \|u\|^2_2 - u^T\gamma-a  - \sup_x \left( u^Tx - \frac{\kappa}{2} \|x\|^2_2 - \beta^Tx-c-f(x)  \right)\\</span>
+        <span class="c1"># &amp;= \sup_u u^Tv - \frac{r}{2} \|u\|^2_2 - u^T\gamma-a + \inf_x \left(  \frac{\kappa}{2} \|x\|^2_2  +\beta^Tx + c +f(x) - u^Tx  \right)\\</span>
+        <span class="c1"># &amp;= \sup_u \inf_x u^Tv - \frac{r}{2} \|u\|^2_2 - u^T\gamma-a +  \frac{\kappa}{2} \|x\|^2_2 + \beta^Tx + c +f(x) - u^Tx \\</span>
+        <span class="c1"># &amp;=  \inf_x \sup_u u^Tv - \frac{r}{2} \|u\|^2_2 - u^T\gamma-a +  \frac{\kappa}{2} \|x\|^2_2  + \beta^Tx + c +f(x) - u^Tx \\</span>
+        <span class="c1"># &amp;=  \inf_x \sup_u \left(u^Tv - \frac{r}{2} \|u\|^2_2 - u^T\gamma- u^Tx\right)-a +  \frac{\kappa}{2} \|x\|^2_2 +   \beta^Tx + c +f(x)  \\</span>
+        <span class="c1"># &amp;=  \inf_x \frac{1}{2r} \|x+\gamma-v\|^2_2 -a +  \frac{\kappa}{2} \|x\|^2_2 + \beta^Tx + c +f(x)  \\</span>
+        <span class="c1"># &amp;= c-a + \frac{1}{2r} \|\gamma-v\|^2_2 - \sup_x \left((v/r)^Tx - \left(\frac{1}{r} + \kappa\right) \|x\|^2_2 - x^T(\beta+\gamma/r) - f(x) \right) \\</span>
+        <span class="c1"># \end{aligned}</span>
+        <span class="c1"># $$</span>
+
+        <span class="c1"># This says that for $r &gt; 0$ the conjugate of a smooth conjugate with a quadratic added to it is a quadratic plus a modified smooth conjugate evaluated at $v/r$.</span>
+
+        <span class="c1"># What if $r=0$? Well,</span>
+        <span class="c1"># then </span>
+        <span class="c1"># $$</span>
+        <span class="c1"># \begin{aligned}</span>
+        <span class="c1"># g(v) &amp;= \sup_{u} u^Tv - \tilde{h}(u) \\</span>
+        <span class="c1"># &amp;= \sup_u u^Tv  - u^T\gamma-a - h(u) \\</span>
+        <span class="c1"># &amp;=  \sup_u u^Tv  - u^T\gamma-a  - \sup_x \left( u^Tx - \frac{\kappa}{2} \|x\|^2_2 - \beta^Tx-c-f(x)  \right)\\</span>
+        <span class="c1"># &amp;= \sup_u u^Tv - u^T\gamma-a + \inf_x \left(  \frac{\kappa}{2} \|x\|^2_2  +\beta^Tx + c +f(x) - u^Tx  \right)\\</span>
+        <span class="c1"># &amp;= \sup_u \inf_x u^Tv - u^T\gamma-a +  \frac{\kappa}{2} \|x\|^2_2 + \beta^Tx + c +f(x) - u^Tx \\</span>
+        <span class="c1"># &amp;= \inf_x \sup_u u^Tv - u^T\gamma-a +  \frac{\kappa}{2} \|x\|^2_2 + \beta^Tx + c +f(x) - u^Tx \\</span>
+        <span class="c1"># &amp;=   \frac{\kappa}{2} \|v-\gamma\|^2_2 + \beta^T(v-\gamma) + c-a +f(v-\gamma) \\</span>
+        <span class="c1"># \end{aligned}</span>
+        <span class="c1"># $$</span>
+        <span class="c1"># where, in the last line we have used the fact that the $\sup$ over $u$ in the second to last line is infinite unless $x=v-\gamma$.</span>
+
+    <span class="k">def</span> <span class="nf">get_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">iszero</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span><span class="o">.</span><span class="n">iszero</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">atom</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+                <span class="n">atom</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span>
+                <span class="k">return</span> <span class="n">atom</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">collapsed</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">coef</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">newq</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">quadratic</span><span class="p">)</span>
+                <span class="n">newq</span><span class="o">.</span><span class="n">constant_term</span> <span class="o">-=</span> <span class="n">q</span><span class="o">.</span><span class="n">constant_term</span>
+                <span class="n">offset</span> <span class="o">=</span> <span class="o">-</span><span class="n">q</span><span class="o">.</span><span class="n">linear_term</span>
+                <span class="k">if</span> <span class="n">atom</span><span class="o">.</span><span class="n">offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">offset</span> <span class="o">-=</span> <span class="n">atom</span><span class="o">.</span><span class="n">offset</span>
+                <span class="n">atom</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span>
+                <span class="n">atom</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+                <span class="n">atom</span><span class="o">.</span><span class="n">quadratic</span> <span class="o">=</span> <span class="n">newq</span>
+                <span class="k">return</span> <span class="n">atom</span>
+            <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">coef</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">coef</span>
+                <span class="n">sq_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span>
+                <span class="n">newq</span> <span class="o">=</span> <span class="n">sq_</span> <span class="o">+</span> <span class="n">q</span><span class="o">.</span><span class="n">conjugate</span>
+                <span class="n">new_smooth</span> <span class="o">=</span> <span class="n">smooth_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="n">newq</span><span class="p">)</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">smooth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                <span class="n">quadratic</span><span class="o">=</span><span class="n">sq</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">linear_term</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+                <span class="n">output</span><span class="o">.</span><span class="n">smoothed_atom</span> <span class="o">=</span> <span class="n">new_smooth</span>
+
+                <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;func&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                    <span class="c1"># what if self.quadratic is later changed? hmm..</span>
+                    <span class="n">r</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">coef</span>
+                    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;func&#39;</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothed_atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="n">r</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> 
+                                                                <span class="n">check_feasibility</span><span class="o">=</span><span class="n">check_feasibility</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;func&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="n">v</span>
+                    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;both&#39;</span><span class="p">:</span>
+                        <span class="n">v1</span><span class="p">,</span> <span class="n">g1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothed_atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="n">r</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> 
+                                                                     <span class="n">check_feasibility</span><span class="o">=</span><span class="n">check_feasibility</span><span class="p">)</span>
+                        <span class="n">v2</span><span class="p">,</span> <span class="n">g2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> 
+                                                                    <span class="n">check_feasibility</span><span class="o">=</span><span class="n">check_feasibility</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">v2</span><span class="o">-</span><span class="n">v1</span><span class="p">,</span> <span class="n">g2</span><span class="o">-</span><span class="n">g1</span><span class="o">/</span><span class="n">r</span>
+                    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+                        <span class="n">g1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothed_atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="n">r</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;grad&#39;</span><span class="p">,</span> 
+                                                                     <span class="n">check_feasibility</span><span class="o">=</span><span class="n">check_feasibility</span><span class="p">)</span>
+                        <span class="n">g2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span><span class="o">.</span><span class="n">objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;grad&#39;</span><span class="p">,</span> 
+                                                                    <span class="n">check_feasibility</span><span class="o">=</span><span class="n">check_feasibility</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">g2</span><span class="o">-</span><span class="n">g1</span><span class="o">/</span><span class="n">r</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;mode incorrectly specified&quot;</span><span class="p">)</span>
+                        
+                <span class="n">output</span><span class="o">.</span><span class="n">smooth_objective</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">)(</span><span class="n">smooth_objective</span><span class="p">,</span>
+                                                                        <span class="n">output</span><span class="p">,</span> 
+                                                                        <span class="n">smooth</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">output</span>
+    <span class="n">conjugate</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_conjugate</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">latexify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">template_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">objective_vars</span><span class="p">)</span>
+        <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;idx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;var&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span>
+
+        <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">latexify</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="s1">&#39;u&#39;</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">)</span>
+        <span class="n">quad_latex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span><span class="o">.</span><span class="n">latexify</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="s1">&#39;u&#39;</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">quad_latex</span><span class="p">:</span>
+            <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39; + &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span>
+                                             <span class="n">quad_latex</span><span class="p">])</span>
+
+        <span class="n">objective</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39; \sup_{u \in \mathbb</span><span class="si">{R}</span><span class="s1">^{</span><span class="si">%(shape)s</span><span class="s1">} } \left[ \langle </span><span class="si">%(var)s</span><span class="s1">, u \rangle - \left(</span><span class="si">%(f)s</span><span class="s1"> \right) \right]&#39;</span> <span class="o">%</span> <span class="n">template_dict</span>
+        <span class="k">return</span> <span class="n">objective</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;smooth_conjugate(</span><span class="si">%s</span><span class="s1">,</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">),</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">quadratic</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate a smooth function and/or its gradient</span>
+
+<span class="sd">        if mode == &#39;both&#39;, return both function value and gradient</span>
+<span class="sd">        if mode == &#39;grad&#39;, return only the gradient</span>
+<span class="sd">        if mode == &#39;func&#39;, return only the function value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_quadratic</span> <span class="o">+</span> <span class="n">sq</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="n">x</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> 
+
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;both&#39;</span><span class="p">:</span>
+            <span class="n">optimal_value</span><span class="p">,</span> <span class="n">argmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">quadratic</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">return_optimum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">objective</span> <span class="o">=</span> <span class="o">-</span><span class="n">optimal_value</span>
+            <span class="c1"># retain a reference</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">argmin</span>
+            <span class="k">return</span> <span class="n">objective</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+            <span class="n">argmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">quadratic</span><span class="o">=</span><span class="n">q</span><span class="p">)</span>
+            <span class="c1"># retain a reference</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">argmin</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;func&#39;</span><span class="p">:</span>
+            <span class="n">optimal_value</span><span class="p">,</span> <span class="n">argmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">quadratic</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">return_optimum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">objective</span> <span class="o">=</span> <span class="o">-</span><span class="n">optimal_value</span>
+            <span class="c1"># retain a reference</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">argmin</span>
+            <span class="k">return</span> <span class="n">objective</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;mode incorrectly specified&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">proximal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proxq</span><span class="p">,</span> <span class="n">prox_control</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;no proximal defined&#39;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

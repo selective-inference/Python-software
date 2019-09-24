@@ -1,0 +1,1272 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="algorithms.stopping_rules" href="selectinf.algorithms.stopping_rules.html" />
+    <link rel="prev" title="algorithms.softmax" href="selectinf.algorithms.softmax.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">algorithms.sqrt_lasso</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-algorithms-sqrt-lasso">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.sqrt_lasso</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.algorithms.sqrt_lasso.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-sqrt-lasso">
+<h1>algorithms.sqrt_lasso<a class="headerlink" href="#algorithms-sqrt-lasso" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-sqrt-lasso">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.sqrt_lasso</span></code><a class="headerlink" href="#module-algorithms-sqrt-lasso" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.algorithms.sqrt_lasso</span></code>:</p>
+digraph inheritance335b2be946 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;algorithms.sqrt_lasso.l2norm_saturated&quot; [URL=&quot;#selectinf.algorithms.sqrt_lasso.l2norm_saturated&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A little wrapper so that sqrt_lasso view can be bootstrapped&quot;];
+  &quot;regreg.smooth.smooth_atom&quot; -&gt; &quot;algorithms.sqrt_lasso.l2norm_saturated&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;algorithms.sqrt_lasso.sqlasso_objective&quot; [URL=&quot;#selectinf.algorithms.sqrt_lasso.sqlasso_objective&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;The square-root LASSO objective. Essentially&quot;];
+  &quot;regreg.smooth.smooth_atom&quot; -&gt; &quot;algorithms.sqrt_lasso.sqlasso_objective&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;algorithms.sqrt_lasso.sqlasso_objective_skinny&quot; [URL=&quot;#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;The square-root LASSO objective on larger parameter space:&quot;];
+  &quot;regreg.smooth.smooth_atom&quot; -&gt; &quot;algorithms.sqrt_lasso.sqlasso_objective_skinny&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;problems.composite.composite&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;A generic way to specify a problem in composite form.&quot;];
+  &quot;problems.composite.smooth&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;A composite subclass that has 0 as &quot;];
+  &quot;problems.composite.composite&quot; -&gt; &quot;problems.composite.smooth&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;regreg.smooth.smooth_atom&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;A class for representing a smooth function and its gradient&quot;];
+  &quot;problems.composite.smooth&quot; -&gt; &quot;regreg.smooth.smooth_atom&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-selectinf.algorithms.sqrt_lasso"></span><p>Module to solve sqrt-LASSO convex program using regreg.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="l2norm-saturated">
+<h3><a class="reference internal" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated" title="selectinf.algorithms.sqrt_lasso.l2norm_saturated"><code class="xref py py-class docutils literal notranslate"><span class="pre">l2norm_saturated</span></code></a><a class="headerlink" href="#l2norm-saturated" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">l2norm_saturated</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">response</em>, <em class="sig-param">coef=1.0</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">initial=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#l2norm_saturated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">regreg.smooth.smooth_atom</span></code></p>
+<p>A little wrapper so that sqrt_lasso view can be bootstrapped
+like a glm.</p>
+<p>Mainly needs the saturated_loss.hessian method.</p>
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">response</em>, <em class="sig-param">coef=1.0</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">initial=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#l2norm_saturated.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.smooth_objective">
+<code class="sig-name descname">smooth_objective</code><span class="sig-paren">(</span><em class="sig-param">natural_param</em>, <em class="sig-param">mode='both'</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#l2norm_saturated.smooth_objective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.smooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the smooth objective, computing its value, gradient or both.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>natural_param</strong> : ndarray</p>
+<blockquote>
+<div><p>The current parameter values.</p>
+</div></blockquote>
+<p><strong>mode</strong> : str</p>
+<blockquote>
+<div><p>One of [‘func’, ‘grad’, ‘both’].</p>
+</div></blockquote>
+<p><strong>check_feasibility</strong> : bool</p>
+<blockquote>
+<div><p>If True, return <cite>np.inf</cite> when
+point is not feasible, i.e. when <cite>natural_param</cite> is not
+in the domain.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>If <cite>mode</cite> is ‘func’ returns just the objective value</p>
+<p>at <cite>natural_param</cite>, else if <cite>mode</cite> is ‘grad’ returns the gradient</p>
+<p>else returns both.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.hessian">
+<code class="sig-name descname">hessian</code><span class="sig-paren">(</span><em class="sig-param">natural_param</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#l2norm_saturated.hessian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.hessian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hessian of the loss.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>natural_param</strong> : ndarray</p>
+<blockquote>
+<div><p>Parameters where Hessian will be evaluated.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>hess</strong> : ndarray</p>
+<blockquote>
+<div><p>A 1D-array representing the diagonal of the Hessian
+evaluated at <cite>natural_param</cite>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_data">
+<code class="sig-name descname">get_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#l2norm_saturated.get_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.set_data">
+<code class="sig-name descname">set_data</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#l2norm_saturated.set_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.set_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.data">
+<em class="property">property </em><code class="sig-name descname">data</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.mean_function">
+<code class="sig-name descname">mean_function</code><span class="sig-paren">(</span><em class="sig-param">eta</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#l2norm_saturated.mean_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.mean_function" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.affine">
+<em class="property">classmethod </em><code class="sig-name descname">affine</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.apply_offset">
+<code class="sig-name descname">apply_offset</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.apply_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.offset is not None, return x-self.offset, else return x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.conjugate">
+<em class="property">property </em><code class="sig-name descname">conjugate</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_conjugate">
+<code class="sig-name descname">get_conjugate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_lipschitz">
+<code class="sig-name descname">get_lipschitz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_offset">
+<code class="sig-name descname">get_offset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_quadratic">
+<code class="sig-name descname">get_quadratic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.get_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.latexify">
+<code class="sig-name descname">latexify</code><span class="sig-paren">(</span><em class="sig-param">var=None</em>, <em class="sig-param">idx=''</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.latexify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.linear">
+<em class="property">classmethod </em><code class="sig-name descname">linear</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.lipschitz">
+<em class="property">property </em><code class="sig-name descname">lipschitz</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.nonsmooth_objective">
+<code class="sig-name descname">nonsmooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.nonsmooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.objective">
+<code class="sig-name descname">objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.objective_template">
+<code class="sig-name descname">objective_template</code><em class="property"> = 'f(%(var)s)'</em><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.objective_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.objective_vars">
+<code class="sig-name descname">objective_vars</code><em class="property"> = {'coef': 'C', 'offset': '\\alpha+', 'shape': 'p', 'var': '\\beta'}</em><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.objective_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.offset">
+<em class="property">property </em><code class="sig-name descname">offset</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.proximal">
+<code class="sig-name descname">proximal</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.proximal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.proximal_optimum">
+<code class="sig-name descname">proximal_optimum</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.proximal_optimum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.proximal_step">
+<code class="sig-name descname">proximal_step</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em>, <em class="sig-param">prox_control=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.proximal_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proximal optimization</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prox_control: [None, dict]</strong></p>
+<blockquote>
+<div><p>If not None, then a dictionary of parameters for the prox procedure</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.quadratic">
+<em class="property">property </em><code class="sig-name descname">quadratic</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic part of the object, instance of <cite>regreg.identity_quadratic.identity_quadratic</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.scale">
+<code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">copy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.set_lipschitz">
+<code class="sig-name descname">set_lipschitz</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.set_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.set_offset">
+<code class="sig-name descname">set_offset</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.set_quadratic">
+<code class="sig-name descname">set_quadratic</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.set_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.shift">
+<em class="property">classmethod </em><code class="sig-name descname">shift</code><span class="sig-paren">(</span><em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.smoothed">
+<code class="sig-name descname">smoothed</code><span class="sig-paren">(</span><em class="sig-param">smoothing_quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.smoothed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add quadratic smoothing term</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_saturated.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">quadratic=None</em>, <em class="sig-param">return_optimum=False</em>, <em class="sig-param">**fit_args</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_saturated.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="sqlasso-objective">
+<h3><a class="reference internal" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective" title="selectinf.algorithms.sqrt_lasso.sqlasso_objective"><code class="xref py py-class docutils literal notranslate"><span class="pre">sqlasso_objective</span></code></a><a class="headerlink" href="#sqlasso-objective" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">sqlasso_objective</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">offset=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">regreg.smooth.smooth_atom</span></code></p>
+<p>The square-root LASSO objective. Essentially
+smooth, but singular on 
+<span class="math notranslate nohighlight">\(\{eta: y=Xeta\}\)</span>.</p>
+<p>This singularity is ignored in solving the problem.
+It might be a problem sometimes?</p>
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">offset=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_data">
+<code class="sig-name descname">get_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective.get_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.set_data">
+<code class="sig-name descname">set_data</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective.set_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.set_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.data">
+<em class="property">property </em><code class="sig-name descname">data</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data for the sqrt LASSO objective.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.smooth_objective">
+<code class="sig-name descname">smooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">mode='both'</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective.smooth_objective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.smooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>arg</strong> : ndarray</p>
+<blockquote>
+<div><p>The current parameter values.</p>
+</div></blockquote>
+<p><strong>mode</strong> : str</p>
+<blockquote>
+<div><p>One of [‘func’, ‘grad’, ‘both’].</p>
+</div></blockquote>
+<p><strong>check_feasibility</strong> : bool</p>
+<blockquote>
+<div><p>If True, return <cite>np.inf</cite> when
+point is not feasible, i.e. when <cite>beta</cite> is not
+in the domain.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>If <cite>mode</cite> is ‘func’ returns just the objective value</p>
+<p>at <cite>beta</cite>, else if <cite>mode</cite> is ‘grad’ returns the gradient</p>
+<p>else returns both.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.hessian">
+<code class="sig-name descname">hessian</code><span class="sig-paren">(</span><em class="sig-param">beta</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective.hessian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.hessian" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Compute the Hessian of the loss :math:<a href="#id1"><span class="problematic" id="id2">`</span></a></p>
+</div></blockquote>
+<p>abla^2 ell(Xeta)`.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>beta</strong> : ndarray</p>
+<blockquote>
+<div><p>Parameters.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>hess</strong> : ndarray</p>
+<blockquote>
+<div><p>Hessian of the loss at <span class="math notranslate nohighlight">\(eta\)</span>, defined everywhere 
+the residual is not 0.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.affine">
+<em class="property">classmethod </em><code class="sig-name descname">affine</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.apply_offset">
+<code class="sig-name descname">apply_offset</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.apply_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.offset is not None, return x-self.offset, else return x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.conjugate">
+<em class="property">property </em><code class="sig-name descname">conjugate</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_conjugate">
+<code class="sig-name descname">get_conjugate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_lipschitz">
+<code class="sig-name descname">get_lipschitz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_offset">
+<code class="sig-name descname">get_offset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_quadratic">
+<code class="sig-name descname">get_quadratic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.get_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.latexify">
+<code class="sig-name descname">latexify</code><span class="sig-paren">(</span><em class="sig-param">var=None</em>, <em class="sig-param">idx=''</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.latexify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.linear">
+<em class="property">classmethod </em><code class="sig-name descname">linear</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.lipschitz">
+<em class="property">property </em><code class="sig-name descname">lipschitz</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.nonsmooth_objective">
+<code class="sig-name descname">nonsmooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.nonsmooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.objective">
+<code class="sig-name descname">objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.objective_template">
+<code class="sig-name descname">objective_template</code><em class="property"> = 'f(%(var)s)'</em><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.objective_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.objective_vars">
+<code class="sig-name descname">objective_vars</code><em class="property"> = {'coef': 'C', 'offset': '\\alpha+', 'shape': 'p', 'var': '\\beta'}</em><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.objective_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.offset">
+<em class="property">property </em><code class="sig-name descname">offset</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.proximal">
+<code class="sig-name descname">proximal</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.proximal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.proximal_optimum">
+<code class="sig-name descname">proximal_optimum</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.proximal_optimum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.proximal_step">
+<code class="sig-name descname">proximal_step</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em>, <em class="sig-param">prox_control=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.proximal_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proximal optimization</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prox_control: [None, dict]</strong></p>
+<blockquote>
+<div><p>If not None, then a dictionary of parameters for the prox procedure</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.quadratic">
+<em class="property">property </em><code class="sig-name descname">quadratic</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic part of the object, instance of <cite>regreg.identity_quadratic.identity_quadratic</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.scale">
+<code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">copy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.set_lipschitz">
+<code class="sig-name descname">set_lipschitz</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.set_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.set_offset">
+<code class="sig-name descname">set_offset</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.set_quadratic">
+<code class="sig-name descname">set_quadratic</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.set_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.shift">
+<em class="property">classmethod </em><code class="sig-name descname">shift</code><span class="sig-paren">(</span><em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.smoothed">
+<code class="sig-name descname">smoothed</code><span class="sig-paren">(</span><em class="sig-param">smoothing_quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.smoothed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add quadratic smoothing term</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">quadratic=None</em>, <em class="sig-param">return_optimum=False</em>, <em class="sig-param">**fit_args</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="sqlasso-objective-skinny">
+<h3><a class="reference internal" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny" title="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny"><code class="xref py py-class docutils literal notranslate"><span class="pre">sqlasso_objective_skinny</span></code></a><a class="headerlink" href="#sqlasso-objective-skinny" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">sqlasso_objective_skinny</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective_skinny"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">regreg.smooth.smooth_atom</span></code></p>
+<blockquote>
+<div><p>The square-root LASSO objective on larger parameter space:</p>
+<div class="math notranslate nohighlight">
+\[(eta, \sigma) \mapsto \]</div>
+</div></blockquote>
+<p>rac{|y-Xeta|_2^2}{sigma} + sigma</p>
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective_skinny.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.smooth_objective">
+<code class="sig-name descname">smooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">mode='both'</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#sqlasso_objective_skinny.smooth_objective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.smooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>arg</strong> : ndarray</p>
+<blockquote>
+<div><p>The current parameter values.</p>
+</div></blockquote>
+<p><strong>mode</strong> : str</p>
+<blockquote>
+<div><p>One of [‘func’, ‘grad’, ‘both’].</p>
+</div></blockquote>
+<p><strong>check_feasibility</strong> : bool</p>
+<blockquote>
+<div><p>If True, return <cite>np.inf</cite> when
+point is not feasible, i.e. when <cite>beta</cite> is not
+in the domain.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>If <cite>mode</cite> is ‘func’ returns just the objective value</p>
+<p>at <cite>beta</cite>, else if <cite>mode</cite> is ‘grad’ returns the gradient</p>
+<p>else returns both.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.affine">
+<em class="property">classmethod </em><code class="sig-name descname">affine</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.apply_offset">
+<code class="sig-name descname">apply_offset</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.apply_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.offset is not None, return x-self.offset, else return x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.conjugate">
+<em class="property">property </em><code class="sig-name descname">conjugate</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.get_conjugate">
+<code class="sig-name descname">get_conjugate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.get_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.get_lipschitz">
+<code class="sig-name descname">get_lipschitz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.get_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.get_offset">
+<code class="sig-name descname">get_offset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.get_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.get_quadratic">
+<code class="sig-name descname">get_quadratic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.get_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.latexify">
+<code class="sig-name descname">latexify</code><span class="sig-paren">(</span><em class="sig-param">var=None</em>, <em class="sig-param">idx=''</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.latexify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.linear">
+<em class="property">classmethod </em><code class="sig-name descname">linear</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.lipschitz">
+<em class="property">property </em><code class="sig-name descname">lipschitz</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.nonsmooth_objective">
+<code class="sig-name descname">nonsmooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.nonsmooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.objective">
+<code class="sig-name descname">objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.objective_template">
+<code class="sig-name descname">objective_template</code><em class="property"> = 'f(%(var)s)'</em><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.objective_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.objective_vars">
+<code class="sig-name descname">objective_vars</code><em class="property"> = {'coef': 'C', 'offset': '\\alpha+', 'shape': 'p', 'var': '\\beta'}</em><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.objective_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.offset">
+<em class="property">property </em><code class="sig-name descname">offset</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.proximal">
+<code class="sig-name descname">proximal</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.proximal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.proximal_optimum">
+<code class="sig-name descname">proximal_optimum</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.proximal_optimum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.proximal_step">
+<code class="sig-name descname">proximal_step</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em>, <em class="sig-param">prox_control=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.proximal_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proximal optimization</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prox_control: [None, dict]</strong></p>
+<blockquote>
+<div><p>If not None, then a dictionary of parameters for the prox procedure</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.quadratic">
+<em class="property">property </em><code class="sig-name descname">quadratic</code><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic part of the object, instance of <cite>regreg.identity_quadratic.identity_quadratic</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.scale">
+<code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">copy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.set_lipschitz">
+<code class="sig-name descname">set_lipschitz</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.set_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.set_offset">
+<code class="sig-name descname">set_offset</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.set_quadratic">
+<code class="sig-name descname">set_quadratic</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.set_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.shift">
+<em class="property">classmethod </em><code class="sig-name descname">shift</code><span class="sig-paren">(</span><em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.smoothed">
+<code class="sig-name descname">smoothed</code><span class="sig-paren">(</span><em class="sig-param">smoothing_quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.smoothed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add quadratic smoothing term</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">quadratic=None</em>, <em class="sig-param">return_optimum=False</em>, <em class="sig-param">**fit_args</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.sqlasso_objective_skinny.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.algorithms.sqrt_lasso.choose_lambda">
+<code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">choose_lambda</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">quantile=0.95</em>, <em class="sig-param">ndraw=10000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#choose_lambda"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.choose_lambda" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Choose a value of <cite>lam</cite> for the square-root LASSO
+based on an empirical quantile of the distribution of</p>
+<p>$$</p>
+</div></blockquote>
+<dl class="simple">
+<dt>rac{|X^Tepsilon|_{infty}}{|epsilon|_2}.</dt><dd><p>$$</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> : np.float((n, p))</p>
+<blockquote>
+<div><blockquote>
+<div><p>Design matrix.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>quantile<span class="classifier">float</span></dt><dd><p>What quantile should we use?</p>
+</dd>
+<dt>ndraw<span class="classifier">int</span></dt><dd><p>How many draws?</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.sqrt_lasso.estimate_sigma">
+<code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">estimate_sigma</code><span class="sig-paren">(</span><em class="sig-param">observed</em>, <em class="sig-param">truncated_df</em>, <em class="sig-param">lower_bound</em>, <em class="sig-param">upper_bound</em>, <em class="sig-param">untruncated_df=0</em>, <em class="sig-param">factor=3</em>, <em class="sig-param">npts=50</em>, <em class="sig-param">nsample=2000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#estimate_sigma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.estimate_sigma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce an estimate of <span class="math notranslate nohighlight">\(\sigma\)</span> from a constrained
+error sum of squares. The relevant distribution is a
+scaled <span class="math notranslate nohighlight">\(\chi^2\)</span> restricted to <span class="math notranslate nohighlight">\([0,U]\)</span> where <span class="math notranslate nohighlight">\(U\)</span> is <cite>upper_bound</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : float</p>
+<blockquote>
+<div><p>The observed sum of squares.</p>
+</div></blockquote>
+<p><strong>truncated_df</strong> : float</p>
+<blockquote>
+<div><p>Degrees of freedom of the truncated <span class="math notranslate nohighlight">\(\chi^2\)</span> in the sum of squares.
+The observed sum is assumed to be the sum
+of an independent untruncated <span class="math notranslate nohighlight">\(\chi^2\)</span> and the truncated one.</p>
+</div></blockquote>
+<p><strong>lower_bound</strong> : float</p>
+<blockquote>
+<div><p>Lower limit of truncation interval.</p>
+</div></blockquote>
+<p><strong>upper_bound</strong> : float</p>
+<blockquote>
+<div><p>Upper limit of truncation interval.</p>
+</div></blockquote>
+<p><strong>untruncated_df</strong> : float</p>
+<blockquote>
+<div><p>Degrees of freedom of the untruncated <span class="math notranslate nohighlight">\(\chi^2\)</span> in the sum of squares.</p>
+</div></blockquote>
+<p><strong>factor</strong> : float</p>
+<blockquote>
+<div><p>Range of candidate values is 
+[observed/factor, observed*factor]</p>
+</div></blockquote>
+<p><strong>npts</strong> : int</p>
+<blockquote>
+<div><p>How many candidate values for interpolator.</p>
+</div></blockquote>
+<p><strong>nsample</strong> : int</p>
+<blockquote>
+<div><p>How many samples for each expected value
+of the truncated sum of squares.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>sigma_hat</strong> : np.float</p>
+<blockquote>
+<div><p>Estimate of <span class="math notranslate nohighlight">\(\sigma\)</span>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.sqrt_lasso.goodness_of_fit">
+<code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">goodness_of_fit</code><span class="sig-paren">(</span><em class="sig-param">lasso_obj</em>, <em class="sig-param">statistic</em>, <em class="sig-param">force=False</em>, <em class="sig-param">alternative='twosided'</em>, <em class="sig-param">ndraw=5000</em>, <em class="sig-param">burnin=2000</em>, <em class="sig-param">sample=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#goodness_of_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.goodness_of_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a goodness of fit test based on a given
+statistic applied to</p>
+<div class="math notranslate nohighlight">
+\[U_{-E}(y) = (I-P_E)y / \|(I-P_E)y\|_2\]</div>
+<p>which is ancillary for the selected model.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lasso_obj</strong> : <cite>lasso</cite></p>
+<blockquote>
+<div><p>Instance of selection.algorithms.lasso.lasso instantiated
+with a gaussian loglikelihood (instance of <cite>regreg.smooth.glm.gaussian_loglike</cite></p>
+</div></blockquote>
+<p><strong>statistic</strong> : callable</p>
+<blockquote>
+<div><p>Statistic to compute on observed <span class="math notranslate nohighlight">\(U_{-E}\)</span> as well
+as sample from null distribution.</p>
+</div></blockquote>
+<p><strong>alternative</strong> : str</p>
+<blockquote>
+<div><p>One of [‘greater’, ‘less’, ‘twosided’]. Determines
+how pvalue is computed, based on upper tail, lower tail
+or equal tail.</p>
+</div></blockquote>
+<p><strong>force</strong> : bool</p>
+<blockquote>
+<div><p>Resample from <span class="math notranslate nohighlight">\(U_{-E}\)</span> under the null even if
+the instance already has a null sample.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>If a null sample is to be drawn, how large a sample?
+Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>If a null sample is to be drawn, how long a burnin?
+Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>sample</strong> : multiparameter_family (optional)</p>
+<blockquote>
+<div><p>If not None, this is used as sample instead of generating a new sample.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pvalue</strong> : np.float</p>
+<blockquote>
+<div><p>Two-tailed p-value.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.sqrt_lasso.l2norm_glm">
+<code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">l2norm_glm</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">offset=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#l2norm_glm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.l2norm_glm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.sqrt_lasso.solve_sqrt_lasso">
+<code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">solve_sqrt_lasso</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">weights=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">solve_args={}</em>, <em class="sig-param">force_fat=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#solve_sqrt_lasso"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.solve_sqrt_lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the square-root LASSO optimization problem:</p>
+<dl class="simple">
+<dt>$$</dt><dd><p>ext{minimize}_{eta} |y-Xeta|_2 + D <a href="#id3"><span class="problematic" id="id4">|eta|</span></a>,</p>
+</dd>
+</dl>
+<p>$$
+where <span class="math notranslate nohighlight">\(D\)</span> is the diagonal matrix with weights on its diagonal.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>y</strong> : np.float((n,))</p>
+<blockquote>
+<div><p>The target, in the model <span class="math notranslate nohighlight">\(y = Xeta\)</span></p>
+</div></blockquote>
+<p><strong>X</strong> : np.float((n, p))</p>
+<blockquote>
+<div><p>The data, in the model <span class="math notranslate nohighlight">\(y = Xeta\)</span></p>
+</div></blockquote>
+<p><strong>weights</strong> : np.float</p>
+<blockquote>
+<div><p>Coefficients of the L-1 penalty in
+optimization problem, note that different
+coordinates can have different coefficients.</p>
+</div></blockquote>
+<p><strong>initial</strong> : np.float(p)</p>
+<blockquote>
+<div><p>Initial point for optimization.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict</p>
+<blockquote>
+<div><p>Arguments passed to regreg solver.</p>
+</div></blockquote>
+<p><strong>quadratic</strong> : <cite>regreg.identity_quadratic</cite></p>
+<blockquote>
+<div><p>A quadratic term added to objective function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.sqrt_lasso.solve_sqrt_lasso_fat">
+<code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">solve_sqrt_lasso_fat</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">weights=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">solve_args={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#solve_sqrt_lasso_fat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.solve_sqrt_lasso_fat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the square-root LASSO optimization problem:</p>
+<dl class="simple">
+<dt>$$</dt><dd><p>ext{minimize}_{eta} |y-Xeta|_2 + D <a href="#id5"><span class="problematic" id="id6">|eta|</span></a>,</p>
+</dd>
+</dl>
+<p>$$
+where <span class="math notranslate nohighlight">\(D\)</span> is the diagonal matrix with weights on its diagonal.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>y</strong> : np.float((n,))</p>
+<blockquote>
+<div><p>The target, in the model <span class="math notranslate nohighlight">\(y = Xeta\)</span></p>
+</div></blockquote>
+<p><strong>X</strong> : np.float((n, p))</p>
+<blockquote>
+<div><p>The data, in the model <span class="math notranslate nohighlight">\(y = Xeta\)</span></p>
+</div></blockquote>
+<p><strong>weights</strong> : np.float</p>
+<blockquote>
+<div><p>Coefficients of the L-1 penalty in
+optimization problem, note that different
+coordinates can have different coefficients.</p>
+</div></blockquote>
+<p><strong>initial</strong> : np.float(p)</p>
+<blockquote>
+<div><p>Initial point for optimization.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict</p>
+<blockquote>
+<div><p>Arguments passed to regreg solver.</p>
+</div></blockquote>
+<p><strong>quadratic</strong> : <cite>regreg.identity_quadratic</cite></p>
+<blockquote>
+<div><p>A quadratic term added to objective function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.algorithms.sqrt_lasso.solve_sqrt_lasso_skinny">
+<code class="sig-prename descclassname">selectinf.algorithms.sqrt_lasso.</code><code class="sig-name descname">solve_sqrt_lasso_skinny</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">weights=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">solve_args={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/algorithms/sqrt_lasso.html#solve_sqrt_lasso_skinny"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.algorithms.sqrt_lasso.solve_sqrt_lasso_skinny" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the square-root LASSO optimization problem:</p>
+<dl class="simple">
+<dt>$$</dt><dd><p>ext{minimize}_{eta} |y-Xeta|_2 + D <a href="#id7"><span class="problematic" id="id8">|eta|</span></a>,</p>
+</dd>
+</dl>
+<p>$$
+where <span class="math notranslate nohighlight">\(D\)</span> is the diagonal matrix with weights on its diagonal.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>y</strong> : np.float((n,))</p>
+<blockquote>
+<div><p>The target, in the model <span class="math notranslate nohighlight">\(y = Xeta\)</span></p>
+</div></blockquote>
+<p><strong>X</strong> : np.float((n, p))</p>
+<blockquote>
+<div><p>The data, in the model <span class="math notranslate nohighlight">\(y = Xeta\)</span></p>
+</div></blockquote>
+<p><strong>weights</strong> : np.float</p>
+<blockquote>
+<div><p>Coefficients of the L-1 penalty in
+optimization problem, note that different
+coordinates can have different coefficients.</p>
+</div></blockquote>
+<p><strong>initial</strong> : np.float(p)</p>
+<blockquote>
+<div><p>Initial point for optimization.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict</p>
+<blockquote>
+<div><p>Arguments passed to regreg solver.</p>
+</div></blockquote>
+<p><strong>quadratic</strong> : <cite>regreg.identity_quadratic</cite></p>
+<blockquote>
+<div><p>A quadratic term added to objective function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.algorithms.stopping_rules.html" class="btn btn-neutral float-right" title="algorithms.stopping_rules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.algorithms.softmax.html" class="btn btn-neutral float-left" title="algorithms.softmax" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

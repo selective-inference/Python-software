@@ -1,0 +1,433 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.modalities.fmri.experimental_paradigm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="modalities-fmri-experimental-paradigm">
+<h1>modalities.fmri.experimental_paradigm<a class="headerlink" href="#modalities-fmri-experimental-paradigm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-modalities-fmri-experimental-paradigm">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">modalities.fmri.experimental_paradigm</span></code><a class="headerlink" href="#module-modalities-fmri-experimental-paradigm" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.modalities.fmri.experimental_paradigm</span></code>:</p>
+digraph inheritance32493386b4 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;fmri.experimental_paradigm.BlockParadigm&quot; [URL=&quot;#nipy.modalities.fmri.experimental_paradigm.BlockParadigm&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class to handle block paradigms&quot;];
+  &quot;fmri.experimental_paradigm.Paradigm&quot; -&gt; &quot;fmri.experimental_paradigm.BlockParadigm&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;fmri.experimental_paradigm.EventRelatedParadigm&quot; [URL=&quot;#nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class to handle event-related paradigms&quot;];
+  &quot;fmri.experimental_paradigm.Paradigm&quot; -&gt; &quot;fmri.experimental_paradigm.EventRelatedParadigm&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;fmri.experimental_paradigm.Paradigm&quot; [URL=&quot;#nipy.modalities.fmri.experimental_paradigm.Paradigm&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Simple class to handle the experimental paradigm in one session&quot;];
+}
+<span class="target" id="module-nipy.modalities.fmri.experimental_paradigm"></span><p>This module implements an object to deal with experimental paradigms.
+In fMRI data analysis, there are two main types of experimental
+paradigms: block and event-related paradigms. They correspond to 2
+classes EventRelatedParadigm and BlockParadigm. Both are implemented
+here, together with functions to write paradigms to csv files.</p>
+<div class="section" id="notes">
+<h3>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h3>
+<p>Although the Paradigm object have no notion of session or acquisitions
+(they are assumed to correspond to a sequential acquisition, called
+‘session’ in SPM jargon), the .csv file used to represent paradigm may
+be multi-session, so it is assumed that the first column of a file
+yielding a paradigm is in fact a session index</p>
+<p>Author: Bertrand Thirion, 2009-2011</p>
+</div>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="blockparadigm">
+<h3><a class="reference internal" href="#nipy.modalities.fmri.experimental_paradigm.BlockParadigm" title="nipy.modalities.fmri.experimental_paradigm.BlockParadigm"><code class="xref py py-class docutils literal notranslate"><span class="pre">BlockParadigm</span></code></a><a class="headerlink" href="#blockparadigm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.modalities.fmri.experimental_paradigm.BlockParadigm">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.experimental_paradigm.</code><code class="sig-name descname">BlockParadigm</code><span class="sig-paren">(</span><em class="sig-param">con_id=None</em>, <em class="sig-param">onset=None</em>, <em class="sig-param">duration=None</em>, <em class="sig-param">amplitude=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/experimental_paradigm.html#BlockParadigm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.BlockParadigm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.modalities.fmri.experimental_paradigm.Paradigm" title="nipy.modalities.fmri.experimental_paradigm.Paradigm"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.modalities.fmri.experimental_paradigm.Paradigm</span></code></a></p>
+<p>Class to handle block paradigms</p>
+<dl class="method">
+<dt id="nipy.modalities.fmri.experimental_paradigm.BlockParadigm.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">con_id=None</em>, <em class="sig-param">onset=None</em>, <em class="sig-param">duration=None</em>, <em class="sig-param">amplitude=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/experimental_paradigm.html#BlockParadigm.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.BlockParadigm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>con_id: array of shape (n_events), type = string, optional</strong></p>
+<blockquote>
+<div><p>id of the events (name of the experimental condition)</p>
+</div></blockquote>
+<p><strong>onset: array of shape (n_events), type = float, optional</strong></p>
+<blockquote>
+<div><p>onset time (in s.) of the events</p>
+</div></blockquote>
+<p><strong>amplitude: array of shape (n_events), type = float, optional,</strong></p>
+<blockquote>
+<div><p>amplitude of the events (if applicable)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.modalities.fmri.experimental_paradigm.BlockParadigm.write_to_csv">
+<code class="sig-name descname">write_to_csv</code><span class="sig-paren">(</span><em class="sig-param">csv_file</em>, <em class="sig-param">session='0'</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.BlockParadigm.write_to_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the paradigm to a csv file</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>csv_file: string, path of the csv file</strong></p>
+<p><strong>session: string, optional, session identifier</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="eventrelatedparadigm">
+<h3><a class="reference internal" href="#nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm" title="nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm"><code class="xref py py-class docutils literal notranslate"><span class="pre">EventRelatedParadigm</span></code></a><a class="headerlink" href="#eventrelatedparadigm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.experimental_paradigm.</code><code class="sig-name descname">EventRelatedParadigm</code><span class="sig-paren">(</span><em class="sig-param">con_id=None</em>, <em class="sig-param">onset=None</em>, <em class="sig-param">amplitude=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/experimental_paradigm.html#EventRelatedParadigm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.modalities.fmri.experimental_paradigm.Paradigm" title="nipy.modalities.fmri.experimental_paradigm.Paradigm"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.modalities.fmri.experimental_paradigm.Paradigm</span></code></a></p>
+<p>Class to handle event-related paradigms</p>
+<dl class="method">
+<dt id="nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">con_id=None</em>, <em class="sig-param">onset=None</em>, <em class="sig-param">amplitude=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/experimental_paradigm.html#EventRelatedParadigm.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>con_id: array of shape (n_events), type = string, optional</strong></p>
+<blockquote>
+<div><p>id of the events (name of the experimental condition)</p>
+</div></blockquote>
+<p><strong>onset: array of shape (n_events), type = float, optional</strong></p>
+<blockquote>
+<div><p>onset time (in s.) of the events</p>
+</div></blockquote>
+<p><strong>amplitude: array of shape (n_events), type = float, optional,</strong></p>
+<blockquote>
+<div><p>amplitude of the events (if applicable)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm.write_to_csv">
+<code class="sig-name descname">write_to_csv</code><span class="sig-paren">(</span><em class="sig-param">csv_file</em>, <em class="sig-param">session='0'</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm.write_to_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the paradigm to a csv file</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>csv_file: string, path of the csv file</strong></p>
+<p><strong>session: string, optional, session identifier</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="paradigm">
+<h3><a class="reference internal" href="#nipy.modalities.fmri.experimental_paradigm.Paradigm" title="nipy.modalities.fmri.experimental_paradigm.Paradigm"><code class="xref py py-class docutils literal notranslate"><span class="pre">Paradigm</span></code></a><a class="headerlink" href="#paradigm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.modalities.fmri.experimental_paradigm.Paradigm">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.experimental_paradigm.</code><code class="sig-name descname">Paradigm</code><span class="sig-paren">(</span><em class="sig-param">con_id=None</em>, <em class="sig-param">onset=None</em>, <em class="sig-param">amplitude=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/experimental_paradigm.html#Paradigm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.Paradigm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Simple class to handle the experimental paradigm in one session</p>
+<dl class="method">
+<dt id="nipy.modalities.fmri.experimental_paradigm.Paradigm.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">con_id=None</em>, <em class="sig-param">onset=None</em>, <em class="sig-param">amplitude=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/experimental_paradigm.html#Paradigm.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.Paradigm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>con_id: array of shape (n_events), type = string, optional</strong></p>
+<blockquote>
+<div><p>identifier of the events</p>
+</div></blockquote>
+<p><strong>onset: array of shape (n_events), type = float, optional,</strong></p>
+<blockquote>
+<div><p>onset time (in s.) of the events</p>
+</div></blockquote>
+<p><strong>amplitude: array of shape (n_events), type = float, optional,</strong></p>
+<blockquote>
+<div><p>amplitude of the events (if applicable)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.modalities.fmri.experimental_paradigm.Paradigm.write_to_csv">
+<code class="sig-name descname">write_to_csv</code><span class="sig-paren">(</span><em class="sig-param">csv_file</em>, <em class="sig-param">session='0'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/experimental_paradigm.html#Paradigm.write_to_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.Paradigm.write_to_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the paradigm to a csv file</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>csv_file: string, path of the csv file</strong></p>
+<p><strong>session: string, optional, session identifier</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="function">
+<h2>Function<a class="headerlink" href="#function" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.modalities.fmri.experimental_paradigm.load_paradigm_from_csv_file">
+<code class="sig-prename descclassname">nipy.modalities.fmri.experimental_paradigm.</code><code class="sig-name descname">load_paradigm_from_csv_file</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">session=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/experimental_paradigm.html#load_paradigm_from_csv_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.experimental_paradigm.load_paradigm_from_csv_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a (.csv) paradigm file consisting of values yielding
+(occurrence time, (duration), event ID, modulation)
+and returns a paradigm instance or a dictionary of paradigm instances</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path: string,</strong></p>
+<blockquote>
+<div><p>path to a .csv file that describes the paradigm</p>
+</div></blockquote>
+<p><strong>session: string, optional, session identifier</strong></p>
+<blockquote>
+<div><p>by default the output is a dictionary
+of session-level dictionaries indexed by session</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>paradigm, paradigm instance (if session is provided), or</p>
+<blockquote>
+<div><p>dictionary of paradigm instances otherwise,
+the resulting session-by-session paradigm</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>It is assumed that the csv file contains the following columns:
+(session id, condition id, onset),
+plus possibly (duration) and/or (amplitude).
+If all the durations are 0, the paradigm will be handled as event-related.</p>
+<p>FIXME: would be much clearer if amplitude was put before duration in the
+.csv</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

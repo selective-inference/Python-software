@@ -1,0 +1,1519 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.statistics.formula.formulae</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Formula objects</span>
+<span class="sd">===============</span>
+
+<span class="sd">A formula is basically a sympy expression for the mean of something of</span>
+<span class="sd">the form::</span>
+
+<span class="sd">   mean = sum([Beta(e)*e for e in expr])</span>
+
+<span class="sd">Or, a linear combination of sympy expressions, with each one multiplied</span>
+<span class="sd">by its own &quot;Beta&quot;. The elements of expr can be instances of Term (for a</span>
+<span class="sd">linear regression formula, they would all be instances of Term). But, in</span>
+<span class="sd">general, there might be some other parameters (i.e. sympy.Symbol</span>
+<span class="sd">instances) that are not Terms.</span>
+
+<span class="sd">The design matrix is made up of columns that are the derivatives of mean</span>
+<span class="sd">with respect to everything that is not a Term, evaluted at a recarray</span>
+<span class="sd">that has field names given by [str(t) for t in self.terms].</span>
+
+<span class="sd">For those familiar with R&#39;s formula syntax, if we wanted a design matrix</span>
+<span class="sd">like the following::</span>
+
+<span class="sd">    &gt; s.table = read.table(&quot;http://www-stat.stanford.edu/~jtaylo/courses/stats191/data/supervisor.table&quot;, header=T)</span>
+<span class="sd">    &gt; d = model.matrix(lm(Y ~ X1*X3, s.table)</span>
+<span class="sd">    )</span>
+<span class="sd">    &gt; d</span>
+<span class="sd">       (Intercept) X1 X3 X1:X3</span>
+<span class="sd">    1            1 51 39  1989</span>
+<span class="sd">    2            1 64 54  3456</span>
+<span class="sd">    3            1 70 69  4830</span>
+<span class="sd">    4            1 63 47  2961</span>
+<span class="sd">    5            1 78 66  5148</span>
+<span class="sd">    6            1 55 44  2420</span>
+<span class="sd">    7            1 67 56  3752</span>
+<span class="sd">    8            1 75 55  4125</span>
+<span class="sd">    9            1 82 67  5494</span>
+<span class="sd">    10           1 61 47  2867</span>
+<span class="sd">    11           1 53 58  3074</span>
+<span class="sd">    12           1 60 39  2340</span>
+<span class="sd">    13           1 62 42  2604</span>
+<span class="sd">    14           1 83 45  3735</span>
+<span class="sd">    15           1 77 72  5544</span>
+<span class="sd">    16           1 90 72  6480</span>
+<span class="sd">    17           1 85 69  5865</span>
+<span class="sd">    18           1 60 75  4500</span>
+<span class="sd">    19           1 70 57  3990</span>
+<span class="sd">    20           1 58 54  3132</span>
+<span class="sd">    21           1 40 34  1360</span>
+<span class="sd">    22           1 61 62  3782</span>
+<span class="sd">    23           1 66 50  3300</span>
+<span class="sd">    24           1 37 58  2146</span>
+<span class="sd">    25           1 54 48  2592</span>
+<span class="sd">    26           1 77 63  4851</span>
+<span class="sd">    27           1 75 74  5550</span>
+<span class="sd">    28           1 57 45  2565</span>
+<span class="sd">    29           1 85 71  6035</span>
+<span class="sd">    30           1 82 59  4838</span>
+<span class="sd">    attr(,&quot;assign&quot;)</span>
+<span class="sd">    [1] 0 1 2 3</span>
+<span class="sd">    &gt;</span>
+
+<span class="sd">With the Formula, it looks like this:</span>
+
+<span class="sd">&gt;&gt;&gt; r = np.rec.array([</span>
+<span class="sd">...     (43, 51, 30, 39, 61, 92, 45), (63, 64, 51, 54, 63, 73, 47), </span>
+<span class="sd">...     (71, 70, 68, 69, 76, 86, 48), (61, 63, 45, 47, 54, 84, 35),</span>
+<span class="sd">...     (81, 78, 56, 66, 71, 83, 47), (43, 55, 49, 44, 54, 49, 34),</span>
+<span class="sd">...     (58, 67, 42, 56, 66, 68, 35), (71, 75, 50, 55, 70, 66, 41),</span>
+<span class="sd">...     (72, 82, 72, 67, 71, 83, 31), (67, 61, 45, 47, 62, 80, 41),</span>
+<span class="sd">...     (64, 53, 53, 58, 58, 67, 34), (67, 60, 47, 39, 59, 74, 41),</span>
+<span class="sd">...     (69, 62, 57, 42, 55, 63, 25), (68, 83, 83, 45, 59, 77, 35),</span>
+<span class="sd">...     (77, 77, 54, 72, 79, 77, 46), (81, 90, 50, 72, 60, 54, 36),</span>
+<span class="sd">...     (74, 85, 64, 69, 79, 79, 63), (65, 60, 65, 75, 55, 80, 60),</span>
+<span class="sd">...     (65, 70, 46, 57, 75, 85, 46), (50, 58, 68, 54, 64, 78, 52),</span>
+<span class="sd">...     (50, 40, 33, 34, 43, 64, 33), (64, 61, 52, 62, 66, 80, 41),</span>
+<span class="sd">...     (53, 66, 52, 50, 63, 80, 37), (40, 37, 42, 58, 50, 57, 49),</span>
+<span class="sd">...     (63, 54, 42, 48, 66, 75, 33), (66, 77, 66, 63, 88, 76, 72),</span>
+<span class="sd">...     (78, 75, 58, 74, 80, 78, 49), (48, 57, 44, 45, 51, 83, 38),</span>
+<span class="sd">...     (85, 85, 71, 71, 77, 74, 55), (82, 82, 39, 59, 64, 78, 39)],</span>
+<span class="sd">...              dtype=[(&#39;y&#39;, &#39;&lt;i8&#39;), (&#39;x1&#39;, &#39;&lt;i8&#39;), (&#39;x2&#39;, &#39;&lt;i8&#39;),</span>
+<span class="sd">...                     (&#39;x3&#39;, &#39;&lt;i8&#39;), (&#39;x4&#39;, &#39;&lt;i8&#39;), (&#39;x5&#39;, &#39;&lt;i8&#39;),</span>
+<span class="sd">...                     (&#39;x6&#39;, &#39;&lt;i8&#39;)])</span>
+<span class="sd">&gt;&gt;&gt; x1 = Term(&#39;x1&#39;); x3 = Term(&#39;x3&#39;)</span>
+<span class="sd">&gt;&gt;&gt; f = Formula([x1, x3, x1*x3]) + I</span>
+<span class="sd">&gt;&gt;&gt; f.mean</span>
+<span class="sd">_b0*x1 + _b1*x3 + _b2*x1*x3 + _b3</span>
+
+<span class="sd">The I is the &quot;intercept&quot; term, I have explicity not used R&#39;s default of</span>
+<span class="sd">adding it to everything.</span>
+
+<span class="sd">&gt;&gt;&gt; f.design(r)  #doctest: +STRUCTARR_EQUAL</span>
+<span class="sd">array([(51.0, 39.0, 1989.0, 1.0), (64.0, 54.0, 3456.0, 1.0),</span>
+<span class="sd">       (70.0, 69.0, 4830.0, 1.0), (63.0, 47.0, 2961.0, 1.0),</span>
+<span class="sd">       (78.0, 66.0, 5148.0, 1.0), (55.0, 44.0, 2420.0, 1.0),</span>
+<span class="sd">       (67.0, 56.0, 3752.0, 1.0), (75.0, 55.0, 4125.0, 1.0),</span>
+<span class="sd">       (82.0, 67.0, 5494.0, 1.0), (61.0, 47.0, 2867.0, 1.0),</span>
+<span class="sd">       (53.0, 58.0, 3074.0, 1.0), (60.0, 39.0, 2340.0, 1.0),</span>
+<span class="sd">       (62.0, 42.0, 2604.0, 1.0), (83.0, 45.0, 3735.0, 1.0),</span>
+<span class="sd">       (77.0, 72.0, 5544.0, 1.0), (90.0, 72.0, 6480.0, 1.0),</span>
+<span class="sd">       (85.0, 69.0, 5865.0, 1.0), (60.0, 75.0, 4500.0, 1.0),</span>
+<span class="sd">       (70.0, 57.0, 3990.0, 1.0), (58.0, 54.0, 3132.0, 1.0),</span>
+<span class="sd">       (40.0, 34.0, 1360.0, 1.0), (61.0, 62.0, 3782.0, 1.0),</span>
+<span class="sd">       (66.0, 50.0, 3300.0, 1.0), (37.0, 58.0, 2146.0, 1.0),</span>
+<span class="sd">       (54.0, 48.0, 2592.0, 1.0), (77.0, 63.0, 4851.0, 1.0),</span>
+<span class="sd">       (75.0, 74.0, 5550.0, 1.0), (57.0, 45.0, 2565.0, 1.0),</span>
+<span class="sd">       (85.0, 71.0, 6035.0, 1.0), (82.0, 59.0, 4838.0, 1.0)], </span>
+<span class="sd">      dtype=[(&#39;x1&#39;, &#39;&lt;f8&#39;), (&#39;x3&#39;, &#39;&lt;f8&#39;), (&#39;x1*x3&#39;, &#39;&lt;f8&#39;), (&#39;1&#39;, &#39;&lt;f8&#39;)])</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">string</span> <span class="k">import</span> <span class="n">ascii_letters</span><span class="p">,</span> <span class="n">digits</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="k">import</span> <span class="n">pinv</span>
+
+<span class="kn">import</span> <span class="nn">sympy</span>
+<span class="kn">from</span> <span class="nn">sympy</span> <span class="k">import</span> <span class="n">Dummy</span><span class="p">,</span> <span class="n">default_sort_key</span>
+<span class="kn">from</span> <span class="nn">sympy.utilities.lambdify</span> <span class="k">import</span> <span class="p">(</span><span class="n">implemented_function</span><span class="p">,</span> <span class="n">lambdify</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">nipy.utils</span> <span class="k">import</span> <span class="n">_NoValue</span><span class="p">,</span> <span class="n">VisibleDeprecationWarning</span>
+<span class="kn">from</span> <span class="nn">nipy.utils.compat3</span> <span class="k">import</span> <span class="n">to_str</span>
+
+<span class="kn">from</span> <span class="nn">nipy.algorithms.utils.matrices</span> <span class="k">import</span> <span class="n">matrix_rank</span><span class="p">,</span> <span class="n">full_rank</span>
+
+<span class="c1"># Legacy repr printing from numpy.</span>
+<span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">legacy_printing</span> <span class="k">as</span> <span class="n">setup_module</span>  <span class="c1"># noqa</span>
+
+
+<span class="nd">@np</span><span class="o">.</span><span class="n">deprecate</span><span class="p">(</span><span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Please use sympy.Dummy instead of this function&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">make_dummy</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Make dummy variable of given name</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        name of dummy variable</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dum : `Dummy` instance</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The interface to Dummy changed between 0.6.7 and 0.7.0, and we used this</span>
+<span class="sd">    function to keep compatibility. Now we depend on sympy 0.7.0 and this</span>
+<span class="sd">    function is obsolete.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Dummy</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="define"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.define">[docs]</a><span class="k">def</span> <span class="nf">define</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># Moved to utils module</span>
+    <span class="kn">import</span> <span class="nn">warnings</span>
+    <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Please use define function from utils module&#39;</span><span class="p">,</span>
+                  <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                  <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">define</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Term"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Term">[docs]</a><span class="k">class</span> <span class="nc">Term</span><span class="p">(</span><span class="n">sympy</span><span class="o">.</span><span class="n">Symbol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A sympy.Symbol type to represent a term an a regression model</span>
+
+<span class="sd">    Terms can be added to other sympy expressions with the single</span>
+<span class="sd">    convention that a term plus itself returns itself.</span>
+
+<span class="sd">    It is meant to emulate something on the right hand side of a formula</span>
+<span class="sd">    in R. In particular, its name can be the name of a field in a</span>
+<span class="sd">    recarray used to create a design matrix.</span>
+
+<span class="sd">    &gt;&gt;&gt; t = Term(&#39;x&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; xval = np.array([(3,),(4,),(5,)], np.dtype([(&#39;x&#39;, np.float)]))</span>
+<span class="sd">    &gt;&gt;&gt; f = t.formula</span>
+<span class="sd">    &gt;&gt;&gt; d = f.design(xval)</span>
+<span class="sd">    &gt;&gt;&gt; print(d.dtype.descr)</span>
+<span class="sd">    [(&#39;x&#39;, &#39;&lt;f8&#39;)]</span>
+<span class="sd">    &gt;&gt;&gt; f.design(xval, return_float=True)</span>
+<span class="sd">    array([ 3.,  4.,  5.])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># This flag is defined to avoid using isinstance in getterms</span>
+    <span class="c1"># and getparams.</span>
+    <span class="n">_term_flag</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_getformula</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Formula</span><span class="p">([</span><span class="bp">self</span><span class="p">])</span>
+    <span class="n">formula</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getformula</span><span class="p">,</span>
+                       <span class="n">doc</span><span class="o">=</span><span class="s2">&quot;Return a Formula with only terms=[self].&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">sympy</span><span class="o">.</span><span class="n">Symbol</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+<span class="c1"># time symbol</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">Term</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="terms"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.terms">[docs]</a><span class="k">def</span> <span class="nf">terms</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Return list of terms with names given by `names`</span>
+
+<span class="sd">    This is just a convenience in defining a set of terms, and is the</span>
+<span class="sd">    equivalent of ``sympy.symbols`` for defining symbols in sympy.</span>
+
+<span class="sd">    We enforce the sympy 0.7.0 behavior of returning symbol &quot;abc&quot; from input</span>
+<span class="sd">    &quot;abc&quot;, rthan than 3 symbols &quot;a&quot;, &quot;b&quot;, &quot;c&quot;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    names : str or sequence of str</span>
+<span class="sd">       If a single str, can specify multiple ``Term``s with string</span>
+<span class="sd">       containing space or &#39;,&#39; as separator.</span>
+<span class="sd">    \\**kwargs : keyword arguments</span>
+<span class="sd">       keyword arguments as for ``sympy.symbols``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ts : ``Term`` or tuple</span>
+<span class="sd">       ``Term`` instance or list of ``Term`` instance objects named from `names`</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; terms((&#39;a&#39;, &#39;b&#39;, &#39;c&#39;))</span>
+<span class="sd">    (a, b, c)</span>
+<span class="sd">    &gt;&gt;&gt; terms(&#39;a, b, c&#39;)</span>
+<span class="sd">    (a, b, c)</span>
+<span class="sd">    &gt;&gt;&gt; terms(&#39;abc&#39;)</span>
+<span class="sd">    abc</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="s1">&#39;each_char&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;deprecated &quot;each_char&quot; kwarg removed in sympy&gt;0.7.3&#39;</span><span class="p">)</span>
+    <span class="n">syms</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">syms</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Term</span><span class="p">(</span><span class="n">syms</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">Term</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">syms</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FactorTerm"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.FactorTerm">[docs]</a><span class="k">class</span> <span class="nc">FactorTerm</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Boolean Term derived from a Factor.</span>
+
+<span class="sd">    Its properties are the same as a Term except that its product with</span>
+<span class="sd">    itself is itself.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># This flag is defined to avoid using isinstance in getterms</span>
+    <span class="n">_factor_term_flag</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+        <span class="c1"># Names or levels can be byte strings</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">Term</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">to_str</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">to_str</span><span class="p">(</span><span class="n">level</span><span class="p">)))</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">factor_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">return</span> <span class="n">new</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sympy</span><span class="o">.</span><span class="n">Symbol</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Beta"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Beta">[docs]</a><span class="k">class</span> <span class="nc">Beta</span><span class="p">(</span><span class="n">sympy</span><span class="o">.</span><span class="n">symbol</span><span class="o">.</span><span class="n">Dummy</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; A symbol tied to a Term `term` &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">term</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">symbol</span><span class="o">.</span><span class="n">Dummy</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">_term</span> <span class="o">=</span> <span class="n">term</span>
+        <span class="k">return</span> <span class="n">new</span></div>
+
+
+<div class="viewcode-block" id="getparams"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.getparams">[docs]</a><span class="k">def</span> <span class="nf">getparams</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return the parameters of an expression that are not Term </span>
+<span class="sd">    instances but are instances of sympy.Symbol.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; x, y, z = [Term(l) for l in &#39;xyz&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; f = Formula([x,y,z])</span>
+<span class="sd">    &gt;&gt;&gt; getparams(f)</span>
+<span class="sd">    []</span>
+<span class="sd">    &gt;&gt;&gt; f.mean</span>
+<span class="sd">    _b0*x + _b1*y + _b2*z</span>
+<span class="sd">    &gt;&gt;&gt; getparams(f.mean)</span>
+<span class="sd">    [_b0, _b1, _b2]</span>
+<span class="sd">    &gt;&gt;&gt; th = sympy.Symbol(&#39;theta&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; f.mean*sympy.exp(th)</span>
+<span class="sd">    (_b0*x + _b1*y + _b2*z)*exp(theta)</span>
+<span class="sd">    &gt;&gt;&gt; getparams(f.mean*sympy.exp(th))</span>
+<span class="sd">    [_b0, _b1, _b2, theta]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
+    <span class="n">expression</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">expression</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+        <span class="n">expression</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,))</span>
+    <span class="k">if</span> <span class="n">expression</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">expression</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">shape</span><span class="p">),))</span>
+    <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">expression</span><span class="p">:</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">sympy</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="n">term</span><span class="p">)</span><span class="o">.</span><span class="n">atoms</span><span class="p">())</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="n">sympy</span><span class="o">.</span><span class="n">Symbol</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_term</span><span class="p">(</span><span class="n">atom</span><span class="p">):</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">default_sort_key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">params</span></div>
+
+
+<div class="viewcode-block" id="getterms"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.getterms">[docs]</a><span class="k">def</span> <span class="nf">getterms</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return the all instances of Term in an expression.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; x, y, z = [Term(l) for l in &#39;xyz&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; f = Formula([x,y,z])</span>
+<span class="sd">    &gt;&gt;&gt; getterms(f)</span>
+<span class="sd">    [x, y, z]</span>
+<span class="sd">    &gt;&gt;&gt; getterms(f.mean)</span>
+<span class="sd">    [x, y, z]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
+    <span class="n">expression</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">expression</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+        <span class="n">expression</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,))</span>
+    <span class="k">if</span> <span class="n">expression</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">expression</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">shape</span><span class="p">),))</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">expression</span><span class="p">:</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">atoms</span><span class="p">())</span>
+    <span class="n">terms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_term</span><span class="p">(</span><span class="n">atom</span><span class="p">):</span>
+            <span class="n">terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span>
+    <span class="n">terms</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">default_sort_key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">terms</span></div>
+
+
+<span class="k">def</span> <span class="nf">_recarray_from_array</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">drop_name_dim</span><span class="o">=</span><span class="n">_NoValue</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create recarray from input array `arr`, field names `names`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">isbuiltin</span><span class="p">:</span>  <span class="c1"># Structured array as input</span>
+        <span class="c1"># Rename fields</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">descr</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">arr</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="c1"># Can drop name axis for &gt; 1D arrays or row vectors (scalar per name).</span>
+    <span class="n">can_name_drop</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">can_name_drop</span> <span class="ow">and</span> <span class="n">drop_name_dim</span> <span class="ow">is</span> <span class="n">_NoValue</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s1">&#39;Default behavior of make_recarray and &gt; 1D arrays will &#39;</span>
+            <span class="s1">&#39;change in next Nipy release.  Current default returns</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;array with same number of dimensions as input, with &#39;</span>
+            <span class="s1">&#39;axis corresponding to the field names having length 1</span><span class="se">\n</span><span class="s1">; &#39;</span>
+            <span class="s1">&#39;Future default will be to drop this length 1 axis. Please &#39;</span>
+            <span class="s1">&#39;change your code to use explicit True or False for</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;compatibility with future Nipy.&#39;</span><span class="p">,</span>
+            <span class="n">VisibleDeprecationWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># This default will change to True in next version of Nipy</span>
+        <span class="n">drop_name_dim</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="n">n</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">])</span>
+    <span class="c1"># At least for numpy &lt;= 1.7.1, the dimension that numpy applies the names</span>
+    <span class="c1"># to depends on the memory layout (C or F).  Ensure C layout for consistent</span>
+    <span class="c1"># application of names to last dimension.</span>
+    <span class="n">rec_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">can_name_drop</span> <span class="ow">and</span> <span class="n">drop_name_dim</span><span class="p">:</span>
+        <span class="n">rec_arr</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">rec_arr</span>
+
+
+<div class="viewcode-block" id="make_recarray"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.make_recarray">[docs]</a><span class="k">def</span> <span class="nf">make_recarray</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">dtypes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">drop_name_dim</span><span class="o">=</span><span class="n">_NoValue</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create recarray from `rows` with field names `names`</span>
+
+<span class="sd">    Create a recarray with named columns from a list or ndarray of `rows` and</span>
+<span class="sd">    sequence of `names` for the columns. If `rows` is an ndarray, `dtypes` must</span>
+<span class="sd">    be None, otherwise we raise a ValueError. Otherwise, if `dtypes` is None,</span>
+<span class="sd">    we cast the data in all columns in `rows` as np.float. If `dtypes` is not</span>
+<span class="sd">    None, the routine uses `dtypes` as a dtype specifier for the output</span>
+<span class="sd">    structured array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rows: list or array</span>
+<span class="sd">        Rows that will be turned into an recarray.</span>
+<span class="sd">    names: sequence</span>
+<span class="sd">        Sequence of strings - names for the columns.</span>
+<span class="sd">    dtypes: None or sequence of str or sequence of np.dtype, optional</span>
+<span class="sd">        Used to create a np.dtype, can be sequence of np.dtype or string.</span>
+<span class="sd">    drop_name_dim : {_NoValue, False, True}, optional</span>
+<span class="sd">        Flag for compatibility with future default behavior.  Current default</span>
+<span class="sd">        is False.  If True, drops the length 1 dimension corresponding to the</span>
+<span class="sd">        axis transformed into fields when converting into a recarray.  If</span>
+<span class="sd">        _NoValue specified, gives default.  Default will change to True in the</span>
+<span class="sd">        next version of Nipy.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    v : np.ndarray</span>
+<span class="sd">        Structured array with field names given by `names`.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    The following tests depend on machine byte order for their exact output.</span>
+
+<span class="sd">    &gt;&gt;&gt; arr = np.array([[3, 4], [4, 6], [6, 8]])</span>
+<span class="sd">    &gt;&gt;&gt; make_recarray(arr, [&#39;x&#39;, &#39;y&#39;],</span>
+<span class="sd">    ...               drop_name_dim=True) #doctest: +STRUCTARR_EQUAL</span>
+<span class="sd">    array([(3, 4), (4, 6), (6, 8)],</span>
+<span class="sd">          dtype=[(&#39;x&#39;, &#39;&lt;i8&#39;), (&#39;y&#39;, &#39;&lt;i8&#39;)])</span>
+<span class="sd">    &gt;&gt;&gt; make_recarray(arr, [&#39;x&#39;, &#39;y&#39;],</span>
+<span class="sd">    ...               drop_name_dim=False) #doctest: +STRUCTARR_EQUAL</span>
+<span class="sd">    array([[(3, 4)],</span>
+<span class="sd">           [(4, 6)],</span>
+<span class="sd">           [(6, 8)]],</span>
+<span class="sd">          dtype=[(&#39;x&#39;, &#39;&lt;i8&#39;), (&#39;y&#39;, &#39;&lt;i8&#39;)])</span>
+<span class="sd">    &gt;&gt;&gt; r = make_recarray(arr, [&#39;w&#39;, &#39;u&#39;], drop_name_dim=True)</span>
+<span class="sd">    &gt;&gt;&gt; make_recarray(r, [&#39;x&#39;, &#39;y&#39;],</span>
+<span class="sd">    ...               drop_name_dim=True) #doctest: +STRUCTARR_EQUAL</span>
+<span class="sd">    array([(3, 4), (4, 6), (6, 8)],</span>
+<span class="sd">          dtype=[(&#39;x&#39;, &#39;&lt;i8&#39;), (&#39;y&#39;, &#39;&lt;i8&#39;)])</span>
+<span class="sd">    &gt;&gt;&gt; make_recarray([[3, 4], [4, 6], [7, 9]], &#39;wv&#39;,</span>
+<span class="sd">    ...               [np.float, np.int])  #doctest: +STRUCTARR_EQUAL</span>
+<span class="sd">    array([(3.0, 4), (4.0, 6), (7.0, 9)],</span>
+<span class="sd">          dtype=[(&#39;w&#39;, &#39;&lt;f8&#39;), (&#39;v&#39;, &#39;&lt;i8&#39;)])</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        `dtypes` not None when `rows` is array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># XXX This function is sort of one of convenience</span>
+    <span class="c1"># Would be nice to use DataArray or something like that</span>
+    <span class="c1"># to add axis names.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">dtypes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;dtypes not used if rows is an ndarray&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_recarray_from_array</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">drop_name_dim</span><span class="p">)</span>
+    <span class="c1"># Structured array from list</span>
+    <span class="k">if</span> <span class="n">dtypes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">dtypes</span><span class="p">)])</span>
+    <span class="c1"># Peek at first value in iterable</span>
+    <span class="n">irows</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="n">row0</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">irows</span><span class="p">)</span>
+    <span class="n">irows</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">([</span><span class="n">row0</span><span class="p">],</span> <span class="n">irows</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">row0</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>  <span class="c1"># a vector</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># a &#39;row vector&#39;</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">irows</span><span class="p">),</span> <span class="n">dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">r</span><span class="p">,)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">irows</span><span class="p">],</span> <span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">irows</span><span class="p">],</span> <span class="n">dtype</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Formula"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Formula">[docs]</a><span class="k">class</span> <span class="nc">Formula</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A Formula is a model for a mean in a regression model.</span>
+
+<span class="sd">    It is often given by a sequence of sympy expressions, with the mean</span>
+<span class="sd">    model being the sum of each term multiplied by a linear regression</span>
+<span class="sd">    coefficient.</span>
+
+<span class="sd">    The expressions may depend on additional Symbol instances, giving a</span>
+<span class="sd">    non-linear regression model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># This flag is defined for test isformula(obj) instead of isinstance</span>
+    <span class="n">_formula_flag</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="Formula.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Formula.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">char</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seq : sequence of ``sympy.Basic``</span>
+<span class="sd">        char : str, optional</span>
+<span class="sd">            character for regression coefficient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">char</span> <span class="o">=</span> <span class="n">char</span></div>
+
+    <span class="c1"># Properties</span>
+    <span class="k">def</span> <span class="nf">_getcoefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_coefs&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_coefs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_coefs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">Beta</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">char</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span><span class="p">),</span> <span class="n">term</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coefs</span>
+    <span class="n">coefs</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getcoefs</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Coefficients in the linear regression formula.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getterms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span>
+        <span class="c1"># The Rmode flag is meant to emulate R&#39;s implicit addition of an </span>
+        <span class="c1"># intercept to every formula. It currently cannot be changed.</span>
+        <span class="n">Rmode</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">Rmode</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sympy</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">:</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">sympy</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">t</span>
+    <span class="n">terms</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getterms</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Terms in the linear regression formula.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getmean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Expression for mean</span>
+
+<span class="sd">        Expression for the mean, expressed as a linear combination of</span>
+<span class="sd">        terms, each with dummy variables in front.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">coefs</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">)</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getmean</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s2">&quot;Expression for the mean, expressed &quot;</span>
+                    <span class="s2">&quot;as a linear combination of terms, each with dummy &quot;</span>
+                    <span class="s2">&quot;variables in front.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getdiff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">getparams</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">))),</span> <span class="n">key</span><span class="o">=</span><span class="n">default_sort_key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">sympy</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">doit</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">]</span>
+    <span class="n">design_expr</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getdiff</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getdtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">vnames</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_expr</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">vnames</span><span class="p">])</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getdtype</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The dtype of the design matrix of the Formula.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Formula(</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">),)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return the term such that str(term) == key.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">            name of term to retrieve</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        term : sympy.Expression</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;term </span><span class="si">%s</span><span class="s1"> not found&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Formula.fromrec"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Formula.fromrec">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">fromrec</span><span class="p">(</span><span class="n">rec</span><span class="p">,</span> <span class="n">keep</span><span class="o">=</span><span class="p">[],</span> <span class="n">drop</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot; Construct Formula from recarray</span>
+
+<span class="sd">        For fields with a string-dtype, it is assumed that these are</span>
+<span class="sd">        qualtiatitve regressors, i.e. Factors.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rec: recarray</span>
+<span class="sd">            Recarray whose field names will be used to create a formula.</span>
+<span class="sd">        keep: []</span>
+<span class="sd">            Field names to explicitly keep, dropping all others.</span>
+<span class="sd">        drop: []</span>
+<span class="sd">            Field names to drop.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">rec</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;SOU&#39;</span><span class="p">:</span>
+                <span class="n">f</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">Factor</span><span class="o">.</span><span class="n">fromcol</span><span class="p">(</span><span class="n">rec</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">n</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">Term</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">formula</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">drop</span><span class="p">:</span>
+            <span class="k">del</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">t</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">keep</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span></div>
+
+<div class="viewcode-block" id="Formula.subs"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Formula.subs">[docs]</a>    <span class="k">def</span> <span class="nf">subs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Perform a sympy substitution on all terms in the Formula</span>
+
+<span class="sd">        Returns a new instance of the same class</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        old : sympy.Basic</span>
+<span class="sd">           The expression to be changed</span>
+<span class="sd">        new : sympy.Basic</span>
+<span class="sd">           The value to change it to.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        newf : Formula</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; s, t = [Term(l) for l in &#39;st&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; f, g = [sympy.Function(l) for l in &#39;fg&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; form = Formula([f(t),g(s)])</span>
+<span class="sd">        &gt;&gt;&gt; newform = form.subs(g, sympy.Function(&#39;h&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; newform.terms</span>
+<span class="sd">        array([f(t), h(s)], dtype=object)</span>
+<span class="sd">        &gt;&gt;&gt; form.terms</span>
+<span class="sd">        array([f(t), g(s)], dtype=object)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">([</span><span class="n">term</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">])</span></div>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; New Formula combining terms of `self` with those of `other`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : Formula instance</span>
+<span class="sd">            Object for which ``is_formula(other)`` is True</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        added : Formula instance</span>
+<span class="sd">            Formula combining terms of `self` with terms of `other`</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; x, y, z = [Term(l) for l in &#39;xyz&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; f1 = Formula([x,y,z])</span>
+<span class="sd">        &gt;&gt;&gt; f2 = Formula([y])+I</span>
+<span class="sd">        &gt;&gt;&gt; f3=f1+f2</span>
+<span class="sd">        &gt;&gt;&gt; sorted(f1.terms, key=default_sort_key)</span>
+<span class="sd">        [x, y, z]</span>
+<span class="sd">        &gt;&gt;&gt; sorted(f2.terms, key=default_sort_key)</span>
+<span class="sd">        [1, y]</span>
+<span class="sd">        &gt;&gt;&gt; sorted(f3.terms, key=default_sort_key)</span>
+<span class="sd">        [1, x, y, y, z]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_formula</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;only Formula objects can be added to a Formula&#39;</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">terms</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">f</span>
+
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; New Formula by deleting terms in `other` from those in `self`</span>
+
+<span class="sd">        Create and return a new Formula by deleting terms in `other` from those</span>
+<span class="sd">        in `self`.</span>
+
+<span class="sd">        No exceptions are raised for terms in `other` that do not appear in</span>
+<span class="sd">        `self`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : Formula instance</span>
+<span class="sd">            Object for which ``is_formula(other)`` is True</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        subbed : Formula instance</span>
+<span class="sd">            Formula with terms of `other` removed from terms of `self`</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; x, y, z = [Term(l) for l in &#39;xyz&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; f1 = Formula([x, y, z])</span>
+<span class="sd">        &gt;&gt;&gt; f2 = Formula([y]) + I</span>
+<span class="sd">        &gt;&gt;&gt; f1.mean</span>
+<span class="sd">        _b0*x + _b1*y + _b2*z</span>
+<span class="sd">        &gt;&gt;&gt; f2.mean</span>
+<span class="sd">        _b0*y + _b1</span>
+<span class="sd">        &gt;&gt;&gt; f3 = f2 - f1</span>
+<span class="sd">        &gt;&gt;&gt; f3.mean</span>
+<span class="sd">        _b0</span>
+<span class="sd">        &gt;&gt;&gt; f4 = f1 - f2</span>
+<span class="sd">        &gt;&gt;&gt; f4.mean</span>
+<span class="sd">        _b0*x + _b1*z</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_formula</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;only Formula objects can be subtracted from a Formula&#39;</span><span class="p">)</span>
+        <span class="c1"># Preserve order of terms in subtraction</span>
+        <span class="n">unwanted</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">terms</span><span class="p">)</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">[</span><span class="n">term</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span> <span class="k">if</span> <span class="n">term</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unwanted</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">Formula</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span>
+
+    <span class="k">def</span> <span class="nf">_getparams</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">getparams</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getparams</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The parameters in the Formula.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_formula</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;only two Formulas can be multiplied together&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Compute the pairwise product of each term</span>
+        <span class="c1"># If either one is a Term, use Term&#39;s multiplication</span>
+        <span class="k">for</span> <span class="n">sterm</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">oterm</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">terms</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">is_term</span><span class="p">(</span><span class="n">sterm</span><span class="p">):</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Term</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="n">sterm</span><span class="p">,</span> <span class="n">oterm</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">is_term</span><span class="p">(</span><span class="n">oterm</span><span class="p">):</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Term</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="n">oterm</span><span class="p">,</span> <span class="n">sterm</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sterm</span><span class="o">*</span><span class="n">oterm</span><span class="p">)</span>
+        <span class="n">terms</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="n">default_sort_key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Formula</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">terms</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">o</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">alltrue</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">other</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">_setup_design</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize design</span>
+
+<span class="sd">        Create a callable object to evaluate the design matrix at a given set</span>
+<span class="sd">        of parameter values to be specified by a recarray and observed Term</span>
+<span class="sd">        values, also specified by a recarray.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># the design expression is the differentiation of the expression</span>
+        <span class="c1"># for the mean.  It is a list</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_expr</span>
+        <span class="c1"># Before evaluating, we recreate the formula</span>
+        <span class="c1"># with numbered terms, and numbered parameters.</span>
+
+        <span class="c1"># This renaming has no impact on the</span>
+        <span class="c1"># final design matrix as the</span>
+        <span class="c1"># callable, self._f below, is a lambda</span>
+        <span class="c1"># that does not care about the names of the terms.</span>
+
+        <span class="c1"># First, find all terms in the mean expression,</span>
+        <span class="c1"># and rename them in the form &quot;__t%d__&quot; with a</span>
+        <span class="c1"># random offset.</span>
+        <span class="c1"># This may cause a possible problem</span>
+        <span class="c1"># when there are parameters named something like &quot;__t%d__&quot;.</span>
+        <span class="c1"># Using the random offset will minimize the possibility</span>
+        <span class="c1"># of this happening.</span>
+
+        <span class="c1"># This renaming is here principally because of the intercept.</span>
+
+        <span class="n">random_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="p">)</span>
+
+        <span class="n">terms</span> <span class="o">=</span> <span class="n">getterms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+
+        <span class="n">newterms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">terms</span><span class="p">):</span>
+            <span class="n">newt</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;__t</span><span class="si">%d</span><span class="s2">__&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">random_offset</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">newt</span><span class="p">)</span>
+            <span class="n">newterms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newt</span><span class="p">)</span>
+
+        <span class="c1"># Next, find all parameters that remain in the design expression.</span>
+        <span class="c1"># In a standard regression model, there will be no parameters</span>
+        <span class="c1"># because they will all be differentiated away in computing</span>
+        <span class="c1"># self.design_expr. In nonlinear models, parameters will remain.</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="n">getparams</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">design_expr</span><span class="p">)</span>
+        <span class="n">newparams</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+            <span class="n">newp</span> <span class="o">=</span> <span class="n">Dummy</span><span class="p">(</span><span class="s2">&quot;__p</span><span class="si">%d</span><span class="s2">__&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">random_offset</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">newp</span><span class="p">)</span>
+            <span class="n">newparams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newp</span><span class="p">)</span>
+
+        <span class="c1"># If there are any aliased functions, these need to be added</span>
+        <span class="c1"># to the name space before sympy lambdifies the expression</span>
+
+        <span class="c1"># These &quot;aliased&quot; functions are used for things like</span>
+        <span class="c1"># the natural splines, etc. You can represent natural splines</span>
+        <span class="c1"># with sympy but the expression is pretty awful.  Note that</span>
+        <span class="c1"># ``d`` here is list giving the differentiation of the</span>
+        <span class="c1"># expression for the mean.  self._f(...) therefore also returns</span>
+        <span class="c1"># a list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f</span> <span class="o">=</span> <span class="n">lambdify</span><span class="p">(</span><span class="n">newparams</span> <span class="o">+</span> <span class="n">newterms</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;numpy&quot;</span><span class="p">))</span>
+
+        <span class="c1"># The input to self.design will be a recarray of that must </span>
+        <span class="c1"># have field names that the Formula will expect to see.</span>
+        <span class="c1"># However, if any of self.terms are FactorTerms, then the field</span>
+        <span class="c1"># in the recarray will not actually be in the Term.</span>
+        <span class="c1"># </span>
+        <span class="c1"># For example, if there is a Factor &#39;f&#39; with levels [&#39;a&#39;,&#39;b&#39;],</span>
+        <span class="c1"># there will be terms &#39;f_a&#39; and &#39;f_b&#39;, though the input to</span>
+        <span class="c1"># design will have a field named &#39;f&#39;. In this sense,</span>
+        <span class="c1"># the recarray used in the call to self.design</span>
+        <span class="c1"># is not really made up of terms, but &quot;preterms&quot;.</span>
+
+        <span class="c1"># In this case, the callable</span>
+
+        <span class="n">preterm</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_factor_term</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+                <span class="n">preterm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">preterm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">factor_name</span><span class="p">)</span>
+        <span class="n">preterm</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">preterm</span><span class="p">))</span>
+
+        <span class="c1"># There is also an argument for parameters that are not</span>
+        <span class="c1"># Terms. </span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dtypes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;param&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">]),</span>
+                        <span class="s1">&#39;term&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">]),</span>
+                        <span class="s1">&#39;preterm&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">preterm</span><span class="p">])}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__terms</span> <span class="o">=</span> <span class="n">terms</span>
+
+<div class="viewcode-block" id="Formula.design"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Formula.design">[docs]</a>    <span class="k">def</span> <span class="nf">design</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+               <span class="nb">input</span><span class="p">,</span>
+               <span class="n">param</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">return_float</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">contrasts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Construct the design matrix, and optional contrast matrices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input : np.recarray</span>
+<span class="sd">           Recarray including fields needed to compute the Terms in</span>
+<span class="sd">           getparams(self.design_expr).</span>
+<span class="sd">        param : None or np.recarray</span>
+<span class="sd">           Recarray including fields that are not Terms in</span>
+<span class="sd">           getparams(self.design_expr)</span>
+<span class="sd">        return_float : bool, optional</span>
+<span class="sd">           If True, return a np.float array rather than a np.recarray</span>
+<span class="sd">        contrasts : None or dict, optional</span>
+<span class="sd">           Contrasts. The items in this dictionary should be (str,</span>
+<span class="sd">           Formula) pairs where a contrast matrix is constructed for</span>
+<span class="sd">           each Formula by evaluating its design at the same parameters</span>
+<span class="sd">           as self.design. If not None, then the return_float is set to True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        des : 2D array</span>
+<span class="sd">            design matrix</span>
+<span class="sd">        cmatrices : dict, optional</span>
+<span class="sd">            Dictionary with keys from `contrasts` input, and contrast matrices</span>
+<span class="sd">            corresponding to `des` design matrix.  Returned only if `contrasts`</span>
+<span class="sd">            input is not None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_design</span><span class="p">()</span>
+
+        <span class="n">preterm_recarray</span> <span class="o">=</span> <span class="nb">input</span>
+        <span class="n">param_recarray</span> <span class="o">=</span> <span class="n">param</span>
+
+        <span class="c1"># The input to design should have field names for all fields in self._dtypes[&#39;preterm&#39;]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">preterm_recarray</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span><span class="o">.</span><span class="n">issuperset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtypes</span><span class="p">[</span><span class="s1">&#39;preterm&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;for term, expecting a recarray with &quot;</span>
+                             <span class="s2">&quot;dtype having the following names: </span><span class="si">%r</span><span class="s2">&quot;</span>
+                             <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtypes</span><span class="p">[</span><span class="s1">&#39;preterm&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">,))</span>
+        <span class="c1"># The parameters should have field names for all fields in self._dtypes[&#39;param&#39;]</span>
+        <span class="k">if</span> <span class="n">param_recarray</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">param_recarray</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span><span class="o">.</span><span class="n">issuperset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtypes</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;for param, expecting a recarray with &quot;</span>
+                                 <span class="s2">&quot;dtype having the following names: </span><span class="si">%r</span><span class="s2">&quot;</span>
+                                 <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtypes</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">,))</span>
+        <span class="c1"># If the only term is an intercept,</span>
+        <span class="c1"># the return value is a matrix of 1&#39;s.</span>
+        <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terms</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">sympy</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)]:</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">preterm_recarray</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">return_float</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s1">&#39;intercept&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)]))</span>
+            <span class="k">return</span> <span class="n">a</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtypes</span><span class="p">[</span><span class="s1">&#39;term&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;none of the expresssions are self.terms &quot;</span>
+                             <span class="s2">&quot;are Term instances; shape of resulting &quot;</span>
+                             <span class="s2">&quot;undefined&quot;</span><span class="p">)</span>
+        <span class="c1"># The term_recarray is essentially the same as preterm_recarray,</span>
+        <span class="c1"># except that all factors in self are expanded</span>
+        <span class="c1"># into their respective binary columns.</span>
+        <span class="n">term_recarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">preterm_recarray</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                 <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtypes</span><span class="p">[</span><span class="s1">&#39;term&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__terms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_factor_term</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+                <span class="n">term_recarray</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">preterm_recarray</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">factor_col</span> <span class="o">=</span> <span class="n">preterm_recarray</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">factor_name</span><span class="p">]</span>
+                <span class="c1"># Python 3: If column type is bytes, convert to string, to allow</span>
+                <span class="c1"># level comparison</span>
+                <span class="k">if</span> <span class="n">factor_col</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span>
+                    <span class="n">factor_col</span> <span class="o">=</span> <span class="n">factor_col</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+                <span class="n">fl_ind</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span> <span class="o">==</span> <span class="n">t</span><span class="o">.</span><span class="n">level</span>
+                                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">factor_col</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">term_recarray</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">factor_name</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">level</span><span class="p">)]</span> <span class="o">=</span> <span class="n">fl_ind</span>
+        <span class="c1"># The lambda created in self._setup_design needs to take a tuple of</span>
+        <span class="c1"># columns as argument, not an ndarray, so each column</span>
+        <span class="c1"># is extracted and put into float_tuple.</span>
+        <span class="n">float_array</span> <span class="o">=</span> <span class="n">term_recarray</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="n">float_array</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">term_recarray</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">float_array</span> <span class="o">=</span> <span class="n">float_array</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">float_tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">float_array</span><span class="p">)</span>
+        <span class="c1"># If there are any parameters, they also must be extracted</span>
+        <span class="c1"># and put into a tuple with the order specified</span>
+        <span class="c1"># by self._dtypes[&#39;param&#39;]</span>
+        <span class="k">if</span> <span class="n">param_recarray</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">param_recarray</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtypes</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="p">()</span>
+        <span class="c1"># Evaluate the design at the parameters and tuple of arrays</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">param</span><span class="o">+</span><span class="n">float_tuple</span><span class="p">))</span>
+        <span class="c1"># TODO: check if this next stepis necessary</span>
+        <span class="c1"># I think it is because the lambda evaluates sympy.Number(1) to 1</span>
+        <span class="c1"># and not an array.</span>
+        <span class="n">D_tuple</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">D</span><span class="p">]</span>
+
+        <span class="n">need_to_modify_shape</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">OK_row_shapes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">D_tuple</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">shape</span> <span class="ow">in</span> <span class="p">[(),(</span><span class="mi">1</span><span class="p">,)]:</span>
+                <span class="n">need_to_modify_shape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">OK_row_shapes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c1"># Make sure that each array has the correct shape.</span>
+        <span class="c1"># The columns in need_to_modify should just be</span>
+        <span class="c1"># the intercept column, which evaluates to have shape == ().</span>
+        <span class="c1"># This makes sure that it has the correct number of rows.</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">need_to_modify_shape</span><span class="p">:</span>
+            <span class="n">D_tuple</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">()</span>
+            <span class="n">D_tuple</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">D_tuple</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">preterm_recarray</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="c1"># At this point, all the columns have the correct shape and the</span>
+        <span class="c1"># design matrix is almost ready to output.</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">D_tuple</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="c1"># If we will return a float matrix or any contrasts,</span>
+        <span class="c1"># we may have some reshaping to do.</span>
+        <span class="k">if</span> <span class="n">contrasts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">contrasts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">return_float</span> <span class="ow">or</span> <span class="n">contrasts</span><span class="p">:</span>
+            <span class="c1"># If the design matrix is just a column of 1s</span>
+            <span class="c1"># return a 1-dimensional array.</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">D</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">))</span>
+            <span class="c1"># If there are contrasts, the pseudo-inverse of D</span>
+            <span class="c1"># must be computed.</span>
+            <span class="k">if</span> <span class="n">contrasts</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">D</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">_D</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">D</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_D</span> <span class="o">=</span> <span class="n">D</span>
+                <span class="n">pinvD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">_D</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Correct the dtype.</span>
+            <span class="c1"># XXX There seems to be a lot of messing around with the dtype.</span>
+            <span class="c1"># This would be a convenient place to just add</span>
+            <span class="c1"># labels like a DataArray.</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">D</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="c1"># Compute the contrast matrices, if any.</span>
+        <span class="k">if</span> <span class="n">contrasts</span><span class="p">:</span>
+            <span class="n">cmatrices</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">cf</span> <span class="ow">in</span> <span class="n">contrasts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_formula</span><span class="p">(</span><span class="n">cf</span><span class="p">):</span>
+                    <span class="n">cf</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">([</span><span class="n">cf</span><span class="p">])</span>
+                <span class="n">L</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="n">param_recarray</span><span class="p">,</span> 
+                              <span class="n">return_float</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">cmatrices</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">contrast_from_cols_or_rows</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">_D</span><span class="p">,</span> <span class="n">pseudo</span><span class="o">=</span><span class="n">pinvD</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">D</span><span class="p">,</span> <span class="n">cmatrices</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">D</span></div></div>
+
+
+<div class="viewcode-block" id="natural_spline"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.natural_spline">[docs]</a><span class="k">def</span> <span class="nf">natural_spline</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">knots</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">intercept</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a Formula containing a natural spline</span>
+
+<span class="sd">    Spline for a Term with specified `knots` and `order`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : ``Term``</span>
+<span class="sd">    knots : None or sequence, optional</span>
+<span class="sd">       Sequence of float.  Default None (same as empty list)</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">       Order of the spline. Defaults to a cubic (==3)</span>
+<span class="sd">    intercept : bool, optional</span>
+<span class="sd">       If True, include a constant function in the natural</span>
+<span class="sd">       spline. Default is False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    formula : Formula</span>
+<span class="sd">         A Formula with (len(knots) + order) Terms (if intercept=False,</span>
+<span class="sd">         otherwise includes one more Term), made up of the natural spline</span>
+<span class="sd">         functions.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; x = Term(&#39;x&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; n = natural_spline(x, knots=[1,3,4], order=3)</span>
+<span class="sd">    &gt;&gt;&gt; xval = np.array([3,5,7.]).view(np.dtype([(&#39;x&#39;, np.float)]))</span>
+<span class="sd">    &gt;&gt;&gt; n.design(xval, return_float=True)</span>
+<span class="sd">    array([[   3.,    9.,   27.,    8.,    0.,   -0.],</span>
+<span class="sd">           [   5.,   25.,  125.,   64.,    8.,    1.],</span>
+<span class="sd">           [   7.,   49.,  343.,  216.,   64.,   27.]])</span>
+<span class="sd">    &gt;&gt;&gt; d = n.design(xval)</span>
+<span class="sd">    &gt;&gt;&gt; print(d.dtype.descr)</span>
+<span class="sd">    [(&#39;ns_1(x)&#39;, &#39;&lt;f8&#39;), (&#39;ns_2(x)&#39;, &#39;&lt;f8&#39;), (&#39;ns_3(x)&#39;, &#39;&lt;f8&#39;), (&#39;ns_4(x)&#39;, &#39;&lt;f8&#39;), (&#39;ns_5(x)&#39;, &#39;&lt;f8&#39;), (&#39;ns_6(x)&#39;, &#39;&lt;f8&#39;)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">knots</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">knots</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">fns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="s1">&#39;ns_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span>
+        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">**</span><span class="n">i</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">fns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">knots</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="s1">&#39;ns_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,)</span>
+        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">**</span><span class="n">order</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">greater</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">implemented_function</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">fns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">intercept</span><span class="p">:</span>
+        <span class="n">fns</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">ff</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">(</span><span class="n">fns</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ff</span></div>
+
+<span class="c1"># The intercept formula</span>
+
+<span class="n">I</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">([</span><span class="n">sympy</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
+
+
+<div class="viewcode-block" id="Factor"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Factor">[docs]</a><span class="k">class</span> <span class="nc">Factor</span><span class="p">(</span><span class="n">Formula</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A qualitative variable in a regression model</span>
+
+<span class="sd">    A Factor is similar to R&#39;s factor. The levels of the Factor can be</span>
+<span class="sd">    either strings or ints.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># This flag is defined to avoid using isinstance in getterms</span>
+    <span class="c1"># and getparams.</span>
+    <span class="n">_factor_flag</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="Factor.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Factor.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">levels</span><span class="p">,</span> <span class="n">char</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize Factor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">        levels : [str or int]</span>
+<span class="sd">            A sequence of strings or ints.</span>
+<span class="sd">        char : str, optional</span>
+<span class="sd">            prefix character for regression coefficients</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check whether they can all be cast to strings or ints without</span>
+        <span class="c1"># loss.</span>
+        <span class="n">levelsarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">levelsarr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">levelsarr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;SOU&#39;</span><span class="p">:</span>
+            <span class="n">levelsarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">levels</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">levelsarr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">&#39;SOU&#39;</span><span class="p">:</span> <span class="c1"># the levels are not strings</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">alltrue</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">levelsarr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">levelsarr</span><span class="p">))):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;levels must be strings or ints&#39;</span><span class="p">)</span>
+            <span class="n">levelsarr</span> <span class="o">=</span> <span class="n">levelsarr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">levelsarr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span> <span class="c1"># Byte strings, convert</span>
+            <span class="n">levelsarr</span> <span class="o">=</span> <span class="n">levelsarr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+        <span class="n">Formula</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="n">FactorTerm</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">levelsarr</span><span class="p">],</span>
+                         <span class="n">char</span><span class="o">=</span><span class="n">char</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">levels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">levelsarr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span></div>
+
+    <span class="c1"># TODO: allow different specifications of the contrasts</span>
+    <span class="c1"># here.... this is like R&#39;s contr.sum</span>
+
+<div class="viewcode-block" id="Factor.get_term"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Factor.get_term">[docs]</a>    <span class="k">def</span> <span class="nf">get_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve a term of the Factor...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">levels</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;level not found&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">level</span><span class="p">))]</span></div>
+
+    <span class="k">def</span> <span class="nf">_getmaineffect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">ref_term</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">ref</span><span class="p">]</span>
+        <span class="n">v</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Formula</span><span class="p">([</span><span class="n">vv</span> <span class="o">-</span> <span class="n">ref_term</span> <span class="k">for</span> <span class="n">vv</span> <span class="ow">in</span> <span class="n">v</span><span class="p">])</span>
+    <span class="n">main_effect</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getmaineffect</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Factor.stratify"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Factor.stratify">[docs]</a>    <span class="k">def</span> <span class="nf">stratify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create a new variable, stratified by the levels of a Factor.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variable : str or simple sympy expression</span>
+<span class="sd">            If sympy expression, then string representation must be all lower</span>
+<span class="sd">            or upper case letters, i.e. it can be interpreted as a name.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        formula : Formula</span>
+<span class="sd">            Formula whose mean has one parameter named variable%d, for each</span>
+<span class="sd">            level in self.levels</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; f = Factor(&#39;a&#39;, [&#39;x&#39;,&#39;y&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; sf = f.stratify(&#39;theta&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; sf.mean</span>
+<span class="sd">        _theta0*a_x + _theta1*a_y</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">variable</span><span class="p">))</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">ascii_letters</span> <span class="o">+</span> <span class="n">digits</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;variable should be interpretable as a &#39;</span>
+                             <span class="s1">&#39;name and not have anything but digits &#39;</span>
+                             <span class="s1">&#39;and numbers&#39;</span><span class="p">)</span>
+        <span class="n">variable</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="n">variable</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">,</span> <span class="n">char</span><span class="o">=</span><span class="n">variable</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">return</span> <span class="n">f</span></div>
+
+<div class="viewcode-block" id="Factor.fromcol"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.Factor.fromcol">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">fromcol</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create a Factor from a column array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        col : ndarray</span>
+<span class="sd">            an array with ndim==1</span>
+<span class="sd">        name : str</span>
+<span class="sd">            name of the Factor</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        factor : Factor</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; data = np.array([(3,&#39;a&#39;),(4,&#39;a&#39;),(5,&#39;b&#39;),(3,&#39;b&#39;)], np.dtype([(&#39;x&#39;, np.float), (&#39;y&#39;, &#39;S1&#39;)]))</span>
+<span class="sd">        &gt;&gt;&gt; f1 = Factor.fromcol(data[&#39;y&#39;], &#39;y&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; f2 = Factor.fromcol(data[&#39;x&#39;], &#39;x&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; d = f1.design(data)</span>
+<span class="sd">        &gt;&gt;&gt; print(d.dtype.descr)</span>
+<span class="sd">        [(&#39;y_a&#39;, &#39;&lt;f8&#39;), (&#39;y_b&#39;, &#39;&lt;f8&#39;)]</span>
+<span class="sd">        &gt;&gt;&gt; d = f2.design(data)</span>
+<span class="sd">        &gt;&gt;&gt; print(d.dtype.descr)</span>
+<span class="sd">        [(&#39;x_3&#39;, &#39;&lt;f8&#39;), (&#39;x_4&#39;, &#39;&lt;f8&#39;), (&#39;x_5&#39;, &#39;&lt;f8&#39;)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="p">(</span><span class="n">col</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting an array that can be thought &#39;</span>
+                             <span class="s1">&#39;of as a column or field of a recarray&#39;</span><span class="p">)</span>
+        <span class="n">levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">col</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;factor&#39;</span>
+        <span class="k">elif</span> <span class="n">col</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">Factor</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">levels</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="contrast_from_cols_or_rows"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.contrast_from_cols_or_rows">[docs]</a><span class="k">def</span> <span class="nf">contrast_from_cols_or_rows</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">pseudo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Construct a contrast matrix from a design matrix D</span>
+
+<span class="sd">    (possibly with its pseudo inverse already computed)</span>
+<span class="sd">    and a matrix L that either specifies something in</span>
+<span class="sd">    the column space of D or the row space of D.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    L : ndarray</span>
+<span class="sd">       Matrix used to try and construct a contrast.</span>
+<span class="sd">    D : ndarray</span>
+<span class="sd">       Design matrix used to create the contrast.</span>
+<span class="sd">    pseudo : None or array-like, optional</span>
+<span class="sd">       If not None, gives pseudo-inverse of `D`.  Allows you to pass</span>
+<span class="sd">       this if it is already calculated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    C : ndarray</span>
+<span class="sd">       Matrix with C.shape[1] == D.shape[1] representing an estimable</span>
+<span class="sd">       contrast.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    From an n x p design matrix D and a matrix L, tries to determine a p</span>
+<span class="sd">    x q contrast matrix C which determines a contrast of full rank,</span>
+<span class="sd">    i.e. the n x q matrix</span>
+
+<span class="sd">    dot(transpose(C), pinv(D))</span>
+
+<span class="sd">    is full rank.</span>
+
+<span class="sd">    L must satisfy either L.shape[0] == n or L.shape[1] == p.</span>
+
+<span class="sd">    If L.shape[0] == n, then L is thought of as representing</span>
+<span class="sd">    columns in the column space of D.</span>
+
+<span class="sd">    If L.shape[1] == p, then L is thought of as what is known</span>
+<span class="sd">    as a contrast matrix. In this case, this function returns an estimable</span>
+<span class="sd">    contrast corresponding to the dot(D, L.T)</span>
+
+<span class="sd">    This always produces a meaningful contrast, not always</span>
+<span class="sd">    with the intended properties because q is always non-zero unless</span>
+<span class="sd">    L is identically 0. That is, it produces a contrast that spans</span>
+<span class="sd">    the column space of L (after projection onto the column space of D).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="n">L</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n</span> <span class="ow">and</span> <span class="n">L</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">p</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;shape of L and D mismatched&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pseudo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pseudo</span> <span class="o">=</span> <span class="n">pinv</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">L</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">n</span><span class="p">:</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">pseudo</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">pseudo</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">L</span><span class="o">.</span><span class="n">T</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">Lp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">C</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Lp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">Lp</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">Lp_rank</span> <span class="o">=</span> <span class="n">matrix_rank</span><span class="p">(</span><span class="n">Lp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">Lp_rank</span> <span class="o">!=</span> <span class="n">Lp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">Lp</span> <span class="o">=</span> <span class="n">full_rank</span><span class="p">(</span><span class="n">Lp</span><span class="p">,</span> <span class="n">Lp_rank</span><span class="p">)</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">pseudo</span><span class="p">,</span> <span class="n">Lp</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">C</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RandomEffects"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.RandomEffects">[docs]</a><span class="k">class</span> <span class="nc">RandomEffects</span><span class="p">(</span><span class="n">Formula</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Covariance matrices for common random effects analyses.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Two subjects (here named 2 and 3):</span>
+
+<span class="sd">    &gt;&gt;&gt; subj = make_recarray([2,2,2,3,3], &#39;s&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; subj_factor = Factor(&#39;s&#39;, [2,3])</span>
+
+<span class="sd">    By default the covariance matrix is symbolic.  The display differs a little</span>
+<span class="sd">    between sympy versions (hence we don&#39;t check it in the doctests):</span>
+
+<span class="sd">    &gt;&gt;&gt; c = RandomEffects(subj_factor.terms)</span>
+<span class="sd">    &gt;&gt;&gt; c.cov(subj) #doctest: +IGNORE_OUTPUT</span>
+<span class="sd">    array([[_s2_0, _s2_0, _s2_0, 0, 0],</span>
+<span class="sd">           [_s2_0, _s2_0, _s2_0, 0, 0],</span>
+<span class="sd">           [_s2_0, _s2_0, _s2_0, 0, 0],</span>
+<span class="sd">           [0, 0, 0, _s2_1, _s2_1],</span>
+<span class="sd">           [0, 0, 0, _s2_1, _s2_1]], dtype=object)</span>
+
+<span class="sd">    With a numeric `sigma`, you get a numeric array:</span>
+
+<span class="sd">    &gt;&gt;&gt; c = RandomEffects(subj_factor.terms, sigma=np.array([[4,1],[1,6]]))</span>
+<span class="sd">    &gt;&gt;&gt; c.cov(subj)</span>
+<span class="sd">    array([[ 4.,  4.,  4.,  1.,  1.],</span>
+<span class="sd">           [ 4.,  4.,  4.,  1.,  1.],</span>
+<span class="sd">           [ 4.,  4.,  4.,  1.,  1.],</span>
+<span class="sd">           [ 1.,  1.,  1.,  6.,  6.],</span>
+<span class="sd">           [ 1.,  1.,  1.,  6.,  6.]])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RandomEffects.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.RandomEffects.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">char</span> <span class="o">=</span> <span class="s1">&#39;e&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize random effects instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seq : [``sympy.Basic``]</span>
+<span class="sd">        sigma : ndarray</span>
+<span class="sd">             Covariance of the random effects. Defaults</span>
+<span class="sd">             to a diagonal with entries for each random</span>
+<span class="sd">             effect.</span>
+<span class="sd">        char : character for regression coefficient</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">sigma</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="n">Dummy</span><span class="p">(</span><span class="s1">&#39;s2_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">q</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="n">q</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;incorrect shape for covariance &#39;</span>
+                             <span class="s1">&#39;of random effects, &#39;</span>
+                             <span class="s1">&#39;should have shape </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">((</span><span class="n">q</span><span class="p">,</span><span class="n">q</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">char</span> <span class="o">=</span> <span class="n">char</span></div>
+
+<div class="viewcode-block" id="RandomEffects.cov"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.RandomEffects.cov">[docs]</a>    <span class="k">def</span> <span class="nf">cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the covariance matrix for some given data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        term : np.recarray</span>
+<span class="sd">             Recarray including fields corresponding to the Terms in</span>
+<span class="sd">             getparams(self.design_expr).</span>
+<span class="sd">        param : np.recarray</span>
+<span class="sd">             Recarray including fields that are not Terms in</span>
+<span class="sd">             getparams(self.design_expr)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        C : ndarray</span>
+<span class="sd">             Covariance matrix implied by design and self.sigma.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="n">param</span><span class="p">,</span> <span class="n">return_float</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="n">D</span><span class="o">.</span><span class="n">T</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="is_term"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.is_term">[docs]</a><span class="k">def</span> <span class="nf">is_term</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Is obj a Term?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_term_flag&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_factor_term"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.is_factor_term">[docs]</a><span class="k">def</span> <span class="nf">is_factor_term</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Is obj a FactorTerm?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_factor_term_flag&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_formula"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.is_formula">[docs]</a><span class="k">def</span> <span class="nf">is_formula</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Is obj a Formula?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_formula_flag&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_factor"><a class="viewcode-back" href="../../../../../api/generated/nipy.algorithms.statistics.formula.formulae.html#nipy.algorithms.statistics.formula.formulae.is_factor">[docs]</a><span class="k">def</span> <span class="nf">is_factor</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Is obj a Factor?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;_factor_flag&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

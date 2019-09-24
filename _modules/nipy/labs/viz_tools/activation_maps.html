@@ -1,0 +1,595 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.viz_tools.activation_maps</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to do automatic visualization of activation-like maps.</span>
+
+<span class="sd">For 2D-only visualization, only matplotlib is required.</span>
+<span class="sd">For 3D visualization, Mayavi, version 3.0 or greater, is required.</span>
+
+<span class="sd">For a demo, see the &#39;demo_plot_map&#39; function.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="c1"># Author: Gael Varoquaux &lt;gael dot varoquaux at normalesup dot org&gt;</span>
+<span class="c1"># License: BSD</span>
+
+<span class="c1"># Standard library imports</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numbers</span>
+
+<span class="c1"># Standard scientific libraries imports (more specific imports are</span>
+<span class="c1"># delayed, so that the part module can be used without them).</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nipy.utils.skip_test</span> <span class="k">import</span> <span class="n">skip_if_running_nose</span>
+<span class="kn">from</span> <span class="nn">nipy.utils</span> <span class="k">import</span> <span class="n">is_numlike</span>
+
+<span class="c1"># Import pylab</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">skip_if_running_nose</span><span class="p">(</span><span class="s1">&#39;Could not import matplotlib&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.anat_cache</span> <span class="k">import</span> <span class="n">mni_sform</span><span class="p">,</span> <span class="n">mni_sform_inv</span><span class="p">,</span> <span class="n">_AnatCache</span>
+<span class="kn">from</span> <span class="nn">.coord_tools</span> <span class="k">import</span> <span class="p">(</span><span class="n">coord_transform</span><span class="p">,</span>
+                          <span class="n">find_maxsep_cut_coords</span>
+                          <span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.slicers</span> <span class="k">import</span> <span class="n">SLICERS</span><span class="p">,</span> <span class="n">_xyz_order</span>
+<span class="kn">from</span> <span class="nn">.edge_detect</span> <span class="k">import</span> <span class="n">_fast_abs_percentile</span>
+
+<span class="c1">################################################################################</span>
+<span class="c1"># Helper functions for 2D plotting of activation maps</span>
+<span class="c1">################################################################################</span>
+
+
+<div class="viewcode-block" id="plot_map"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.activation_maps.html#nipy.labs.viz_tools.activation_maps.plot_map">[docs]</a><span class="k">def</span> <span class="nf">plot_map</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">cut_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">anat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">anat_affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">slicer</span><span class="o">=</span><span class="s1">&#39;ortho&#39;</span><span class="p">,</span>
+             <span class="n">figure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">annotate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">draw_cross</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+             <span class="n">do3d</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">threshold_3d</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">view_3d</span><span class="o">=</span><span class="p">(</span><span class="mf">38.5</span><span class="p">,</span> <span class="mf">70.5</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.7</span><span class="p">,</span> <span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mf">9.1</span><span class="p">)),</span>
+             <span class="n">black_bg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">imshow_kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Plot three cuts of a given activation map (Frontal, Axial, and Lateral)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        map : 3D ndarray</span>
+<span class="sd">            The activation map, as a 3D image.</span>
+<span class="sd">        affine : 4x4 ndarray</span>
+<span class="sd">            The affine matrix going from image voxel space to MNI space.</span>
+<span class="sd">        cut_coords: None, int, or a tuple of floats</span>
+<span class="sd">            The MNI coordinates of the point where the cut is performed, in</span>
+<span class="sd">            MNI coordinates and order.</span>
+<span class="sd">            If slicer is &#39;ortho&#39;, this should be a 3-tuple: (x, y, z)</span>
+<span class="sd">            For slicer == &#39;x&#39;, &#39;y&#39;, or &#39;z&#39;, then these are the</span>
+<span class="sd">            coordinates of each cut in the corresponding direction.</span>
+<span class="sd">            If None or an int is given, then a maximally separated sequence (</span>
+<span class="sd">            with exactly cut_coords elements if cut_coords is not None) of</span>
+<span class="sd">            cut coordinates along the slicer axis is computed automatically</span>
+<span class="sd">        anat : 3D ndarray or False, optional</span>
+<span class="sd">            The anatomical image to be used as a background. If None, the</span>
+<span class="sd">            MNI152 T1 1mm template is used. If False, no anat is displayed.</span>
+<span class="sd">        anat_affine : 4x4 ndarray, optional</span>
+<span class="sd">            The affine matrix going from the anatomical image voxel space to</span>
+<span class="sd">            MNI space. This parameter is not used when the default</span>
+<span class="sd">            anatomical is used, but it is compulsory when using an</span>
+<span class="sd">            explicite anatomical image.</span>
+<span class="sd">        slicer: {&#39;ortho&#39;, &#39;x&#39;, &#39;y&#39;, &#39;z&#39;}</span>
+<span class="sd">            Choose the direction of the cuts. With &#39;ortho&#39; three cuts are</span>
+<span class="sd">            performed in orthogonal directions</span>
+<span class="sd">        figure : integer or matplotlib figure, optional</span>
+<span class="sd">            Matplotlib figure used or its number. If None is given, a</span>
+<span class="sd">            new figure is created.</span>
+<span class="sd">        axes : matplotlib axes or 4 tuple of float: (xmin, ymin, width, height), optional</span>
+<span class="sd">            The axes, or the coordinates, in matplotlib figure space,</span>
+<span class="sd">            of the axes used to display the plot. If None, the complete</span>
+<span class="sd">            figure is used.</span>
+<span class="sd">        title : string, optional</span>
+<span class="sd">            The title dispayed on the figure.</span>
+<span class="sd">        threshold : a number, None, or &#39;auto&#39;</span>
+<span class="sd">            If None is given, the maps are not thresholded.</span>
+<span class="sd">            If a number is given, it is used to threshold the maps:</span>
+<span class="sd">            values below the threshold are plotted as transparent. If</span>
+<span class="sd">            auto is given, the threshold is determined magically by</span>
+<span class="sd">            analysis of the map.</span>
+<span class="sd">        annotate: boolean, optional</span>
+<span class="sd">            If annotate is True, positions and left/right annotation</span>
+<span class="sd">            are added to the plot.</span>
+<span class="sd">        draw_cross: boolean, optional</span>
+<span class="sd">            If draw_cross is True, a cross is drawn on the plot to</span>
+<span class="sd">            indicate the cut plosition.</span>
+<span class="sd">        do3d: {True, False or &#39;interactive&#39;}, optional</span>
+<span class="sd">            If True, Mayavi is used to plot a 3D view of the</span>
+<span class="sd">            map in addition to the slicing. If &#39;interactive&#39;, the</span>
+<span class="sd">            3D visualization is displayed in an additional interactive</span>
+<span class="sd">            window.</span>
+<span class="sd">        threshold_3d:</span>
+<span class="sd">            The threshold to use for the 3D view (if any). Defaults to</span>
+<span class="sd">            the same threshold as that used for the 2D view.</span>
+<span class="sd">        view_3d: tuple,</span>
+<span class="sd">            The view used to take the screenshot: azimuth, elevation,</span>
+<span class="sd">            distance and focalpoint, see the docstring of mlab.view.</span>
+<span class="sd">        black_bg: boolean, optional</span>
+<span class="sd">            If True, the background of the image is set to be black. If</span>
+<span class="sd">            you whish to save figures with a black background, you</span>
+<span class="sd">            will need to pass &quot;facecolor=&#39;k&#39;, edgecolor=&#39;k&#39;&quot; to pylab&#39;s</span>
+<span class="sd">            savefig.</span>
+<span class="sd">        imshow_kwargs: extra keyword arguments, optional</span>
+<span class="sd">            Extra keyword arguments passed to pylab.imshow</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Arrays should be passed in numpy convention: (x, y, z)</span>
+<span class="sd">        ordered.</span>
+
+<span class="sd">        Use masked arrays to create transparency:</span>
+
+<span class="sd">            import numpy as np</span>
+<span class="sd">            map = np.ma.masked_less(map, 0.5)</span>
+<span class="sd">            plot_map(map, affine)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span> <span class="o">=</span> <span class="n">_xyz_order</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+
+    <span class="n">nan_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">map</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">):</span>
+        <span class="nb">map</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="nb">map</span><span class="p">[</span><span class="n">nan_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">del</span> <span class="n">nan_mask</span>
+
+    <span class="c1"># Deal with automatic settings of plot parameters</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
+        <span class="c1"># Threshold epsilon above a percentile value, to be sure that some</span>
+        <span class="c1"># voxels are indeed threshold</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">_fast_abs_percentile</span><span class="p">(</span><span class="nb">map</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-5</span>
+
+    <span class="k">if</span> <span class="n">do3d</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">mayavi</span> <span class="k">import</span> <span class="n">version</span>
+            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">enthought.mayavi</span> <span class="k">import</span> <span class="n">version</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">(</span><span class="n">version</span><span class="o">.</span><span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ImportError</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Mayavi &gt; 3.x not installed, plotting only 2D&#39;</span><span class="p">)</span>
+            <span class="n">do3d</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">cut_coords</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cut_coords</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">)</span>
+        <span class="p">)</span> <span class="ow">and</span> <span class="n">slicer</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">]:</span>
+        <span class="n">cut_coords</span> <span class="o">=</span> <span class="n">find_maxsep_cut_coords</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">slicer</span><span class="o">=</span><span class="n">slicer</span><span class="p">,</span>
+                                            <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+                                            <span class="n">n_cuts</span><span class="o">=</span><span class="n">cut_coords</span><span class="p">)</span>
+
+    <span class="n">slicer</span> <span class="o">=</span> <span class="n">SLICERS</span><span class="p">[</span><span class="n">slicer</span><span class="p">]</span><span class="o">.</span><span class="n">init_with_figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="n">affine</span><span class="p">,</span>
+                                              <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+                                              <span class="n">cut_coords</span><span class="o">=</span><span class="n">cut_coords</span><span class="p">,</span>
+                                              <span class="n">figure</span><span class="o">=</span><span class="n">figure</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span>
+                                              <span class="n">black_bg</span><span class="o">=</span><span class="n">black_bg</span><span class="p">,</span>
+                                              <span class="n">leave_space</span><span class="o">=</span><span class="n">do3d</span><span class="p">)</span>
+
+    <span class="c1"># Use Mayavi for the 3D plotting</span>
+    <span class="k">if</span> <span class="n">do3d</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">.maps_3d</span> <span class="k">import</span> <span class="n">plot_map_3d</span><span class="p">,</span> <span class="n">m2screenshot</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">tvtk.api</span> <span class="k">import</span> <span class="n">tvtk</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">enthought.tvtk.api</span> <span class="k">import</span> <span class="n">tvtk</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">tvtk</span><span class="o">.</span><span class="n">Version</span><span class="p">()</span>
+        <span class="n">offscreen</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">version</span><span class="o">.</span><span class="n">vtk_major_version</span><span class="p">,</span> <span class="n">version</span><span class="o">.</span><span class="n">vtk_minor_version</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="n">offscreen</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">do3d</span> <span class="o">==</span> <span class="s1">&#39;interactive&#39;</span><span class="p">:</span>
+            <span class="n">offscreen</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cmap&#39;</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">cmap_d</span><span class="p">[</span><span class="n">pl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;image.cmap&#39;</span><span class="p">]])</span>
+        <span class="c1"># Computing vmin and vmax is costly in time, and is needed</span>
+        <span class="c1"># later, so we compute them now, and store them for future</span>
+        <span class="c1"># use</span>
+        <span class="n">vmin</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vmin&#39;</span><span class="p">,</span> <span class="nb">map</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;vmin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vmin</span>
+        <span class="n">vmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vmax&#39;</span><span class="p">,</span> <span class="nb">map</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;vmax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vmax</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">mayavi</span> <span class="k">import</span> <span class="n">mlab</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">enthought.mayavi</span> <span class="k">import</span> <span class="n">mlab</span>
+        <span class="k">if</span> <span class="n">threshold_3d</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">threshold_3d</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="n">plot_map_3d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">map</span><span class="p">),</span> <span class="n">affine</span><span class="p">,</span> <span class="n">cut_coords</span><span class="o">=</span><span class="n">cut_coords</span><span class="p">,</span>
+                    <span class="n">anat</span><span class="o">=</span><span class="n">anat</span><span class="p">,</span> <span class="n">anat_affine</span><span class="o">=</span><span class="n">anat_affine</span><span class="p">,</span> 
+                    <span class="n">offscreen</span><span class="o">=</span><span class="n">offscreen</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+                    <span class="n">threshold</span><span class="o">=</span><span class="n">threshold_3d</span><span class="p">,</span>
+                    <span class="n">view</span><span class="o">=</span><span class="n">view_3d</span><span class="p">,</span>
+                    <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+
+        <span class="n">ax</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">slicer</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">add_axes</span><span class="p">((</span><span class="mf">0.001</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.29</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+        <span class="n">m2screenshot</span><span class="p">(</span><span class="n">mpl_axes</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">offscreen</span><span class="p">:</span>
+            <span class="c1"># Clean up, so that the offscreen engine doesn&#39;t become the</span>
+            <span class="c1"># default</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+            <span class="n">engine</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">get_engine</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">mayavi.core.registry</span> <span class="k">import</span> <span class="n">registry</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">enthought.mayavi.core.registry</span> <span class="k">import</span> <span class="n">registry</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">registry</span><span class="o">.</span><span class="n">engines</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="n">engine</span><span class="p">:</span>
+                    <span class="n">registry</span><span class="o">.</span><span class="n">engines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+
+    <span class="k">if</span> <span class="n">threshold</span><span class="p">:</span>
+        <span class="nb">map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_inside</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="o">-</span><span class="n">threshold</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+    <span class="n">_plot_anat</span><span class="p">(</span><span class="n">slicer</span><span class="p">,</span> <span class="n">anat</span><span class="p">,</span> <span class="n">anat_affine</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+               <span class="n">annotate</span><span class="o">=</span><span class="n">annotate</span><span class="p">,</span> <span class="n">draw_cross</span><span class="o">=</span><span class="n">draw_cross</span><span class="p">)</span>
+
+    <span class="n">slicer</span><span class="o">.</span><span class="n">plot_map</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="o">**</span><span class="n">imshow_kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">slicer</span></div>
+
+
+<span class="k">def</span> <span class="nf">_plot_anat</span><span class="p">(</span><span class="n">slicer</span><span class="p">,</span> <span class="n">anat</span><span class="p">,</span> <span class="n">anat_affine</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">annotate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">draw_cross</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">pl</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">gray</span><span class="p">,</span>
+               <span class="o">**</span><span class="n">imshow_kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Internal function used to plot anatomy</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">canonical_anat</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">anat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">anat</span><span class="p">,</span> <span class="n">anat_affine</span><span class="p">,</span> <span class="n">vmax_anat</span> <span class="o">=</span> <span class="n">_AnatCache</span><span class="o">.</span><span class="n">get_anat</span><span class="p">()</span>
+            <span class="n">canonical_anat</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">anat</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+    <span class="n">black_bg</span> <span class="o">=</span> <span class="n">slicer</span><span class="o">.</span><span class="n">_black_bg</span>
+    <span class="c1"># XXX: Check that we should indeed plot an anat: we have one, and the</span>
+    <span class="c1"># cut_coords are in its range</span>
+
+    <span class="k">if</span> <span class="n">anat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">canonical_anat</span><span class="p">:</span>
+            <span class="c1"># We special-case the &#39;canonical anat&#39;, as we don&#39;t need</span>
+            <span class="c1"># to do a few transforms to it.</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="n">vmax_anat</span>
+        <span class="k">elif</span> <span class="n">dim</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="n">anat</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="n">anat</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vmin</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">vmax</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">anat</span><span class="p">,</span> <span class="n">anat_affine</span> <span class="o">=</span> <span class="n">_xyz_order</span><span class="p">(</span><span class="n">anat</span><span class="p">,</span> <span class="n">anat_affine</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dim</span><span class="p">:</span>
+            <span class="n">vmean</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="n">vmin</span> <span class="o">+</span> <span class="n">vmax</span><span class="p">)</span>
+            <span class="n">ptp</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="n">vmax</span> <span class="o">-</span> <span class="n">vmin</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_numlike</span><span class="p">(</span><span class="n">dim</span><span class="p">):</span>
+                <span class="n">dim</span> <span class="o">=</span> <span class="o">.</span><span class="mi">6</span>
+            <span class="k">if</span> <span class="n">black_bg</span><span class="p">:</span>
+                <span class="n">vmax</span> <span class="o">=</span> <span class="n">vmean</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">dim</span><span class="p">)</span><span class="o">*</span><span class="n">ptp</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vmin</span> <span class="o">=</span> <span class="n">vmean</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">dim</span><span class="p">)</span><span class="o">*</span><span class="n">ptp</span>
+        <span class="n">slicer</span><span class="o">.</span><span class="n">plot_map</span><span class="p">(</span><span class="n">anat</span><span class="p">,</span> <span class="n">anat_affine</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+                              <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">imshow_kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">annotate</span><span class="p">:</span>
+            <span class="n">slicer</span><span class="o">.</span><span class="n">annotate</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">draw_cross</span><span class="p">:</span>
+            <span class="n">slicer</span><span class="o">.</span><span class="n">draw_cross</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">black_bg</span><span class="p">:</span>
+        <span class="c1"># To have a black background in PDF, we need to create a</span>
+        <span class="c1"># patch in black for the background</span>
+        <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">slicer</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+                         <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">],</span>
+                         <span class="n">zorder</span><span class="o">=-</span><span class="mi">500</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">slicer</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">slicer</span>
+
+
+<div class="viewcode-block" id="plot_anat"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.activation_maps.html#nipy.labs.viz_tools.activation_maps.plot_anat">[docs]</a><span class="k">def</span> <span class="nf">plot_anat</span><span class="p">(</span><span class="n">anat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">anat_affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cut_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slicer</span><span class="o">=</span><span class="s1">&#39;ortho&#39;</span><span class="p">,</span>
+              <span class="n">figure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">annotate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">draw_cross</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">black_bg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">pl</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">gray</span><span class="p">,</span>
+              <span class="o">**</span><span class="n">imshow_kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Plot three cuts of an anatomical image (Frontal, Axial, and Lateral)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        anat : 3D ndarray, optional</span>
+<span class="sd">            The anatomical image to be used as a background. If None is</span>
+<span class="sd">            given, nipy tries to find a T1 template.</span>
+<span class="sd">        anat_affine : 4x4 ndarray, optional</span>
+<span class="sd">            The affine matrix going from the anatomical image voxel space to </span>
+<span class="sd">            MNI space. This parameter is not used when the default </span>
+<span class="sd">            anatomical is used, but it is compulsory when using an</span>
+<span class="sd">            explicite anatomical image.</span>
+<span class="sd">        figure : integer or matplotlib figure, optional</span>
+<span class="sd">            Matplotlib figure used or its number. If None is given, a</span>
+<span class="sd">            new figure is created.</span>
+<span class="sd">        cut_coords: None, or a tuple of floats</span>
+<span class="sd">            The MNI coordinates of the point where the cut is performed, in</span>
+<span class="sd">            MNI coordinates and order.</span>
+<span class="sd">            If slicer is &#39;ortho&#39;, this should be a 3-tuple: (x, y, z)</span>
+<span class="sd">            For slicer == &#39;x&#39;, &#39;y&#39;, or &#39;z&#39;, then these are the</span>
+<span class="sd">            coordinates of each cut in the corresponding direction.</span>
+<span class="sd">            If None is given, the cuts is calculated automaticaly.</span>
+<span class="sd">        slicer: {&#39;ortho&#39;, &#39;x&#39;, &#39;y&#39;, &#39;z&#39;}</span>
+<span class="sd">            Choose the direction of the cuts. With &#39;ortho&#39; three cuts are</span>
+<span class="sd">            performed in orthogonal directions</span>
+<span class="sd">        figure : integer or matplotlib figure, optional</span>
+<span class="sd">            Matplotlib figure used or its number. If None is given, a</span>
+<span class="sd">            new figure is created.</span>
+<span class="sd">        axes : matplotlib axes or 4 tuple of float: (xmin, ymin, width, height), optional</span>
+<span class="sd">            The axes, or the coordinates, in matplotlib figure space,</span>
+<span class="sd">            of the axes used to display the plot. If None, the complete</span>
+<span class="sd">            figure is used.</span>
+<span class="sd">        title : string, optional</span>
+<span class="sd">            The title dispayed on the figure.</span>
+<span class="sd">        annotate: boolean, optional</span>
+<span class="sd">            If annotate is True, positions and left/right annotation</span>
+<span class="sd">            are added to the plot.</span>
+<span class="sd">        draw_cross: boolean, optional</span>
+<span class="sd">            If draw_cross is True, a cross is drawn on the plot to</span>
+<span class="sd">            indicate the cut plosition.</span>
+<span class="sd">        black_bg: boolean, optional</span>
+<span class="sd">            If True, the background of the image is set to be black. If</span>
+<span class="sd">            you whish to save figures with a black background, you</span>
+<span class="sd">            will need to pass &quot;facecolor=&#39;k&#39;, edgecolor=&#39;k&#39;&quot; to pylab&#39;s</span>
+<span class="sd">            savefig.</span>
+<span class="sd">        dim: float, optional</span>
+<span class="sd">            If set, dim the anatomical image, such that</span>
+<span class="sd">            vmax = vmean + (1+dim)*ptp if black_bg is set to True, or</span>
+<span class="sd">            vmin = vmean - (1+dim)*ptp otherwise, where</span>
+<span class="sd">            ptp = .5*(vmax - vmin)</span>
+<span class="sd">        cmap: matplotlib colormap, optional</span>
+<span class="sd">            The colormap for the anat</span>
+<span class="sd">        imshow_kwargs: extra keyword arguments, optional</span>
+<span class="sd">            Extra keyword arguments passed to pylab.imshow</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Arrays should be passed in numpy convention: (x, y, z)</span>
+<span class="sd">        ordered.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">slicer</span> <span class="o">=</span> <span class="n">SLICERS</span><span class="p">[</span><span class="n">slicer</span><span class="p">]</span><span class="o">.</span><span class="n">init_with_figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">anat</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="n">anat_affine</span><span class="p">,</span>
+                                          <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cut_coords</span><span class="o">=</span><span class="n">cut_coords</span><span class="p">,</span>
+                                          <span class="n">figure</span><span class="o">=</span><span class="n">figure</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span>
+                                          <span class="n">black_bg</span><span class="o">=</span><span class="n">black_bg</span><span class="p">)</span>
+
+    <span class="n">_plot_anat</span><span class="p">(</span><span class="n">slicer</span><span class="p">,</span> <span class="n">anat</span><span class="p">,</span> <span class="n">anat_affine</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+               <span class="n">annotate</span><span class="o">=</span><span class="n">annotate</span><span class="p">,</span> <span class="n">draw_cross</span><span class="o">=</span><span class="n">draw_cross</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+               <span class="o">**</span><span class="n">imshow_kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">slicer</span></div>
+
+
+<div class="viewcode-block" id="demo_plot_map"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.activation_maps.html#nipy.labs.viz_tools.activation_maps.demo_plot_map">[docs]</a><span class="k">def</span> <span class="nf">demo_plot_map</span><span class="p">(</span><span class="n">do3d</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Demo activation map plotting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">182</span><span class="p">,</span> <span class="mi">218</span><span class="p">,</span> <span class="mi">182</span><span class="p">))</span>
+    <span class="c1"># Color a asymetric rectangle around Broca area:</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="o">-</span><span class="mi">52</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">22</span>
+    <span class="n">mapped</span> <span class="o">=</span> <span class="n">coord_transform</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">mni_sform_inv</span><span class="p">)</span>
+    <span class="n">x_map</span><span class="p">,</span> <span class="n">y_map</span><span class="p">,</span> <span class="n">z_map</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mapped</span><span class="p">]</span>
+    <span class="c1"># Compare to values obtained using fslview. We need to add one as</span>
+    <span class="c1"># voxels do not start at 0 in fslview.</span>
+    <span class="k">assert</span> <span class="n">x_map</span> <span class="o">==</span> <span class="mi">142</span>
+    <span class="k">assert</span> <span class="n">y_map</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">137</span>
+    <span class="k">assert</span> <span class="n">z_map</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">95</span>
+    <span class="nb">map</span><span class="p">[</span><span class="n">x_map</span><span class="o">-</span><span class="mi">5</span><span class="p">:</span><span class="n">x_map</span><span class="o">+</span><span class="mi">5</span><span class="p">,</span> <span class="n">y_map</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="n">y_map</span><span class="o">+</span><span class="mi">3</span><span class="p">,</span> <span class="n">z_map</span><span class="o">-</span><span class="mi">10</span><span class="p">:</span><span class="n">z_map</span><span class="o">+</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">plot_map</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">mni_sform</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span>
+                        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Broca&#39;s area&quot;</span><span class="p">,</span> <span class="n">do3d</span><span class="o">=</span><span class="n">do3d</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

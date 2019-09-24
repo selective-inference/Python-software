@@ -1,0 +1,593 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.statistics.mixed_effects_stat</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module for computation of mixed effects statistics with an EM algorithm.</span>
+<span class="sd">i.e.</span>
+<span class="sd">solves problems of the form</span>
+<span class="sd">y = X beta + e1 + e2,</span>
+<span class="sd">where X and Y are known, e1 and e2 are centered with diagonal covariance.</span>
+<span class="sd">V1 = var(e1) is known, and V2 = var(e2) = lambda identity.</span>
+<span class="sd">the code estimates beta and lambda using an EM algorithm.</span>
+<span class="sd">Likelihood ratio tests can then be used to test the columns of beta.</span>
+
+<span class="sd">Author: Bertrand Thirion, 2012.</span>
+
+<span class="sd">&gt;&gt;&gt; N, P = 15, 500</span>
+<span class="sd">&gt;&gt;&gt; V1 = np.random.randn(N, P) ** 2</span>
+<span class="sd">&gt;&gt;&gt; effects = np.ones(P)</span>
+<span class="sd">&gt;&gt;&gt; Y = generate_data(np.ones(N), effects, .25, V1)</span>
+<span class="sd">&gt;&gt;&gt; T1 = one_sample_ttest(Y, V1, n_iter=5)</span>
+<span class="sd">&gt;&gt;&gt; T2 = t_stat(Y)</span>
+<span class="sd">&gt;&gt;&gt; assert(T1.std() &lt; T2.std())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">EPS</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+
+
+<div class="viewcode-block" id="generate_data"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.generate_data">[docs]</a><span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">V2</span><span class="p">,</span> <span class="n">V1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Generate a group of individuals from the provided parameters</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X: array of shape (n_samples, n_reg),</span>
+<span class="sd">       the design matrix of the model</span>
+<span class="sd">    beta: float or array of shape (n_reg, n_tests),</span>
+<span class="sd">          the associated effects</span>
+<span class="sd">    V2: float or array of shape (n_tests),</span>
+<span class="sd">              group variance</span>
+<span class="sd">    V1: array of shape(n_samples, n_tests),</span>
+<span class="sd">               the individual variances</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Y: array of shape(n_samples, n_tests)</span>
+<span class="sd">       the individual data related to the two-level normal model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check that the variances are  positive</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">V1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Variance should be positive&#39;</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">V1</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">V2</span> <span class="o">+</span> <span class="n">V1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">beta</span><span class="p">):</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">V1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">beta</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+    <span class="n">Y</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Y</span></div>
+
+
+<div class="viewcode-block" id="check_arrays"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.check_arrays">[docs]</a><span class="k">def</span> <span class="nf">check_arrays</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check that the given data can be used for the models</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Y: array of shape (n_samples, n_tests) or (n_samples)</span>
+<span class="sd">       the estimated effects</span>
+<span class="sd">    V1: array of shape (n_samples, n_tests) or (n_samples)</span>
+<span class="sd">          first-level variance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">V1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;a negative variance has been provided&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">==</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">V1</span><span class="p">)</span> <span class="o">==</span> <span class="n">V1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">V1</span> <span class="o">=</span> <span class="n">V1</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">V1</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Y and V1 do not have the same shape&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Y</span><span class="p">,</span> <span class="n">V1</span></div>
+
+
+<div class="viewcode-block" id="t_stat"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.t_stat">[docs]</a><span class="k">def</span> <span class="nf">t_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the t stat of the sample on each row of the matrix</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Y, array of shape (n_samples, n_tests)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_variates, array of shape (n_tests)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Y</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">Y</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MixedEffectsModel"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel">[docs]</a><span class="k">class</span> <span class="nc">MixedEffectsModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to handle multiple one-sample mixed effects models</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MixedEffectsModel.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the effects and first-level variance,</span>
+<span class="sd">        and initialize related quantities</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: array of shape(n_samples, n_effects),</span>
+<span class="sd">           the design matrix</span>
+<span class="sd">        n_iter: int, optional,</span>
+<span class="sd">               number of iterations of the EM algorithm</span>
+<span class="sd">        verbose: bool, optional, verbosity mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_iter</span> <span class="o">=</span> <span class="n">n_iter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">X</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pinv_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MixedEffectsModel.log_like"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.log_like">[docs]</a>    <span class="k">def</span> <span class="nf">log_like</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Compute the log-likelihood of (Y, V1) under the model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Y, array of shape (n_samples, n_tests) or (n_samples)</span>
+<span class="sd">           the estimated effects</span>
+<span class="sd">        V1, array of shape (n_samples, n_tests) or (n_samples)</span>
+<span class="sd">            first-level variance</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        logl: array of shape self.n_tests,</span>
+<span class="sd">              the log-likelihood of the model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Y</span><span class="p">,</span> <span class="n">V1</span> <span class="o">=</span> <span class="n">check_arrays</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span>
+        <span class="n">tvar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">V2</span> <span class="o">+</span> <span class="n">V1</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">Y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y_</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">tvar</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">logl</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tvar</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">logl</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">logl</span> <span class="o">*=</span> <span class="p">(</span><span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">logl</span></div>
+
+<div class="viewcode-block" id="MixedEffectsModel.predict"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the log_likelihood of the data.See the log_like method&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_like</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MixedEffectsModel.score"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the log_likelihood of the data. See the log_like method&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_like</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_one_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Applies one step of an EM algorithm to estimate self.mean_, self.var</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Y, array of shape (n_samples, n_tests) or (n_samples)</span>
+<span class="sd">              the estimated effects</span>
+<span class="sd">        V1, array of shape (n_samples, n_tests) or (n_samples)</span>
+<span class="sd">                 first-level variance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># E step</span>
+        <span class="n">prec</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V2</span> <span class="o">+</span> <span class="n">V1</span><span class="p">)</span>
+        <span class="n">Y_</span> <span class="o">=</span> <span class="n">prec</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V2</span> <span class="o">*</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">V1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y_</span><span class="p">)</span>
+        <span class="n">cvar</span> <span class="o">=</span> <span class="n">V1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">V2</span> <span class="o">*</span> <span class="n">prec</span>
+
+        <span class="c1"># M step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinv_X</span><span class="p">,</span> <span class="n">Y_</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Y_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta_</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">V2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">Y_</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y_</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">cvar</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MixedEffectsModel.fit"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Launches the EM algorithm to estimate self</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Y, array of shape (n_samples, n_tests) or (n_samples)</span>
+<span class="sd">              the estimated effects</span>
+<span class="sd">        V1, array of shape (n_samples, n_tests) or (n_samples)</span>
+<span class="sd">                 first-level variance</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Basic data checks</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;X and Y must have the same numbers of rows&#39;</span><span class="p">)</span>
+        <span class="n">Y</span><span class="p">,</span> <span class="n">V1</span> <span class="o">=</span> <span class="n">check_arrays</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pinv_X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Y_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta_</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">V2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">Y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y_</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">log_like_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_like</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Average log-likelihood: &#39;</span><span class="p">,</span> <span class="n">log_like_init</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_iter</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_one_step</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">log_like_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_like</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">log_like_</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">log_like_init</span> <span class="o">-</span> <span class="n">EPS</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The log-likelihood cannot decrease&#39;</span><span class="p">)</span>
+                <span class="n">log_like_init</span> <span class="o">=</span> <span class="n">log_like_</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Iteration </span><span class="si">%d</span><span class="s1">, average log-likelihood: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="n">i</span><span class="p">,</span> <span class="n">log_like_</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="bp">self</span></div></div>
+
+
+<div class="viewcode-block" id="two_sample_ftest"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.two_sample_ftest">[docs]</a><span class="k">def</span> <span class="nf">two_sample_ftest</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the mixed effects t-stat for each row of the X</span>
+<span class="sd">    (one sample test)</span>
+<span class="sd">    This uses the Formula in Roche et al., NeuroImage 2007</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Y: array of shape (n_samples, n_tests)</span>
+<span class="sd">       the data</span>
+<span class="sd">    V1: array of shape (n_samples, n_tests)</span>
+<span class="sd">        first-level variance assocated with the data</span>
+<span class="sd">    group: array of shape (n_samples)</span>
+<span class="sd">       a vector of indicators yielding the samples membership</span>
+<span class="sd">    n_iter: int, optional,</span>
+<span class="sd">           number of iterations of the EM algorithm</span>
+<span class="sd">    verbose: bool, optional, verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tstat: array of shape (n_tests),</span>
+<span class="sd">           statistical values obtained from the likelihood ratio test</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check that group is correct</span>
+    <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The number of labels is not the number of samples&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;group should be composed only of zeros and ones&#39;</span><span class="p">)</span>
+
+    <span class="c1"># create design matrices</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">group</span><span class="p">),</span> <span class="n">group</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">mfx_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                    <span class="n">return_t</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_f</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="two_sample_ttest"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.two_sample_ttest">[docs]</a><span class="k">def</span> <span class="nf">two_sample_ttest</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the mixed effects t-stat for each row of the X</span>
+<span class="sd">    (one sample test)</span>
+<span class="sd">    This uses the Formula in Roche et al., NeuroImage 2007</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Y: array of shape (n_samples, n_tests)</span>
+<span class="sd">       the data</span>
+<span class="sd">    V1: array of shape (n_samples, n_tests)</span>
+<span class="sd">        first-level variance assocated with the data</span>
+<span class="sd">    group: array of shape (n_samples)</span>
+<span class="sd">       a vector of indicators yielding the samples membership</span>
+<span class="sd">    n_iter: int, optional,</span>
+<span class="sd">           number of iterations of the EM algorithm</span>
+<span class="sd">    verbose: bool, optional, verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tstat: array of shape (n_tests),</span>
+<span class="sd">           statistical values obtained from the likelihood ratio test</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">group</span><span class="p">),</span> <span class="n">group</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">mfx_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                    <span class="n">return_t</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="one_sample_ftest"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.one_sample_ftest">[docs]</a><span class="k">def</span> <span class="nf">one_sample_ftest</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the mixed effects F-stat for each row of the X</span>
+<span class="sd">    (one sample test)</span>
+<span class="sd">    This uses the Formula in Roche et al., NeuroImage 2007</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Y: array of shape (n_samples, n_tests)</span>
+<span class="sd">       the data</span>
+<span class="sd">    V1: array of shape (n_samples, n_tests)</span>
+<span class="sd">        first-level variance ssociated with the data</span>
+<span class="sd">    n_iter: int, optional,</span>
+<span class="sd">           number of iterations of the EM algorithm</span>
+<span class="sd">    verbose: bool, optional, verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fstat, array of shape (n_tests),</span>
+<span class="sd">           statistical values obtained from the likelihood ratio test</span>
+<span class="sd">    sign, array of shape (n_tests),</span>
+<span class="sd">          sign of the mean for each test (allow for post-hoc signed tests)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mfx_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span>
+                    <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">return_t</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_f</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="one_sample_ttest"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.one_sample_ttest">[docs]</a><span class="k">def</span> <span class="nf">one_sample_ttest</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the mixed effects t-stat for each row of the X</span>
+<span class="sd">    (one sample test)</span>
+<span class="sd">    This uses the Formula in Roche et al., NeuroImage 2007</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Y: array of shape (n_samples, n_tests)</span>
+<span class="sd">       the observations</span>
+<span class="sd">    V1: array of shape (n_samples, n_tests)</span>
+<span class="sd">        first-level variance associated with the observations</span>
+<span class="sd">    n_iter: int, optional,</span>
+<span class="sd">           number of iterations of the EM algorithm</span>
+<span class="sd">    verbose: bool, optional, verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tstat: array of shape (n_tests),</span>
+<span class="sd">           statistical values obtained from the likelihood ratio test</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mfx_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span>
+                    <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">return_t</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="mfx_stat"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.mixed_effects_stat.html#nipy.algorithms.statistics.mixed_effects_stat.mfx_stat">[docs]</a><span class="k">def</span> <span class="nf">mfx_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">return_t</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+             <span class="n">return_f</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_effect</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">return_var</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run a mixed-effects model test on the column of the design matrix</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Y: array of shape (n_samples, n_tests)</span>
+<span class="sd">       the data</span>
+<span class="sd">    V1: array of shape (n_samples, n_tests)</span>
+<span class="sd">        first-level variance assocated with the data</span>
+<span class="sd">    X: array of shape(n_samples, n_regressors)</span>
+<span class="sd">       the design matrix of the model</span>
+<span class="sd">    column: int,</span>
+<span class="sd">            index of the column of X to be tested</span>
+<span class="sd">    n_iter: int, optional,</span>
+<span class="sd">           number of iterations of the EM algorithm</span>
+<span class="sd">    return_t: bool, optional,</span>
+<span class="sd">              should one return the t test (True by default)</span>
+<span class="sd">    return_f: bool, optional,</span>
+<span class="sd">              should one return the F test (False by default)</span>
+<span class="sd">    return_effect: bool, optional,</span>
+<span class="sd">              should one return the effect estimate (False by default)</span>
+<span class="sd">    return_var: bool, optional,</span>
+<span class="sd">              should one return the variance estimate (False by default)</span>
+
+<span class="sd">    verbose: bool, optional, verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (tstat, fstat, effect, var): tuple of arrays of shape (n_tests),</span>
+<span class="sd">                                 those required by the input return booleans</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check that X/columns are correct</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;X.shape[0] is not the number of samples&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">column</span> <span class="o">&gt;</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;the column index is more than the number of columns&#39;</span><span class="p">)</span>
+
+    <span class="c1"># create design matrices</span>
+    <span class="n">contrast_mask</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="n">column</span><span class="p">]</span>
+    <span class="n">X0</span> <span class="o">=</span> <span class="n">X</span> <span class="o">*</span> <span class="n">contrast_mask</span>
+
+    <span class="c1"># instantiate the mixed effects models</span>
+    <span class="n">model_0</span> <span class="o">=</span> <span class="n">MixedEffectsModel</span><span class="p">(</span><span class="n">X0</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span>
+    <span class="n">model_1</span> <span class="o">=</span> <span class="n">MixedEffectsModel</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span>
+
+    <span class="c1"># compute the log-likelihood ratio statistic</span>
+    <span class="n">fstat</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">model_1</span><span class="o">.</span><span class="n">log_like</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span> <span class="o">-</span> <span class="n">model_0</span><span class="o">.</span><span class="n">log_like</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">))</span>
+    <span class="n">fstat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">fstat</span><span class="p">)</span>
+    <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">model_1</span><span class="o">.</span><span class="n">beta_</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="k">if</span> <span class="n">return_t</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fstat</span><span class="p">)</span> <span class="o">*</span> <span class="n">sign</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">return_f</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="p">(</span><span class="n">fstat</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">return_var</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="p">(</span><span class="n">model_1</span><span class="o">.</span><span class="n">V2</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">return_effect</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="p">(</span><span class="n">model_1</span><span class="o">.</span><span class="n">beta_</span><span class="p">[</span><span class="n">column</span><span class="p">],)</span>
+    <span class="k">return</span> <span class="n">output</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

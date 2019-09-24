@@ -1,0 +1,685 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.statistics.empirical_pvalue.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-statistics-empirical-pvalue">
+<h1>algorithms.statistics.empirical_pvalue<a class="headerlink" href="#algorithms-statistics-empirical-pvalue" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-statistics-empirical-pvalue">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.statistics.empirical_pvalue</span></code><a class="headerlink" href="#module-algorithms-statistics-empirical-pvalue" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.statistics.empirical_pvalue</span></code>:</p>
+digraph inheritancef2bf286c30 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;statistics.empirical_pvalue.NormalEmpiricalNull&quot; [URL=&quot;#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class to compute the empirical null normal fit to the data.&quot;];
+}
+<span class="target" id="module-nipy.algorithms.statistics.empirical_pvalue"></span><p>Routines to get corrected p-values estimates, based on the observations.</p>
+<p>It implements 3 approaches:</p>
+<ul>
+<li><p>Benjamini-Hochberg FDR: <a class="reference external" href="http://en.wikipedia.org/wiki/False_discovery_rate">http://en.wikipedia.org/wiki/False_discovery_rate</a></p></li>
+<li><p>a class that fits a Gaussian model to the central part of an
+histogram, following [1]</p>
+<p>[1] Schwartzman A, Dougherty RF, Lee J, Ghahremani D, Taylor
+JE. Empirical null and false discovery rate analysis in
+neuroimaging. Neuroimage. 2009 Jan 1;44(1):71-82.  PubMed PMID:
+18547821. DOI: 10.1016/j.neuroimage.2008.04.182</p>
+<p>This is typically necessary to estimate a FDR when one is not
+certain that the data behaves as a standard normal under H_0.</p>
+</li>
+<li><p>a model based on Gaussian mixture modelling ‘a la Oxford’</p></li>
+</ul>
+<p>Author : Bertrand Thirion, Yaroslav Halchenko, 2008-2012</p>
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="normalempiricalnull">
+<h2><a class="reference internal" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull" title="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormalEmpiricalNull</span></code></a><a class="headerlink" href="#normalempiricalnull" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">NormalEmpiricalNull</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#NormalEmpiricalNull"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to compute the empirical null normal fit to the data.</p>
+<p>The data which is used to estimate the FDR, assuming a Gaussian null
+from Schwartzmann et al., NeuroImage 44 (2009) 71–82</p>
+<dl class="method">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#NormalEmpiricalNull.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize an empirical null normal object.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> : 1D ndarray</p>
+<blockquote>
+<div><p>The data used to estimate the empirical null.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.learn">
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param">left=0.2</em>, <em class="sig-param">right=0.8</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#NormalEmpiricalNull.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.learn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the proportion, mean and variance of a Gaussian distribution
+for a fraction of the data</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>left: float, optional</strong></p>
+<blockquote>
+<div><p>Left cut parameter to prevent fitting non-gaussian data</p>
+</div></blockquote>
+<p><strong>right: float, optional</strong></p>
+<blockquote>
+<div><p>Right cut parameter to prevent fitting non-gaussian data</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method stores the following attributes:</p>
+<ul class="simple">
+<li><p>mu = mu</p></li>
+<li><p>p0 = min(1, np.exp(lp0))</p></li>
+<li><p>sqsigma: variance of the estimated normal
+distribution</p></li>
+<li><p>sigma: np.sqrt(sqsigma) : standard deviation of the estimated
+normal distribution</p></li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.fdrcurve">
+<code class="sig-name descname">fdrcurve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#NormalEmpiricalNull.fdrcurve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.fdrcurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the FDR associated with any point of self.x</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.threshold">
+<code class="sig-name descname">threshold</code><span class="sig-paren">(</span><em class="sig-param">alpha=0.05</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#NormalEmpiricalNull.threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the threshold corresponding to an alpha-level FDR for x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>alpha</strong> : float, optional</p>
+<blockquote>
+<div><p>the chosen false discovery rate threshold.</p>
+</div></blockquote>
+<p><strong>verbose</strong> : boolean, optional</p>
+<blockquote>
+<div><p>the verbosity level, if True a plot is generated.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>theta: float</p>
+<blockquote>
+<div><p>the critical value associated with the provided FDR</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.uncorrected_threshold">
+<code class="sig-name descname">uncorrected_threshold</code><span class="sig-paren">(</span><em class="sig-param">alpha=0.001</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#NormalEmpiricalNull.uncorrected_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.uncorrected_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the threshold corresponding to a specificity alpha for x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>alpha</strong> : float, optional</p>
+<blockquote>
+<div><p>the chosen false discovery rate (FDR) threshold.</p>
+</div></blockquote>
+<p><strong>verbose</strong> : boolean, optional</p>
+<blockquote>
+<div><p>the verbosity level, if True a plot is generated.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>theta: float</p>
+<blockquote>
+<div><p>the critical value associated with the provided p-value</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.fdr">
+<code class="sig-name descname">fdr</code><span class="sig-paren">(</span><em class="sig-param">theta</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#NormalEmpiricalNull.fdr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.fdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a threshold theta, find the estimated FDR</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float or array of shape (n_samples)</p>
+<blockquote>
+<div><p>values to test</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>afp</strong> : value of array of shape(n)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param">efp=None</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">bar=1</em>, <em class="sig-param">mpaxes=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#NormalEmpiricalNull.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the  histogram of x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>efp</strong> : float, optional</p>
+<blockquote>
+<div><p>The empirical FDR (corresponding to x)
+if efp==None, the false positive rate threshold plot is not
+drawn.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float, optional</p>
+<blockquote>
+<div><p>The chosen FDR threshold</p>
+</div></blockquote>
+<p><strong>bar=1</strong> : bool, optional</p>
+<p><strong>mpaxes=None: if not None, handle to an axes where the fig</strong></p>
+<p><strong>will be drawn. Avoids creating unnecessarily new figures</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.check_p_values">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">check_p_values</code><span class="sig-paren">(</span><em class="sig-param">p_values</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#check_p_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.check_p_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basic checks on the p_values array: values should be within [0,1]</p>
+<p>Assures also that p_values are at least in 1d array.  None of the
+checks is performed if p_values is None.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>p_values</strong> : array of shape (n)</p>
+<blockquote>
+<div><p>The sample p-values</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>p_values</strong> : array of shape (n)</p>
+<blockquote>
+<div><p>The sample p-values</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.fdr">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">fdr</code><span class="sig-paren">(</span><em class="sig-param">p_values=None</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#fdr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.fdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the FDR associated with each p value</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>p_values</strong> : ndarray of shape (n)</p>
+<blockquote>
+<div><p>The samples p-value</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>q</strong> : array of shape(n)</p>
+<blockquote>
+<div><p>The corresponding fdr values</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.fdr_threshold">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">fdr_threshold</code><span class="sig-paren">(</span><em class="sig-param">p_values</em>, <em class="sig-param">alpha=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#fdr_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.fdr_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return FDR threshold given p values</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>p_values</strong> : array of shape (n), optional</p>
+<blockquote>
+<div><p>The samples p-value</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float, optional</p>
+<blockquote>
+<div><p>The desired FDR significance</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>critical_p_value: float</p>
+<blockquote>
+<div><p>The p value corresponding to the FDR alpha</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.gamma_gaussian_fit">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">gamma_gaussian_fit</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">test=None</em>, <em class="sig-param">verbose=0</em>, <em class="sig-param">mpaxes=False</em>, <em class="sig-param">bias=1</em>, <em class="sig-param">gaussian_mix=0</em>, <em class="sig-param">return_estimator=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#gamma_gaussian_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.gamma_gaussian_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computing some prior probabilities that the voxels of a certain map
+are in class disactivated, null or active using a gamma-Gaussian mixture</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nvox,)</strong></p>
+<blockquote>
+<div><p>the map to be analysed</p>
+</div></blockquote>
+<p><strong>test: array of shape (nbitems,), optional</strong></p>
+<blockquote>
+<div><p>the test values for which the p-value needs to be computed
+by default, test = x</p>
+</div></blockquote>
+<p><strong>verbose: 0, 1 or 2, optional</strong></p>
+<blockquote>
+<div><p>verbosity mode, 0 is quiet, and 2 calls matplotlib to display
+graphs.</p>
+</div></blockquote>
+<p><strong>mpaxes: matplotlib axes, optional</strong></p>
+<blockquote>
+<div><p>axes handle used to plot the figure in verbose mode
+if None, new axes are created
+if false, nothing is done</p>
+</div></blockquote>
+<p><strong>bias: float, optional</strong></p>
+<blockquote>
+<div><p>lower bound on the Gaussian variance (to avoid shrinkage)</p>
+</div></blockquote>
+<p><strong>gaussian_mix: float, optional</strong></p>
+<blockquote>
+<div><p>if nonzero, lower bound on the Gaussian mixing weight
+(to avoid shrinkage)</p>
+</div></blockquote>
+<p><strong>return_estimator: boolean, optional</strong></p>
+<blockquote>
+<div><p>if return_estimator is true, the estimator object is
+returned.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bfp: array of shape (nbitems,3)</p>
+<blockquote>
+<div><p>The probability of each component in the mixture model for each
+test value</p>
+</div></blockquote>
+<p>estimator: nipy.labs.clustering.ggmixture.GGGM object</p>
+<blockquote>
+<div><p>The estimator object, returned only if return_estimator is true.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.gaussian_fdr">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">gaussian_fdr</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#gaussian_fdr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.gaussian_fdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the FDR associated with each value assuming a Gaussian distribution</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.gaussian_fdr_threshold">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">gaussian_fdr_threshold</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">alpha=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#gaussian_fdr_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.gaussian_fdr_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return FDR threshold given normal variates</p>
+<p>Given an array x of normal variates, this function returns the
+critical p-value associated with alpha.
+x is explicitly assumed to be normal distributed under H_0</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: ndarray</strong></p>
+<blockquote>
+<div><p>input data</p>
+</div></blockquote>
+<p><strong>alpha: float, optional</strong></p>
+<blockquote>
+<div><p>desired significance</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>threshold</strong> : float</p>
+<blockquote>
+<div><p>threshold, given as a Gaussian critical value</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.smoothed_histogram_from_samples">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">smoothed_histogram_from_samples</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">bins=None</em>, <em class="sig-param">nbins=256</em>, <em class="sig-param">normalized=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#smoothed_histogram_from_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.smoothed_histogram_from_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Smooth histogram corresponding to density underlying the samples in <cite>x</cite></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples)</strong></p>
+<blockquote>
+<div><p>input data</p>
+</div></blockquote>
+<p><strong>bins: array of shape(nbins+1), optional</strong></p>
+<blockquote>
+<div><p>the bins location</p>
+</div></blockquote>
+<p><strong>nbins: int, optional</strong></p>
+<blockquote>
+<div><p>the number of bins of the resulting histogram</p>
+</div></blockquote>
+<p><strong>normalized: bool, optional</strong></p>
+<blockquote>
+<div><p>if True, the result is returned as a density value</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>h: array of shape (nbins)</p>
+<blockquote>
+<div><p>the histogram</p>
+</div></blockquote>
+<p>bins: array of shape(nbins+1),</p>
+<blockquote>
+<div><p>the bins location</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.empirical_pvalue.three_classes_GMM_fit">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.empirical_pvalue.</code><code class="sig-name descname">three_classes_GMM_fit</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">test=None</em>, <em class="sig-param">alpha=0.01</em>, <em class="sig-param">prior_strength=100</em>, <em class="sig-param">verbose=0</em>, <em class="sig-param">fixed_scale=False</em>, <em class="sig-param">mpaxes=None</em>, <em class="sig-param">bias=0</em>, <em class="sig-param">theta=0</em>, <em class="sig-param">return_estimator=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/empirical_pvalue.html#three_classes_GMM_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.empirical_pvalue.three_classes_GMM_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the data with a 3-classes Gaussian Mixture Model,
+i.e. compute some probability that the voxels of a certain map
+are in class disactivated, null or active</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nvox,1)</strong></p>
+<blockquote>
+<div><p>The map to be analysed</p>
+</div></blockquote>
+<p><strong>test: array of shape(nbitems,1), optional</strong></p>
+<blockquote>
+<div><p>the test values for which the p-value needs to be computed
+by default (if None), test=x</p>
+</div></blockquote>
+<p><strong>alpha: float, optional</strong></p>
+<blockquote>
+<div><p>the prior weights of the positive and negative classes</p>
+</div></blockquote>
+<p><strong>prior_strength: float, optional</strong></p>
+<blockquote>
+<div><p>the confidence on the prior (should be compared to size(x))</p>
+</div></blockquote>
+<p><strong>verbose: int</strong></p>
+<blockquote>
+<div><p>verbosity mode</p>
+</div></blockquote>
+<p><strong>fixed_scale: bool, optional</strong></p>
+<blockquote>
+<div><p>boolean, variance parameterization. if True, the variance is locked to 1
+otherwise, it is estimated from the data</p>
+</div></blockquote>
+<p><strong>mpaxes:</strong></p>
+<blockquote>
+<div><p>axes handle used to plot the figure in verbose mode
+if None, new axes are created</p>
+</div></blockquote>
+<p><strong>bias:  bool</strong></p>
+<blockquote>
+<div><p>allows a rescaling of the posterior probability
+that takes into account the threshold theta. Not rigorous.</p>
+</div></blockquote>
+<p><strong>theta: float</strong></p>
+<blockquote>
+<div><p>the threshold used to correct the posterior p-values
+when bias=1; normally, it is such that test&gt;theta
+note that if theta = -np.inf, the method has a standard behaviour</p>
+</div></blockquote>
+<p><strong>return_estimator: boolean, optional</strong></p>
+<blockquote>
+<div><p>If return_estimator is true, the estimator object is
+returned.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bfp</strong> : array of shape (nbitems,3):</p>
+<blockquote>
+<div><p>the posterior probability of each test item belonging to each component
+in the GMM (sum to 1 across the 3 classes)
+if np.size(test)==0, i.e. nbitem==0, None is returned</p>
+</div></blockquote>
+<p><strong>estimator</strong> : nipy.labs.clustering.GMM object</p>
+<blockquote>
+<div><p>The estimator object, returned only if return_estimator is true.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Our convention is that:</p>
+<ul class="simple">
+<li><p>class 1 represents the negative class</p></li>
+<li><p>class 2 represents the null class</p></li>
+<li><p>class 3 represents the positive class</p></li>
+</ul>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

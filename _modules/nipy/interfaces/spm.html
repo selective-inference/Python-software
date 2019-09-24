@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.interfaces.spm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&#39;&#39;&#39; Interfaces to SPM &#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">with_statement</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="k">import</span> <span class="n">savemat</span>
+
+<span class="kn">from</span> <span class="nn">nibabel</span> <span class="k">import</span> <span class="n">load</span>
+<span class="kn">from</span> <span class="nn">nibabel.tmpdirs</span> <span class="k">import</span> <span class="n">InTemporaryDirectory</span>
+
+<span class="kn">from</span> <span class="nn">.matlab</span> <span class="k">import</span> <span class="n">run_matlab_script</span>
+
+
+<div class="viewcode-block" id="SpmInfo"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.SpmInfo">[docs]</a><span class="k">class</span> <span class="nc">SpmInfo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="SpmInfo.__init__"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.SpmInfo.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spm_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spm_ver</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="nf">_set_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">InTemporaryDirectory</span><span class="p">():</span>
+            <span class="n">run_matlab_script</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">spm_path = spm(&#39;dir&#39;);</span>
+<span class="s2">spm_ver = spm(&#39;ver&#39;);</span>
+<span class="s2">fid = fopen(&#39;spm_stuff.txt&#39;, &#39;wt&#39;);</span>
+<span class="s2">fprintf(fid, &#39;</span><span class="si">%s</span><span class="s2">\n&#39;, spm_path);</span>
+<span class="s2">fprintf(fid, &#39;</span><span class="si">%s</span><span class="s2">\n&#39;, spm_ver);</span>
+<span class="s2">fclose(fid);</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;spm_stuff.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;rt&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fobj</span><span class="p">:</span>
+                <span class="n">lines</span> <span class="o">=</span> <span class="n">fobj</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spm_path</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spm_ver</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">spm_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spm_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_properties</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spm_path</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">spm_ver</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spm_ver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_properties</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spm_ver</span></div>
+
+
+<span class="n">spm_info</span> <span class="o">=</span> <span class="n">SpmInfo</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="make_job"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.make_job">[docs]</a><span class="k">def</span> <span class="nf">make_job</span><span class="p">(</span><span class="n">jobtype</span><span class="p">,</span> <span class="n">jobname</span><span class="p">,</span> <span class="n">contents</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;jobs&#39;</span><span class="p">:[{</span><span class="n">jobtype</span><span class="p">:[{</span><span class="n">jobname</span><span class="p">:</span><span class="n">contents</span><span class="p">}]}]}</span></div>
+
+
+<span class="c1"># XXX this should be moved into a matdict class or something</span>
+<div class="viewcode-block" id="fltcols"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.fltcols">[docs]</a><span class="k">def</span> <span class="nf">fltcols</span><span class="p">(</span><span class="n">vals</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Trivial little function to make 1xN float vector &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="run_jobdef"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.run_jobdef">[docs]</a><span class="k">def</span> <span class="nf">run_jobdef</span><span class="p">(</span><span class="n">jobdef</span><span class="p">):</span>
+    <span class="n">script</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">load pyjobs;</span>
+<span class="s2">spm_jobman(&#39;run&#39;, jobs);</span>
+<span class="s2">&quot;&quot;&quot;</span>
+    <span class="c1"># Need initcfg for SPM8</span>
+    <span class="k">if</span> <span class="n">spm_info</span><span class="o">.</span><span class="n">spm_ver</span> <span class="o">!=</span> <span class="s1">&#39;SPM5&#39;</span><span class="p">:</span>
+        <span class="n">script</span> <span class="o">=</span> <span class="s2">&quot;spm_jobman(&#39;initcfg&#39;);</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">script</span>
+    <span class="k">with</span> <span class="n">InTemporaryDirectory</span><span class="p">():</span>
+        <span class="n">savemat</span><span class="p">(</span><span class="s1">&#39;pyjobs.mat&#39;</span><span class="p">,</span> <span class="n">jobdef</span><span class="p">,</span> <span class="n">oned_as</span><span class="o">=</span><span class="s1">&#39;row&#39;</span><span class="p">)</span>
+        <span class="n">run_matlab_script</span><span class="p">(</span><span class="n">script</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="scans_for_fname"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.scans_for_fname">[docs]</a><span class="k">def</span> <span class="nf">scans_for_fname</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="n">n_scans</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">scans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_scans</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">sno</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_scans</span><span class="p">):</span>
+        <span class="n">scans</span><span class="p">[</span><span class="n">sno</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">,</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">sno</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scans</span></div>
+
+
+<div class="viewcode-block" id="scans_for_fnames"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.scans_for_fnames">[docs]</a><span class="k">def</span> <span class="nf">scans_for_fnames</span><span class="p">(</span><span class="n">fnames</span><span class="p">):</span>
+    <span class="n">n_sess</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fnames</span><span class="p">)</span>
+    <span class="n">sess_scans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="n">n_sess</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">sess</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sess</span><span class="p">):</span>
+        <span class="n">sess_scans</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">sess</span><span class="p">]</span> <span class="o">=</span> <span class="n">scans_for_fname</span><span class="p">(</span><span class="n">fnames</span><span class="p">[</span><span class="n">sess</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">sess_scans</span></div>
+
+
+<div class="viewcode-block" id="fname_presuffix"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.fname_presuffix">[docs]</a><span class="k">def</span> <span class="nf">fname_presuffix</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">use_ext</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">pth</span><span class="p">,</span> <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="n">fname</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">use_ext</span><span class="p">:</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pth</span><span class="p">,</span> <span class="n">prefix</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="n">ext</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fnames_presuffix"><a class="viewcode-back" href="../../../api/generated/nipy.interfaces.spm.html#nipy.interfaces.spm.fnames_presuffix">[docs]</a><span class="k">def</span> <span class="nf">fnames_presuffix</span><span class="p">(</span><span class="n">fnames</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="n">f2</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">fnames</span><span class="p">:</span>
+        <span class="n">f2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname_presuffix</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">suffix</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">f2</span></div>
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

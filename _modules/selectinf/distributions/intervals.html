@@ -1,0 +1,422 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.distributions.intervals</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains a class for</span>
+<span class="sd">forming confindence intervals and</span>
+<span class="sd">testing 1-dimensional linear hypotheses</span>
+<span class="sd">about the underlying mean vector of</span>
+<span class="sd">a Gaussian subjected to selection.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="intervals_from_sample"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.intervals.html#selectinf.distributions.intervals.intervals_from_sample">[docs]</a><span class="k">class</span> <span class="nc">intervals_from_sample</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct confidence intervals</span>
+<span class="sd">    for real-valued parameters by tilting</span>
+<span class="sd">    a multiparameter exponential family</span>
+<span class="sd">    with reference measure a Monte Carlo sample.</span>
+
+<span class="sd">    The exponential family is assumed to</span>
+<span class="sd">    be derived from a Gaussian with</span>
+<span class="sd">    some selective weight and the</span>
+<span class="sd">    parameters are linear functionals of the</span>
+<span class="sd">    mean parameter of the Gaussian.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="intervals_from_sample.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.intervals.html#selectinf.distributions.intervals.intervals_from_sample.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">covariance</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        reference : np.float(k)</span>
+<span class="sd">            Reference value of mean parameter. Often</span>
+<span class="sd">            taken to be an unpenalized MLE or perhaps</span>
+<span class="sd">            (approximate) selective MLE / MAP.</span>
+
+<span class="sd">        sample : np.float(s, k)</span>
+<span class="sd">            A Monte Carlo sample drawn from selective distribution.</span>
+
+<span class="sd">        observed : np.float(k)</span>
+<span class="sd">            Observed value of Gaussian estimator.</span>
+<span class="sd">            Often an unpenalized MLE.</span>
+
+<span class="sd">        covariance : np.float(k, k)</span>
+<span class="sd">            Covariance of original Gaussian.</span>
+<span class="sd">            Used only to compute unselective</span>
+<span class="sd">            variance of linear functionals of the</span>
+<span class="sd">            (approximately) Gaussian estimator.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">observed</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">reference</span><span class="p">),</span>
+                             <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sample</span><span class="p">),</span>
+                             <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">observed</span><span class="p">),</span>
+                             <span class="n">covariance</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="intervals_from_sample.pivots_all"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.intervals.html#selectinf.distributions.intervals.intervals_from_sample.pivots_all">[docs]</a>    <span class="k">def</span> <span class="nf">pivots_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Compute pivotal quantities, i.e.</span>
+<span class="sd">        the selective distribution function</span>
+<span class="sd">        under $H_{0,k}:\theta_k=\theta_{0,k}$</span>
+<span class="sd">        where $\theta_0$ is `parameter`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        parameter : np.float(k) (optional)</span>
+<span class="sd">            Value of mean parameter under</span>
+<span class="sd">            coordinate null hypotheses.</span>
+<span class="sd">            Defaults to `np.zeros(k)`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        pivots : np.float(k)</span>
+<span class="sd">            Pivotal quantites. Each is</span>
+<span class="sd">            (asymptotically) uniformly</span>
+<span class="sd">            distributed on [0,1] under</span>
+<span class="sd">            corresponding $H_{0,k}$.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">pivots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">linear_func</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">linear_func</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="n">pivots</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pivot_param</span><span class="p">(</span><span class="n">linear_func</span><span class="p">,</span> <span class="n">parameter</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">pivots</span></div>
+
+<div class="viewcode-block" id="intervals_from_sample.confidence_interval"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.intervals.html#selectinf.distributions.intervals.intervals_from_sample.confidence_interval">[docs]</a>    <span class="k">def</span> <span class="nf">confidence_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_func</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Construct a `level*100`% confidence</span>
+<span class="sd">        interval for a linear functional</span>
+<span class="sd">        of the mean parameter</span>
+<span class="sd">        of the underlying Gaussian.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        linear_func : np.float(k)</span>
+<span class="sd">            Linear functional determining</span>
+<span class="sd">            parameter.</span>
+
+<span class="sd">        level : float (optional)</span>
+<span class="sd">            Specify the</span>
+<span class="sd">            confidence level.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        L, U : float</span>
+<span class="sd">            Lower and upper limits of confidence</span>
+<span class="sd">            interval.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">level</span>
+        <span class="n">pvalues_at_grid</span><span class="p">,</span> <span class="n">grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pivots_grid</span><span class="p">(</span><span class="n">linear_func</span><span class="p">)</span>
+        <span class="n">accepted_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pvalues_at_grid</span> <span class="o">&gt;</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">accepted_indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="n">accepted_indices</span><span class="p">])</span>
+            <span class="n">upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="n">accepted_indices</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span></div>
+
+<div class="viewcode-block" id="intervals_from_sample.confidence_intervals_all"><a class="viewcode-back" href="../../../api/generated/selectinf.distributions.intervals.html#selectinf.distributions.intervals.intervals_from_sample.confidence_intervals_all">[docs]</a>    <span class="k">def</span> <span class="nf">confidence_intervals_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Construct a `level*100`% confidence</span>
+<span class="sd">        interval for each $\theta_j$</span>
+<span class="sd">        of the mean parameter</span>
+<span class="sd">        of the underlying Gaussian.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        level : float (optional)</span>
+<span class="sd">            Specify the confidence level.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        LU : np.float(k,2)</span>
+<span class="sd">            Array with lower and upper confidence limits.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">linear_func</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">linear_func</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="n">limits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_interval</span><span class="p">(</span><span class="n">linear_func</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">limits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">lower</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">upper</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">limits</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lower</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">upper</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="c1"># bad reference -- all pvalues less then alpha</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">])</span><span class="o">.</span><span class="n">T</span></div>
+
+    <span class="c1"># Private methods</span>
+
+    <span class="k">def</span> <span class="nf">_pivot_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_func</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute pivotal quantity for the</span>
+<span class="sd">        quantitiy linear_func.dot(parameter)</span>
+<span class="sd">        at the hypothesized value param.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">linear_func</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">linear_func</span><span class="p">)</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="p">(</span><span class="n">linear_func</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">linear_func</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">linear_func</span><span class="p">))</span>
+
+        <span class="n">_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">linear_func</span><span class="p">)</span>
+        <span class="n">_observed</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observed</span> <span class="o">*</span> <span class="n">linear_func</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="n">indicator</span> <span class="o">=</span> <span class="n">_sample</span> <span class="o">&lt;</span> <span class="n">_observed</span>
+        <span class="n">log_gaussian_tilt</span> <span class="o">=</span> <span class="n">_sample</span>  <span class="o">*</span> <span class="p">(</span><span class="n">param</span> <span class="o">-</span> <span class="n">ref</span><span class="p">)</span>
+        <span class="n">log_gaussian_tilt</span> <span class="o">/=</span> <span class="n">var</span>
+        <span class="n">emp_exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_empirical_exp</span><span class="p">(</span><span class="n">linear_func</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
+        <span class="n">likelihood_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_gaussian_tilt</span><span class="p">)</span> <span class="o">/</span> <span class="n">emp_exp</span>
+
+        <span class="k">if</span> <span class="n">emp_exp</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">indicator</span> <span class="o">*</span> <span class="n">likelihood_ratio</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span>
+
+    <span class="k">def</span> <span class="nf">_pivots_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_func</span><span class="p">,</span> <span class="n">npts</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">num_sd</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute pivots on a 1D grid centered at</span>
+<span class="sd">        (reference*linear_func).sum() and reference.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">linear_func</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">linear_func</span><span class="p">)</span>
+        <span class="n">stdev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">linear_func</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">linear_func</span><span class="p">)))</span>
+
+        <span class="c1">#grid = np.linspace(-300*stdev, 300*stdev, 30000) + (self.reference * linear_func).sum()</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span> <span class="c1">#+ (self.reference * linear_func).sum()</span>
+        <span class="c1">#print(self.observed.dot(linear_func), 300*stdev)</span>
+
+        <span class="n">pivots_at_grid</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pivot_param</span><span class="p">(</span><span class="n">linear_func</span><span class="p">,</span> <span class="n">grid</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                          <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="n">pivots_at_grid</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="nb">min</span><span class="p">(</span><span class="n">pval</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="n">pval</span><span class="p">)</span> <span class="k">for</span> <span class="n">pval</span> <span class="ow">in</span> <span class="n">pivots_at_grid</span><span class="p">]</span>
+        <span class="n">pivots_at_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pivots_at_grid</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pivots_at_grid</span><span class="p">,</span> <span class="n">grid</span>
+
+    <span class="k">def</span> <span class="nf">_empirical_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_func</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Empirical expected value of the exponential.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">linear_func</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">linear_func</span><span class="p">)</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">*</span> <span class="n">linear_func</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">linear_func</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">linear_func</span><span class="p">))</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="p">(</span><span class="n">param</span> <span class="o">-</span> <span class="n">ref</span><span class="p">)</span> <span class="o">/</span> <span class="n">var</span>
+
+        <span class="c1"># we can probably save a little bit of time</span>
+        <span class="c1"># by caching _sample</span>
+        <span class="n">_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">linear_func</span><span class="p">)</span>
+
+        <span class="n">tilted_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">_sample</span> <span class="o">*</span> <span class="n">factor</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tilted_sample</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

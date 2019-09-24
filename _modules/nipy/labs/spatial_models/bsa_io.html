@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.spatial_models.bsa_io</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is the interface to the bayesian_structural_analysis (bsa) module</span>
+<span class="sd">It handles the images provided as input and produces result images.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os.path</span> <span class="k">as</span> <span class="nn">op</span>
+<span class="kn">from</span> <span class="nn">nibabel</span> <span class="k">import</span> <span class="n">load</span><span class="p">,</span> <span class="n">save</span><span class="p">,</span> <span class="n">Nifti1Image</span>
+
+<span class="kn">from</span> <span class="nn">..mask</span> <span class="k">import</span> <span class="n">intersect_masks</span>
+<span class="kn">from</span> <span class="nn">.bayesian_structural_analysis</span> <span class="k">import</span> <span class="n">compute_landmarks</span>
+<span class="kn">from</span> <span class="nn">.discrete_domain</span> <span class="k">import</span> <span class="n">domain_from_image</span>
+<span class="kn">from</span> <span class="nn">...io.nibcompat</span> <span class="k">import</span> <span class="n">get_header</span><span class="p">,</span> <span class="n">get_affine</span>
+
+<span class="kn">from</span> <span class="nn">...externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<div class="viewcode-block" id="make_bsa_image"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.bsa_io.html#nipy.labs.spatial_models.bsa_io.make_bsa_image">[docs]</a><span class="k">def</span> <span class="nf">make_bsa_image</span><span class="p">(</span>
+    <span class="n">mask_images</span><span class="p">,</span> <span class="n">stat_images</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">3.</span><span class="p">,</span> <span class="n">smin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span>
+    <span class="n">prevalence_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">prevalence_pval</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">write_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="n">contrast_id</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Main function for  performing bsa on a set of images.</span>
+<span class="sd">    It creates the some output images in the given directory</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mask_images: list of str,</span>
+<span class="sd">                 image paths that yield mask images, one for each subject</span>
+<span class="sd">    stat_images: list of str,</span>
+<span class="sd">                 image paths of the activation images, one for each subject</span>
+<span class="sd">    threshold: float, optional,</span>
+<span class="sd">               threshold used to ignore all the image data that is below</span>
+<span class="sd">    smin: float, optional,</span>
+<span class="sd">          minimal size (in voxels) of the extracted blobs</span>
+<span class="sd">          smaller blobs are merged into larger ones</span>
+<span class="sd">    sigma: float, optional,</span>
+<span class="sd">           variance of the spatial model, i.e. cross-subject uncertainty</span>
+<span class="sd">    prevalence_threshold: float, optional</span>
+<span class="sd">                          threshold on the representativity measure</span>
+<span class="sd">    prevalence_pval: float, optional,</span>
+<span class="sd">                     p-value of the representativity test:</span>
+<span class="sd">             test = p(representativity&gt;prevalence_threshold) &gt; prevalence_pval</span>
+<span class="sd">    write_dir: string, optional,</span>
+<span class="sd">               if not None, output directory</span>
+<span class="sd">    method: {&#39;density&#39;, &#39;co-occurrence&#39;}, optional,</span>
+<span class="sd">            Inference method used in the landmark definition</span>
+<span class="sd">    contrast_id: string, optional,</span>
+<span class="sd">                 identifier of the contrast</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    landmarks: nipy.labs.spatial_models.structural_bfls.landmark_regions</span>
+<span class="sd">         instance that describes the structures found at the group level</span>
+<span class="sd">         None is returned if nothing has been found significant</span>
+<span class="sd">         at the group level</span>
+<span class="sd">    hrois : list of nipy.labs.spatial_models.hroi.Nroi instances,</span>
+<span class="sd">       (one per subject), describe the individual counterpart of landmarks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_subjects</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat_images</span><span class="p">)</span>
+
+    <span class="c1"># Read the referential information</span>
+    <span class="n">nim</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">stat_images</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">ref_dim</span> <span class="o">=</span> <span class="n">nim</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+
+    <span class="c1"># Read the masks and compute the &quot;intersection&quot;</span>
+    <span class="c1"># mask = np.reshape(intersect_masks(mask_images), ref_dim).astype(&#39;u8&#39;)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask_images</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">mask_images</span><span class="p">)</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask_images</span><span class="p">,</span> <span class="n">Nifti1Image</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask_images</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># mask_images should be a list of strings or images</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">intersect_masks</span><span class="p">(</span><span class="n">mask_images</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;u8&#39;</span><span class="p">)</span>
+
+    <span class="c1"># encode it as a domain</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">domain_from_image</span><span class="p">(</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">affine</span><span class="p">),</span> <span class="n">nn</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+    <span class="n">n_voxels</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="c1"># read the functional images</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">stat_image</span> <span class="ow">in</span> <span class="n">stat_images</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">load</span><span class="p">(</span><span class="n">stat_image</span><span class="p">)</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">ref_dim</span><span class="p">)</span>
+        <span class="n">stats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">beta</span><span class="p">[</span><span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="c1"># launch the method</span>
+    <span class="n">crmap</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_voxels</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_voxels</span><span class="p">)</span>
+    <span class="n">landmarks</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">hrois</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subjects</span><span class="p">)]</span>
+    <span class="n">default_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">prevalence</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+    <span class="n">landmarks</span><span class="p">,</span> <span class="n">hrois</span> <span class="o">=</span> <span class="n">compute_landmarks</span><span class="p">(</span>
+        <span class="n">domain</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">prevalence_pval</span><span class="p">,</span> <span class="n">prevalence_threshold</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="n">algorithm</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">landmarks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">crmap</span> <span class="o">=</span> <span class="n">landmarks</span><span class="o">.</span><span class="n">map_label</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">coord</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+        <span class="n">density</span> <span class="o">=</span> <span class="n">landmarks</span><span class="o">.</span><span class="n">kernel_density</span><span class="p">(</span>
+            <span class="n">k</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coord</span><span class="o">=</span><span class="n">domain</span><span class="o">.</span><span class="n">coord</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="n">default_idx</span> <span class="o">=</span> <span class="n">landmarks</span><span class="o">.</span><span class="n">k</span> <span class="o">+</span> <span class="mi">2</span>
+        <span class="n">prevalence</span> <span class="o">=</span> <span class="n">landmarks</span><span class="o">.</span><span class="n">roi_prevalence</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">write_dir</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">landmarks</span><span class="p">,</span> <span class="n">hrois</span>
+
+    <span class="c1"># Write the results as images</span>
+
+    <span class="c1"># the spatial density image</span>
+    <span class="n">density_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ref_dim</span><span class="p">)</span>
+    <span class="n">density_map</span><span class="p">[</span><span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">density</span>
+    <span class="n">wim</span> <span class="o">=</span> <span class="n">Nifti1Image</span><span class="p">(</span><span class="n">density_map</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+    <span class="n">get_header</span><span class="p">(</span><span class="n">wim</span><span class="p">)[</span><span class="s1">&#39;descrip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;group-level spatial density &#39;</span>
+                                  <span class="s1">&#39;of active regions&#39;</span><span class="p">)</span>
+    <span class="n">dens_path</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">write_dir</span><span class="p">,</span> <span class="s2">&quot;density_</span><span class="si">%s</span><span class="s2">.nii&quot;</span> <span class="o">%</span> <span class="n">contrast_id</span><span class="p">)</span>
+    <span class="n">save</span><span class="p">(</span><span class="n">wim</span><span class="p">,</span> <span class="n">dens_path</span><span class="p">)</span>
+
+    <span class="c1"># write a 3D image for group-level labels</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ref_dim</span><span class="p">)</span>
+    <span class="n">labels</span><span class="p">[</span><span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">crmap</span>
+    <span class="n">wim</span> <span class="o">=</span> <span class="n">Nifti1Image</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">),</span> <span class="n">affine</span><span class="p">)</span>
+    <span class="n">get_header</span><span class="p">(</span><span class="n">wim</span><span class="p">)[</span><span class="s1">&#39;descrip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;group Level labels from bsa procedure&#39;</span>
+    <span class="n">save</span><span class="p">(</span><span class="n">wim</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">write_dir</span><span class="p">,</span> <span class="s2">&quot;CR_</span><span class="si">%s</span><span class="s2">.nii&quot;</span> <span class="o">%</span> <span class="n">contrast_id</span><span class="p">))</span>
+
+    <span class="c1"># write a prevalence image</span>
+    <span class="n">prev_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">crmap</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+    <span class="n">prev_</span><span class="p">[</span><span class="n">crmap</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">prevalence</span><span class="p">[</span><span class="n">crmap</span><span class="p">[</span><span class="n">crmap</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="n">prevalence_map</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ref_dim</span><span class="p">)</span>
+    <span class="n">prevalence_map</span><span class="p">[</span><span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">prev_</span>
+    <span class="n">wim</span> <span class="o">=</span> <span class="n">Nifti1Image</span><span class="p">(</span><span class="n">prevalence_map</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+    <span class="n">get_header</span><span class="p">(</span><span class="n">wim</span><span class="p">)[</span><span class="s1">&#39;descrip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Weighted prevalence image&#39;</span>
+    <span class="n">save</span><span class="p">(</span><span class="n">wim</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">write_dir</span><span class="p">,</span> <span class="s2">&quot;prevalence_</span><span class="si">%s</span><span class="s2">.nii&quot;</span> <span class="o">%</span> <span class="n">contrast_id</span><span class="p">))</span>
+
+    <span class="c1"># write a 4d images with all subjects results</span>
+    <span class="n">wdim</span> <span class="o">=</span> <span class="p">(</span><span class="n">ref_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ref_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ref_dim</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">n_subjects</span><span class="p">)</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">wdim</span><span class="p">,</span> <span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">subject</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subjects</span><span class="p">):</span>
+        <span class="n">labels</span><span class="p">[</span><span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">subject</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">hrois</span><span class="p">[</span><span class="n">subject</span><span class="p">]</span><span class="o">.</span><span class="n">k</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nls</span> <span class="o">=</span> <span class="n">hrois</span><span class="p">[</span><span class="n">subject</span><span class="p">]</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">)</span>
+            <span class="n">nls</span><span class="p">[</span><span class="n">nls</span> <span class="o">==</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_idx</span>
+            <span class="n">lab</span> <span class="o">=</span> <span class="n">hrois</span><span class="p">[</span><span class="n">subject</span><span class="p">]</span><span class="o">.</span><span class="n">label</span>
+            <span class="n">lab</span><span class="p">[</span><span class="n">lab</span> <span class="o">&gt;</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">nls</span><span class="p">[</span><span class="n">lab</span><span class="p">[</span><span class="n">lab</span> <span class="o">&gt;</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+            <span class="n">labels</span><span class="p">[</span><span class="n">mask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">subject</span><span class="p">]</span> <span class="o">=</span> <span class="n">lab</span>
+    <span class="n">wim</span> <span class="o">=</span> <span class="n">Nifti1Image</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+    <span class="n">get_header</span><span class="p">(</span><span class="n">wim</span><span class="p">)[</span><span class="s1">&#39;descrip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Individual labels from bsa procedure&#39;</span>
+    <span class="n">save</span><span class="p">(</span><span class="n">wim</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">write_dir</span><span class="p">,</span> <span class="s2">&quot;AR_</span><span class="si">%s</span><span class="s2">.nii&quot;</span> <span class="o">%</span> <span class="n">contrast_id</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">landmarks</span><span class="p">,</span> <span class="n">hrois</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

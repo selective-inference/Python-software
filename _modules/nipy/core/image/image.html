@@ -1,0 +1,1098 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.core.image.image</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; Define the Image class and functions to work with Image instances</span>
+
+<span class="sd">* fromarray : create an Image instance from an ndarray (deprecated in favor of</span>
+<span class="sd">  using the Image constructor)</span>
+<span class="sd">* subsample : slice an Image instance (deprecated in favor of image slicing)</span>
+<span class="sd">* rollimg : roll an image axis to given location</span>
+<span class="sd">* synchronized_order : match coordinate systems between images</span>
+<span class="sd">* iter_axis : make iterator to iterate over an image axis</span>
+<span class="sd">* is_image : test for an object obeying the Image API</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nibabel.onetime</span> <span class="k">import</span> <span class="n">setattr_on_read</span>
+
+<span class="c1"># These imports are used in the fromarray and subsample functions only, not in</span>
+<span class="c1"># Image</span>
+<span class="kn">from</span> <span class="nn">..reference.coordinate_map</span> <span class="k">import</span> <span class="p">(</span><span class="n">AffineTransform</span><span class="p">,</span> <span class="n">CoordinateSystem</span><span class="p">,</span>
+                                       <span class="n">input_axis_index</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..reference.array_coords</span> <span class="k">import</span> <span class="n">ArrayCoordMap</span>
+
+<span class="c1"># Legacy repr printing from numpy.</span>
+<span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">legacy_printing</span> <span class="k">as</span> <span class="n">setup_module</span>  <span class="c1"># noqa</span>
+
+
+<div class="viewcode-block" id="Image"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image">[docs]</a><span class="k">class</span> <span class="nc">Image</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The `Image` class provides the core object type used in nipy.</span>
+
+<span class="sd">    An `Image` represents a volumetric brain image and provides means</span>
+<span class="sd">    for manipulating the image data.  Most functions in the image module</span>
+<span class="sd">    operate on `Image` objects.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Images can be created through the module functions.  See nipy.io for</span>
+<span class="sd">    image IO such as ``load`` and ``save``</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Load an image from disk</span>
+
+<span class="sd">    &gt;&gt;&gt; from nipy.testing import anatfile</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">    &gt;&gt;&gt; img = load_image(anatfile)</span>
+
+<span class="sd">    Make an image from an array.  We need to make a meaningful coordinate map</span>
+<span class="sd">    for the image.</span>
+
+<span class="sd">    &gt;&gt;&gt; arr = np.zeros((21,64,64), dtype=np.int16)</span>
+<span class="sd">    &gt;&gt;&gt; cmap = AffineTransform(&#39;kji&#39;, &#39;zxy&#39;, np.eye(4))</span>
+<span class="sd">    &gt;&gt;&gt; img = Image(arr, cmap)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_doc</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Dictionary to store docs for attributes that are properties.  We</span>
+    <span class="c1"># want these docs to conform with our documentation standard, but</span>
+    <span class="c1"># they need to be passed into the property function.  Defining</span>
+    <span class="c1"># them separately allows us to do this without a lot of clutter</span>
+    <span class="c1"># in the property line.</span>
+
+    <span class="c1">###################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1"># Attributes</span>
+    <span class="c1">#</span>
+    <span class="c1">###################################################################</span>
+
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Dictionary containing additional information.&quot;</span>
+
+    <span class="n">coordmap</span> <span class="o">=</span> <span class="n">AffineTransform</span><span class="p">(</span><span class="n">CoordinateSystem</span><span class="p">(</span><span class="s1">&#39;ijk&#39;</span><span class="p">),</span>
+                               <span class="n">CoordinateSystem</span><span class="p">(</span><span class="s1">&#39;xyz&#39;</span><span class="p">),</span>
+                               <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;coordmap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Affine transform mapping from axes coordinates to reference coordinates.&quot;</span>
+
+<div class="viewcode-block" id="Image.shape"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.shape">[docs]</a>    <span class="nd">@setattr_on_read</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">shape</span></div>
+    <span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;shape&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Shape of data array.&quot;</span>
+
+<div class="viewcode-block" id="Image.ndim"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.ndim">[docs]</a>    <span class="nd">@setattr_on_read</span>
+    <span class="k">def</span> <span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+    <span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;ndim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Number of data dimensions.&quot;</span>
+
+<div class="viewcode-block" id="Image.reference"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.reference">[docs]</a>    <span class="nd">@setattr_on_read</span>
+    <span class="k">def</span> <span class="nf">reference</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_range</span></div>
+    <span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;reference&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Reference coordinate system.&quot;</span>
+
+<div class="viewcode-block" id="Image.axes"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.axes">[docs]</a>    <span class="nd">@setattr_on_read</span>
+    <span class="k">def</span> <span class="nf">axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span></div>
+    <span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;axes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Axes of image.&quot;</span>
+
+<div class="viewcode-block" id="Image.affine"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.affine">[docs]</a>    <span class="nd">@setattr_on_read</span>
+    <span class="k">def</span> <span class="nf">affine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="s2">&quot;affine&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">affine</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Nonlinear transform does not have an affine.&#39;</span><span class="p">)</span></div>
+    <span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;affine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Affine transformation if one exists.&quot;</span>
+
+    <span class="c1">###################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1"># Properties</span>
+    <span class="c1">#</span>
+    <span class="c1">###################################################################</span>
+
+    <span class="k">def</span> <span class="nf">_getheader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># data loaded from a file may have a header</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Please don&#39;t use ``img.header``; use&quot;</span>
+                      <span class="s2">&quot;``img.metadata[&#39;header&#39;] instead&quot;</span><span class="p">,</span>
+                      <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                      <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">hdr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;header&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hdr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Image created from arrays &#39;</span>
+                                 <span class="s1">&#39;may not have headers.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hdr</span>
+    <span class="k">def</span> <span class="nf">_setheader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Please don&#39;t use ``img.header``; use&quot;</span>
+                      <span class="s2">&quot;``img.metadata[&#39;header&#39;] instead&quot;</span><span class="p">,</span>
+                      <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                      <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span>
+    <span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">]</span> <span class="o">=</span> \
+    <span class="sd">&quot;&quot;&quot;The file header structure for this image, if available.  This interface</span>
+<span class="sd">    will soon go away - you should use ``img.metadata[&#39;header&#39;] instead.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getheader</span><span class="p">,</span> <span class="n">_setheader</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="n">_doc</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">])</span>
+
+    <span class="c1">###################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1"># Constructor</span>
+    <span class="c1">#</span>
+    <span class="c1">###################################################################</span>
+
+<div class="viewcode-block" id="Image.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">coordmap</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an `Image` object from array and `CoordinateMap` object.</span>
+
+<span class="sd">        Images are often created through the ``load_image`` function in the nipy</span>
+<span class="sd">        base namespace.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : array-like</span>
+<span class="sd">            object that as attribute ``shape`` and returns an array from</span>
+<span class="sd">            ``np.asarray(data)``</span>
+<span class="sd">        coordmap : `AffineTransform` object</span>
+<span class="sd">            coordmap mapping the domain (input) voxel axes of the image to the</span>
+<span class="sd">            range (reference, output) axes - usually mm in real world space</span>
+<span class="sd">        metadata : dict, optional</span>
+<span class="sd">            Freeform metadata for image.  Most common contents is ``header``</span>
+<span class="sd">            from nifti etc loaded images.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        load_image : load ``Image`` from a file</span>
+<span class="sd">        save_image : save ``Image`` to a file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># Shallow copy</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">AffineTransform</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;coordmap must be an AffineTransform&#39;</span><span class="p">)</span>
+        <span class="c1"># self._data is an array-like object.  It must have a shape attribute</span>
+        <span class="c1"># (see above) and return an array from np.array(data)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span> <span class="o">=</span> <span class="n">coordmap</span>
+        <span class="k">if</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="n">ndim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;the number of axes implied by the coordmap do &#39;</span>
+                             <span class="s1">&#39;not match the number of axes of the data&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span></div>
+
+    <span class="c1">###################################################################</span>
+    <span class="c1">#</span>
+    <span class="c1"># Methods</span>
+    <span class="c1">#</span>
+    <span class="c1">###################################################################</span>
+
+<div class="viewcode-block" id="Image.reordered_reference"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.reordered_reference">[docs]</a>    <span class="k">def</span> <span class="nf">reordered_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return new Image with reordered output coordinates</span>
+
+<span class="sd">        New Image coordmap has reordered output coordinates. This does</span>
+<span class="sd">        not transpose the data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        order : None, sequence, optional</span>
+<span class="sd">            sequence of int (giving indices) or str (giving names) - expressing</span>
+<span class="sd">            new order of coordmap output coordinates.  None (the default)</span>
+<span class="sd">            results in reversed ordering.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        r_img : object</span>
+<span class="sd">            Image of same class as `self`, with reordered output coordinates.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; cmap = AffineTransform.from_start_step(</span>
+<span class="sd">        ...             &#39;ijk&#39;, &#39;xyz&#39;, [1, 2, 3], [4, 5, 6], &#39;domain&#39;, &#39;range&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; im = Image(np.empty((30,40,50)), cmap)</span>
+<span class="sd">        &gt;&gt;&gt; im_reordered = im.reordered_reference([2,0,1])</span>
+<span class="sd">        &gt;&gt;&gt; im_reordered.shape</span>
+<span class="sd">        (30, 40, 50)</span>
+<span class="sd">        &gt;&gt;&gt; im_reordered.coordmap</span>
+<span class="sd">        AffineTransform(</span>
+<span class="sd">           function_domain=CoordinateSystem(coord_names=(&#39;i&#39;, &#39;j&#39;, &#39;k&#39;), name=&#39;domain&#39;, coord_dtype=float64),</span>
+<span class="sd">           function_range=CoordinateSystem(coord_names=(&#39;z&#39;, &#39;x&#39;, &#39;y&#39;), name=&#39;range&#39;, coord_dtype=float64),</span>
+<span class="sd">           affine=array([[ 0.,  0.,  6.,  3.],</span>
+<span class="sd">                         [ 4.,  0.,  0.,  1.],</span>
+<span class="sd">                         [ 0.,  5.,  0.,  2.],</span>
+<span class="sd">                         [ 0.,  0.,  0.,  1.]])</span>
+<span class="sd">        )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">order</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+        <span class="n">new_cmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">reordered_range</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">from_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordmap</span><span class="o">=</span><span class="n">new_cmap</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Image.reordered_axes"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.reordered_axes">[docs]</a>    <span class="k">def</span> <span class="nf">reordered_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a new Image with reordered input coordinates.</span>
+
+<span class="sd">        This transposes the data as well.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        order : None, sequence, optional</span>
+<span class="sd">            Sequence of int (giving indices) or str (giving names) - expressing</span>
+<span class="sd">            new order of coordmap output coordinates.  None (the default)</span>
+<span class="sd">            results in reversed ordering.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        r_img : object</span>
+<span class="sd">            Image of same class as `self`, with reordered output coordinates.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; cmap = AffineTransform.from_start_step(</span>
+<span class="sd">        ...             &#39;ijk&#39;, &#39;xyz&#39;, [1, 2, 3], [4, 5, 6], &#39;domain&#39;, &#39;range&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; cmap</span>
+<span class="sd">        AffineTransform(</span>
+<span class="sd">           function_domain=CoordinateSystem(coord_names=(&#39;i&#39;, &#39;j&#39;, &#39;k&#39;), name=&#39;domain&#39;, coord_dtype=float64),</span>
+<span class="sd">           function_range=CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;, &#39;z&#39;), name=&#39;range&#39;, coord_dtype=float64),</span>
+<span class="sd">           affine=array([[ 4.,  0.,  0.,  1.],</span>
+<span class="sd">                         [ 0.,  5.,  0.,  2.],</span>
+<span class="sd">                         [ 0.,  0.,  6.,  3.],</span>
+<span class="sd">                         [ 0.,  0.,  0.,  1.]])</span>
+<span class="sd">        )</span>
+<span class="sd">        &gt;&gt;&gt; im = Image(np.empty((30,40,50)), cmap)</span>
+<span class="sd">        &gt;&gt;&gt; im_reordered = im.reordered_axes([2,0,1])</span>
+<span class="sd">        &gt;&gt;&gt; im_reordered.shape</span>
+<span class="sd">        (50, 30, 40)</span>
+<span class="sd">        &gt;&gt;&gt; im_reordered.coordmap</span>
+<span class="sd">        AffineTransform(</span>
+<span class="sd">           function_domain=CoordinateSystem(coord_names=(&#39;k&#39;, &#39;i&#39;, &#39;j&#39;), name=&#39;domain&#39;, coord_dtype=float64),</span>
+<span class="sd">           function_range=CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;, &#39;z&#39;), name=&#39;range&#39;, coord_dtype=float64),</span>
+<span class="sd">           affine=array([[ 0.,  4.,  0.,  1.],</span>
+<span class="sd">                         [ 0.,  0.,  5.,  2.],</span>
+<span class="sd">                         [ 6.,  0.,  0.,  3.],</span>
+<span class="sd">                         [ 0.,  0.,  0.,  1.]])</span>
+<span class="sd">        )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">order</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+        <span class="n">new_cmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">reordered_domain</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="c1"># Only transpose if we have to so as to avoid calling</span>
+        <span class="c1"># self.get_data</span>
+        <span class="k">if</span> <span class="n">order</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">)):</span>
+            <span class="n">new_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">order</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">from_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                         <span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span>
+                                         <span class="n">coordmap</span><span class="o">=</span><span class="n">new_cmap</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Image.renamed_axes"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.renamed_axes">[docs]</a>    <span class="k">def</span> <span class="nf">renamed_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">names_dict</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Return a new image with input (domain) axes renamed</span>
+
+<span class="sd">        Axes renamed according to the input dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \*\*names_dict : dict</span>
+<span class="sd">            with keys being old names, and values being new names</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        newimg : Image</span>
+<span class="sd">            An Image with the same data, having its axes renamed.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; data = np.random.standard_normal((11,9,4))</span>
+<span class="sd">        &gt;&gt;&gt; im = Image(data, AffineTransform.from_params(&#39;ijk&#39;, &#39;xyz&#39;, np.identity(4), &#39;domain&#39;, &#39;range&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; im_renamed = im.renamed_axes(i=&#39;slice&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; print(im_renamed.axes)</span>
+<span class="sd">        CoordinateSystem(coord_names=(&#39;slice&#39;, &#39;j&#39;, &#39;k&#39;), name=&#39;domain&#39;, coord_dtype=float64)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_cmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">renamed_domain</span><span class="p">(</span><span class="n">names_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">from_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordmap</span><span class="o">=</span><span class="n">new_cmap</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Image.renamed_reference"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.renamed_reference">[docs]</a>    <span class="k">def</span> <span class="nf">renamed_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">names_dict</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Return new image with renamed output (range) coordinates</span>
+
+<span class="sd">        Coordinates renamed according to the dictionary</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \*\*names_dict : dict</span>
+<span class="sd">            with keys being old names, and values being new names</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        newimg : Image</span>
+<span class="sd">            An Image with the same data, having its output coordinates renamed.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; data = np.random.standard_normal((11,9,4))</span>
+<span class="sd">        &gt;&gt;&gt; im = Image(data, AffineTransform.from_params(&#39;ijk&#39;, &#39;xyz&#39;, np.identity(4), &#39;domain&#39;, &#39;range&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; im_renamed_reference = im.renamed_reference(x=&#39;newx&#39;, y=&#39;newy&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; print(im_renamed_reference.reference)</span>
+<span class="sd">        CoordinateSystem(coord_names=(&#39;newx&#39;, &#39;newy&#39;, &#39;z&#39;), name=&#39;range&#39;, coord_dtype=float64)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_cmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">renamed_range</span><span class="p">(</span><span class="n">names_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">from_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordmap</span><span class="o">=</span><span class="n">new_cmap</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setting values of an image, set values in the data array.&quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Please don&#39;t use ``img[x] = y``; use &quot;</span>
+                      <span class="s2">&quot;``img.get_data()[x]  = y`` instead&quot;</span><span class="p">,</span>
+                      <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                      <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return data as a numpy array.&quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Please use get_data instead - will be deprecated&#39;</span><span class="p">,</span>
+                      <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                      <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Image.get_data"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.get_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return data as a numpy array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asanyarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slice_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Slicing an image returns an Image.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        slice_object: int, slice or sequence of slice</span>
+<span class="sd">            An object representing a numpy &#39;slice&#39;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        img_subsampled: Image</span>
+<span class="sd">            An Image with data self.get_data()[slice_object] and an</span>
+<span class="sd">            appropriately corrected CoordinateMap.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.testing import funcfile</span>
+<span class="sd">        &gt;&gt;&gt; im = load_image(funcfile)</span>
+<span class="sd">        &gt;&gt;&gt; frame3 = im[:,:,:,3]</span>
+<span class="sd">        &gt;&gt;&gt; np.allclose(frame3.get_data(), im.get_data()[:,:,:,3])</span>
+<span class="sd">        True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">slice_object</span><span class="p">]</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">ArrayCoordMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)[</span><span class="n">slice_object</span><span class="p">]</span>
+        <span class="n">coordmap</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">coordmap</span>
+        <span class="k">if</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">from_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                             <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                                             <span class="n">coordmap</span><span class="o">=</span><span class="n">coordmap</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Images do not have default iteration</span>
+
+<span class="sd">        This is because it&#39;s not obvious that axis 0 is the right axis to</span>
+<span class="sd">        iterate over.  For example, we often want to iterate over the time or</span>
+<span class="sd">        volume axis, and this is more likely to be axis 3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Images do not have default iteration; &quot;</span>
+                        <span class="s2">&quot;you can use ``iter_axis(img, axis)`` instead.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">shape</span>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">get_data</span><span class="p">())</span>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">coord_names</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">coord_names</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">get_printoptions</span><span class="p">()</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">edgeitems</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">representation</span> <span class="o">=</span> \
+            <span class="s1">&#39;Image(</span><span class="se">\n</span><span class="s1">  data=</span><span class="si">%s</span><span class="s1">,</span><span class="se">\n</span><span class="s1">  coordmap=</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">       &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)),</span>
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">         &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)))</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">representation</span>
+
+<div class="viewcode-block" id="Image.from_image"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.Image.from_image">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_image</span><span class="p">(</span><span class="n">klass</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coordmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Classmethod makes new instance of this `klass` from instance `img`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : array-like</span>
+<span class="sd">            object that as attribute ``shape`` and returns an array from</span>
+<span class="sd">            ``np.asarray(data)``</span>
+<span class="sd">        coordmap : `AffineTransform` object</span>
+<span class="sd">            coordmap mapping the domain (input) voxel axes of the image to the</span>
+<span class="sd">            range (reference, output) axes - usually mm in real world space</span>
+<span class="sd">        metadata : dict, optional</span>
+<span class="sd">            Freeform metadata for image.  Most common contents is ``header``</span>
+<span class="sd">            from nifti etc loaded images.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        img : `klass` instance</span>
+<span class="sd">            New image with data from `data`, coordmap from `coordmap` maybe</span>
+<span class="sd">            metadata from `metadata`</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Subclasses of ``Image`` with different semantics for ``__init__`` will</span>
+<span class="sd">        need to override this classmethod.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from nipy import load_image</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.core.api import Image</span>
+<span class="sd">        &gt;&gt;&gt; from nipy.testing import anatfile</span>
+<span class="sd">        &gt;&gt;&gt; aimg = load_image(anatfile)</span>
+<span class="sd">        &gt;&gt;&gt; arr = np.arange(24).reshape((2,3,4))</span>
+<span class="sd">        &gt;&gt;&gt; img = Image.from_image(aimg, data=arr)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">_data</span>
+        <span class="k">if</span> <span class="n">coordmap</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">coordmap</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">klass</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">coordmap</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SliceMaker"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.SliceMaker">[docs]</a><span class="k">class</span> <span class="nc">SliceMaker</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This class just creates slice objects for image resampling</span>
+
+<span class="sd">    It only has a __getitem__ method that returns its argument.</span>
+
+<span class="sd">    XXX Wouldn&#39;t need this if there was a way</span>
+<span class="sd">    XXX to do this</span>
+<span class="sd">    XXX subsample(img, [::2,::3,10:1:-1])</span>
+<span class="sd">    XXX</span>
+<span class="sd">    XXX Could be something like this Subsample(img)[::2,::3,10:1:-1]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">index</span></div>
+
+<span class="n">slice_maker</span> <span class="o">=</span> <span class="n">SliceMaker</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="subsample"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.subsample">[docs]</a><span class="k">def</span> <span class="nf">subsample</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">slice_object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Subsample an image</span>
+
+<span class="sd">    Please don&#39;t use this function, but use direct image slicing instead.  That</span>
+<span class="sd">    is, replace::</span>
+
+<span class="sd">        frame3 = subsample(im, slice_maker[:,:,:,3])</span>
+
+<span class="sd">    with::</span>
+
+<span class="sd">        frame3 = im[:,:,:,3]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : Image</span>
+<span class="sd">    slice_object: int, slice or sequence of slice</span>
+<span class="sd">       An object representing a numpy &#39;slice&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    img_subsampled: Image</span>
+<span class="sd">         An Image with data img.get_data()[slice_object] and an appropriately</span>
+<span class="sd">         corrected CoordinateMap.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.testing import funcfile</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.core.api import subsample, slice_maker</span>
+<span class="sd">    &gt;&gt;&gt; im = load_image(funcfile)</span>
+<span class="sd">    &gt;&gt;&gt; frame3 = subsample(im, slice_maker[:,:,:,3])</span>
+<span class="sd">    &gt;&gt;&gt; np.allclose(frame3.get_data(), im.get_data()[:,:,:,3])</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;subsample is deprecated, please use image &#39;</span>
+                  <span class="s1">&#39;slicing instead (e.g. img[:,:,1]&#39;</span><span class="p">,</span>
+                  <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                  <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">slice_object</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fromarray"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.fromarray">[docs]</a><span class="k">def</span> <span class="nf">fromarray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">innames</span><span class="p">,</span> <span class="n">outnames</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create an image from array `data`, and input/output coordinate names</span>
+
+<span class="sd">    The mapping between the input and output coordinate names is the identity</span>
+<span class="sd">    matrix.</span>
+
+<span class="sd">    Please don&#39;t use this routine, but instead prefer::</span>
+
+<span class="sd">        from nipy.core.api import Image, AffineTransform</span>
+<span class="sd">        img = Image(data, AffineTransform(innames, outnames, np.eye(4)))</span>
+
+<span class="sd">    where ``4`` is ``len(innames) + 1``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : numpy array</span>
+<span class="sd">        A numpy array of three dimensions.</span>
+<span class="sd">    innames : sequence</span>
+<span class="sd">       a list of input axis names</span>
+<span class="sd">    innames : sequence</span>
+<span class="sd">       a list of output axis names</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    image : An `Image` object</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    load : function for loading images</span>
+<span class="sd">    save : function for saving images</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; img = fromarray(np.zeros((2,3,4)), &#39;ijk&#39;, &#39;xyz&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; img.coordmap</span>
+<span class="sd">    AffineTransform(</span>
+<span class="sd">       function_domain=CoordinateSystem(coord_names=(&#39;i&#39;, &#39;j&#39;, &#39;k&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       function_range=CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;, &#39;z&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       affine=array([[ 1.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  1.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  1.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  1.]])</span>
+<span class="sd">    )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;fromarray is deprecated, please use the Image &#39;</span>
+                  <span class="s1">&#39;constructor instead&#39;</span><span class="p">,</span>
+                  <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                  <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">coordmap</span> <span class="o">=</span> <span class="n">AffineTransform</span><span class="o">.</span><span class="n">from_start_step</span><span class="p">(</span><span class="n">innames</span><span class="p">,</span>
+                                               <span class="n">outnames</span><span class="p">,</span>
+                                               <span class="p">(</span><span class="mf">0.</span><span class="p">,)</span><span class="o">*</span><span class="n">ndim</span><span class="p">,</span>
+                                               <span class="p">(</span><span class="mf">1.</span><span class="p">,)</span><span class="o">*</span><span class="n">ndim</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">coordmap</span><span class="p">)</span></div>
+
+
+<span class="nd">@np</span><span class="o">.</span><span class="n">deprecate_with_doc</span><span class="p">(</span><span class="s1">&#39;Please use rollimg instead&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">rollaxis</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Roll `axis` backwards, until it lies in the first position.</span>
+
+<span class="sd">    It also reorders the reference coordinates by the same ordering.</span>
+<span class="sd">    This is done to preserve a diagonal affine matrix if image.affine</span>
+<span class="sd">    is diagonal. It also makes it possible to unambiguously specify</span>
+<span class="sd">    an axis to roll along in terms of either a reference name (i.e. &#39;z&#39;)</span>
+<span class="sd">    or an axis name (i.e. &#39;slice&#39;).</span>
+
+<span class="sd">    This function is deprecated; please use ``rollimg`` instead.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : Image</span>
+<span class="sd">       Image whose axes and reference coordinates are to be reordered</span>
+<span class="sd">       by rolling.</span>
+<span class="sd">    axis : str or int</span>
+<span class="sd">       Axis to be rolled, can be specified by name or as an integer.</span>
+<span class="sd">    inverse : bool, optional</span>
+<span class="sd">       If inverse is True, then axis must be an integer and the first axis is</span>
+<span class="sd">       returned to the position axis.  This keyword is deprecated and we&#39;ll</span>
+<span class="sd">       remove it in a future version of nipy.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    newimg : Image</span>
+<span class="sd">       Image with reordered axes and reference coordinates.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; data = np.zeros((30,40,50,5))</span>
+<span class="sd">    &gt;&gt;&gt; affine_transform = AffineTransform.from_params(&#39;ijkl&#39;, &#39;xyzt&#39;, np.diag([1,2,3,4,1]))</span>
+<span class="sd">    &gt;&gt;&gt; im = Image(data, affine_transform)</span>
+<span class="sd">    &gt;&gt;&gt; im.coordmap</span>
+<span class="sd">    AffineTransform(</span>
+<span class="sd">       function_domain=CoordinateSystem(coord_names=(&#39;i&#39;, &#39;j&#39;, &#39;k&#39;, &#39;l&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       function_range=CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;, &#39;z&#39;, &#39;t&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       affine=array([[ 1.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  2.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  3.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  4.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  0.,  1.]])</span>
+<span class="sd">    )</span>
+<span class="sd">    &gt;&gt;&gt; im_t_first = rollaxis(im, &#39;t&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; np.diag(im_t_first.affine)</span>
+<span class="sd">    array([ 4.,  1.,  2.,  3.,  1.])</span>
+<span class="sd">    &gt;&gt;&gt; im_t_first.shape</span>
+<span class="sd">    (5, 30, 40, 50)</span>
+<span class="sd">    &gt;&gt;&gt; im_t_first.coordmap</span>
+<span class="sd">    AffineTransform(</span>
+<span class="sd">       function_domain=CoordinateSystem(coord_names=(&#39;l&#39;, &#39;i&#39;, &#39;j&#39;, &#39;k&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       function_range=CoordinateSystem(coord_names=(&#39;t&#39;, &#39;x&#39;, &#39;y&#39;, &#39;z&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       affine=array([[ 4.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  1.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  2.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  3.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  0.,  1.]])</span>
+<span class="sd">    )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">inverse</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Inverse should be True or False; did you mean to &#39;</span>
+                         <span class="s1">&#39;use the ``rollimg` function instead?&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">+</span> <span class="n">axis</span>
+    <span class="k">if</span> <span class="n">inverse</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;If carrying out inverse rolling, &#39;</span>
+                             <span class="s1">&#39;axis must be an integer&#39;</span><span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+        <span class="n">order</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">reordered_axes</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="o">.</span><span class="n">reordered_reference</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">ndim</span><span class="p">),</span>
+                         <span class="n">img</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">coord_names</span><span class="p">,</span>
+                         <span class="n">img</span><span class="o">.</span><span class="n">reference</span><span class="o">.</span><span class="n">coord_names</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;axis must be an axis number,&#39;</span>
+                         <span class="s1">&#39;an axis name or a reference name&#39;</span><span class="p">)</span>
+    <span class="c1"># Find out which index axis corresonds to</span>
+    <span class="n">in_index</span> <span class="o">=</span> <span class="n">out_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">in_index</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">out_index</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">reference</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="n">in_index</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">out_index</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">in_index</span> <span class="o">!=</span> <span class="n">out_index</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ambiguous choice of axis -- it exists &#39;</span>
+                             <span class="s1">&#39;both in as an axis name and a &#39;</span>
+                             <span class="s1">&#39;reference name&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">in_index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="n">in_index</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="n">out_index</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">axis</span> <span class="o">+=</span> <span class="n">img</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+    <span class="n">order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+    <span class="n">order</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">reordered_axes</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="o">.</span><span class="n">reordered_reference</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="rollimg"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.rollimg">[docs]</a><span class="k">def</span> <span class="nf">rollimg</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fix0</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Roll `axis` backwards in the inputs, until it lies before `start`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : Image</span>
+<span class="sd">        Image whose axes and reference coordinates are to be reordered by</span>
+<span class="sd">        rollimg.</span>
+<span class="sd">    axis : str or int</span>
+<span class="sd">        Axis to be rolled, can be specified by name or as an integer.  If an</span>
+<span class="sd">        integer, axis is an input axis.  If a name, can be name of input or</span>
+<span class="sd">        output axis.  If an output axis, we search for the closest matching</span>
+<span class="sd">        input axis, and raise an AxisError if this fails.</span>
+<span class="sd">    start : str or int, optional</span>
+<span class="sd">        position before which to roll axis `axis`.  Default to 0.  Can again be</span>
+<span class="sd">        an integer (input axis) or name of input or output axis.</span>
+<span class="sd">    fix0 : bool, optional</span>
+<span class="sd">        Whether to allow for zero scaling when searching for an input axis</span>
+<span class="sd">        matching an output axis.  Useful for images where time scaling is 0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    newimg : Image</span>
+<span class="sd">       Image with reordered input axes and corresponding data.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; data = np.zeros((30,40,50,5))</span>
+<span class="sd">    &gt;&gt;&gt; affine_transform = AffineTransform(&#39;ijkl&#39;, &#39;xyzt&#39;, np.diag([1,2,3,4,1]))</span>
+<span class="sd">    &gt;&gt;&gt; im = Image(data, affine_transform)</span>
+<span class="sd">    &gt;&gt;&gt; im.coordmap</span>
+<span class="sd">    AffineTransform(</span>
+<span class="sd">       function_domain=CoordinateSystem(coord_names=(&#39;i&#39;, &#39;j&#39;, &#39;k&#39;, &#39;l&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       function_range=CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;, &#39;z&#39;, &#39;t&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       affine=array([[ 1.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  2.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  3.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  4.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  0.,  1.]])</span>
+<span class="sd">    )</span>
+<span class="sd">    &gt;&gt;&gt; im_t_first = rollimg(im, &#39;t&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; im_t_first.shape</span>
+<span class="sd">    (5, 30, 40, 50)</span>
+<span class="sd">    &gt;&gt;&gt; im_t_first.coordmap</span>
+<span class="sd">    AffineTransform(</span>
+<span class="sd">       function_domain=CoordinateSystem(coord_names=(&#39;l&#39;, &#39;i&#39;, &#39;j&#39;, &#39;k&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       function_range=CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;, &#39;z&#39;, &#39;t&#39;), name=&#39;&#39;, coord_dtype=float64),</span>
+<span class="sd">       affine=array([[ 0.,  1.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  2.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  3.,  0.],</span>
+<span class="sd">                     [ 4.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">                     [ 0.,  0.,  0.,  0.,  1.]])</span>
+<span class="sd">    )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="n">input_axis_index</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">fix0</span><span class="p">)</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">input_axis_index</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">fix0</span><span class="p">)</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+    <span class="n">order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="n">start</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="n">order</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">reordered_axes</span><span class="p">(</span><span class="n">order</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="iter_axis"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.iter_axis">[docs]</a><span class="k">def</span> <span class="nf">iter_axis</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">asarray</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return generator to slice an image `img` over `axis`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : ``Image`` instance</span>
+<span class="sd">    axis : int or str</span>
+<span class="sd">        axis identifier, either name or axis number</span>
+<span class="sd">    asarray : {False, True}, optional</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    g : generator</span>
+<span class="sd">        such that list(g) returns a list of slices over `axis`.  If `asarray` is</span>
+<span class="sd">        `False` the slices are images.  If `asarray` is True, slices are the</span>
+<span class="sd">        data from the images.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; data = np.arange(24).reshape((4,3,2))</span>
+<span class="sd">    &gt;&gt;&gt; img = Image(data, AffineTransform(&#39;ijk&#39;, &#39;xyz&#39;, np.eye(4)))</span>
+<span class="sd">    &gt;&gt;&gt; slices = list(iter_axis(img, &#39;j&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; len(slices)</span>
+<span class="sd">    3</span>
+<span class="sd">    &gt;&gt;&gt; slices[0].shape</span>
+<span class="sd">    (4, 2)</span>
+<span class="sd">    &gt;&gt;&gt; slices = list(iter_axis(img, &#39;k&#39;, asarray=True))</span>
+<span class="sd">    &gt;&gt;&gt; slices[1].sum() == data[:,:,1].sum()</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rimg</span> <span class="o">=</span> <span class="n">rollimg</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rimg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">asarray</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">rimg</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">rimg</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="synchronized_order"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.synchronized_order">[docs]</a><span class="k">def</span> <span class="nf">synchronized_order</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">target_img</span><span class="p">,</span>
+                       <span class="n">axes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">reference</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Reorder reference and axes of `img` to match target_img.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : Image</span>
+<span class="sd">    target_img : Image</span>
+<span class="sd">    axes : bool, optional</span>
+<span class="sd">        If True, synchronize the order of the axes.</span>
+<span class="sd">    reference : bool, optional</span>
+<span class="sd">        If True, synchronize the order of the reference coordinates.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    newimg : Image</span>
+<span class="sd">        An Image satisfying newimg.axes == target.axes (if axes == True),</span>
+<span class="sd">        newimg.reference == target.reference (if reference == True).</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; data = np.random.standard_normal((3,4,7,5))</span>
+<span class="sd">    &gt;&gt;&gt; im = Image(data, AffineTransform.from_params(&#39;ijkl&#39;, &#39;xyzt&#39;, np.diag([1,2,3,4,1])))</span>
+<span class="sd">    &gt;&gt;&gt; im_scrambled = im.reordered_axes(&#39;iljk&#39;).reordered_reference(&#39;txyz&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; im == im_scrambled</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled = synchronized_order(im_scrambled, im)</span>
+<span class="sd">    &gt;&gt;&gt; im == im_unscrambled</span>
+<span class="sd">    True</span>
+
+<span class="sd">    The images don&#39;t have to be the same shape</span>
+
+<span class="sd">    &gt;&gt;&gt; data2 = np.random.standard_normal((3,11,9,4))</span>
+<span class="sd">    &gt;&gt;&gt; im2 = Image(data, AffineTransform.from_params(&#39;ijkl&#39;, &#39;xyzt&#39;, np.diag([1,2,3,4,1])))</span>
+<span class="sd">    &gt;&gt;&gt; im_scrambled2 = im2.reordered_axes(&#39;iljk&#39;).reordered_reference(&#39;xtyz&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled2 = synchronized_order(im_scrambled2, im)</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled2.coordmap == im.coordmap</span>
+<span class="sd">    True</span>
+
+<span class="sd">    or have the same coordmap</span>
+
+<span class="sd">    &gt;&gt;&gt; data3 = np.random.standard_normal((3,11,9,4))</span>
+<span class="sd">    &gt;&gt;&gt; im3 = Image(data3, AffineTransform.from_params(&#39;ijkl&#39;, &#39;xyzt&#39;, np.diag([1,9,3,-2,1])))</span>
+<span class="sd">    &gt;&gt;&gt; im_scrambled3 = im3.reordered_axes(&#39;iljk&#39;).reordered_reference(&#39;xtyz&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled3 = synchronized_order(im_scrambled3, im)</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled3.axes == im.axes</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled3.reference == im.reference</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled4 = synchronized_order(im_scrambled3, im, axes=False)</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled4.axes == im.axes</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled4.axes == im_scrambled3.axes</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; im_unscrambled4.reference == im.reference</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Caution, we can&#39;t just use target_img.reference because other subclasses</span>
+    <span class="c1"># of Image may not have all axes in the .reference attribute.</span>
+    <span class="n">target_axes</span> <span class="o">=</span> <span class="n">target_img</span><span class="o">.</span><span class="n">axes</span> <span class="c1"># = target_img.coordmap.function_domain</span>
+    <span class="c1"># the below not necessarily == target_image.reference</span>
+    <span class="n">target_reference</span> <span class="o">=</span> <span class="n">target_img</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_range</span>
+    <span class="k">if</span> <span class="n">axes</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">reordered_axes</span><span class="p">(</span><span class="n">target_axes</span><span class="o">.</span><span class="n">coord_names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">reference</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">reordered_reference</span><span class="p">(</span><span class="n">target_reference</span><span class="o">.</span><span class="n">coord_names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">img</span></div>
+
+
+<div class="viewcode-block" id="is_image"><a class="viewcode-back" href="../../../../api/generated/nipy.core.image.image.html#nipy.core.image.image.is_image">[docs]</a><span class="k">def</span> <span class="nf">is_image</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Returns true if this object obeys the Image API</span>
+
+<span class="sd">    This allows us to test for something that is duck-typing an image.</span>
+
+<span class="sd">    For now an array must have a &#39;coordmap&#39; attribute, and a callable</span>
+<span class="sd">    &#39;get_data&#39; attribute.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obj : object</span>
+<span class="sd">       object for which to test API</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    is_img : bool</span>
+<span class="sd">       True if object obeys image API</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.testing import anatfile</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">    &gt;&gt;&gt; img = load_image(anatfile)</span>
+<span class="sd">    &gt;&gt;&gt; is_image(img)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; class C(object): pass</span>
+<span class="sd">    &gt;&gt;&gt; c = C()</span>
+<span class="sd">    &gt;&gt;&gt; is_image(c)</span>
+<span class="sd">    False</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;coordmap&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;get_data&#39;</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

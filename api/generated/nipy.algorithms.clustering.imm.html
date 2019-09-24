@@ -1,0 +1,1817 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.clustering.imm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-clustering-imm">
+<h1>algorithms.clustering.imm<a class="headerlink" href="#algorithms-clustering-imm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-clustering-imm">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.clustering.imm</span></code><a class="headerlink" href="#module-algorithms-clustering-imm" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.clustering.imm</span></code>:</p>
+digraph inheritance317d710708 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;clustering.bgmm.BGMM&quot; [URL=&quot;nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;This class implements Bayesian GMMs&quot;];
+  &quot;clustering.gmm.GMM&quot; -&gt; &quot;clustering.bgmm.BGMM&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;clustering.gmm.GMM&quot; [URL=&quot;nipy.algorithms.clustering.gmm.html#nipy.algorithms.clustering.gmm.GMM&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Standard GMM.&quot;];
+  &quot;clustering.imm.IMM&quot; [URL=&quot;#nipy.algorithms.clustering.imm.IMM&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;The class implements Infinite Gaussian Mixture model&quot;];
+  &quot;clustering.bgmm.BGMM&quot; -&gt; &quot;clustering.imm.IMM&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;clustering.imm.MixedIMM&quot; [URL=&quot;#nipy.algorithms.clustering.imm.MixedIMM&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Particular IMM with an additional null class.&quot;];
+  &quot;clustering.imm.IMM&quot; -&gt; &quot;clustering.imm.MixedIMM&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.algorithms.clustering.imm"></span><p>Infinite mixture model : A generalization of Bayesian mixture models
+with an unspecified number of classes</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="imm">
+<h3><a class="reference internal" href="#nipy.algorithms.clustering.imm.IMM" title="nipy.algorithms.clustering.imm.IMM"><code class="xref py py-class docutils literal notranslate"><span class="pre">IMM</span></code></a><a class="headerlink" href="#imm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.clustering.imm.IMM">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.clustering.imm.</code><code class="sig-name descname">IMM</code><span class="sig-paren">(</span><em class="sig-param">alpha=0.5</em>, <em class="sig-param">dim=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM" title="nipy.algorithms.clustering.bgmm.BGMM"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.clustering.bgmm.BGMM</span></code></a></p>
+<p>The class implements Infinite Gaussian Mixture model
+or Dirichlet Proces Mixture Model.
+This simply a generalization of Bayesian Gaussian Mixture Models
+with an unknown number of classes.</p>
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">alpha=0.5</em>, <em class="sig-param">dim=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>alpha: float, optional,</strong></p>
+<blockquote>
+<div><p>the parameter for cluster creation</p>
+</div></blockquote>
+<p><strong>dim: int, optional,</strong></p>
+<blockquote>
+<div><p>the dimension of the the data</p>
+</div></blockquote>
+<p><strong>Note: use the function set_priors() to set adapted priors</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.set_priors">
+<code class="sig-name descname">set_priors</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.set_priors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.set_priors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the priors in order of having them weakly uninformative
+this is from  Fraley and raftery;
+Journal of Classification 24:155-181 (2007)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x, array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.set_constant_densities">
+<code class="sig-name descname">set_constant_densities</code><span class="sig-paren">(</span><em class="sig-param">prior_dens=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.set_constant_densities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.set_constant_densities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the null and prior densities as constant
+(assuming a compact domain)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prior_dens: float, optional</strong></p>
+<blockquote>
+<div><p>constant for the prior density</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">niter=1</em>, <em class="sig-param">sampling_points=None</em>, <em class="sig-param">init=False</em>, <em class="sig-param">kfold=None</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>sample the indicator and parameters</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples, self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>niter: int,</strong></p>
+<blockquote>
+<div><p>the number of iterations to perform</p>
+</div></blockquote>
+<p><strong>sampling_points: array of shape(nbpoints, self.dim), optional</strong></p>
+<blockquote>
+<div><p>points where the likelihood will be sampled
+this defaults to x</p>
+</div></blockquote>
+<p><strong>kfold: int or array, optional,</strong></p>
+<blockquote>
+<div><p>parameter of cross-validation control
+by default, no cross-validation is used
+the procedure is faster but less accurate</p>
+</div></blockquote>
+<p><strong>verbose=0: verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>likelihood: array of shape(nbpoints)</p>
+<blockquote>
+<div><p>total likelihood of the model</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.simple_update">
+<code class="sig-name descname">simple_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">plike</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.simple_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.simple_update" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>This is a step in the sampling procedure</p>
+</div></blockquote>
+<p>that uses internal corss_validation</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples, dim),</strong></p>
+<blockquote>
+<div><p>the input data</p>
+</div></blockquote>
+<p><strong>z: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the associated membership variables</p>
+</div></blockquote>
+<p><strong>plike: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the likelihood under the prior</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like: array od shape(n_samples),</p>
+<blockquote>
+<div><p>the likelihood of the data</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.cross_validated_update">
+<code class="sig-name descname">cross_validated_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">plike</em>, <em class="sig-param">kfold=10</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.cross_validated_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.cross_validated_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a step in the sampling procedure
+that uses internal corss_validation</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples, dim),</strong></p>
+<blockquote>
+<div><p>the input data</p>
+</div></blockquote>
+<p><strong>z: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the associated membership variables</p>
+</div></blockquote>
+<p><strong>plike: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the likelihood under the prior</p>
+</div></blockquote>
+<p><strong>kfold: int, or array of shape(n_samples), optional,</strong></p>
+<blockquote>
+<div><p>folds in the cross-validation loop</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like: array od shape(n_samples),</p>
+<blockquote>
+<div><p>the (cross-validated) likelihood of the data</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.reduce">
+<code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduce the assignments by removing empty clusters and update self.k</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z: array of shape(n),</strong></p>
+<blockquote>
+<div><p>a vector of membership variables changed in place</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: the remapped values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update function (draw a sample of the IMM parameters)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>z array of shape (n_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.update_weights">
+<code class="sig-name descname">update_weights</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.update_weights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.update_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the allocation vector z, resmaple the weights parameter</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z array of shape (n_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the allocation variable</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.sample_indicator">
+<code class="sig-name descname">sample_indicator</code><span class="sig-paren">(</span><em class="sig-param">like</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.sample_indicator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.sample_indicator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample the indicator from the likelihood</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>like: array of shape (nbitem,self.k)</strong></p>
+<blockquote>
+<div><p>component-wise likelihood</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: array of shape(nbitem): a draw of the membership variable</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The behaviour is different from standard bgmm in that z can take
+arbitrary values</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.likelihood_under_the_prior">
+<code class="sig-name descname">likelihood_under_the_prior</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.likelihood_under_the_prior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.likelihood_under_the_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the likelihood of x under the prior</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x, array of shape (self.n_samples,self.dim)</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>w, the likelihood of x under the prior model (unweighted)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.likelihood">
+<code class="sig-name descname">likelihood</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">plike=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#IMM.likelihood"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the likelihood of the model for the data x
+the values are weighted by the components weights</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples, self.dim),</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>plike: array os shape (n_samples), optional,x</strong></p>
+<blockquote>
+<div><p>the desnity of each point under the prior</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like, array of shape(nbitem,self.k)</p>
+<p>component-wise likelihood</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.average_log_like">
+<code class="sig-name descname">average_log_like</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">tiny=1e-15</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.average_log_like" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the averaged log-likelihood of the mode for the dataset x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x:  array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>tiny = 1.e-15: a small constant to avoid numerical singularities</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.bayes_factor">
+<code class="sig-name descname">bayes_factor</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">nperm=0</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.bayes_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the Bayes Factor of the current model using Chib’s method</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nb_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data from which bic is computed</p>
+</div></blockquote>
+<p><strong>z: array of shape (nb_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+<p><strong>nperm=0: int</strong></p>
+<blockquote>
+<div><p>the number of permutations to sample
+to model the label switching issue
+in the computation of the Bayes Factor
+By default, exhaustive permutations are used</p>
+</div></blockquote>
+<p><strong>verbose=0: verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bf (float) the computed evidence (Bayes factor)</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>See: Marginal Likelihood from the Gibbs Output
+Journal article by Siddhartha Chib;
+Journal of the American Statistical Association, Vol. 90, 1995</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.bic">
+<code class="sig-name descname">bic</code><span class="sig-paren">(</span><em class="sig-param">like</em>, <em class="sig-param">tiny=1e-15</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.bic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computation of bic approximation of evidence</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>like, array of shape (n_samples, self.k)</strong></p>
+<blockquote>
+<div><p>component-wise likelihood</p>
+</div></blockquote>
+<p><strong>tiny=1.e-15, a small constant to avoid numerical singularities</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the bic value, float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.check">
+<code class="sig-name descname">check</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checking the shape of sifferent matrices involved in the model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.check_x">
+<code class="sig-name descname">check_x</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.check_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>essentially check that x.shape[1]==self.dim</p>
+<p>x is returned with possibly reshaping</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.conditional_posterior_proba">
+<code class="sig-name descname">conditional_posterior_proba</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">perm=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.conditional_posterior_proba" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the probability of the current parameters of self
+given x and z</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nb_samples, dim),</strong></p>
+<blockquote>
+<div><p>the data from which bic is computed</p>
+</div></blockquote>
+<p><strong>z: array of shape (nb_samples), type = np.int,</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+<p><strong>perm: array ok shape(nperm, self.k),typ=np.int, optional</strong></p>
+<blockquote>
+<div><p>all permutation of z under which things will be recomputed
+By default, no permutation is performed</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.estimate">
+<code class="sig-name descname">estimate</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">niter=100</em>, <em class="sig-param">delta=0.0001</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimation of the model given a dataset x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data from which the model is estimated</p>
+</div></blockquote>
+<p><strong>niter=100: maximal number of iterations in the estimation process</strong></p>
+<p><strong>delta = 1.e-4: increment of data likelihood at which</strong></p>
+<blockquote>
+<div><p>convergence is declared</p>
+</div></blockquote>
+<p><strong>verbose=0: verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bic</strong> : an asymptotic approximation of model evidence</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.evidence">
+<code class="sig-name descname">evidence</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">nperm=0</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.evidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>See bayes_factor(self, x, z, nperm=0, verbose=0)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.guess_priors">
+<code class="sig-name descname">guess_priors</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">nocheck=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.guess_priors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the priors in order of having them weakly uninformative
+this is from  Fraley and raftery;
+Journal of Classification 24:155-181 (2007)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x, array of shape (nb_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>nocheck: boolean, optional,</strong></p>
+<blockquote>
+<div><p>if nocheck==True, check is skipped</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.guess_regularizing">
+<code class="sig-name descname">guess_regularizing</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">bcheck=1</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.guess_regularizing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the regularizing priors as weakly informative
+according to Fraley and raftery;
+Journal of Classification 24:155-181 (2007)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.initialize">
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>initialize z using a k-means algorithm, then upate the parameters</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nb_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.initialize_and_estimate">
+<code class="sig-name descname">initialize_and_estimate</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z=None</em>, <em class="sig-param">niter=100</em>, <em class="sig-param">delta=0.0001</em>, <em class="sig-param">ninit=1</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.initialize_and_estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimation of self given x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data from which the model is estimated</p>
+</div></blockquote>
+<p><strong>z = None: array of shape (n_samples)</strong></p>
+<blockquote>
+<div><p>a prior labelling of the data to initialize the computation</p>
+</div></blockquote>
+<p><strong>niter=100: maximal number of iterations in the estimation process</strong></p>
+<p><strong>delta = 1.e-4: increment of data likelihood at which</strong></p>
+<blockquote>
+<div><p>convergence is declared</p>
+</div></blockquote>
+<p><strong>ninit=1: number of initialization performed</strong></p>
+<blockquote>
+<div><p>to reach a good solution</p>
+</div></blockquote>
+<p><strong>verbose=0: verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the best model is returned</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.map_label">
+<code class="sig-name descname">map_label</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">like=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.map_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the MAP labelling of x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data under study</p>
+</div></blockquote>
+<p><strong>like=None array of shape(n_samples,self.k)</strong></p>
+<blockquote>
+<div><p>component-wise likelihood
+if like==None, it is recomputed</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: array of shape(n_samples): the resulting MAP labelling</p>
+<blockquote>
+<div><p>of the rows of x</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.mixture_likelihood">
+<code class="sig-name descname">mixture_likelihood</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.mixture_likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the likelihood of the mixture for x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.plugin">
+<code class="sig-name descname">plugin</code><span class="sig-paren">(</span><em class="sig-param">means</em>, <em class="sig-param">precisions</em>, <em class="sig-param">weights</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.plugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set manually the weights, means and precision of the model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>means: array of shape (self.k,self.dim)</strong></p>
+<p><strong>precisions:  array of shape (self.k,self.dim,self.dim)</strong></p>
+<blockquote>
+<div><p>or (self.k, self.dim)</p>
+</div></blockquote>
+<p><strong>weights: array of shape (self.k)</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.pop">
+<code class="sig-name descname">pop</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the population, i.e. the statistics of allocation</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z array of shape (nb_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the allocation variable</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>hist</strong> : array shape (self.k) count variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.probability_under_prior">
+<code class="sig-name descname">probability_under_prior</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.probability_under_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the probability of the current parameters of self
+given the priors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.sample_and_average">
+<code class="sig-name descname">sample_and_average</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">niter=1</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.sample_and_average" title="Permalink to this definition">¶</a></dt>
+<dd><p>sample the indicator and parameters
+the average values for weights,means, precisions are returned</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x = array of shape (nb_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data from which bic is computed</p>
+</div></blockquote>
+<p><strong>niter=1: number of iterations</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>weights: array of shape (self.k)</p>
+<p>means: array of shape (self.k,self.dim)</p>
+<p>precisions:  array of shape (self.k,self.dim,self.dim)</p>
+<blockquote>
+<div><p>or (self.k, self.dim)
+these are the average parameters across samplings</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>All this makes sense only if no label switching as occurred so this is
+wrong in general (asymptotically).</p>
+<p>fix: implement a permutation procedure for components identification</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">gd</em>, <em class="sig-param">density=None</em>, <em class="sig-param">axes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to plot a GMM, still in progress
+Currently, works only in 1D and 2D</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples, dim)</strong></p>
+<blockquote>
+<div><p>the data under study</p>
+</div></blockquote>
+<p><strong>gd: GridDescriptor instance</strong></p>
+<p><strong>density: array os shape(prod(gd.n_bins))</strong></p>
+<blockquote>
+<div><p>density of the model one the discrete grid implied by gd
+by default, this is recomputed</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.show_components">
+<code class="sig-name descname">show_components</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">gd</em>, <em class="sig-param">density=None</em>, <em class="sig-param">mpaxes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.show_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to plot a GMM – Currently, works only in 1D</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples, dim)</strong></p>
+<blockquote>
+<div><p>the data under study</p>
+</div></blockquote>
+<p><strong>gd: GridDescriptor instance</strong></p>
+<p><strong>density: array os shape(prod(gd.n_bins))</strong></p>
+<blockquote>
+<div><p>density of the model one the discrete grid implied by gd
+by default, this is recomputed</p>
+</div></blockquote>
+<p><strong>mpaxes: axes handle to make the figure, optional,</strong></p>
+<blockquote>
+<div><p>if None, a new figure is created</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.test">
+<code class="sig-name descname">test</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">tiny=1e-15</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log-likelihood of the mixture for x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ll: array of shape(n_samples)</p>
+<blockquote>
+<div><p>the log-likelihood of the rows of x</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z=None</em>, <em class="sig-param">niter=100</em>, <em class="sig-param">delta=0.0001</em>, <em class="sig-param">ninit=1</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Idem initialize_and_estimate</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.unweighted_likelihood">
+<code class="sig-name descname">unweighted_likelihood</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.unweighted_likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the likelihood of each data for each component
+the values are not weighted by the component weights</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like, array of shape(n_samples,self.k)</p>
+<blockquote>
+<div><p>unweighted component-wise likelihood</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Hopefully faster</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.unweighted_likelihood_">
+<code class="sig-name descname">unweighted_likelihood_</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.unweighted_likelihood_" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the likelihood of each data for each component
+the values are not weighted by the component weights</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like, array of shape(n_samples,self.k)</p>
+<blockquote>
+<div><p>unweighted component-wise likelihood</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.update_means">
+<code class="sig-name descname">update_means</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.update_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the allocation vector z,
+and the corresponding data x,
+resample the mean</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nb_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>z: array of shape (nb_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.IMM.update_precisions">
+<code class="sig-name descname">update_precisions</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.IMM.update_precisions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the allocation vector z,
+and the corresponding data x,
+resample the precisions</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (nb_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>z array of shape (nb_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mixedimm">
+<h3><a class="reference internal" href="#nipy.algorithms.clustering.imm.MixedIMM" title="nipy.algorithms.clustering.imm.MixedIMM"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixedIMM</span></code></a><a class="headerlink" href="#mixedimm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.clustering.imm.</code><code class="sig-name descname">MixedIMM</code><span class="sig-paren">(</span><em class="sig-param">alpha=0.5</em>, <em class="sig-param">dim=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#MixedIMM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.clustering.imm.IMM" title="nipy.algorithms.clustering.imm.IMM"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.clustering.imm.IMM</span></code></a></p>
+<p>Particular IMM with an additional null class.
+The data is supplied together
+with a sample-related probability of being under the null.</p>
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">alpha=0.5</em>, <em class="sig-param">dim=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#MixedIMM.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>alpha: float, optional,</strong></p>
+<blockquote>
+<div><p>the parameter for cluster creation</p>
+</div></blockquote>
+<p><strong>dim: int, optional,</strong></p>
+<blockquote>
+<div><p>the dimension of the the data</p>
+</div></blockquote>
+<p><strong>Note: use the function set_priors() to set adapted priors</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.set_constant_densities">
+<code class="sig-name descname">set_constant_densities</code><span class="sig-paren">(</span><em class="sig-param">null_dens=None</em>, <em class="sig-param">prior_dens=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#MixedIMM.set_constant_densities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.set_constant_densities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the null and prior densities as constant
+(over a  supposedly compact domain)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>null_dens: float, optional</strong></p>
+<blockquote>
+<div><p>constant for the null density</p>
+</div></blockquote>
+<p><strong>prior_dens: float, optional</strong></p>
+<blockquote>
+<div><p>constant for the prior density</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">null_class_proba</em>, <em class="sig-param">niter=1</em>, <em class="sig-param">sampling_points=None</em>, <em class="sig-param">init=False</em>, <em class="sig-param">kfold=None</em>, <em class="sig-param">co_clustering=False</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#MixedIMM.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>sample the indicator and parameters</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples, self.dim),</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>null_class_proba: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the probability to be under the null</p>
+</div></blockquote>
+<p><strong>niter: int,</strong></p>
+<blockquote>
+<div><p>the number of iterations to perform</p>
+</div></blockquote>
+<p><strong>sampling_points: array of shape(nbpoints, self.dim), optional</strong></p>
+<blockquote>
+<div><p>points where the likelihood will be sampled
+this defaults to x</p>
+</div></blockquote>
+<p><strong>kfold: int, optional,</strong></p>
+<blockquote>
+<div><p>parameter of cross-validation control
+by default, no cross-validation is used
+the procedure is faster but less accurate</p>
+</div></blockquote>
+<p><strong>co_clustering: bool, optional</strong></p>
+<blockquote>
+<div><p>if True,
+return a model of data co-labelling across iterations</p>
+</div></blockquote>
+<p><strong>verbose=0: verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>likelihood: array of shape(nbpoints)</p>
+<blockquote>
+<div><p>total likelihood of the model</p>
+</div></blockquote>
+<p>pproba: array of shape(n_samples),</p>
+<blockquote>
+<div><p>the posterior of being in the null
+(the posterior of null_class_proba)</p>
+</div></blockquote>
+<p>coclust: only if co_clustering==True,</p>
+<blockquote>
+<div><p>sparse_matrix of shape (n_samples, n_samples),
+frequency of co-labelling of each sample pairs
+across iterations</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.simple_update">
+<code class="sig-name descname">simple_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">plike</em>, <em class="sig-param">null_class_proba</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#MixedIMM.simple_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.simple_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>One step in the sampling procedure (one data sweep)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples, dim),</strong></p>
+<blockquote>
+<div><p>the input data</p>
+</div></blockquote>
+<p><strong>z: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the associated membership variables</p>
+</div></blockquote>
+<p><strong>plike: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the likelihood under the prior</p>
+</div></blockquote>
+<p><strong>null_class_proba: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>prior probability to be under the null</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like: array od shape(n_samples),</p>
+<blockquote>
+<div><p>the likelihood of the data under the H1 hypothesis</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.cross_validated_update">
+<code class="sig-name descname">cross_validated_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">plike</em>, <em class="sig-param">null_class_proba</em>, <em class="sig-param">kfold=10</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#MixedIMM.cross_validated_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.cross_validated_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a step in the sampling procedure
+that uses internal corss_validation</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples, dim),</strong></p>
+<blockquote>
+<div><p>the input data</p>
+</div></blockquote>
+<p><strong>z: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the associated membership variables</p>
+</div></blockquote>
+<p><strong>plike: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the likelihood under the prior</p>
+</div></blockquote>
+<p><strong>kfold: int, optional, or array</strong></p>
+<blockquote>
+<div><p>number of folds in cross-validation loop
+or set of indexes for the cross-validation procedure</p>
+</div></blockquote>
+<p><strong>null_class_proba: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>prior probability to be under the null</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like: array od shape(n_samples),</p>
+<blockquote>
+<div><p>the (cross-validated) likelihood of the data</p>
+</div></blockquote>
+<p>z: array of shape(n_samples),</p>
+<blockquote>
+<div><p>the associated membership variables</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>When kfold is an array, there is an internal reshuffling to randomize
+the order of updates</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.sample_indicator">
+<code class="sig-name descname">sample_indicator</code><span class="sig-paren">(</span><em class="sig-param">like</em>, <em class="sig-param">null_class_proba</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#MixedIMM.sample_indicator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.sample_indicator" title="Permalink to this definition">¶</a></dt>
+<dd><p>sample the indicator from the likelihood</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>like: array of shape (nbitem,self.k)</strong></p>
+<blockquote>
+<div><p>component-wise likelihood</p>
+</div></blockquote>
+<p><strong>null_class_proba: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>prior probability to be under the null</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: array of shape(nbitem): a draw of the membership variable</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Here z=-1 encodes for the null class</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.average_log_like">
+<code class="sig-name descname">average_log_like</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">tiny=1e-15</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.average_log_like" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the averaged log-likelihood of the mode for the dataset x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x:  array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>tiny = 1.e-15: a small constant to avoid numerical singularities</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.bayes_factor">
+<code class="sig-name descname">bayes_factor</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">nperm=0</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.bayes_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the Bayes Factor of the current model using Chib’s method</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nb_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data from which bic is computed</p>
+</div></blockquote>
+<p><strong>z: array of shape (nb_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+<p><strong>nperm=0: int</strong></p>
+<blockquote>
+<div><p>the number of permutations to sample
+to model the label switching issue
+in the computation of the Bayes Factor
+By default, exhaustive permutations are used</p>
+</div></blockquote>
+<p><strong>verbose=0: verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bf (float) the computed evidence (Bayes factor)</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>See: Marginal Likelihood from the Gibbs Output
+Journal article by Siddhartha Chib;
+Journal of the American Statistical Association, Vol. 90, 1995</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.bic">
+<code class="sig-name descname">bic</code><span class="sig-paren">(</span><em class="sig-param">like</em>, <em class="sig-param">tiny=1e-15</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.bic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computation of bic approximation of evidence</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>like, array of shape (n_samples, self.k)</strong></p>
+<blockquote>
+<div><p>component-wise likelihood</p>
+</div></blockquote>
+<p><strong>tiny=1.e-15, a small constant to avoid numerical singularities</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the bic value, float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.check">
+<code class="sig-name descname">check</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checking the shape of sifferent matrices involved in the model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.check_x">
+<code class="sig-name descname">check_x</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.check_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>essentially check that x.shape[1]==self.dim</p>
+<p>x is returned with possibly reshaping</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.conditional_posterior_proba">
+<code class="sig-name descname">conditional_posterior_proba</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">perm=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.conditional_posterior_proba" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the probability of the current parameters of self
+given x and z</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nb_samples, dim),</strong></p>
+<blockquote>
+<div><p>the data from which bic is computed</p>
+</div></blockquote>
+<p><strong>z: array of shape (nb_samples), type = np.int,</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+<p><strong>perm: array ok shape(nperm, self.k),typ=np.int, optional</strong></p>
+<blockquote>
+<div><p>all permutation of z under which things will be recomputed
+By default, no permutation is performed</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.estimate">
+<code class="sig-name descname">estimate</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">niter=100</em>, <em class="sig-param">delta=0.0001</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimation of the model given a dataset x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data from which the model is estimated</p>
+</div></blockquote>
+<p><strong>niter=100: maximal number of iterations in the estimation process</strong></p>
+<p><strong>delta = 1.e-4: increment of data likelihood at which</strong></p>
+<blockquote>
+<div><p>convergence is declared</p>
+</div></blockquote>
+<p><strong>verbose=0: verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bic</strong> : an asymptotic approximation of model evidence</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.evidence">
+<code class="sig-name descname">evidence</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em>, <em class="sig-param">nperm=0</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.evidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>See bayes_factor(self, x, z, nperm=0, verbose=0)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.guess_priors">
+<code class="sig-name descname">guess_priors</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">nocheck=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.guess_priors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the priors in order of having them weakly uninformative
+this is from  Fraley and raftery;
+Journal of Classification 24:155-181 (2007)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x, array of shape (nb_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>nocheck: boolean, optional,</strong></p>
+<blockquote>
+<div><p>if nocheck==True, check is skipped</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.guess_regularizing">
+<code class="sig-name descname">guess_regularizing</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">bcheck=1</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.guess_regularizing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the regularizing priors as weakly informative
+according to Fraley and raftery;
+Journal of Classification 24:155-181 (2007)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.initialize">
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>initialize z using a k-means algorithm, then upate the parameters</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nb_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.initialize_and_estimate">
+<code class="sig-name descname">initialize_and_estimate</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z=None</em>, <em class="sig-param">niter=100</em>, <em class="sig-param">delta=0.0001</em>, <em class="sig-param">ninit=1</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.initialize_and_estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimation of self given x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data from which the model is estimated</p>
+</div></blockquote>
+<p><strong>z = None: array of shape (n_samples)</strong></p>
+<blockquote>
+<div><p>a prior labelling of the data to initialize the computation</p>
+</div></blockquote>
+<p><strong>niter=100: maximal number of iterations in the estimation process</strong></p>
+<p><strong>delta = 1.e-4: increment of data likelihood at which</strong></p>
+<blockquote>
+<div><p>convergence is declared</p>
+</div></blockquote>
+<p><strong>ninit=1: number of initialization performed</strong></p>
+<blockquote>
+<div><p>to reach a good solution</p>
+</div></blockquote>
+<p><strong>verbose=0: verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the best model is returned</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.likelihood">
+<code class="sig-name descname">likelihood</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">plike=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the likelihood of the model for the data x
+the values are weighted by the components weights</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples, self.dim),</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>plike: array os shape (n_samples), optional,x</strong></p>
+<blockquote>
+<div><p>the desnity of each point under the prior</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like, array of shape(nbitem,self.k)</p>
+<p>component-wise likelihood</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.likelihood_under_the_prior">
+<code class="sig-name descname">likelihood_under_the_prior</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.likelihood_under_the_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the likelihood of x under the prior</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x, array of shape (self.n_samples,self.dim)</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>w, the likelihood of x under the prior model (unweighted)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.map_label">
+<code class="sig-name descname">map_label</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">like=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.map_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the MAP labelling of x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data under study</p>
+</div></blockquote>
+<p><strong>like=None array of shape(n_samples,self.k)</strong></p>
+<blockquote>
+<div><p>component-wise likelihood
+if like==None, it is recomputed</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: array of shape(n_samples): the resulting MAP labelling</p>
+<blockquote>
+<div><p>of the rows of x</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.mixture_likelihood">
+<code class="sig-name descname">mixture_likelihood</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.mixture_likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the likelihood of the mixture for x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.plugin">
+<code class="sig-name descname">plugin</code><span class="sig-paren">(</span><em class="sig-param">means</em>, <em class="sig-param">precisions</em>, <em class="sig-param">weights</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.plugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set manually the weights, means and precision of the model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>means: array of shape (self.k,self.dim)</strong></p>
+<p><strong>precisions:  array of shape (self.k,self.dim,self.dim)</strong></p>
+<blockquote>
+<div><p>or (self.k, self.dim)</p>
+</div></blockquote>
+<p><strong>weights: array of shape (self.k)</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.pop">
+<code class="sig-name descname">pop</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the population, i.e. the statistics of allocation</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z array of shape (nb_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the allocation variable</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>hist</strong> : array shape (self.k) count variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.probability_under_prior">
+<code class="sig-name descname">probability_under_prior</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.probability_under_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the probability of the current parameters of self
+given the priors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.reduce">
+<code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduce the assignments by removing empty clusters and update self.k</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z: array of shape(n),</strong></p>
+<blockquote>
+<div><p>a vector of membership variables changed in place</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: the remapped values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.sample_and_average">
+<code class="sig-name descname">sample_and_average</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">niter=1</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.sample_and_average" title="Permalink to this definition">¶</a></dt>
+<dd><p>sample the indicator and parameters
+the average values for weights,means, precisions are returned</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x = array of shape (nb_samples,dim)</strong></p>
+<blockquote>
+<div><p>the data from which bic is computed</p>
+</div></blockquote>
+<p><strong>niter=1: number of iterations</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>weights: array of shape (self.k)</p>
+<p>means: array of shape (self.k,self.dim)</p>
+<p>precisions:  array of shape (self.k,self.dim,self.dim)</p>
+<blockquote>
+<div><p>or (self.k, self.dim)
+these are the average parameters across samplings</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>All this makes sense only if no label switching as occurred so this is
+wrong in general (asymptotically).</p>
+<p>fix: implement a permutation procedure for components identification</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.set_priors">
+<code class="sig-name descname">set_priors</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.set_priors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the priors in order of having them weakly uninformative
+this is from  Fraley and raftery;
+Journal of Classification 24:155-181 (2007)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x, array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">gd</em>, <em class="sig-param">density=None</em>, <em class="sig-param">axes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to plot a GMM, still in progress
+Currently, works only in 1D and 2D</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples, dim)</strong></p>
+<blockquote>
+<div><p>the data under study</p>
+</div></blockquote>
+<p><strong>gd: GridDescriptor instance</strong></p>
+<p><strong>density: array os shape(prod(gd.n_bins))</strong></p>
+<blockquote>
+<div><p>density of the model one the discrete grid implied by gd
+by default, this is recomputed</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.show_components">
+<code class="sig-name descname">show_components</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">gd</em>, <em class="sig-param">density=None</em>, <em class="sig-param">mpaxes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.show_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to plot a GMM – Currently, works only in 1D</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(n_samples, dim)</strong></p>
+<blockquote>
+<div><p>the data under study</p>
+</div></blockquote>
+<p><strong>gd: GridDescriptor instance</strong></p>
+<p><strong>density: array os shape(prod(gd.n_bins))</strong></p>
+<blockquote>
+<div><p>density of the model one the discrete grid implied by gd
+by default, this is recomputed</p>
+</div></blockquote>
+<p><strong>mpaxes: axes handle to make the figure, optional,</strong></p>
+<blockquote>
+<div><p>if None, a new figure is created</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.test">
+<code class="sig-name descname">test</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">tiny=1e-15</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log-likelihood of the mixture for x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ll: array of shape(n_samples)</p>
+<blockquote>
+<div><p>the log-likelihood of the rows of x</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z=None</em>, <em class="sig-param">niter=100</em>, <em class="sig-param">delta=0.0001</em>, <em class="sig-param">ninit=1</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Idem initialize_and_estimate</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.unweighted_likelihood">
+<code class="sig-name descname">unweighted_likelihood</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.unweighted_likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the likelihood of each data for each component
+the values are not weighted by the component weights</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like, array of shape(n_samples,self.k)</p>
+<blockquote>
+<div><p>unweighted component-wise likelihood</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Hopefully faster</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.unweighted_likelihood_">
+<code class="sig-name descname">unweighted_likelihood_</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.unweighted_likelihood_" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the likelihood of each data for each component
+the values are not weighted by the component weights</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>like, array of shape(n_samples,self.k)</p>
+<blockquote>
+<div><p>unweighted component-wise likelihood</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update function (draw a sample of the IMM parameters)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (n_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>z array of shape (n_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.update_means">
+<code class="sig-name descname">update_means</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.update_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the allocation vector z,
+and the corresponding data x,
+resample the mean</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nb_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>z: array of shape (nb_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.update_precisions">
+<code class="sig-name descname">update_precisions</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.update_precisions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the allocation vector z,
+and the corresponding data x,
+resample the precisions</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x array of shape (nb_samples,self.dim)</strong></p>
+<blockquote>
+<div><p>the data used in the estimation process</p>
+</div></blockquote>
+<p><strong>z array of shape (nb_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the corresponding classification</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.imm.MixedIMM.update_weights">
+<code class="sig-name descname">update_weights</code><span class="sig-paren">(</span><em class="sig-param">z</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.clustering.imm.MixedIMM.update_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the allocation vector z, resmaple the weights parameter</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z array of shape (n_samples), type = np.int</strong></p>
+<blockquote>
+<div><p>the allocation variable</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.clustering.imm.co_labelling">
+<code class="sig-prename descclassname">nipy.algorithms.clustering.imm.</code><code class="sig-name descname">co_labelling</code><span class="sig-paren">(</span><em class="sig-param">z</em>, <em class="sig-param">kmax=None</em>, <em class="sig-param">kmin=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#co_labelling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.co_labelling" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a sparse co-labelling matrix given the label vector z</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z: array of shape(n_samples),</strong></p>
+<blockquote>
+<div><p>the input labels</p>
+</div></blockquote>
+<p><strong>kmax: int, optional,</strong></p>
+<blockquote>
+<div><p>considers only the labels in the range [0, kmax[</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>colabel: a sparse coo_matrix,</p>
+<blockquote>
+<div><p>yields the co labelling of the data
+i.e. c[i,j]= 1 if z[i]==z[j], 0 otherwise</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.clustering.imm.main">
+<code class="sig-prename descclassname">nipy.algorithms.clustering.imm.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/imm.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.imm.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Illustrative example of the behaviour of imm</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

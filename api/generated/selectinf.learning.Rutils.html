@@ -1,0 +1,972 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="learning.core" href="selectinf.learning.core.html" />
+    <link rel="prev" title="learning.Rfitters" href="selectinf.learning.Rfitters.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">learning.Rutils</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-learning-rutils">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.Rutils</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.learning.Rutils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="learning-rutils">
+<h1>learning.Rutils<a class="headerlink" href="#learning-rutils" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-learning-rutils">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.Rutils</span></code><a class="headerlink" href="#module-learning-rutils" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.learning.Rutils</span></code>:</p>
+digraph inheritance655fb2723b {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;learning.Rutils.generic_method&quot; [URL=&quot;#selectinf.learning.Rutils.generic_method&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;traitlets.traitlets.HasTraits&quot; -&gt; &quot;learning.Rutils.generic_method&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;learning.Rutils.lasso_glmnet&quot; [URL=&quot;#selectinf.learning.Rutils.lasso_glmnet&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;learning.Rutils.generic_method&quot; -&gt; &quot;learning.Rutils.lasso_glmnet&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;traitlets.traitlets.HasDescriptors&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;The base class for all classes that have descriptors.&quot;];
+  &quot;traitlets.traitlets.HasTraits&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;traitlets.traitlets.HasDescriptors&quot; -&gt; &quot;traitlets.traitlets.HasTraits&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-selectinf.learning.Rutils"></span></div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="generic-method">
+<h3><a class="reference internal" href="#selectinf.learning.Rutils.generic_method" title="selectinf.learning.Rutils.generic_method"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic_method</span></code></a><a class="headerlink" href="#generic-method" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.learning.Rutils.generic_method">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.learning.Rutils.</code><code class="sig-name descname">generic_method</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">l_theory</em>, <em class="sig-param">l_min</em>, <em class="sig-param">l_1se</em>, <em class="sig-param">sigma_reid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#generic_method"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.generic_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">traitlets.traitlets.HasTraits</span></code></p>
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">l_theory</em>, <em class="sig-param">l_min</em>, <em class="sig-param">l_1se</em>, <em class="sig-param">sigma_reid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#generic_method.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.generic_method.need_CV">
+<code class="sig-name descname">need_CV</code><em class="property"> = False</em><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.need_CV" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.generic_method.selectiveR_method">
+<code class="sig-name descname">selectiveR_method</code><em class="property"> = False</em><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.selectiveR_method" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.generic_method.wide_ok">
+<code class="sig-name descname">wide_ok</code><em class="property"> = True</em><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.wide_ok" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.generic_method.q">
+<code class="sig-name descname">q</code><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.q" title="Permalink to this definition">¶</a></dt>
+<dd><p>A float trait.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.generic_method.method_name">
+<code class="sig-name descname">method_name</code><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.method_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>A trait for unicode strings.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.generic_method.model_target">
+<code class="sig-name descname">model_target</code><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.model_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>A trait for unicode strings.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.setup">
+<em class="property">classmethod </em><code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param">feature_cov</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#generic_method.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.select">
+<code class="sig-name descname">select</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#generic_method.select"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.select" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.register">
+<em class="property">classmethod </em><code class="sig-name descname">register</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#generic_method.register"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.register" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.selected_target">
+<code class="sig-name descname">selected_target</code><span class="sig-paren">(</span><em class="sig-param">active</em>, <em class="sig-param">beta</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#generic_method.selected_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.selected_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.full_target">
+<code class="sig-name descname">full_target</code><span class="sig-paren">(</span><em class="sig-param">active</em>, <em class="sig-param">beta</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#generic_method.full_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.full_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.get_target">
+<code class="sig-name descname">get_target</code><span class="sig-paren">(</span><em class="sig-param">active</em>, <em class="sig-param">beta</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#generic_method.get_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.get_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.add_traits">
+<code class="sig-name descname">add_traits</code><span class="sig-paren">(</span><em class="sig-param">**traits</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.add_traits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dynamically add trait attributes to the HasTraits instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.class_own_trait_events">
+<em class="property">classmethod </em><code class="sig-name descname">class_own_trait_events</code><span class="sig-paren">(</span><em class="sig-param">name</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.class_own_trait_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a dict of all event handlers defined on this class, not a parent.</p>
+<p>Works like <code class="docutils literal notranslate"><span class="pre">event_handlers</span></code>, except for excluding traits from parents.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.class_own_traits">
+<em class="property">classmethod </em><code class="sig-name descname">class_own_traits</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.class_own_traits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a dict of all the traitlets defined on this class, not a parent.</p>
+<p>Works like <cite>class_traits</cite>, except for excluding traits from parents.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.class_trait_names">
+<em class="property">classmethod </em><code class="sig-name descname">class_trait_names</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.class_trait_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of all the names of this class’ traits.</p>
+<p>This method is just like the <a class="reference internal" href="#selectinf.learning.Rutils.generic_method.trait_names" title="selectinf.learning.Rutils.generic_method.trait_names"><code class="xref py py-meth docutils literal notranslate"><span class="pre">trait_names()</span></code></a> method,
+but is unbound.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.class_traits">
+<em class="property">classmethod </em><code class="sig-name descname">class_traits</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.class_traits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of all the traits of this class.  The dictionary
+is keyed on the name and the values are the TraitType objects.</p>
+<p>This method is just like the <a class="reference internal" href="#selectinf.learning.Rutils.generic_method.traits" title="selectinf.learning.Rutils.generic_method.traits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">traits()</span></code></a> method, but is unbound.</p>
+<p>The TraitTypes returned don’t know anything about the values
+that the various HasTrait’s instances are holding.</p>
+<p>The metadata kwargs allow functions to be passed in which
+filter traits based on metadata values.  The functions should
+take a single value as an argument and return a boolean.  If
+any function returns False, then the trait is not included in
+the output.  If a metadata key doesn’t exist, None will be passed
+to the function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.cross_validation_lock">
+<em class="property">property </em><code class="sig-name descname">cross_validation_lock</code><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.cross_validation_lock" title="Permalink to this definition">¶</a></dt>
+<dd><p>A contextmanager for running a block with our cross validation lock set
+to True.</p>
+<p>At the end of the block, the lock’s value is restored to its value
+prior to entering the block.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.has_trait">
+<code class="sig-name descname">has_trait</code><span class="sig-paren">(</span><em class="sig-param">name</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.has_trait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the object has a trait with the specified name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.hold_trait_notifications">
+<code class="sig-name descname">hold_trait_notifications</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.hold_trait_notifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context manager for bundling trait change notifications and cross
+validation.</p>
+<p>Use this when doing multiple trait assignments (init, config), to avoid
+race conditions in trait notifiers requesting other trait values.
+All trait notifications will fire after all values have been assigned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.notify_change">
+<code class="sig-name descname">notify_change</code><span class="sig-paren">(</span><em class="sig-param">change</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.notify_change" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.observe">
+<code class="sig-name descname">observe</code><span class="sig-paren">(</span><em class="sig-param">handler</em>, <em class="sig-param">names=traitlets.All</em>, <em class="sig-param">type='change'</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.observe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup a handler to be called when a trait changes.</p>
+<p>This is used to setup dynamic notifications of trait changes.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handler</strong> : callable</p>
+<blockquote>
+<div><p>A callable that is called when a trait changes. Its
+signature should be <code class="docutils literal notranslate"><span class="pre">handler(change)</span></code>, where <code class="docutils literal notranslate"><span class="pre">change</span></code> is a
+dictionary. The change dictionary at least holds a ‘type’ key.
+* <code class="docutils literal notranslate"><span class="pre">type</span></code>: the type of notification.
+Other keys may be passed depending on the value of ‘type’. In the
+case where type is ‘change’, we also have the following keys:
+* <code class="docutils literal notranslate"><span class="pre">owner</span></code> : the HasTraits instance
+* <code class="docutils literal notranslate"><span class="pre">old</span></code> : the old value of the modified trait attribute
+* <code class="docutils literal notranslate"><span class="pre">new</span></code> : the new value of the modified trait attribute
+* <code class="docutils literal notranslate"><span class="pre">name</span></code> : the name of the modified trait attribute.</p>
+</div></blockquote>
+<p><strong>names</strong> : list, str, All</p>
+<blockquote>
+<div><p>If names is All, the handler will apply to all traits.  If a list
+of str, handler will apply to all names in the list.  If a
+str, the handler will apply just to that name.</p>
+</div></blockquote>
+<p><strong>type</strong> : str, All (default: ‘change’)</p>
+<blockquote>
+<div><p>The type of notification to filter by. If equal to All, then all
+notifications are passed to the observe handler.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.on_trait_change">
+<code class="sig-name descname">on_trait_change</code><span class="sig-paren">(</span><em class="sig-param">handler=None</em>, <em class="sig-param">name=None</em>, <em class="sig-param">remove=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.on_trait_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>DEPRECATED: Setup a handler to be called when a trait changes.</p>
+<p>This is used to setup dynamic notifications of trait changes.</p>
+<p>Static handlers can be created by creating methods on a HasTraits
+subclass with the naming convention ‘_[traitname]_changed’.  Thus,
+to create static handler for the trait ‘a’, create the method
+_a_changed(self, name, old, new) (fewer arguments can be used, see
+below).</p>
+<p>If <cite>remove</cite> is True and <cite>handler</cite> is not specified, all change
+handlers for the specified name are uninstalled.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handler</strong> : callable, None</p>
+<blockquote>
+<div><p>A callable that is called when a trait changes.  Its
+signature can be handler(), handler(name), handler(name, new),
+handler(name, old, new), or handler(name, old, new, self).</p>
+</div></blockquote>
+<p><strong>name</strong> : list, str, None</p>
+<blockquote>
+<div><p>If None, the handler will apply to all traits.  If a list
+of str, handler will apply to all names in the list.  If a
+str, the handler will apply just to that name.</p>
+</div></blockquote>
+<p><strong>remove</strong> : bool</p>
+<blockquote>
+<div><p>If False (the default), then install the handler.  If True
+then unintall it.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.set_trait">
+<code class="sig-name descname">set_trait</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.set_trait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forcibly sets trait attribute, including read-only attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.setup_instance">
+<code class="sig-name descname">setup_instance</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.setup_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called <strong>before</strong> self.__init__ is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.trait_events">
+<em class="property">classmethod </em><code class="sig-name descname">trait_events</code><span class="sig-paren">(</span><em class="sig-param">name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.trait_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of all the event handlers of this class.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name: str (default: None)</strong></p>
+<blockquote>
+<div><p>The name of a trait of this class. If name is <code class="docutils literal notranslate"><span class="pre">None</span></code> then all
+the event handlers of this class will be returned instead.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The event handlers associated with a trait name, or all event handlers.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.trait_metadata">
+<code class="sig-name descname">trait_metadata</code><span class="sig-paren">(</span><em class="sig-param">traitname</em>, <em class="sig-param">key</em>, <em class="sig-param">default=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.trait_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get metadata values for trait by key.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.trait_names">
+<code class="sig-name descname">trait_names</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.trait_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of all the names of this class’ traits.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.traits">
+<code class="sig-name descname">traits</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.traits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of all the traits of this class.  The dictionary
+is keyed on the name and the values are the TraitType objects.</p>
+<p>The TraitTypes returned don’t know anything about the values
+that the various HasTrait’s instances are holding.</p>
+<p>The metadata kwargs allow functions to be passed in which
+filter traits based on metadata values.  The functions should
+take a single value as an argument and return a boolean.  If
+any function returns False, then the trait is not included in
+the output.  If a metadata key doesn’t exist, None will be passed
+to the function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.unobserve">
+<code class="sig-name descname">unobserve</code><span class="sig-paren">(</span><em class="sig-param">handler</em>, <em class="sig-param">names=traitlets.All</em>, <em class="sig-param">type='change'</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.unobserve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a trait change handler.</p>
+<p>This is used to unregister handlers to trait change notifications.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handler</strong> : callable</p>
+<blockquote>
+<div><p>The callable called when a trait attribute changes.</p>
+</div></blockquote>
+<p><strong>names</strong> : list, str, All (default: All)</p>
+<blockquote>
+<div><p>The names of the traits for which the specified handler should be
+uninstalled. If names is All, the specified handler is uninstalled
+from the list of notifiers corresponding to all changes.</p>
+</div></blockquote>
+<p><strong>type</strong> : str or All (default: ‘change’)</p>
+<blockquote>
+<div><p>The type of notification to filter by. If All, the specified handler
+is uninstalled from the list of notifiers corresponding to all types.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.generic_method.unobserve_all">
+<code class="sig-name descname">unobserve_all</code><span class="sig-paren">(</span><em class="sig-param">name=traitlets.All</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.generic_method.unobserve_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove trait change handlers of any type for the specified name.
+If name is not specified, removes all trait notifiers.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="lasso-glmnet">
+<h3><a class="reference internal" href="#selectinf.learning.Rutils.lasso_glmnet" title="selectinf.learning.Rutils.lasso_glmnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lasso_glmnet</span></code></a><a class="headerlink" href="#lasso-glmnet" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.learning.Rutils.lasso_glmnet">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.learning.Rutils.</code><code class="sig-name descname">lasso_glmnet</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">l_theory</em>, <em class="sig-param">l_min</em>, <em class="sig-param">l_1se</em>, <em class="sig-param">sigma_reid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#lasso_glmnet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.learning.Rutils.generic_method" title="selectinf.learning.Rutils.generic_method"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.learning.Rutils.generic_method</span></code></a></p>
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">l_theory</em>, <em class="sig-param">l_min</em>, <em class="sig-param">l_1se</em>, <em class="sig-param">sigma_reid</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.select">
+<code class="sig-name descname">select</code><span class="sig-paren">(</span><em class="sig-param">CV=True</em>, <em class="sig-param">seed=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#lasso_glmnet.select"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.select" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.add_traits">
+<code class="sig-name descname">add_traits</code><span class="sig-paren">(</span><em class="sig-param">**traits</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.add_traits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dynamically add trait attributes to the HasTraits instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.class_own_trait_events">
+<em class="property">classmethod </em><code class="sig-name descname">class_own_trait_events</code><span class="sig-paren">(</span><em class="sig-param">name</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.class_own_trait_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a dict of all event handlers defined on this class, not a parent.</p>
+<p>Works like <code class="docutils literal notranslate"><span class="pre">event_handlers</span></code>, except for excluding traits from parents.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.class_own_traits">
+<em class="property">classmethod </em><code class="sig-name descname">class_own_traits</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.class_own_traits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a dict of all the traitlets defined on this class, not a parent.</p>
+<p>Works like <cite>class_traits</cite>, except for excluding traits from parents.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.class_trait_names">
+<em class="property">classmethod </em><code class="sig-name descname">class_trait_names</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.class_trait_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of all the names of this class’ traits.</p>
+<p>This method is just like the <a class="reference internal" href="#selectinf.learning.Rutils.lasso_glmnet.trait_names" title="selectinf.learning.Rutils.lasso_glmnet.trait_names"><code class="xref py py-meth docutils literal notranslate"><span class="pre">trait_names()</span></code></a> method,
+but is unbound.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.class_traits">
+<em class="property">classmethod </em><code class="sig-name descname">class_traits</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.class_traits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of all the traits of this class.  The dictionary
+is keyed on the name and the values are the TraitType objects.</p>
+<p>This method is just like the <a class="reference internal" href="#selectinf.learning.Rutils.lasso_glmnet.traits" title="selectinf.learning.Rutils.lasso_glmnet.traits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">traits()</span></code></a> method, but is unbound.</p>
+<p>The TraitTypes returned don’t know anything about the values
+that the various HasTrait’s instances are holding.</p>
+<p>The metadata kwargs allow functions to be passed in which
+filter traits based on metadata values.  The functions should
+take a single value as an argument and return a boolean.  If
+any function returns False, then the trait is not included in
+the output.  If a metadata key doesn’t exist, None will be passed
+to the function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.cross_validation_lock">
+<em class="property">property </em><code class="sig-name descname">cross_validation_lock</code><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.cross_validation_lock" title="Permalink to this definition">¶</a></dt>
+<dd><p>A contextmanager for running a block with our cross validation lock set
+to True.</p>
+<p>At the end of the block, the lock’s value is restored to its value
+prior to entering the block.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.full_target">
+<code class="sig-name descname">full_target</code><span class="sig-paren">(</span><em class="sig-param">active</em>, <em class="sig-param">beta</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.full_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.get_target">
+<code class="sig-name descname">get_target</code><span class="sig-paren">(</span><em class="sig-param">active</em>, <em class="sig-param">beta</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.get_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.has_trait">
+<code class="sig-name descname">has_trait</code><span class="sig-paren">(</span><em class="sig-param">name</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.has_trait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the object has a trait with the specified name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.hold_trait_notifications">
+<code class="sig-name descname">hold_trait_notifications</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.hold_trait_notifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context manager for bundling trait change notifications and cross
+validation.</p>
+<p>Use this when doing multiple trait assignments (init, config), to avoid
+race conditions in trait notifiers requesting other trait values.
+All trait notifications will fire after all values have been assigned.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.method_name">
+<code class="sig-name descname">method_name</code><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.method_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>A trait for unicode strings.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.model_target">
+<code class="sig-name descname">model_target</code><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.model_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>A trait for unicode strings.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.need_CV">
+<code class="sig-name descname">need_CV</code><em class="property"> = False</em><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.need_CV" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.notify_change">
+<code class="sig-name descname">notify_change</code><span class="sig-paren">(</span><em class="sig-param">change</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.notify_change" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.observe">
+<code class="sig-name descname">observe</code><span class="sig-paren">(</span><em class="sig-param">handler</em>, <em class="sig-param">names=traitlets.All</em>, <em class="sig-param">type='change'</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.observe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup a handler to be called when a trait changes.</p>
+<p>This is used to setup dynamic notifications of trait changes.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handler</strong> : callable</p>
+<blockquote>
+<div><p>A callable that is called when a trait changes. Its
+signature should be <code class="docutils literal notranslate"><span class="pre">handler(change)</span></code>, where <code class="docutils literal notranslate"><span class="pre">change</span></code> is a
+dictionary. The change dictionary at least holds a ‘type’ key.
+* <code class="docutils literal notranslate"><span class="pre">type</span></code>: the type of notification.
+Other keys may be passed depending on the value of ‘type’. In the
+case where type is ‘change’, we also have the following keys:
+* <code class="docutils literal notranslate"><span class="pre">owner</span></code> : the HasTraits instance
+* <code class="docutils literal notranslate"><span class="pre">old</span></code> : the old value of the modified trait attribute
+* <code class="docutils literal notranslate"><span class="pre">new</span></code> : the new value of the modified trait attribute
+* <code class="docutils literal notranslate"><span class="pre">name</span></code> : the name of the modified trait attribute.</p>
+</div></blockquote>
+<p><strong>names</strong> : list, str, All</p>
+<blockquote>
+<div><p>If names is All, the handler will apply to all traits.  If a list
+of str, handler will apply to all names in the list.  If a
+str, the handler will apply just to that name.</p>
+</div></blockquote>
+<p><strong>type</strong> : str, All (default: ‘change’)</p>
+<blockquote>
+<div><p>The type of notification to filter by. If equal to All, then all
+notifications are passed to the observe handler.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.on_trait_change">
+<code class="sig-name descname">on_trait_change</code><span class="sig-paren">(</span><em class="sig-param">handler=None</em>, <em class="sig-param">name=None</em>, <em class="sig-param">remove=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.on_trait_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>DEPRECATED: Setup a handler to be called when a trait changes.</p>
+<p>This is used to setup dynamic notifications of trait changes.</p>
+<p>Static handlers can be created by creating methods on a HasTraits
+subclass with the naming convention ‘_[traitname]_changed’.  Thus,
+to create static handler for the trait ‘a’, create the method
+_a_changed(self, name, old, new) (fewer arguments can be used, see
+below).</p>
+<p>If <cite>remove</cite> is True and <cite>handler</cite> is not specified, all change
+handlers for the specified name are uninstalled.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handler</strong> : callable, None</p>
+<blockquote>
+<div><p>A callable that is called when a trait changes.  Its
+signature can be handler(), handler(name), handler(name, new),
+handler(name, old, new), or handler(name, old, new, self).</p>
+</div></blockquote>
+<p><strong>name</strong> : list, str, None</p>
+<blockquote>
+<div><p>If None, the handler will apply to all traits.  If a list
+of str, handler will apply to all names in the list.  If a
+str, the handler will apply just to that name.</p>
+</div></blockquote>
+<p><strong>remove</strong> : bool</p>
+<blockquote>
+<div><p>If False (the default), then install the handler.  If True
+then unintall it.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.q">
+<code class="sig-name descname">q</code><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.q" title="Permalink to this definition">¶</a></dt>
+<dd><p>A float trait.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.register">
+<em class="property">classmethod </em><code class="sig-name descname">register</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.register" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.selected_target">
+<code class="sig-name descname">selected_target</code><span class="sig-paren">(</span><em class="sig-param">active</em>, <em class="sig-param">beta</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.selected_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.selectiveR_method">
+<code class="sig-name descname">selectiveR_method</code><em class="property"> = False</em><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.selectiveR_method" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.set_trait">
+<code class="sig-name descname">set_trait</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.set_trait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forcibly sets trait attribute, including read-only attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.setup">
+<em class="property">classmethod </em><code class="sig-name descname">setup</code><span class="sig-paren">(</span><em class="sig-param">feature_cov</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.setup_instance">
+<code class="sig-name descname">setup_instance</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.setup_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called <strong>before</strong> self.__init__ is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.trait_events">
+<em class="property">classmethod </em><code class="sig-name descname">trait_events</code><span class="sig-paren">(</span><em class="sig-param">name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.trait_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of all the event handlers of this class.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name: str (default: None)</strong></p>
+<blockquote>
+<div><p>The name of a trait of this class. If name is <code class="docutils literal notranslate"><span class="pre">None</span></code> then all
+the event handlers of this class will be returned instead.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The event handlers associated with a trait name, or all event handlers.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.trait_metadata">
+<code class="sig-name descname">trait_metadata</code><span class="sig-paren">(</span><em class="sig-param">traitname</em>, <em class="sig-param">key</em>, <em class="sig-param">default=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.trait_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get metadata values for trait by key.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.trait_names">
+<code class="sig-name descname">trait_names</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.trait_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of all the names of this class’ traits.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.traits">
+<code class="sig-name descname">traits</code><span class="sig-paren">(</span><em class="sig-param">**metadata</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.traits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of all the traits of this class.  The dictionary
+is keyed on the name and the values are the TraitType objects.</p>
+<p>The TraitTypes returned don’t know anything about the values
+that the various HasTrait’s instances are holding.</p>
+<p>The metadata kwargs allow functions to be passed in which
+filter traits based on metadata values.  The functions should
+take a single value as an argument and return a boolean.  If
+any function returns False, then the trait is not included in
+the output.  If a metadata key doesn’t exist, None will be passed
+to the function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.unobserve">
+<code class="sig-name descname">unobserve</code><span class="sig-paren">(</span><em class="sig-param">handler</em>, <em class="sig-param">names=traitlets.All</em>, <em class="sig-param">type='change'</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.unobserve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a trait change handler.</p>
+<p>This is used to unregister handlers to trait change notifications.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handler</strong> : callable</p>
+<blockquote>
+<div><p>The callable called when a trait attribute changes.</p>
+</div></blockquote>
+<p><strong>names</strong> : list, str, All (default: All)</p>
+<blockquote>
+<div><p>The names of the traits for which the specified handler should be
+uninstalled. If names is All, the specified handler is uninstalled
+from the list of notifiers corresponding to all changes.</p>
+</div></blockquote>
+<p><strong>type</strong> : str or All (default: ‘change’)</p>
+<blockquote>
+<div><p>The type of notification to filter by. If All, the specified handler
+is uninstalled from the list of notifiers corresponding to all types.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.unobserve_all">
+<code class="sig-name descname">unobserve_all</code><span class="sig-paren">(</span><em class="sig-param">name=traitlets.All</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.unobserve_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove trait change handlers of any type for the specified name.
+If name is not specified, removes all trait notifiers.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.learning.Rutils.lasso_glmnet.wide_ok">
+<code class="sig-name descname">wide_ok</code><em class="property"> = True</em><a class="headerlink" href="#selectinf.learning.Rutils.lasso_glmnet.wide_ok" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.learning.Rutils.cv_glmnet_lam">
+<code class="sig-prename descclassname">selectinf.learning.Rutils.</code><code class="sig-name descname">cv_glmnet_lam</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">seed=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#cv_glmnet_lam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.cv_glmnet_lam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Some calculations that can be reused by methods:</p>
+<p>lambda.min, lambda.1se, lambda.theory and Reid et al. estimate of noise</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.learning.Rutils.factor_knockoffs">
+<code class="sig-prename descclassname">selectinf.learning.Rutils.</code><code class="sig-name descname">factor_knockoffs</code><span class="sig-paren">(</span><em class="sig-param">feature_cov</em>, <em class="sig-param">method='asdp'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#factor_knockoffs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.factor_knockoffs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.learning.Rutils.null_print">
+<code class="sig-prename descclassname">selectinf.learning.Rutils.</code><code class="sig-name descname">null_print</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/Rutils.html#null_print"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.Rutils.null_print" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.learning.core.html" class="btn btn-neutral float-right" title="learning.core" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.learning.Rfitters.html" class="btn btn-neutral float-left" title="learning.Rfitters" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

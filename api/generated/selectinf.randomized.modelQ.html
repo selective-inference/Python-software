@@ -1,0 +1,536 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="randomized.query" href="selectinf.randomized.query.html" />
+    <link rel="prev" title="randomized.lasso" href="selectinf.randomized.lasso.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">randomized.modelQ</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-randomized-modelq">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.modelQ</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#modelq"><code class="xref py py-class docutils literal notranslate"><span class="pre">modelQ</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.randomized.modelQ.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="randomized-modelq">
+<h1>randomized.modelQ<a class="headerlink" href="#randomized-modelq" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-randomized-modelq">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.modelQ</span></code><a class="headerlink" href="#module-randomized-modelq" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.randomized.modelQ</span></code>:</p>
+digraph inheritance6f66c09682 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;randomized.modelQ.modelQ&quot; [URL=&quot;#selectinf.randomized.modelQ.modelQ&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A class for the randomized LASSO for post-selection inference.&quot;];
+  &quot;randomized.query.gaussian_query&quot; -&gt; &quot;randomized.modelQ.modelQ&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.query.gaussian_query&quot; [URL=&quot;selectinf.randomized.query.html#selectinf.randomized.query.gaussian_query&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;randomized.query.query&quot; -&gt; &quot;randomized.query.gaussian_query&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.query.query&quot; [URL=&quot;selectinf.randomized.query.html#selectinf.randomized.query.query&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;This class is the base of randomized selective inference&quot;];
+}
+<span class="target" id="module-selectinf.randomized.modelQ"></span></div>
+<div class="section" id="modelq">
+<h2><a class="reference internal" href="#selectinf.randomized.modelQ.modelQ" title="selectinf.randomized.modelQ.modelQ"><code class="xref py py-class docutils literal notranslate"><span class="pre">modelQ</span></code></a><a class="headerlink" href="#modelq" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="selectinf.randomized.modelQ.modelQ">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.modelQ.</code><code class="sig-name descname">modelQ</code><span class="sig-paren">(</span><em class="sig-param">Q</em>, <em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">ridge_term=None</em>, <em class="sig-param">randomizer_scale=None</em>, <em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/modelQ.html#modelQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="selectinf.randomized.query.html#selectinf.randomized.query.gaussian_query" title="selectinf.randomized.query.gaussian_query"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.randomized.query.gaussian_query</span></code></a></p>
+<p>A class for the randomized LASSO for post-selection inference.
+The problem solved is</p>
+<div class="math notranslate nohighlight">
+\[\text{minimize}_{\beta} -X^Ty + \frac{1}{2} \beta^TQ\beta + 
+    \sum_{i=1}^p \lambda_i |\beta_i\| - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2\]</div>
+<p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is <cite>lam</cite>, <span class="math notranslate nohighlight">\(\omega\)</span> is a randomization generated below
+and the last term is a small ridge penalty. Each static method
+forms <span class="math notranslate nohighlight">\(\ell\)</span> as well as the <span class="math notranslate nohighlight">\(\ell_1\)</span> penalty. The generic class
+forms the remaining two terms in the objective.</p>
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">Q</em>, <em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">feature_weights</em>, <em class="sig-param">ridge_term=None</em>, <em class="sig-param">randomizer_scale=None</em>, <em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/modelQ.html#modelQ.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new post-selection object for the LASSO problem</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>loglike</strong> : <cite>regreg.smooth.glm.glm</cite></p>
+<blockquote>
+<div><p>A (negative) log-likelihood as implemented in <cite>regreg</cite>.</p>
+</div></blockquote>
+<p><strong>feature_weights</strong> : np.ndarray</p>
+<blockquote>
+<div><p>Feature weights for L-1 penalty. If a float,
+it is brodcast to all features.</p>
+</div></blockquote>
+<p><strong>ridge_term</strong> : float</p>
+<blockquote>
+<div><p>How big a ridge term to add?</p>
+</div></blockquote>
+<p><strong>randomizer_scale</strong> : float</p>
+<blockquote>
+<div><p>Scale for IID components of randomization.</p>
+</div></blockquote>
+<p><strong>perturb</strong> : np.ndarray</p>
+<blockquote>
+<div><p>Random perturbation subtracted as a linear
+term in the objective function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-12}</em>, <em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/modelQ.html#modelQ.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the randomized lasso using <cite>regreg</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>solve_args</strong> : keyword args</p>
+<blockquote>
+<div><p>Passed to <cite>regreg.problems.simple_problem.solve</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>signs</strong> : np.float</p>
+<blockquote>
+<div><p>Support and non-zero signs of randomized lasso solution.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.summary">
+<code class="sig-name descname">summary</code><span class="sig-paren">(</span><em class="sig-param">target='selected'</em>, <em class="sig-param">features=None</em>, <em class="sig-param">parameter=None</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">ndraw=10000</em>, <em class="sig-param">burnin=2000</em>, <em class="sig-param">compute_intervals=False</em>, <em class="sig-param">dispersion=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/modelQ.html#modelQ.summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce p-values and confidence intervals for targets
+of model including selected features</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>target</strong> : one of [‘selected’, ‘full’]</p>
+<p><strong>features</strong> : np.bool</p>
+<blockquote>
+<div><p>Binary encoding of which features to use in final
+model and targets.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.array</p>
+<blockquote>
+<div><p>Hypothesized value for parameter – defaults to 0.</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>dispersion</strong> : float (optional)</p>
+<blockquote>
+<div><p>Use a known value for dispersion, or Pearson’s X^2?</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.selective_MLE">
+<code class="sig-name descname">selective_MLE</code><span class="sig-paren">(</span><em class="sig-param">target='selected'</em>, <em class="sig-param">features=None</em>, <em class="sig-param">parameter=None</em>, <em class="sig-param">level=0.9</em>, <em class="sig-param">compute_intervals=False</em>, <em class="sig-param">dispersion=None</em>, <em class="sig-param">solve_args={'tol': 1e-12}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/modelQ.html#modelQ.selective_MLE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.selective_MLE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>target</strong> : one of [‘selected’, ‘full’]</p>
+<p><strong>features</strong> : np.bool</p>
+<blockquote>
+<div><p>Binary encoding of which features to use in final
+model and targets.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.array</p>
+<blockquote>
+<div><p>Hypothesized value for parameter – defaults to 0.</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>dispersion</strong> : float (optional)</p>
+<blockquote>
+<div><p>Use a known value for dispersion, or Pearson’s X^2?</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.selected_targets">
+<code class="sig-name descname">selected_targets</code><span class="sig-paren">(</span><em class="sig-param">features=None</em>, <em class="sig-param">dispersion=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/modelQ.html#modelQ.selected_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.selected_targets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.full_targets">
+<code class="sig-name descname">full_targets</code><span class="sig-paren">(</span><em class="sig-param">features=None</em>, <em class="sig-param">dispersion=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/modelQ.html#modelQ.full_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.full_targets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.get_sampler">
+<code class="sig-name descname">get_sampler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.get_sampler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.randomize">
+<code class="sig-name descname">randomize</code><span class="sig-paren">(</span><em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.randomize" title="Permalink to this definition">¶</a></dt>
+<dd><p>The actual randomization step.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>perturb</strong> : ndarray, optional</p>
+<blockquote>
+<div><p>Value of randomization vector, an instance of <span class="math notranslate nohighlight">\(\omega\)</span>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.sampler">
+<em class="property">property </em><code class="sig-name descname">sampler</code><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sampler of optimization (augmented) variables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.set_sampler">
+<code class="sig-name descname">set_sampler</code><span class="sig-paren">(</span><em class="sig-param">sampler</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.set_sampler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.setup_sampler">
+<code class="sig-name descname">setup_sampler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.setup_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup query to prepare for sampling.
+Should set a few key attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>observed_score_state</p></li>
+<li><p>observed_opt_state</p></li>
+<li><p>opt_transform</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.modelQ.modelQ.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.modelQ.modelQ.useC">
+<code class="sig-name descname">useC</code><em class="property"> = True</em><a class="headerlink" href="#selectinf.randomized.modelQ.modelQ.useC" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.randomized.query.html" class="btn btn-neutral float-right" title="randomized.query" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.randomized.lasso.html" class="btn btn-neutral float-left" title="randomized.lasso" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

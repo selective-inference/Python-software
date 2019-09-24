@@ -1,0 +1,394 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.registration.scripting</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A scripting wrapper around 4D registration (SpaceTimeRealign)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">os.path</span> <span class="k">as</span> <span class="nn">op</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="k">as</span> <span class="nn">npl</span>
+
+<span class="kn">import</span> <span class="nn">nibabel</span> <span class="k">as</span> <span class="nn">nib</span>
+<span class="kn">from</span> <span class="nn">nibabel.filename_parser</span> <span class="k">import</span> <span class="n">splitext_addext</span>
+<span class="kn">import</span> <span class="nn">nibabel.eulerangles</span> <span class="k">as</span> <span class="nn">euler</span>
+<span class="kn">from</span> <span class="nn">nibabel.optpkg</span> <span class="k">import</span> <span class="n">optional_package</span>
+<span class="n">matplotlib</span><span class="p">,</span> <span class="n">HAVE_MPL</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">optional_package</span><span class="p">(</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.groupwise_registration</span> <span class="k">import</span> <span class="n">SpaceTimeRealign</span>
+<span class="kn">import</span> <span class="nn">nipy.algorithms.slicetiming</span> <span class="k">as</span> <span class="nn">st</span>
+<span class="kn">from</span> <span class="nn">nipy.io.api</span> <span class="k">import</span> <span class="n">save_image</span>
+
+<span class="n">timefuncs</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">timefuncs</span><span class="o">.</span><span class="n">SLICETIME_FUNCTIONS</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;space_time_realign&quot;</span><span class="p">,</span> <span class="s2">&quot;aff2euler&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="aff2euler"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.scripting.html#nipy.algorithms.registration.scripting.aff2euler">[docs]</a><span class="k">def</span> <span class="nf">aff2euler</span><span class="p">(</span><span class="n">affine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute Euler angles from 4 x 4 `affine`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    affine : 4 by 4 array</span>
+<span class="sd">        An affine transformation matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    The Euler angles associated with the affine</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">euler</span><span class="o">.</span><span class="n">mat2euler</span><span class="p">(</span><span class="n">aff2rot_zooms</span><span class="p">(</span><span class="n">affine</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="aff2rot_zooms"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.scripting.html#nipy.algorithms.registration.scripting.aff2rot_zooms">[docs]</a><span class="k">def</span> <span class="nf">aff2rot_zooms</span><span class="p">(</span><span class="n">affine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a rotation matrix and zooms from 4 x 4 `affine`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    affine : 4 by 4 array</span>
+<span class="sd">        An affine transformation matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    R: 3 by 3 array</span>
+<span class="sd">       A rotation matrix in 3D</span>
+
+<span class="sd">    zooms: length 3 1-d array</span>
+<span class="sd">         Vector with voxel sizes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">RZS</span> <span class="o">=</span> <span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">zooms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">RZS</span> <span class="o">*</span> <span class="n">RZS</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">RS</span> <span class="o">=</span> <span class="n">RZS</span> <span class="o">/</span> <span class="n">zooms</span>
+    <span class="c1"># Adjust zooms to make RS correspond (below) to a true</span>
+    <span class="c1"># rotation matrix.</span>
+    <span class="k">if</span> <span class="n">npl</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">RS</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">zooms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">RS</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="c1"># retrieve rotation matrix from RS with polar decomposition.</span>
+    <span class="c1"># Discard shears</span>
+    <span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">Qs</span> <span class="o">=</span> <span class="n">npl</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">RS</span><span class="p">)</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">Qs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">R</span><span class="p">,</span> <span class="n">zooms</span></div>
+
+
+<div class="viewcode-block" id="space_time_realign"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.scripting.html#nipy.algorithms.registration.scripting.space_time_realign">[docs]</a><span class="k">def</span> <span class="nf">space_time_realign</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">slice_order</span><span class="o">=</span><span class="s1">&#39;descending&#39;</span><span class="p">,</span> <span class="n">slice_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                       <span class="n">slice_dir</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">apply</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">make_figure</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">out_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a scripting interface to `nipy.algorithms.registration.SpaceTimeRealign` </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input : str or list</span>
+<span class="sd">        A full path to a file-name (4D nifti time-series) , or to a directory</span>
+<span class="sd">        containing 4D nifti time-series, or a list of full-paths to files.</span>
+<span class="sd">    tr : float</span>
+<span class="sd">        The repetition time</span>
+<span class="sd">    slice_order : str (optional)</span>
+<span class="sd">        This is the order of slice-times in the acquisition. This is used as a</span>
+<span class="sd">        key into the ``SLICETIME_FUNCTIONS`` dictionary from</span>
+<span class="sd">        :mod:`nipy.algorithms.slicetiming.timefuncs`. Default: &#39;descending&#39;.</span>
+<span class="sd">    slice_dim : int (optional) </span>
+<span class="sd">        Denotes the axis in `images` that is the slice axis.  In a 4D image,</span>
+<span class="sd">        this will often be axis = 2 (default).</span>
+<span class="sd">    slice_dir : int (optional)</span>
+<span class="sd">        1 if the slices were acquired slice 0 first (default), slice -1 last,</span>
+<span class="sd">        or -1 if acquire slice -1 first, slice 0 last.</span>
+<span class="sd">    apply : bool (optional)</span>
+<span class="sd">        Whether to apply the transformation and produce an output. Default:</span>
+<span class="sd">        True. </span>
+<span class="sd">    make_figure : bool (optional)</span>
+<span class="sd">        Whether to generate a .png figure with the parameters across scans.</span>
+<span class="sd">    out_name : bool (optional)</span>
+<span class="sd">        Specify an output location (full path) for the files that are</span>
+<span class="sd">        generated. Default: generate files in the path of the inputs (with an</span>
+<span class="sd">        `_mc` suffix added to the file-names.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    transforms : ndarray</span>
+<span class="sd">        An (n_times_points,) shaped array containing </span>
+<span class="sd">       `nipy.algorithms.registration.affine.Rigid` class instances for each time</span>
+<span class="sd">        point in the time-series. These can be used as affine transforms by</span>
+<span class="sd">        referring to their `.as_affine` attribute.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">make_figure</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">HAVE_MPL</span><span class="p">:</span>
+            <span class="n">e_s</span> <span class="o">=</span><span class="s2">&quot;You need to have matplotlib installed to run this function&quot;</span>
+            <span class="n">e_s</span> <span class="o">+=</span> <span class="s2">&quot; with `make_figure` set to `True`&quot;</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">e_s</span><span class="p">)</span>
+
+    <span class="c1"># If we got only a single file, we motion correct that one:</span>
+    <span class="k">if</span> <span class="n">op</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.nii&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">input</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.nii.gz&#39;</span><span class="p">)):</span>
+            <span class="n">e_s</span> <span class="o">=</span> <span class="s2">&quot;Input needs to be a nifti file (&#39;.nii&#39; or &#39;.nii.gz&#39;&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">e_s</span><span class="p">)</span>
+        <span class="n">fnames</span> <span class="o">=</span> <span class="p">[</span><span class="nb">input</span><span class="p">]</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="c1"># If this is a full-path to a directory containing files, it&#39;s still a</span>
+    <span class="c1"># string: </span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">list_of_files</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="n">fnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">list_of_files</span><span class="p">)</span>
+                  <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.nii&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.nii.gz&#39;</span><span class="p">))</span> <span class="p">]</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="p">[</span><span class="n">nib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">fnames</span><span class="p">]</span>
+    <span class="c1"># Assume that it&#39;s a list of full-paths to files:</span>
+    <span class="k">else</span><span class="p">:</span>
+       <span class="nb">input</span> <span class="o">=</span> <span class="p">[</span><span class="n">nib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">]</span>
+
+    <span class="n">slice_times</span> <span class="o">=</span> <span class="n">timefuncs</span><span class="p">[</span><span class="n">slice_order</span><span class="p">]</span>
+    <span class="n">slice_info</span> <span class="o">=</span> <span class="p">[</span><span class="n">slice_dim</span><span class="p">,</span>
+                  <span class="n">slice_dir</span><span class="p">]</span>
+
+    <span class="n">reggy</span> <span class="o">=</span> <span class="n">SpaceTimeRealign</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span>
+                             <span class="n">tr</span><span class="p">,</span>
+                             <span class="n">slice_times</span><span class="p">,</span>
+                             <span class="n">slice_info</span><span class="p">)</span>
+
+    <span class="n">reggy</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">align_runs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># We now have the transformation parameters in here:</span>
+    <span class="n">transforms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reggy</span><span class="o">.</span><span class="n">_transforms</span><span class="p">))</span>
+    <span class="n">rot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">rotation</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">transforms</span><span class="p">])</span>
+    <span class="n">trans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">translation</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">transforms</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">apply</span><span class="p">:</span>
+        <span class="n">new_reggy</span> <span class="o">=</span> <span class="n">reggy</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">align_runs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">run_idx</span><span class="p">,</span> <span class="n">new_im</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_reggy</span><span class="p">):</span>
+            <span class="c1"># Fix output TR - it was probably lost in the image realign step</span>
+            <span class="k">assert</span> <span class="n">new_im</span><span class="o">.</span><span class="n">affine</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+            <span class="n">new_im</span><span class="o">.</span><span class="n">affine</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">new_im</span><span class="o">.</span><span class="n">affine</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+            <span class="c1"># Save it out to a &#39;.nii.gz&#39; file:</span>
+            <span class="n">froot</span><span class="p">,</span> <span class="n">ext</span><span class="p">,</span> <span class="n">trail_ext</span> <span class="o">=</span> <span class="n">splitext_addext</span><span class="p">(</span><span class="n">fnames</span><span class="p">[</span><span class="n">run_idx</span><span class="p">])</span>
+            <span class="n">path</span><span class="p">,</span> <span class="n">fname</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">froot</span><span class="p">)</span>
+            <span class="c1"># We retain the file-name adding &#39;_mc&#39; regardless of where it&#39;s</span>
+            <span class="c1"># saved</span>
+            <span class="n">new_path</span> <span class="o">=</span> <span class="n">path</span> <span class="k">if</span> <span class="n">out_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">out_name</span>
+            <span class="n">save_image</span><span class="p">(</span><span class="n">new_im</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_path</span><span class="p">,</span> <span class="n">fname</span> <span class="o">+</span> <span class="s1">&#39;_mc.nii.gz&#39;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">make_figure</span><span class="p">:</span>
+        <span class="c1"># Delay MPL plotting import to latest moment to avoid errors trying</span>
+        <span class="c1"># import the default MPL backend (such as tkinter, which may not be</span>
+        <span class="c1"># installed). See: https://github.com/nipy/nipy/issues/414</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="n">figure</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">figure</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">([</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rot</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time (TR)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Translation (mm)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">trans</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time (TR)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Rotation (radians)&#39;</span><span class="p">)</span>
+        <span class="n">figure</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">fnames</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">],</span>
+                                    <span class="s1">&#39;mc_params.png&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">transforms</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

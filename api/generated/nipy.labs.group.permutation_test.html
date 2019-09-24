@@ -1,0 +1,851 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.group.permutation_test.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-group-permutation-test">
+<h1>labs.group.permutation_test<a class="headerlink" href="#labs-group-permutation-test" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-labs-group-permutation-test">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.group.permutation_test</span></code><a class="headerlink" href="#module-labs-group-permutation-test" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.labs.group.permutation_test</span></code>:</p>
+digraph inheritance4c1d2411c5 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;group.permutation_test.permutation_test&quot; [URL=&quot;#nipy.labs.group.permutation_test.permutation_test&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;This generic permutation test class contains the calibration method&quot;];
+  &quot;group.permutation_test.permutation_test_onesample&quot; [URL=&quot;#nipy.labs.group.permutation_test.permutation_test_onesample&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class derived from the generic permutation_test class.&quot;];
+  &quot;group.permutation_test.permutation_test&quot; -&gt; &quot;group.permutation_test.permutation_test_onesample&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;group.permutation_test.permutation_test_onesample_graph&quot; [URL=&quot;#nipy.labs.group.permutation_test.permutation_test_onesample_graph&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class derived from the generic permutation_test class.&quot;];
+  &quot;group.permutation_test.permutation_test&quot; -&gt; &quot;group.permutation_test.permutation_test_onesample_graph&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;group.permutation_test.permutation_test_twosample&quot; [URL=&quot;#nipy.labs.group.permutation_test.permutation_test_twosample&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class derived from the generic permutation_test class.&quot;];
+  &quot;group.permutation_test.permutation_test&quot; -&gt; &quot;group.permutation_test.permutation_test_twosample&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.labs.group.permutation_test"></span><p>One and two sample permutation tests.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="permutation-test">
+<h3><a class="reference internal" href="#nipy.labs.group.permutation_test.permutation_test" title="nipy.labs.group.permutation_test.permutation_test"><code class="xref py py-class docutils literal notranslate"><span class="pre">permutation_test</span></code></a><a class="headerlink" href="#permutation-test" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.group.permutation_test.permutation_test">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">permutation_test</code><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This generic permutation test class contains the calibration method
+which is common to the derived classes permutation_test_onesample and
+permutation_test_twosample (as well as other common methods)</p>
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">$self</em>, <em class="sig-param">/</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test.calibrate">
+<code class="sig-name descname">calibrate</code><span class="sig-paren">(</span><em class="sig-param">nperms=10000, clusters=None, cluster_stats=['size', 'Fisher'], regions=None, region_stats=['Fisher'], verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test.calibrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test.calibrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calibrate cluster and region summary statistics using permutation test</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nperms</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of random permutations generated.
+Exhaustive permutations are used only if nperms=None,
+or exceeds total number of possible permutations</p>
+</div></blockquote>
+<p><strong>clusters</strong> : list [(thresh1,diam1),(thresh2,diam2),…], optional</p>
+<blockquote>
+<div><p>List of cluster extraction pairs: (thresh,diam).  <em>thresh</em> provides
+T values threshold, <em>diam</em> is the maximum cluster diameter, in
+voxels.  Using <a href="#id1"><span class="problematic" id="id2">*</span></a>diam*==None yields classical suprathreshold
+clusters.</p>
+</div></blockquote>
+<p><strong>cluster_stats</strong> : list [stat1,…], optional</p>
+<blockquote>
+<div><p>List of cluster summary statistics id (either ‘size’ or ‘Fisher’)</p>
+</div></blockquote>
+<p><strong>regions</strong> : list [Labels1,Labels2,…]</p>
+<blockquote>
+<div><p>List of region labels arrays, of size (p,) where p is the number
+of voxels</p>
+</div></blockquote>
+<p><strong>region_stats</strong> : list [stat1,…], optional</p>
+<blockquote>
+<div><p>List of cluster summary statistics id (only ‘Fisher’ supported
+for now)</p>
+</div></blockquote>
+<p><strong>verbose</strong> : boolean, optional</p>
+<blockquote>
+<div><p>“Chatterbox” mode switch</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>voxel_results</strong> : dict</p>
+<blockquote>
+<div><p>A dictionary containing the following keys: <code class="docutils literal notranslate"><span class="pre">p_values</span></code> (p,)
+Uncorrected p-values.``Corr_p_values`` (p,) Corrected p-values,
+computed by the Tmax procedure.  <code class="docutils literal notranslate"><span class="pre">perm_maxT_values</span></code> (nperms)
+values of the maximum statistic under permutation.</p>
+</div></blockquote>
+<p><strong>cluster_results</strong> : list [results1,results2,…]</p>
+<blockquote>
+<div><p>List of permutation test results for each cluster extraction pair.
+These are dictionaries with the following keys “thresh”, “diam”,
+“labels”, “expected_voxels_per_cluster”,
+“expected_number_of_clusters”, and “peak_XYZ” if XYZ field is
+nonempty and for each summary statistic id “S”: “size_values”,
+“size_p_values”, “S_Corr_p_values”, “perm_size_values”,
+“perm_maxsize_values”</p>
+</div></blockquote>
+<p>region_results :list [results1,results2,…]</p>
+<blockquote>
+<div><p>List of permutation test results for each region labels arrays.
+These are dictionaries with the following keys: “label_values”,
+“peak_XYZ” (if XYZ field nonempty) and for each summary statistic
+id “S”: “size_values”, “size_p_values”, “perm_size_values”,
+“perm_maxsize_values”</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test.height_threshold">
+<code class="sig-name descname">height_threshold</code><span class="sig-paren">(</span><em class="sig-param">pval</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test.height_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test.height_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the uniform height threshold matching a given
+permutation-based P-value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test.pvalue">
+<code class="sig-name descname">pvalue</code><span class="sig-paren">(</span><em class="sig-param">Tvalues=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test.pvalue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test.pvalue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return uncorrected voxel-level pseudo p-values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test.zscore">
+<code class="sig-name descname">zscore</code><span class="sig-paren">(</span><em class="sig-param">Tvalues=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test.zscore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test.zscore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return z score corresponding to the uncorrected
+voxel-level pseudo p-value.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="permutation-test-onesample">
+<h3><a class="reference internal" href="#nipy.labs.group.permutation_test.permutation_test_onesample" title="nipy.labs.group.permutation_test.permutation_test_onesample"><code class="xref py py-class docutils literal notranslate"><span class="pre">permutation_test_onesample</span></code></a><a class="headerlink" href="#permutation-test-onesample" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">permutation_test_onesample</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">XYZ</em>, <em class="sig-param">axis=0</em>, <em class="sig-param">vardata=None</em>, <em class="sig-param">stat_id='student'</em>, <em class="sig-param">base=0.0</em>, <em class="sig-param">niter=5</em>, <em class="sig-param">ndraws=100000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test_onesample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.group.permutation_test.permutation_test" title="nipy.labs.group.permutation_test.permutation_test"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.group.permutation_test.permutation_test</span></code></a></p>
+<p>Class derived from the generic permutation_test class.
+Inherits the calibrate method</p>
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">XYZ</em>, <em class="sig-param">axis=0</em>, <em class="sig-param">vardata=None</em>, <em class="sig-param">stat_id='student'</em>, <em class="sig-param">base=0.0</em>, <em class="sig-param">niter=5</em>, <em class="sig-param">ndraws=100000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test_onesample.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize permutation_test_onesample instance,
+compute statistic values in each voxel and under permutation
+In:  data                data array</p>
+<blockquote>
+<div><dl class="simple">
+<dt>XYZ                 voxels coordinates</dt><dd><p>axis    &lt;int&gt;       Subject axis in data</p>
+</dd>
+<dt>vardata             variance (same shape as data)</dt><dd><p>optional (if None, mfx statistics cannot be used)</p>
+</dd>
+<dt>stat_id &lt;char&gt;      choice of test statistic</dt><dd><p>(see onesample.stats for a list of possible stats)</p>
+</dd>
+</dl>
+<p>base    &lt;float&gt;     mean signal under H0
+niter   &lt;int&gt;       number of iterations of EM algorithm
+ndraws  &lt;int&gt;       Number of generated random t values</p>
+</div></blockquote>
+<dl>
+<dt>Out:</dt><dd><p>self.Tvalues        voxelwise test statistic values
+self.random_Tvalues sorted statistic values in random voxels and under random</p>
+<blockquote>
+<div><p>sign permutation</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample.calibrate">
+<code class="sig-name descname">calibrate</code><span class="sig-paren">(</span><em class="sig-param">nperms=10000, clusters=None, cluster_stats=['size', 'Fisher'], regions=None, region_stats=['Fisher'], verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample.calibrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calibrate cluster and region summary statistics using permutation test</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nperms</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of random permutations generated.
+Exhaustive permutations are used only if nperms=None,
+or exceeds total number of possible permutations</p>
+</div></blockquote>
+<p><strong>clusters</strong> : list [(thresh1,diam1),(thresh2,diam2),…], optional</p>
+<blockquote>
+<div><p>List of cluster extraction pairs: (thresh,diam).  <em>thresh</em> provides
+T values threshold, <em>diam</em> is the maximum cluster diameter, in
+voxels.  Using <a href="#id3"><span class="problematic" id="id4">*</span></a>diam*==None yields classical suprathreshold
+clusters.</p>
+</div></blockquote>
+<p><strong>cluster_stats</strong> : list [stat1,…], optional</p>
+<blockquote>
+<div><p>List of cluster summary statistics id (either ‘size’ or ‘Fisher’)</p>
+</div></blockquote>
+<p><strong>regions</strong> : list [Labels1,Labels2,…]</p>
+<blockquote>
+<div><p>List of region labels arrays, of size (p,) where p is the number
+of voxels</p>
+</div></blockquote>
+<p><strong>region_stats</strong> : list [stat1,…], optional</p>
+<blockquote>
+<div><p>List of cluster summary statistics id (only ‘Fisher’ supported
+for now)</p>
+</div></blockquote>
+<p><strong>verbose</strong> : boolean, optional</p>
+<blockquote>
+<div><p>“Chatterbox” mode switch</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>voxel_results</strong> : dict</p>
+<blockquote>
+<div><p>A dictionary containing the following keys: <code class="docutils literal notranslate"><span class="pre">p_values</span></code> (p,)
+Uncorrected p-values.``Corr_p_values`` (p,) Corrected p-values,
+computed by the Tmax procedure.  <code class="docutils literal notranslate"><span class="pre">perm_maxT_values</span></code> (nperms)
+values of the maximum statistic under permutation.</p>
+</div></blockquote>
+<p><strong>cluster_results</strong> : list [results1,results2,…]</p>
+<blockquote>
+<div><p>List of permutation test results for each cluster extraction pair.
+These are dictionaries with the following keys “thresh”, “diam”,
+“labels”, “expected_voxels_per_cluster”,
+“expected_number_of_clusters”, and “peak_XYZ” if XYZ field is
+nonempty and for each summary statistic id “S”: “size_values”,
+“size_p_values”, “S_Corr_p_values”, “perm_size_values”,
+“perm_maxsize_values”</p>
+</div></blockquote>
+<p>region_results :list [results1,results2,…]</p>
+<blockquote>
+<div><p>List of permutation test results for each region labels arrays.
+These are dictionaries with the following keys: “label_values”,
+“peak_XYZ” (if XYZ field nonempty) and for each summary statistic
+id “S”: “size_values”, “size_p_values”, “perm_size_values”,
+“perm_maxsize_values”</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample.height_threshold">
+<code class="sig-name descname">height_threshold</code><span class="sig-paren">(</span><em class="sig-param">pval</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample.height_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the uniform height threshold matching a given
+permutation-based P-value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample.pvalue">
+<code class="sig-name descname">pvalue</code><span class="sig-paren">(</span><em class="sig-param">Tvalues=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample.pvalue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return uncorrected voxel-level pseudo p-values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample.zscore">
+<code class="sig-name descname">zscore</code><span class="sig-paren">(</span><em class="sig-param">Tvalues=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample.zscore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return z score corresponding to the uncorrected
+voxel-level pseudo p-value.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="permutation-test-onesample-graph">
+<h3><a class="reference internal" href="#nipy.labs.group.permutation_test.permutation_test_onesample_graph" title="nipy.labs.group.permutation_test.permutation_test_onesample_graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">permutation_test_onesample_graph</span></code></a><a class="headerlink" href="#permutation-test-onesample-graph" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample_graph">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">permutation_test_onesample_graph</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">G</em>, <em class="sig-param">axis=0</em>, <em class="sig-param">vardata=None</em>, <em class="sig-param">stat_id='student'</em>, <em class="sig-param">base=0.0</em>, <em class="sig-param">niter=5</em>, <em class="sig-param">ndraws=100000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test_onesample_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.group.permutation_test.permutation_test" title="nipy.labs.group.permutation_test.permutation_test"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.group.permutation_test.permutation_test</span></code></a></p>
+<p>Class derived from the generic permutation_test class.
+Inherits the calibrate method</p>
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample_graph.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">G</em>, <em class="sig-param">axis=0</em>, <em class="sig-param">vardata=None</em>, <em class="sig-param">stat_id='student'</em>, <em class="sig-param">base=0.0</em>, <em class="sig-param">niter=5</em>, <em class="sig-param">ndraws=100000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test_onesample_graph.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample_graph.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize permutation_test_onesample instance,
+compute statistic values in each voxel and under permutation
+In:  data                data array</p>
+<blockquote>
+<div><p>G                   weighted graph (each vertex corresponds to a voxel)
+axis    &lt;int&gt;       Subject axis in data
+vardata             variance (same shape as data)</p>
+<blockquote>
+<div><p>optional (if None, mfx statistics cannot be used)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>stat_id &lt;char&gt;      choice of test statistic</dt><dd><p>(see onesample.stats for a list of possible stats)</p>
+</dd>
+</dl>
+<p>base    &lt;float&gt;     mean signal under H0
+niter   &lt;int&gt;       number of iterations of EM algorithm
+ndraws  &lt;int&gt;       Number of generated random t values</p>
+</div></blockquote>
+<dl>
+<dt>Out:</dt><dd><p>self.Tvalues        voxelwise test statistic values
+self.random_Tvalues sorted statistic values in random voxels and under random</p>
+<blockquote>
+<div><p>sign permutation</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample_graph.calibrate">
+<code class="sig-name descname">calibrate</code><span class="sig-paren">(</span><em class="sig-param">nperms=10000, clusters=None, cluster_stats=['size', 'Fisher'], regions=None, region_stats=['Fisher'], verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample_graph.calibrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calibrate cluster and region summary statistics using permutation test</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nperms</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of random permutations generated.
+Exhaustive permutations are used only if nperms=None,
+or exceeds total number of possible permutations</p>
+</div></blockquote>
+<p><strong>clusters</strong> : list [(thresh1,diam1),(thresh2,diam2),…], optional</p>
+<blockquote>
+<div><p>List of cluster extraction pairs: (thresh,diam).  <em>thresh</em> provides
+T values threshold, <em>diam</em> is the maximum cluster diameter, in
+voxels.  Using <a href="#id5"><span class="problematic" id="id6">*</span></a>diam*==None yields classical suprathreshold
+clusters.</p>
+</div></blockquote>
+<p><strong>cluster_stats</strong> : list [stat1,…], optional</p>
+<blockquote>
+<div><p>List of cluster summary statistics id (either ‘size’ or ‘Fisher’)</p>
+</div></blockquote>
+<p><strong>regions</strong> : list [Labels1,Labels2,…]</p>
+<blockquote>
+<div><p>List of region labels arrays, of size (p,) where p is the number
+of voxels</p>
+</div></blockquote>
+<p><strong>region_stats</strong> : list [stat1,…], optional</p>
+<blockquote>
+<div><p>List of cluster summary statistics id (only ‘Fisher’ supported
+for now)</p>
+</div></blockquote>
+<p><strong>verbose</strong> : boolean, optional</p>
+<blockquote>
+<div><p>“Chatterbox” mode switch</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>voxel_results</strong> : dict</p>
+<blockquote>
+<div><p>A dictionary containing the following keys: <code class="docutils literal notranslate"><span class="pre">p_values</span></code> (p,)
+Uncorrected p-values.``Corr_p_values`` (p,) Corrected p-values,
+computed by the Tmax procedure.  <code class="docutils literal notranslate"><span class="pre">perm_maxT_values</span></code> (nperms)
+values of the maximum statistic under permutation.</p>
+</div></blockquote>
+<p><strong>cluster_results</strong> : list [results1,results2,…]</p>
+<blockquote>
+<div><p>List of permutation test results for each cluster extraction pair.
+These are dictionaries with the following keys “thresh”, “diam”,
+“labels”, “expected_voxels_per_cluster”,
+“expected_number_of_clusters”, and “peak_XYZ” if XYZ field is
+nonempty and for each summary statistic id “S”: “size_values”,
+“size_p_values”, “S_Corr_p_values”, “perm_size_values”,
+“perm_maxsize_values”</p>
+</div></blockquote>
+<p>region_results :list [results1,results2,…]</p>
+<blockquote>
+<div><p>List of permutation test results for each region labels arrays.
+These are dictionaries with the following keys: “label_values”,
+“peak_XYZ” (if XYZ field nonempty) and for each summary statistic
+id “S”: “size_values”, “size_p_values”, “perm_size_values”,
+“perm_maxsize_values”</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample_graph.height_threshold">
+<code class="sig-name descname">height_threshold</code><span class="sig-paren">(</span><em class="sig-param">pval</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample_graph.height_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the uniform height threshold matching a given
+permutation-based P-value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample_graph.pvalue">
+<code class="sig-name descname">pvalue</code><span class="sig-paren">(</span><em class="sig-param">Tvalues=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample_graph.pvalue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return uncorrected voxel-level pseudo p-values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_onesample_graph.zscore">
+<code class="sig-name descname">zscore</code><span class="sig-paren">(</span><em class="sig-param">Tvalues=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_onesample_graph.zscore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return z score corresponding to the uncorrected
+voxel-level pseudo p-value.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="permutation-test-twosample">
+<h3><a class="reference internal" href="#nipy.labs.group.permutation_test.permutation_test_twosample" title="nipy.labs.group.permutation_test.permutation_test_twosample"><code class="xref py py-class docutils literal notranslate"><span class="pre">permutation_test_twosample</span></code></a><a class="headerlink" href="#permutation-test-twosample" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.group.permutation_test.permutation_test_twosample">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">permutation_test_twosample</code><span class="sig-paren">(</span><em class="sig-param">data1</em>, <em class="sig-param">data2</em>, <em class="sig-param">XYZ</em>, <em class="sig-param">axis=0</em>, <em class="sig-param">vardata1=None</em>, <em class="sig-param">vardata2=None</em>, <em class="sig-param">stat_id='student'</em>, <em class="sig-param">niter=5</em>, <em class="sig-param">ndraws=100000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test_twosample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_twosample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.group.permutation_test.permutation_test" title="nipy.labs.group.permutation_test.permutation_test"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.group.permutation_test.permutation_test</span></code></a></p>
+<p>Class derived from the generic permutation_test class.
+Inherits the calibrate method</p>
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_twosample.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">data1</em>, <em class="sig-param">data2</em>, <em class="sig-param">XYZ</em>, <em class="sig-param">axis=0</em>, <em class="sig-param">vardata1=None</em>, <em class="sig-param">vardata2=None</em>, <em class="sig-param">stat_id='student'</em>, <em class="sig-param">niter=5</em>, <em class="sig-param">ndraws=100000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#permutation_test_twosample.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_twosample.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize permutation_test_twosample instance,
+compute statistic values in each voxel and under permutation
+In:  data1, data2        data arrays</p>
+<blockquote>
+<div><dl class="simple">
+<dt>XYZ                 voxels coordinates</dt><dd><p>axis    &lt;int&gt;       Subject axis in data</p>
+</dd>
+<dt>vardata1, vardata2  variance (same shape as data)</dt><dd><p>optional (if None, mfx statistics cannot be used)</p>
+</dd>
+<dt>stat_id &lt;char&gt;      choice of test statistic</dt><dd><p>(see onesample.stats for a list of possible stats)</p>
+</dd>
+</dl>
+<p>niter   &lt;int&gt;       number of iterations of EM algorithm
+ndraws  &lt;int&gt;       Number of generated random t values</p>
+</div></blockquote>
+<dl>
+<dt>Out:</dt><dd><p>self.Tvalues        voxelwise test statistic values
+self.random_Tvalues sorted statistic values in random voxels and under random</p>
+<blockquote>
+<div><p>sign permutation</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_twosample.calibrate">
+<code class="sig-name descname">calibrate</code><span class="sig-paren">(</span><em class="sig-param">nperms=10000, clusters=None, cluster_stats=['size', 'Fisher'], regions=None, region_stats=['Fisher'], verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_twosample.calibrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calibrate cluster and region summary statistics using permutation test</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nperms</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of random permutations generated.
+Exhaustive permutations are used only if nperms=None,
+or exceeds total number of possible permutations</p>
+</div></blockquote>
+<p><strong>clusters</strong> : list [(thresh1,diam1),(thresh2,diam2),…], optional</p>
+<blockquote>
+<div><p>List of cluster extraction pairs: (thresh,diam).  <em>thresh</em> provides
+T values threshold, <em>diam</em> is the maximum cluster diameter, in
+voxels.  Using <a href="#id7"><span class="problematic" id="id8">*</span></a>diam*==None yields classical suprathreshold
+clusters.</p>
+</div></blockquote>
+<p><strong>cluster_stats</strong> : list [stat1,…], optional</p>
+<blockquote>
+<div><p>List of cluster summary statistics id (either ‘size’ or ‘Fisher’)</p>
+</div></blockquote>
+<p><strong>regions</strong> : list [Labels1,Labels2,…]</p>
+<blockquote>
+<div><p>List of region labels arrays, of size (p,) where p is the number
+of voxels</p>
+</div></blockquote>
+<p><strong>region_stats</strong> : list [stat1,…], optional</p>
+<blockquote>
+<div><p>List of cluster summary statistics id (only ‘Fisher’ supported
+for now)</p>
+</div></blockquote>
+<p><strong>verbose</strong> : boolean, optional</p>
+<blockquote>
+<div><p>“Chatterbox” mode switch</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>voxel_results</strong> : dict</p>
+<blockquote>
+<div><p>A dictionary containing the following keys: <code class="docutils literal notranslate"><span class="pre">p_values</span></code> (p,)
+Uncorrected p-values.``Corr_p_values`` (p,) Corrected p-values,
+computed by the Tmax procedure.  <code class="docutils literal notranslate"><span class="pre">perm_maxT_values</span></code> (nperms)
+values of the maximum statistic under permutation.</p>
+</div></blockquote>
+<p><strong>cluster_results</strong> : list [results1,results2,…]</p>
+<blockquote>
+<div><p>List of permutation test results for each cluster extraction pair.
+These are dictionaries with the following keys “thresh”, “diam”,
+“labels”, “expected_voxels_per_cluster”,
+“expected_number_of_clusters”, and “peak_XYZ” if XYZ field is
+nonempty and for each summary statistic id “S”: “size_values”,
+“size_p_values”, “S_Corr_p_values”, “perm_size_values”,
+“perm_maxsize_values”</p>
+</div></blockquote>
+<p>region_results :list [results1,results2,…]</p>
+<blockquote>
+<div><p>List of permutation test results for each region labels arrays.
+These are dictionaries with the following keys: “label_values”,
+“peak_XYZ” (if XYZ field nonempty) and for each summary statistic
+id “S”: “size_values”, “size_p_values”, “perm_size_values”,
+“perm_maxsize_values”</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_twosample.height_threshold">
+<code class="sig-name descname">height_threshold</code><span class="sig-paren">(</span><em class="sig-param">pval</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_twosample.height_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the uniform height threshold matching a given
+permutation-based P-value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_twosample.pvalue">
+<code class="sig-name descname">pvalue</code><span class="sig-paren">(</span><em class="sig-param">Tvalues=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_twosample.pvalue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return uncorrected voxel-level pseudo p-values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.group.permutation_test.permutation_test_twosample.zscore">
+<code class="sig-name descname">zscore</code><span class="sig-paren">(</span><em class="sig-param">Tvalues=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.group.permutation_test.permutation_test_twosample.zscore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return z score corresponding to the uncorrected
+voxel-level pseudo p-value.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.compute_cluster_stats">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">compute_cluster_stats</code><span class="sig-paren">(</span><em class="sig-param">Tvalues, labels, random_Tvalues, cluster_stats=['size', 'Fisher']</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#compute_cluster_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.compute_cluster_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>size_values, Fisher_values = compute_cluster_stats(Tvalues, labels, random_Tvalues, cluster_stats=[“size”,”Fisher”])
+Compute summary statistics in each cluster
+In:  see permutation_test_onesample class docstring
+Out: size_values   Array of size nclust, or None if “size” not in cluster_stats</p>
+<blockquote>
+<div><p>Fisher_values Array of size nclust, or None if “Fisher” not in cluster_stats</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.compute_region_stat">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">compute_region_stat</code><span class="sig-paren">(</span><em class="sig-param">Tvalues</em>, <em class="sig-param">labels</em>, <em class="sig-param">label_values</em>, <em class="sig-param">random_Tvalues</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#compute_region_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.compute_region_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fisher_values = compute_region_stat(Tvalues, labels, label_values, random_Tvalues)
+Compute summary statistics in each cluster
+In:  see permutation_test_onesample class docstring
+Out: Fisher_values Array of size nregions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.extract_clusters_from_diam">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">extract_clusters_from_diam</code><span class="sig-paren">(</span><em class="sig-param">T</em>, <em class="sig-param">XYZ</em>, <em class="sig-param">th</em>, <em class="sig-param">diam</em>, <em class="sig-param">k=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#extract_clusters_from_diam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.extract_clusters_from_diam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract clusters from a statistical map
+under diameter constraint
+and above given threshold
+In:  T      (p)     statistical map</p>
+<blockquote>
+<div><p>XYZ    (3,p)   voxels coordinates
+th     &lt;float&gt; minimum threshold
+diam   &lt;int&gt;   maximal diameter (in voxels)
+k      &lt;int&gt;   the number of neighbours considered. (6,18 or 26)</p>
+</div></blockquote>
+<p>Out: labels (p)     cluster labels</p>
+<p>Comment by alexis-roche, September 15th 2012: this function was
+originally developed by Merlin Keller in an attempt to generalize
+classical cluster-level analysis by subdividing clusters in blobs
+with limited diameter (at least, this is my understanding). This
+piece of code seems to have remained very experimental and its
+usefulness in real-world neuroimaging image studies is still to be
+demonstrated.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.extract_clusters_from_graph">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">extract_clusters_from_graph</code><span class="sig-paren">(</span><em class="sig-param">T</em>, <em class="sig-param">G</em>, <em class="sig-param">th</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#extract_clusters_from_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.extract_clusters_from_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>This returns a label vector of same size as T,
+defining connected components for subgraph of
+weighted graph G containing vertices s.t. T &gt;= th</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.extract_clusters_from_thresh">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">extract_clusters_from_thresh</code><span class="sig-paren">(</span><em class="sig-param">T</em>, <em class="sig-param">XYZ</em>, <em class="sig-param">th</em>, <em class="sig-param">k=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#extract_clusters_from_thresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.extract_clusters_from_thresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract clusters from statistical map
+above specified threshold
+In:  T      (p)     statistical map</p>
+<blockquote>
+<div><p>XYZ    (3,p)   voxels coordinates
+th     &lt;float&gt; threshold
+k      &lt;int&gt;   the number of neighbours considered. (6,18 or 26)</p>
+</div></blockquote>
+<p>Out: labels (p)     cluster labels</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.max_dist">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">max_dist</code><span class="sig-paren">(</span><em class="sig-param">XYZ</em>, <em class="sig-param">I</em>, <em class="sig-param">J</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#max_dist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.max_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum distance between two set of points
+In:  XYZ (3,p) voxels coordinates</p>
+<blockquote>
+<div><p>I   (q)   index of points
+J   (r)   index of points</p>
+</div></blockquote>
+<p>Out: d &lt;float&gt;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.onesample_stat">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">onesample_stat</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V</em>, <em class="sig-param">stat_id</em>, <em class="sig-param">base=0.0</em>, <em class="sig-param">axis=0</em>, <em class="sig-param">Magics=None</em>, <em class="sig-param">niter=5</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#onesample_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.onesample_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for os_stat and os_stat_mfx</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.peak_XYZ">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">peak_XYZ</code><span class="sig-paren">(</span><em class="sig-param">XYZ</em>, <em class="sig-param">Tvalues</em>, <em class="sig-param">labels</em>, <em class="sig-param">label_values</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#peak_XYZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.peak_XYZ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns (3, n_labels) array of maximum T values coordinates for each label value</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.sorted_values">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">sorted_values</code><span class="sig-paren">(</span><em class="sig-param">a</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#sorted_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.sorted_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract list of distinct sortedvalues from an array</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.group.permutation_test.twosample_stat">
+<code class="sig-prename descclassname">nipy.labs.group.permutation_test.</code><code class="sig-name descname">twosample_stat</code><span class="sig-paren">(</span><em class="sig-param">Y1</em>, <em class="sig-param">V1</em>, <em class="sig-param">Y2</em>, <em class="sig-param">V2</em>, <em class="sig-param">stat_id</em>, <em class="sig-param">axis=0</em>, <em class="sig-param">Magics=None</em>, <em class="sig-param">niter=5</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/group/permutation_test.html#twosample_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.group.permutation_test.twosample_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for ts_stat and ts_stat_mfx</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

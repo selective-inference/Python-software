@@ -1,0 +1,811 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.spatial_models.hroi</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the specification of &#39;hierarchical ROI&#39; object,</span>
+<span class="sd">Which is used in spatial models of the library such as structural analysis</span>
+
+<span class="sd">The connection with other classes is not completely satisfactory at the moment:</span>
+<span class="sd">there should be some intermediate classes between &#39;Fields&#39; and &#39;hroi&#39;</span>
+
+<span class="sd">Author : Bertrand Thirion, 2009-2011</span>
+<span class="sd">         Virgile Fritsch &lt;virgile.fritsch@inria.fr&gt;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nipy.algorithms.graph.graph</span> <span class="k">import</span> <span class="n">WeightedGraph</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.graph.forest</span> <span class="k">import</span> <span class="n">Forest</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.graph.field</span> <span class="k">import</span> <span class="n">field_from_coo_matrix_and_data</span>
+<span class="kn">from</span> <span class="nn">.mroi</span> <span class="k">import</span> <span class="n">SubDomains</span>
+
+<span class="n">NINF</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+
+<div class="viewcode-block" id="hroi_agglomeration"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.hroi_agglomeration">[docs]</a><span class="k">def</span> <span class="nf">hroi_agglomeration</span><span class="p">(</span><span class="n">input_hroi</span><span class="p">,</span> <span class="n">criterion</span><span class="o">=</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="n">smin</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Performs an agglomeration then a selection of regions</span>
+<span class="sd">    so that a certain size or volume criterion is satisfied.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_hroi: HierarchicalROI instance</span>
+<span class="sd">      The input hROI</span>
+<span class="sd">    criterion: str, optional</span>
+<span class="sd">      To be chosen among &#39;size&#39; or &#39;volume&#39;</span>
+<span class="sd">    smin: float, optional</span>
+<span class="sd">      The applied criterion</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output_hroi:  HierarchicalROI instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">criterion</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="s1">&#39;volume&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unknown criterion&#39;</span><span class="p">)</span>
+    <span class="n">output_hroi</span> <span class="o">=</span> <span class="n">input_hroi</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">output_hroi</span><span class="o">.</span><span class="n">k</span>
+    <span class="k">if</span> <span class="n">criterion</span> <span class="o">==</span> <span class="s1">&#39;size&#39;</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">output_hroi</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">criterion</span> <span class="o">==</span> <span class="s1">&#39;volume&#39;</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">output_hroi</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span>
+
+    <span class="c1"># iteratively agglomerate regions that are too small</span>
+    <span class="k">while</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="n">output_hroi</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">output_hroi</span><span class="o">.</span><span class="n">k</span>
+        <span class="c1"># regions agglomeration</span>
+        <span class="n">output_hroi</span><span class="o">.</span><span class="n">merge_ascending</span><span class="p">(</span><span class="n">output_hroi</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">value</span> <span class="o">&lt;=</span> <span class="n">smin</span><span class="p">])</span>
+        <span class="c1"># suppress parents nodes having only one child</span>
+        <span class="n">output_hroi</span><span class="o">.</span><span class="n">merge_descending</span><span class="p">()</span>
+        <span class="c1"># early stopping 1</span>
+        <span class="k">if</span> <span class="n">output_hroi</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="c1"># early stopping 2</span>
+        <span class="k">if</span> <span class="n">criterion</span> <span class="o">==</span> <span class="s1">&#39;size&#39;</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">output_hroi</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">criterion</span> <span class="o">==</span> <span class="s1">&#39;volume&#39;</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">output_hroi</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">smin</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="c1"># finally remove those regions for which the criterion cannot be matched</span>
+    <span class="n">output_hroi</span><span class="o">.</span><span class="n">select_roi</span><span class="p">(</span><span class="n">output_hroi</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">value</span> <span class="o">&gt;</span> <span class="n">smin</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">output_hroi</span></div>
+
+
+<div class="viewcode-block" id="HROI_as_discrete_domain_blobs"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HROI_as_discrete_domain_blobs">[docs]</a><span class="k">def</span> <span class="nf">HROI_as_discrete_domain_blobs</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">NINF</span><span class="p">,</span> <span class="n">smin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                  <span class="n">criterion</span><span class="o">=</span><span class="s1">&#39;size&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Instantiate an HierarchicalROI as the blob decomposition</span>
+<span class="sd">    of data in a certain domain.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    domain : discrete_domain.StructuredDomain instance,</span>
+<span class="sd">      Definition of the spatial context.</span>
+<span class="sd">    data : array of shape (domain.size)</span>
+<span class="sd">      The corresponding data field.</span>
+<span class="sd">    threshold : float, optional</span>
+<span class="sd">      Thresholding level.</span>
+<span class="sd">    criterion : string, optional</span>
+<span class="sd">      To be chosen among &#39;size&#39; or &#39;volume&#39;.</span>
+<span class="sd">    smin: float, optional</span>
+<span class="sd">      A threshold on the criterion.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    nroi: HierachicalROI instance with a `signal` feature.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">():</span>
+        <span class="c1"># return an empty HROI structure</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="k">return</span> <span class="n">HierarchicalROI</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+
+    <span class="c1"># check size</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">field_from_coo_matrix_and_data</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">idx</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">threshold_bifurcations</span><span class="p">(</span><span class="n">th</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
+    <span class="n">nroi</span> <span class="o">=</span> <span class="n">HierarchicalROI</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+    <span class="c1"># create a signal feature</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">signal</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">nroi</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">nroi</span><span class="o">.</span><span class="n">get_id</span><span class="p">()]</span>
+    <span class="n">nroi</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="s1">&#39;signal&#39;</span><span class="p">,</span> <span class="n">signal</span><span class="p">)</span>
+    <span class="c1"># agglomerate regions in order to compact the structure if necessary</span>
+    <span class="n">nroi</span> <span class="o">=</span> <span class="n">hroi_agglomeration</span><span class="p">(</span><span class="n">nroi</span><span class="p">,</span> <span class="n">criterion</span><span class="o">=</span><span class="n">criterion</span><span class="p">,</span> <span class="n">smin</span><span class="o">=</span><span class="n">smin</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">nroi</span></div>
+
+
+<div class="viewcode-block" id="HROI_from_watershed"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HROI_from_watershed">[docs]</a><span class="k">def</span> <span class="nf">HROI_from_watershed</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">NINF</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Instantiate an HierarchicalROI as the watershed of a certain dataset</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    domain: discrete_domain.StructuredDomain instance</span>
+<span class="sd">      Definition of the spatial context.</span>
+<span class="sd">    data: array of shape (domain.size)</span>
+<span class="sd">      The corresponding data field.</span>
+<span class="sd">    threshold: float, optional</span>
+<span class="sd">      Thresholding level.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    nroi : ``HierarchichalROI`` instance</span>
+<span class="sd">        The HierachicalROI instance with a ``seed`` feature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">():</span>
+        <span class="c1"># return an empty HROI structure</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="k">return</span> <span class="n">HierarchicalROI</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">field_from_coo_matrix_and_data</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">idx</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">custom_watershed</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="n">parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">idx</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">nroi</span> <span class="o">=</span> <span class="n">HierarchicalROI</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+
+    <span class="n">nroi</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">nroi</span></div>
+
+
+<span class="c1">########################################################################</span>
+<span class="c1"># Hierarchical ROI</span>
+<span class="c1">########################################################################</span>
+<div class="viewcode-block" id="HierarchicalROI"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI">[docs]</a><span class="k">class</span> <span class="nc">HierarchicalROI</span><span class="p">(</span><span class="n">SubDomains</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class that handles hierarchical ROIs</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k : int</span>
+<span class="sd">      Number of ROI in the SubDomains object</span>
+<span class="sd">    label : array of shape (domain.size), dtype=np.int</span>
+<span class="sd">      An array use to define which voxel belongs to which ROI.</span>
+<span class="sd">      The label values greater than -1 correspond to subregions</span>
+<span class="sd">      labelling. The labels are recomputed so as to be consecutive</span>
+<span class="sd">      integers.</span>
+<span class="sd">      The labels should not be accessed outside this class. One has to</span>
+<span class="sd">      use the API mapping methods instead.</span>
+<span class="sd">    features : dict {str: list of object, length=self.k}</span>
+<span class="sd">      Describe the voxels features, grouped by ROI</span>
+<span class="sd">    roi_features : dict {str: array-like, shape=(self.k, roi_feature_dim)</span>
+<span class="sd">      Describe the ROI features. A special feature, `id`, is read-only and</span>
+<span class="sd">      is used to give an unique identifier for region, which is persistent</span>
+<span class="sd">      through the MROI objects manipulations. On should access the different</span>
+<span class="sd">      ROI&#39;s features using ids.</span>
+<span class="sd">    parents : np.ndarray, shape(self.k)</span>
+<span class="sd">      self.parents[i] is the index of the parent of the i-th ROI.</span>
+
+<span class="sd">    TODO: have the parents as a list of id rather than a list of indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HierarchicalROI.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Building the HierarchicalROI</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">SubDomains</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span></div>
+
+    <span class="c1">###</span>
+    <span class="c1"># Getters for very basic features or roi features</span>
+    <span class="c1">###</span>
+<div class="viewcode-block" id="HierarchicalROI.get_volume"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.get_volume">[docs]</a>    <span class="k">def</span> <span class="nf">get_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_children</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get ROI volume</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id: any hashable type, optional</span>
+<span class="sd">          Id of the ROI from which we want to get the volume.</span>
+<span class="sd">          Can be None (default) if we want all ROIs&#39;s volumes.</span>
+<span class="sd">        ignore_children : bool, optional</span>
+<span class="sd">          Specify if the volume of the node should include</span>
+<span class="sd">          (ignore_children = False) or not the one of its children</span>
+<span class="sd">          (ignore_children = True).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        volume : float</span>
+<span class="sd">          if an id is provided,</span>
+<span class="sd">             or list of float</span>
+<span class="sd">          if no id provided (default)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ignore_children</span><span class="p">:</span>
+            <span class="c1"># volume of the children is not included</span>
+            <span class="n">volume</span> <span class="o">=</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># volume of the children is included</span>
+            <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">volume</span> <span class="o">=</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                <span class="n">desc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_forest</span><span class="p">()</span><span class="o">.</span><span class="n">get_descendants</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">),</span> <span class="n">exclude_self</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># get children volume</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">desc</span><span class="p">:</span>
+                    <span class="n">volume</span> <span class="o">=</span> <span class="n">volume</span> <span class="o">+</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">volume</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                    <span class="n">roi_volume</span> <span class="o">=</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                    <span class="n">desc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_forest</span><span class="p">()</span><span class="o">.</span><span class="n">get_descendants</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">),</span> <span class="n">exclude_self</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="c1"># get children volume</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">desc</span><span class="p">:</span>
+                        <span class="n">roi_volume</span> <span class="o">=</span> <span class="n">roi_volume</span> <span class="o">+</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">k</span><span class="p">])</span>
+                    <span class="n">volume</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">roi_volume</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">volume</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.get_size"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.get_size">[docs]</a>    <span class="k">def</span> <span class="nf">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_children</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get ROI size (counted in terms of voxels)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id: any hashable type, optional</span>
+<span class="sd">          Id of the ROI from which we want to get the size.</span>
+<span class="sd">          Can be None (default) if we want all ROIs&#39;s sizes.</span>
+<span class="sd">        ignore_children: bool, optional</span>
+<span class="sd">          Specify if the size of the node should include</span>
+<span class="sd">          (ignore_children = False) or not the one of its children</span>
+<span class="sd">          (ignore_children = True).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        size: int</span>
+<span class="sd">          if an id is provided,</span>
+<span class="sd">             or list of int</span>
+<span class="sd">          if no id provided (default)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ignore_children</span><span class="p">:</span>
+            <span class="c1"># size of the children is not included</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># size of the children is included</span>
+            <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                <span class="n">desc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_forest</span><span class="p">()</span><span class="o">.</span><span class="n">get_descendants</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">),</span> <span class="n">exclude_self</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># get children size</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">desc</span><span class="p">:</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="n">size</span> <span class="o">+</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                    <span class="n">roi_size</span> <span class="o">=</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                    <span class="n">desc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_forest</span><span class="p">()</span><span class="o">.</span><span class="n">get_descendants</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">),</span> <span class="n">exclude_self</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="c1"># get children size</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">desc</span><span class="p">:</span>
+                        <span class="n">roi_size</span> <span class="o">=</span> <span class="n">roi_size</span> <span class="o">+</span> <span class="n">SubDomains</span><span class="o">.</span><span class="n">get_size</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">k</span><span class="p">])</span>
+                    <span class="n">size</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">roi_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">size</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.select_roi"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.select_roi">[docs]</a>    <span class="k">def</span> <span class="nf">select_roi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an instance of HROI with only the subset of chosen ROIs.</span>
+
+<span class="sd">        The hierarchy is set accordingly.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id_list: list of id (any hashable type)</span>
+<span class="sd">          The id of the ROI to be kept in the structure.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="n">id_list</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()])</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># handle the case of an empty selection</span>
+            <span class="n">new_parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+            <span class="bp">self</span> <span class="o">=</span> <span class="n">HierarchicalROI</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># get new parents</span>
+            <span class="n">new_parents</span> <span class="o">=</span> <span class="n">Forest</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">)</span><span class="o">.</span><span class="n">subforest</span><span class="p">(</span>
+                <span class="n">valid</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">))</span><span class="o">.</span><span class="n">parents</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="n">SubDomains</span><span class="o">.</span><span class="n">select_roi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">=</span> <span class="n">new_parents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recompute_labels</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.make_graph"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.make_graph">[docs]</a>    <span class="k">def</span> <span class="nf">make_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Output an nipy graph structure to represent the ROI hierarchy.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">return</span> <span class="n">WeightedGraph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.make_forest"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.make_forest">[docs]</a>    <span class="k">def</span> <span class="nf">make_forest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Output an nipy forest structure to represent the ROI hierarchy.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">Forest</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">G</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.merge_ascending"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.merge_ascending">[docs]</a>    <span class="k">def</span> <span class="nf">merge_ascending</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_list</span><span class="p">,</span> <span class="n">pull_features</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the non-valid ROIs by including them in</span>
+<span class="sd">        their parents when it exists.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id_list: list of id (any hashable type)</span>
+<span class="sd">          The id of the ROI to be merged into their parents.</span>
+<span class="sd">          Nodes that are their own parent are unmodified.</span>
+<span class="sd">        pull_features: list of str</span>
+<span class="sd">          List of the ROI features that will be pooled from the children</span>
+<span class="sd">          when they are merged into their parents. Otherwise, the receiving</span>
+<span class="sd">          parent would keep its own ROI feature.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">pull_features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pull_features</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">id_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">id_list</span><span class="p">]</span>
+
+        <span class="c1"># relabel maps old labels to new labels </span>
+        <span class="n">relabel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="c1"># merge nodes, one at a time</span>
+        <span class="k">for</span> <span class="n">c_id</span> <span class="ow">in</span> <span class="n">id_list</span><span class="p">:</span>
+            <span class="c1"># define alias for clearer indexing</span>
+            <span class="n">c_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">c_id</span><span class="p">)</span>
+            <span class="n">p_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span>
+            <span class="n">p_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">p_pos</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">p_pos</span> <span class="o">!=</span> <span class="n">c_pos</span><span class="p">:</span>
+                <span class="c1"># this will be used in many places</span>
+                <span class="n">mask_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+                <span class="n">mask_pos</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1"># set new parents</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">mask_pos</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">==</span> <span class="n">c_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_pos</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">&gt;</span> <span class="n">c_pos</span><span class="p">]</span> <span class="o">-=</span>  <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+
+                <span class="c1"># merge labels</span>
+                <span class="n">relabel</span><span class="p">[</span><span class="n">relabel</span> <span class="o">==</span> <span class="n">c_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_id</span>
+
+                <span class="c1"># compute new features</span>
+                <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">):</span>
+                    <span class="c1"># replace feature</span>
+                    <span class="c1"># (without the API since self is in an inconsistent state)</span>
+                    <span class="n">dj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+                    <span class="n">dj</span><span class="p">[</span><span class="n">p_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">dj</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">c_id</span><span class="p">)],</span> 
+                                           <span class="n">dj</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">p_id</span><span class="p">)]))</span>
+                    <span class="k">del</span> <span class="n">dj</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">fid</span><span class="p">]</span> <span class="o">=</span> <span class="n">dj</span>
+
+                <span class="c1"># compute new roi features</span>
+                <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">):</span>
+                    <span class="n">dj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">fid</span> <span class="ow">in</span> <span class="n">pull_features</span><span class="p">:</span>
+                        <span class="c1"># modify only if `pull` requested</span>
+                        <span class="n">dj</span><span class="p">[</span><span class="n">p_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">dj</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">[</span><span class="n">fid</span><span class="p">]</span> <span class="o">=</span> <span class="n">dj</span><span class="p">[</span><span class="n">mask_pos</span><span class="p">]</span>
+
+        <span class="c1"># update the labels        </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">relabel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">&gt;</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recompute_labels</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.merge_descending"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.merge_descending">[docs]</a>    <span class="k">def</span> <span class="nf">merge_descending</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pull_features</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Remove the items with only one son by including them in their son</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        methods indicates the way possible features are dealt with</span>
+<span class="sd">        (not implemented yet)</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Caveat: if roi_features have been defined, they will be removed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">pull_features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pull_features</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># relabel maps old labels to new labels </span>
+        <span class="n">relabel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="c1"># merge nodes, one at a time</span>
+        <span class="n">id_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[::</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">p_id</span> <span class="ow">in</span> <span class="n">id_list</span><span class="p">:</span>
+            <span class="n">p_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">p_id</span><span class="p">)</span>
+            <span class="n">p_children</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">==</span> <span class="n">p_pos</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">p_pos</span> <span class="ow">in</span> <span class="n">p_children</span><span class="p">:</span>
+                <span class="c1"># remove current node from its children list</span>
+                <span class="n">p_children</span> <span class="o">=</span> <span class="n">p_children</span><span class="p">[</span><span class="n">p_children</span> <span class="o">!=</span> <span class="n">p_pos</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">p_children</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># merge node if it has only one child</span>
+                <span class="n">c_pos</span> <span class="o">=</span> <span class="n">p_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">c_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">c_pos</span><span class="p">]</span>
+                <span class="n">mask_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+                <span class="n">mask_pos</span><span class="p">[</span><span class="n">p_pos</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1"># set new parents</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">p_pos</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span> <span class="o">==</span> <span class="n">p_pos</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">c_pos</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">mask_pos</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">&gt;</span> <span class="n">p_pos</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="c1"># merge labels</span>
+                <span class="n">relabel</span><span class="p">[</span><span class="n">relabel</span> <span class="o">==</span> <span class="n">p_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">relabel</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+
+                <span class="c1"># compute new features</span>
+                <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">):</span>
+                    <span class="c1"># replace feature</span>
+                    <span class="c1"># (without the API since self is in an inconsistent state)</span>
+                    <span class="n">dj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+                    <span class="n">dj</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">dj</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">c_id</span><span class="p">)],</span> 
+                                           <span class="n">dj</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">p_id</span><span class="p">)]))</span>
+                    <span class="k">del</span> <span class="n">dj</span><span class="p">[</span><span class="n">p_pos</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">fid</span><span class="p">]</span> <span class="o">=</span> <span class="n">dj</span>
+
+                <span class="c1"># compute new roi features</span>
+                <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">):</span>
+                    <span class="n">dj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">fid</span> <span class="ow">in</span> <span class="n">pull_features</span><span class="p">:</span>
+                        <span class="c1"># modify only if `pull` requested</span>
+                        <span class="n">dj</span><span class="p">[</span><span class="n">c_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">dj</span><span class="p">[</span><span class="n">p_pos</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">[</span><span class="n">fid</span><span class="p">]</span> <span class="o">=</span> <span class="n">dj</span><span class="p">[</span><span class="n">mask_pos</span><span class="p">]</span>
+
+        <span class="c1"># update HROI structure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">relabel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">&gt;</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recompute_labels</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.get_parents"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.get_parents">[docs]</a>    <span class="k">def</span> <span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the parent of each node in the hierarchy</span>
+
+<span class="sd">        The parents are represented by their position in the nodes flat list.</span>
+
+<span class="sd">        TODO:</span>
+<span class="sd">        The purpose of this class API is not to rely on this order, so</span>
+<span class="sd">        we should have self.parents as a list of ids instead of a list of</span>
+<span class="sd">        positions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.get_leaves_id"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.get_leaves_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_leaves_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the ids of the leaves.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="c1"># locate the positions of the children of each node</span>
+        <span class="n">is_leaf_aux</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">==</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)]</span>
+        <span class="c1"># select nodes that has no child (different from themselves)</span>
+        <span class="n">is_leaf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+            <span class="p">[(</span><span class="nb">len</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">child</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span>
+             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">is_leaf_aux</span><span class="p">)])</span>
+        <span class="c1"># finaly return ids</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">is_leaf</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.reduce_to_leaves"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.reduce_to_leaves">[docs]</a>    <span class="k">def</span> <span class="nf">reduce_to_leaves</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a  new set of rois which are only the leaves of self.</span>
+
+<span class="sd">        Modification of the structure is done in place. One way therefore</span>
+<span class="sd">        want to work on a copy a of a given HROI oject.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># handle the empy HROI case</span>
+            <span class="k">return</span> <span class="n">HierarchicalROI</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span>
+        <span class="n">leaves_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_leaves_id</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select_roi</span><span class="p">(</span><span class="n">leaves_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.copy"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a copy of self.</span>
+
+<span class="sd">        self.domain is not copied.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cp</span> <span class="o">=</span> <span class="n">HierarchicalROI</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">())</span>
+        <span class="c1"># copy features</span>
+        <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">))</span>
+        <span class="c1"># copy ROI features</span>
+        <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">:</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cp</span></div>
+
+<div class="viewcode-block" id="HierarchicalROI.representative_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.HierarchicalROI.representative_feature">[docs]</a>    <span class="k">def</span> <span class="nf">representative_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">ignore_children</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">assess_quality</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute a ROI representative of a given feature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: str,</span>
+<span class="sd">          Feature id</span>
+<span class="sd">        method: str,</span>
+<span class="sd">          Method used to compute a representative.</span>
+<span class="sd">          Chosen among &#39;mean&#39; (default), &#39;max&#39;, &#39;median&#39;, &#39;min&#39;,</span>
+<span class="sd">          &#39;weighted mean&#39;.</span>
+<span class="sd">        id: any hashable type</span>
+<span class="sd">          Id of the ROI from which we want to extract a representative feature.</span>
+<span class="sd">          Can be None (default) if we want to get all ROIs&#39;s representatives.</span>
+<span class="sd">        ignore_children: bool,</span>
+<span class="sd">          Specify if the volume of the node should include</span>
+<span class="sd">          (ignore_children = False) or not the one of its children</span>
+<span class="sd">          (ignore_children = True).</span>
+<span class="sd">        assess_quality: bool</span>
+<span class="sd">          If True, a new roi feature is created, which represent the quality</span>
+<span class="sd">          of the feature representative (the number of non-nan value for the</span>
+<span class="sd">          feature over the ROI size).</span>
+<span class="sd">          Default is False.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rf</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+        <span class="n">feature_quality</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+            <span class="n">p_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_children</span><span class="p">:</span>
+                <span class="c1"># also include the children features</span>
+                <span class="n">desc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">==</span> <span class="n">p_pos</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">p_pos</span> <span class="ow">in</span> <span class="n">desc</span><span class="p">:</span>
+                    <span class="n">desc</span> <span class="o">=</span> <span class="n">desc</span><span class="p">[</span><span class="n">desc</span> <span class="o">!=</span> <span class="n">p_pos</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">desc</span><span class="p">:</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()[</span><span class="n">c</span><span class="p">])))</span>
+            <span class="c1"># NaN-resistant representative</span>
+            <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">nan</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nan</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="c1"># feature quality</span>
+            <span class="n">feature_quality</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">nan</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">nan</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+            <span class="c1"># compute representative</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;weighted mean&quot;</span><span class="p">:</span>
+                <span class="n">lvk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_local_volume</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_children</span><span class="p">:</span>
+                    <span class="c1"># append weights for children&#39;s voxels</span>
+                    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">desc</span><span class="p">:</span>
+                        <span class="n">lvk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                            <span class="p">(</span><span class="n">lvk</span><span class="p">,</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">get_local_volume</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">c</span><span class="p">))))</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">lvk</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">/</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">eps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">lvk</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">]))</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;median&quot;</span><span class="p">:</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">summary_feature</span> <span class="o">=</span> <span class="n">rf</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">summary_feature</span> <span class="o">=</span> <span class="n">rf</span>
+
+        <span class="k">if</span> <span class="n">assess_quality</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_quality&#39;</span> <span class="o">%</span> <span class="n">fid</span><span class="p">,</span> <span class="n">feature_quality</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">summary_feature</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="make_hroi_from_subdomain"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.hroi.html#nipy.labs.spatial_models.hroi.make_hroi_from_subdomain">[docs]</a><span class="k">def</span> <span class="nf">make_hroi_from_subdomain</span><span class="p">(</span><span class="n">sub_domain</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Instantiate an HROi from a SubDomain instance and parents</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hroi</span> <span class="o">=</span> <span class="n">HierarchicalROI</span><span class="p">(</span><span class="n">sub_domain</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="n">sub_domain</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+    <span class="c1"># set features</span>
+    <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="n">sub_domain</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+        <span class="n">hroi</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">sub_domain</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">))</span>
+    <span class="c1"># set ROI features</span>
+    <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="n">sub_domain</span><span class="o">.</span><span class="n">roi_features</span><span class="p">:</span>
+        <span class="n">hroi</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">sub_domain</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">hroi</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

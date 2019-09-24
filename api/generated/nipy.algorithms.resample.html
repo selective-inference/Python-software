@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.resample.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-resample">
+<h1>algorithms.resample<a class="headerlink" href="#algorithms-resample" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.algorithms.resample">
+<span id="module-algorithms-resample"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.resample</span></code><a class="headerlink" href="#module-nipy.algorithms.resample" title="Permalink to this headline">¶</a></h2>
+<p>Some simple examples and utility functions for resampling.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.resample.resample">
+<code class="sig-prename descclassname">nipy.algorithms.resample.</code><code class="sig-name descname">resample</code><span class="sig-paren">(</span><em class="sig-param">image</em>, <em class="sig-param">target</em>, <em class="sig-param">mapping</em>, <em class="sig-param">shape</em>, <em class="sig-param">order=3</em>, <em class="sig-param">mode='constant'</em>, <em class="sig-param">cval=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/resample.html#resample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.resample.resample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resample <cite>image</cite> to <cite>target</cite> CoordinateMap</p>
+<p>Use a “world-to-world” mapping <cite>mapping</cite> and spline interpolation of a 
+<cite>order</cite>.</p>
+<p>Here, “world-to-world” refers to the fact that mapping should be a
+callable that takes a physical coordinate in “target” and gives a
+physical coordinate in “image”.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>image</strong> : Image instance</p>
+<blockquote>
+<div><p>image that is to be resampled.</p>
+</div></blockquote>
+<p><strong>target</strong> : CoordinateMap</p>
+<blockquote>
+<div><p>coordinate map for output image.</p>
+</div></blockquote>
+<p><strong>mapping</strong> : callable or tuple or array</p>
+<blockquote>
+<div><p>transformation from target.function_range to
+image.coordmap.function_range, i.e. ‘world-to-world mapping’. Can
+be specified in three ways: a callable, a tuple (A, b)
+representing the mapping y=dot(A,x)+b or a representation of this
+mapping as an affine array, in homogeneous coordinates.</p>
+</div></blockquote>
+<p><strong>shape</strong> : sequence of int</p>
+<blockquote>
+<div><p>shape of output array, in target.function_domain.</p>
+</div></blockquote>
+<p><strong>order</strong> : int, optional</p>
+<blockquote>
+<div><p>what order of interpolation to use in <code class="docutils literal notranslate"><span class="pre">scipy.ndimage</span></code>.</p>
+</div></blockquote>
+<p><strong>mode</strong> : str, optional</p>
+<blockquote>
+<div><p>Points outside the boundaries of the input are filled according to the
+given mode (‘constant’, ‘nearest’, ‘reflect’ or ‘wrap’). Default is
+‘constant’.</p>
+</div></blockquote>
+<p><strong>cval</strong> : scalar, optional</p>
+<blockquote>
+<div><p>Value used for points outside the boundaries of the input if
+mode=’constant’. Default is 0.0.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>output</strong> : Image instance</p>
+<blockquote>
+<div><p>Image has interpolated data and output.coordmap == target.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.resample.resample_img2img">
+<code class="sig-prename descclassname">nipy.algorithms.resample.</code><code class="sig-name descname">resample_img2img</code><span class="sig-paren">(</span><em class="sig-param">source</em>, <em class="sig-param">target</em>, <em class="sig-param">order=3</em>, <em class="sig-param">mode='constant'</em>, <em class="sig-param">cval=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/resample.html#resample_img2img"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.resample.resample_img2img" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resample <cite>source</cite> image to space of <cite>target</cite> image</p>
+<p>This wraps the resample function to resample one image onto another.
+The output of the function will give an image with shape of the
+target and data from the source.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>source</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>Image instance that is to be resampled</p>
+</div></blockquote>
+<p><strong>target</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>Image instance to which source is resampled. The output image will
+have the same shape as the target, and the same coordmap.</p>
+</div></blockquote>
+<p><strong>order</strong> : <code class="docutils literal notranslate"><span class="pre">int</span></code>, optional</p>
+<blockquote>
+<div><p>What order of interpolation to use in <code class="docutils literal notranslate"><span class="pre">scipy.ndimage</span></code>.</p>
+</div></blockquote>
+<p><strong>mode</strong> : str, optional</p>
+<blockquote>
+<div><p>Points outside the boundaries of the input are filled according to the
+given mode (‘constant’, ‘nearest’, ‘reflect’ or ‘wrap’). Default is
+‘constant’.</p>
+</div></blockquote>
+<p><strong>cval</strong> : scalar, optional</p>
+<blockquote>
+<div><p>Value used for points outside the boundaries of the input if
+mode=’constant’. Default is 0.0.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>output</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code></p>
+<blockquote>
+<div><p>Image with interpolated data and output.coordmap == target.coordmap</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">funcfile</span><span class="p">,</span> <span class="n">anatfile</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.io.api</span> <span class="k">import</span> <span class="n">load_image</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aimg_source</span> <span class="o">=</span> <span class="n">load_image</span><span class="p">(</span><span class="n">anatfile</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aimg_target</span> <span class="o">=</span> <span class="n">aimg_source</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># in this case, we resample aimg to itself</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resimg</span> <span class="o">=</span> <span class="n">resample_img2img</span><span class="p">(</span><span class="n">aimg_source</span><span class="p">,</span> <span class="n">aimg_target</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

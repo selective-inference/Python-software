@@ -1,0 +1,930 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.viz_tools.slicers</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The Slicer classes.</span>
+
+<span class="sd">The main purpose of these classes is to have auto adjust of axes size to</span>
+<span class="sd">the data with different layout of cuts.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nipy.utils</span> <span class="k">import</span> <span class="n">is_iterable</span>
+
+<span class="kn">from</span> <span class="nn">nipy.utils.skip_test</span> <span class="k">import</span> <span class="n">skip_if_running_nose</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+    <span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
+    <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">transforms</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">skip_if_running_nose</span><span class="p">(</span><span class="s1">&#39;Could not import matplotlib&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># Local imports</span>
+<span class="kn">from</span> <span class="nn">.coord_tools</span> <span class="k">import</span> <span class="n">coord_transform</span><span class="p">,</span> <span class="n">get_bounds</span><span class="p">,</span> <span class="n">get_mask_bounds</span><span class="p">,</span> \
+        <span class="n">find_cut_coords</span>
+<span class="kn">from</span> <span class="nn">.edge_detect</span> <span class="k">import</span> <span class="n">_edge_map</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">cm</span>
+<span class="kn">from</span> <span class="nn">..datasets</span> <span class="k">import</span> <span class="n">VolumeImg</span>
+
+<span class="c1">################################################################################</span>
+<span class="c1"># Bugware to have transparency work OK with MPL &lt; .99.1</span>
+<span class="k">if</span> <span class="n">mpl</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&lt;</span> <span class="s1">&#39;0.99.1&#39;</span><span class="p">:</span>
+    <span class="c1"># We wrap the lut as a callable and replace its evalution to put</span>
+    <span class="c1"># alpha to zero where the mask is true. This is what is done in</span>
+    <span class="c1"># MPL &gt;= .99.1</span>
+    <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">colors</span>
+    <span class="k">class</span> <span class="nc">CMapProxy</span><span class="p">(</span><span class="n">colors</span><span class="o">.</span><span class="n">Colormap</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lut</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__lut</span> <span class="o">=</span> <span class="n">lut</span>
+
+        <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lut</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">MaskedArray</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">results</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">arr</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">results</span>
+
+        <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+            <span class="c1"># Dark magic: we are delegating any call to the lut instance</span>
+            <span class="c1"># we wrap</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__lut</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_xyz_order</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">):</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">VolumeImg</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="n">affine</span><span class="p">,</span> <span class="n">world_space</span><span class="o">=</span><span class="s1">&#39;mine&#39;</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">xyz_ordered</span><span class="p">(</span><span class="n">resample</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="nb">map</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="n">affine</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">affine</span>
+    <span class="k">return</span> <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1"># class CutAxes</span>
+<span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="CutAxes"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.CutAxes">[docs]</a><span class="k">class</span> <span class="nc">CutAxes</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; An MPL axis-like object that displays a cut of 3D volumes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CutAxes.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.CutAxes.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">coord</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; An MPL axis-like object that displays a cut of 3D volumes</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ==========</span>
+<span class="sd">            ax: a MPL axes instance</span>
+<span class="sd">                The axes in which the plots will be drawn</span>
+<span class="sd">            direction: {&#39;x&#39;, &#39;y&#39;, &#39;z&#39;}</span>
+<span class="sd">                The directions of the cut</span>
+<span class="sd">            coord: float</span>
+<span class="sd">                The coordinnate along the direction of the cut</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="n">direction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coord</span> <span class="o">=</span> <span class="n">coord</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_object_bounds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CutAxes.do_cut"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.CutAxes.do_cut">[docs]</a>    <span class="k">def</span> <span class="nf">do_cut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Cut the 3D volume into a 2D slice</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ==========</span>
+<span class="sd">            map: 3D ndarray</span>
+<span class="sd">                The 3D volume to cut</span>
+<span class="sd">            affine: 4x4 ndarray</span>
+<span class="sd">                The affine of the volume</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">coords</span><span class="p">[</span><span class="s1">&#39;xyz&#39;</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span>
+        <span class="n">x_map</span><span class="p">,</span> <span class="n">y_map</span><span class="p">,</span> <span class="n">z_map</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">c</span><span class="p">))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span>
+                               <span class="n">coord_transform</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                               <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                               <span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                                               <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">affine</span><span class="p">))]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+            <span class="n">cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="nb">map</span><span class="p">[:,</span> <span class="n">y_map</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span>
+            <span class="n">cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="nb">map</span><span class="p">[</span><span class="n">x_map</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span>
+            <span class="n">cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="nb">map</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">z_map</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid value for direction </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cut</span></div>
+
+
+<div class="viewcode-block" id="CutAxes.draw_cut"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.CutAxes.draw_cut">[docs]</a>    <span class="k">def</span> <span class="nf">draw_cut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut</span><span class="p">,</span> <span class="n">data_bounds</span><span class="p">,</span> <span class="n">bounding_box</span><span class="p">,</span>
+                  <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;imshow&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># kwargs massaging</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;origin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;upper&#39;</span>
+        <span class="k">if</span> <span class="n">mpl</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&lt;</span> <span class="s1">&#39;0.99.1&#39;</span><span class="p">:</span>
+            <span class="n">cmap</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cmap&#39;</span><span class="p">,</span>
+                        <span class="n">pl</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">cmap_d</span><span class="p">[</span><span class="n">pl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;image.cmap&#39;</span><span class="p">]])</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cmap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CMapProxy</span><span class="p">(</span><span class="n">cmap</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">)</span> <span class="o">=</span> <span class="n">data_bounds</span>
+            <span class="p">(</span><span class="n">xmin_</span><span class="p">,</span> <span class="n">xmax_</span><span class="p">),</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin_</span><span class="p">,</span> <span class="n">zmax_</span><span class="p">)</span> <span class="o">=</span> <span class="n">bounding_box</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">)</span> <span class="o">=</span> <span class="n">data_bounds</span>
+            <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="p">(</span><span class="n">xmin_</span><span class="p">,</span> <span class="n">xmax_</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin_</span><span class="p">,</span> <span class="n">zmax_</span><span class="p">)</span> <span class="o">=</span> <span class="n">bounding_box</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">),</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">data_bounds</span>
+            <span class="p">(</span><span class="n">xmin_</span><span class="p">,</span> <span class="n">xmax_</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin_</span><span class="p">,</span> <span class="n">zmax_</span><span class="p">),</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">bounding_box</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid value for direction </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">)</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="nb">type</span><span class="p">)(</span><span class="n">cut</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_object_bounds</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">xmin_</span><span class="p">,</span> <span class="n">xmax_</span><span class="p">,</span> <span class="n">zmin_</span><span class="p">,</span> <span class="n">zmax_</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_object_bounds</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="CutAxes.get_object_bounds"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.CutAxes.get_object_bounds">[docs]</a>    <span class="k">def</span> <span class="nf">get_object_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return the bounds of the objects on this axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_object_bounds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Nothing plotted yet</span>
+            <span class="k">return</span> <span class="o">-.</span><span class="mi">01</span><span class="p">,</span> <span class="o">.</span><span class="mi">01</span><span class="p">,</span> <span class="o">-.</span><span class="mi">01</span><span class="p">,</span> <span class="o">.</span><span class="mi">01</span>
+        <span class="n">xmins</span><span class="p">,</span> <span class="n">xmaxs</span><span class="p">,</span> <span class="n">ymins</span><span class="p">,</span> <span class="n">ymaxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_object_bounds</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">xmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">xmaxs</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">xmins</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">xmins</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">xmaxs</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="n">ymax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">ymaxs</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">ymins</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">ymins</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ymaxs</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span></div>
+
+
+<div class="viewcode-block" id="CutAxes.draw_left_right"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.CutAxes.draw_left_right">[docs]</a>    <span class="k">def</span> <span class="nf">draw_left_right</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">bg_color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">95</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span>
+                <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+                <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s2">&quot;square,pad=0&quot;</span><span class="p">,</span>
+                            <span class="n">ec</span><span class="o">=</span><span class="n">bg_color</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="n">bg_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">.</span><span class="mi">9</span><span class="p">,</span> <span class="o">.</span><span class="mi">95</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span>
+                <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+                <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s2">&quot;square,pad=0&quot;</span><span class="p">,</span>
+                            <span class="n">ec</span><span class="o">=</span><span class="n">bg_color</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="n">bg_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CutAxes.draw_position"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.CutAxes.draw_position">[docs]</a>    <span class="k">def</span> <span class="nf">draw_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">bg_color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">=</span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord</span><span class="p">),</span>
+                <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+                <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s2">&quot;square,pad=0&quot;</span><span class="p">,</span>
+                            <span class="n">ec</span><span class="o">=</span><span class="n">bg_color</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="n">bg_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1"># class BaseSlicer</span>
+<span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="BaseSlicer"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer">[docs]</a><span class="k">class</span> <span class="nc">BaseSlicer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The main purpose of these class is to have auto adjust of axes size</span>
+<span class="sd">        to the data with different layout of cuts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># This actually encodes the figsize for only one axe</span>
+    <span class="n">_default_figsize</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.2</span><span class="p">,</span> <span class="mf">2.6</span><span class="p">]</span>
+
+<div class="viewcode-block" id="BaseSlicer.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_coords</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">black_bg</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create 3 linked axes for plotting orthogonal cuts.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            cut_coords: 3 tuple of ints</span>
+<span class="sd">                The cut position, in world space.</span>
+<span class="sd">            axes: matplotlib axes object, optional</span>
+<span class="sd">                The axes that will be subdivided in 3.</span>
+<span class="sd">            black_bg: boolean, optional</span>
+<span class="sd">                If True, the background of the figure will be put to</span>
+<span class="sd">                black. If you whish to save figures with a black background, </span>
+<span class="sd">                you will need to pass &quot;facecolor=&#39;k&#39;, edgecolor=&#39;k&#39;&quot; to </span>
+<span class="sd">                pylab&#39;s savefig.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cut_coords</span> <span class="o">=</span> <span class="n">cut_coords</span>
+        <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">axes</span><span class="p">((</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">))</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_axes</span> <span class="o">=</span> <span class="n">axes</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">set_zorder</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">bb</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="p">(</span><span class="n">bb</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="n">bb</span><span class="o">.</span><span class="n">y0</span><span class="p">,</span> <span class="n">bb</span><span class="o">.</span><span class="n">x1</span><span class="p">,</span> <span class="n">bb</span><span class="o">.</span><span class="n">y1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_black_bg</span> <span class="o">=</span> <span class="n">black_bg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_axes</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseSlicer.find_cut_coords"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer.find_cut_coords">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">find_cut_coords</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">cut_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Implement this as a staticmethod or a classmethod when</span>
+        <span class="c1"># subclassing</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="BaseSlicer.init_with_figure"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer.init_with_figure">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">init_with_figure</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">cut_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">black_bg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">leave_space</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">cut_coords</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">find_cut_coords</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span>
+                                         <span class="n">cut_coords</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">Axes</span><span class="p">)</span> <span class="ow">and</span> <span class="n">figure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">figure</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">figure</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">Figure</span><span class="p">):</span>
+            <span class="c1"># Make sure that we have a figure</span>
+            <span class="n">figsize</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_default_figsize</span><span class="p">[:]</span>
+            <span class="c1"># Adjust for the number of axes</span>
+            <span class="n">figsize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cut_coords</span><span class="p">)</span>
+            <span class="n">facecolor</span> <span class="o">=</span> <span class="s1">&#39;k&#39;</span> <span class="k">if</span> <span class="n">black_bg</span> <span class="k">else</span> <span class="s1">&#39;w&#39;</span>
+
+            <span class="k">if</span> <span class="n">leave_space</span><span class="p">:</span>
+                <span class="n">figsize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">3.4</span>
+            <span class="n">figure</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span>
+                            <span class="n">facecolor</span><span class="o">=</span><span class="n">facecolor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">Axes</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="n">axes</span><span class="o">.</span><span class="n">figure</span> <span class="ow">is</span> <span class="n">figure</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;The axes passed are not &quot;</span>
+                <span class="s2">&quot;in the figure&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">leave_space</span><span class="p">:</span>
+                <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">.</span><span class="mi">7</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">is_iterable</span><span class="p">(</span><span class="n">axes</span><span class="p">):</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">)</span>
+        <span class="c1"># People forget to turn their axis off, or to set the zorder, and</span>
+        <span class="c1"># then they cannot see their slicer</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">cut_coords</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">black_bg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseSlicer.title"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer.title">[docs]</a>    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">bgcolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Write a title to the view.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            text: string</span>
+<span class="sd">                The text of the title</span>
+<span class="sd">            x: float, optional</span>
+<span class="sd">                The horizontal position of the title on the frame in </span>
+<span class="sd">                fraction of the frame width.</span>
+<span class="sd">            y: float, optional</span>
+<span class="sd">                The vertical position of the title on the frame in </span>
+<span class="sd">                fraction of the frame height.</span>
+<span class="sd">            size: integer, optional</span>
+<span class="sd">                The size of the title text.</span>
+<span class="sd">            color: matplotlib color specifier, optional</span>
+<span class="sd">                The color of the font of the title.</span>
+<span class="sd">            bgcolor: matplotlib color specifier, optional</span>
+<span class="sd">                The color of the background of the title.</span>
+<span class="sd">            alpha: float, optional</span>
+<span class="sd">                The alpha value for the background.</span>
+<span class="sd">            kwargs:</span>
+<span class="sd">                Extra keyword arguments are passed to matplotlib&#39;s text</span>
+<span class="sd">                function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;k&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_black_bg</span> <span class="k">else</span> <span class="s1">&#39;w&#39;</span>
+        <span class="k">if</span> <span class="n">bgcolor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bgcolor</span> <span class="o">=</span> <span class="s1">&#39;w&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_black_bg</span> <span class="k">else</span> <span class="s1">&#39;k&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_axes</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> 
+                    <span class="n">transform</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_axes</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+                    <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                    <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                    <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s2">&quot;square,pad=.3&quot;</span><span class="p">,</span> 
+                              <span class="n">ec</span><span class="o">=</span><span class="n">bgcolor</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="n">bgcolor</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">),</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseSlicer.plot_map"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer.plot_map">[docs]</a>    <span class="k">def</span> <span class="nf">plot_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Plot a 3D map in all the views.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            -----------</span>
+<span class="sd">            map: 3D ndarray</span>
+<span class="sd">                The 3D map to be plotted. If it is a masked array, only</span>
+<span class="sd">                the non-masked part will be plotted.</span>
+<span class="sd">            affine: 4x4 ndarray</span>
+<span class="sd">                The affine matrix giving the transformation from voxel</span>
+<span class="sd">                indices to world space.</span>
+<span class="sd">            threshold : a number, None, or &#39;auto&#39;</span>
+<span class="sd">                If None is given, the maps are not thresholded.</span>
+<span class="sd">                If a number is given, it is used to threshold the maps:</span>
+<span class="sd">                values below the threshold are plotted as transparent.</span>
+<span class="sd">            kwargs:</span>
+<span class="sd">                Extra keyword arguments are passed to imshow.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">threshold</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_equal</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_inside</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="o">-</span><span class="n">threshold</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> 
+                                          <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_map_show</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;imshow&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseSlicer.contour_map"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer.contour_map">[docs]</a>    <span class="k">def</span> <span class="nf">contour_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Contour a 3D map in all the views.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            -----------</span>
+<span class="sd">            map: 3D ndarray</span>
+<span class="sd">                The 3D map to be plotted. If it is a masked array, only</span>
+<span class="sd">                the non-masked part will be plotted.</span>
+<span class="sd">            affine: 4x4 ndarray</span>
+<span class="sd">                The affine matrix giving the transformation from voxel</span>
+<span class="sd">                indices to world space.</span>
+<span class="sd">            kwargs:</span>
+<span class="sd">                Extra keyword arguments are passed to contour.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_map_show</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;contour&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_map_show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;imshow&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span> <span class="o">=</span> <span class="n">_xyz_order</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+
+        <span class="n">data_bounds</span> <span class="o">=</span> <span class="n">get_bounds</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">)</span> <span class="o">=</span> <span class="n">data_bounds</span>
+
+        <span class="n">xmin_</span><span class="p">,</span> <span class="n">xmax_</span><span class="p">,</span> <span class="n">ymin_</span><span class="p">,</span> <span class="n">ymax_</span><span class="p">,</span> <span class="n">zmin_</span><span class="p">,</span> <span class="n">zmax_</span> <span class="o">=</span> \
+                                        <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="s1">&#39;mask&#39;</span><span class="p">):</span>
+            <span class="n">not_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            <span class="n">xmin_</span><span class="p">,</span> <span class="n">xmax_</span><span class="p">,</span> <span class="n">ymin_</span><span class="p">,</span> <span class="n">ymax_</span><span class="p">,</span> <span class="n">zmin_</span><span class="p">,</span> <span class="n">zmax_</span> <span class="o">=</span> \
+                            <span class="n">get_mask_bounds</span><span class="p">(</span><span class="n">not_mask</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vmin&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vmax&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Avoid dealing with masked arrays: they are slow</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">not_mask</span><span class="p">):</span>
+                    <span class="c1"># Everything is masked</span>
+                    <span class="n">vmin</span> <span class="o">=</span> <span class="n">vmax</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">masked_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">map</span><span class="p">)[</span><span class="n">not_mask</span><span class="p">]</span>
+                    <span class="n">vmin</span> <span class="o">=</span> <span class="n">masked_map</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                    <span class="n">vmax</span> <span class="o">=</span> <span class="n">masked_map</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vmin&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;vmin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vmin</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;vmax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vmax</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;vmin&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;vmin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;vmax&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;vmax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="n">bounding_box</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmin_</span><span class="p">,</span> <span class="n">xmax_</span><span class="p">),</span> <span class="p">(</span><span class="n">ymin_</span><span class="p">,</span> <span class="n">ymax_</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin_</span><span class="p">,</span> <span class="n">zmax_</span><span class="p">)</span>
+
+        <span class="c1"># For each ax, cut the data and plot it</span>
+        <span class="k">for</span> <span class="n">cut_ax</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cut</span> <span class="o">=</span> <span class="n">cut_ax</span><span class="o">.</span><span class="n">do_cut</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="c1"># We are cutting outside the indices of the data</span>
+                <span class="k">continue</span>
+            <span class="n">cut_ax</span><span class="o">.</span><span class="n">draw_cut</span><span class="p">(</span><span class="n">cut</span><span class="p">,</span> <span class="n">data_bounds</span><span class="p">,</span> <span class="n">bounding_box</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="BaseSlicer.edge_map"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer.edge_map">[docs]</a>    <span class="k">def</span> <span class="nf">edge_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Plot the edges of a 3D map in all the views.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            -----------</span>
+<span class="sd">            map: 3D ndarray</span>
+<span class="sd">                The 3D map to be plotted. If it is a masked array, only</span>
+<span class="sd">                the non-masked part will be plotted.</span>
+<span class="sd">            affine: 4x4 ndarray</span>
+<span class="sd">                The affine matrix giving the transformation from voxel</span>
+<span class="sd">                indices to world space.</span>
+<span class="sd">            color: matplotlib color: string or (r, g, b) value</span>
+<span class="sd">                The color used to display the edge map</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span> <span class="o">=</span> <span class="n">_xyz_order</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">alpha_cmap</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">))</span>
+        <span class="n">data_bounds</span> <span class="o">=</span> <span class="n">get_bounds</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+
+        <span class="c1"># For each ax, cut the data and plot it</span>
+        <span class="k">for</span> <span class="n">cut_ax</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cut</span> <span class="o">=</span> <span class="n">cut_ax</span><span class="o">.</span><span class="n">do_cut</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+                <span class="n">edge_mask</span> <span class="o">=</span> <span class="n">_edge_map</span><span class="p">(</span><span class="n">cut</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="c1"># We are cutting outside the indices of the data</span>
+                <span class="k">continue</span>
+            <span class="n">cut_ax</span><span class="o">.</span><span class="n">draw_cut</span><span class="p">(</span><span class="n">edge_mask</span><span class="p">,</span> <span class="n">data_bounds</span><span class="p">,</span> <span class="n">data_bounds</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;imshow&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseSlicer.annotate"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseSlicer.annotate">[docs]</a>    <span class="k">def</span> <span class="nf">annotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left_right</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Add annotations to the plot.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            left_right: boolean, optional</span>
+<span class="sd">                If left_right is True, annotations indicating which side</span>
+<span class="sd">                is left and which side is right are drawn.</span>
+<span class="sd">            positions: boolean, optional</span>
+<span class="sd">                If positions is True, annotations indicating the</span>
+<span class="sd">                positions of the cuts are drawn.</span>
+<span class="sd">            size: integer, optional</span>
+<span class="sd">                The size of the text used.</span>
+<span class="sd">            kwargs:</span>
+<span class="sd">                Extra keyword arguments are passed to matplotlib&#39;s text</span>
+<span class="sd">                function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;color&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_black_bg</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;w&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;k&#39;</span>
+
+        <span class="n">bg_color</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;k&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_black_bg</span> <span class="k">else</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">left_right</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">cut_ax</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">cut_ax</span><span class="o">.</span><span class="n">draw_left_right</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">bg_color</span><span class="o">=</span><span class="n">bg_color</span><span class="p">,</span>
+                                       <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">positions</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">cut_ax</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">cut_ax</span><span class="o">.</span><span class="n">draw_position</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">bg_color</span><span class="o">=</span><span class="n">bg_color</span><span class="p">,</span>
+                                       <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1"># class OrthoSlicer</span>
+<span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="OrthoSlicer"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.OrthoSlicer">[docs]</a><span class="k">class</span> <span class="nc">OrthoSlicer</span><span class="p">(</span><span class="n">BaseSlicer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A class to create 3 linked axes for plotting orthogonal</span>
+<span class="sd">        cuts of 3D maps.</span>
+
+<span class="sd">        Attributes</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        axes: dictionnary of axes</span>
+<span class="sd">            The 3 axes used to plot each view.</span>
+<span class="sd">        frame_axes: axes</span>
+<span class="sd">            The axes framing the whole set of views.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        The extent of the different axes are adjusted to fit the data</span>
+<span class="sd">        best in the viewing area.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="OrthoSlicer.find_cut_coords"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.OrthoSlicer.find_cut_coords">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">find_cut_coords</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">cut_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">cut_coords</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">cut_coords</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x_map</span><span class="p">,</span> <span class="n">y_map</span><span class="p">,</span> <span class="n">z_map</span> <span class="o">=</span> <span class="n">find_cut_coords</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>
+                                        <span class="n">activation_threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
+                <span class="n">cut_coords</span> <span class="o">=</span> <span class="n">coord_transform</span><span class="p">(</span><span class="n">x_map</span><span class="p">,</span> <span class="n">y_map</span><span class="p">,</span> <span class="n">z_map</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cut_coords</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_init_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span>
+        <span class="c1"># Create our axes:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">direction</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">((</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">)):</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="mf">0.3</span><span class="o">*</span><span class="n">index</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">),</span> <span class="n">y1</span><span class="o">-</span><span class="n">y0</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+            <span class="n">coord</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_coords</span><span class="p">[</span><span class="s1">&#39;xyz&#39;</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">direction</span><span class="p">)]</span>
+            <span class="n">cut_ax</span> <span class="o">=</span> <span class="n">CutAxes</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">coord</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="n">direction</span><span class="p">]</span> <span class="o">=</span> <span class="n">cut_ax</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_axes_locator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locator</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_locator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">renderer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The locator function used by matplotlib to position axes.</span>
+<span class="sd">            Here we put the logic used to adjust the size of the axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span>
+        <span class="n">width_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">cut_ax_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span>
+        <span class="n">x_ax</span> <span class="o">=</span> <span class="n">cut_ax_dict</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span>
+        <span class="n">y_ax</span> <span class="o">=</span> <span class="n">cut_ax_dict</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span>
+        <span class="n">z_ax</span> <span class="o">=</span> <span class="n">cut_ax_dict</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">cut_ax</span> <span class="ow">in</span> <span class="n">cut_ax_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">bounds</span> <span class="o">=</span> <span class="n">cut_ax</span><span class="o">.</span><span class="n">get_object_bounds</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">bounds</span><span class="p">:</span>
+                <span class="c1"># This happens if the call to _map_show was not</span>
+                <span class="c1"># succesful. As it happens asyncroniously (during a</span>
+                <span class="c1"># refresh of the figure) we capture the problem and</span>
+                <span class="c1"># ignore it: it only adds a non informative traceback</span>
+                <span class="n">bounds</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">bounds</span>
+            <span class="n">width_dict</span><span class="p">[</span><span class="n">cut_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
+        <span class="n">total_width</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">width_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">width</span> <span class="ow">in</span> <span class="n">width_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">width_dict</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">width</span><span class="o">/</span><span class="n">total_width</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span> <span class="o">-</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">left_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">left_dict</span><span class="p">[</span><span class="n">y_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">x0</span>
+        <span class="n">left_dict</span><span class="p">[</span><span class="n">x_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">x0</span> <span class="o">+</span> <span class="n">width_dict</span><span class="p">[</span><span class="n">y_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span>
+        <span class="n">left_dict</span><span class="p">[</span><span class="n">z_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">x0</span> <span class="o">+</span> <span class="n">width_dict</span><span class="p">[</span><span class="n">x_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span> <span class="o">+</span> <span class="n">width_dict</span><span class="p">[</span><span class="n">y_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Bbox</span><span class="p">([[</span><span class="n">left_dict</span><span class="p">[</span><span class="n">axes</span><span class="p">],</span> <span class="n">y0</span><span class="p">],</span>
+                          <span class="p">[</span><span class="n">left_dict</span><span class="p">[</span><span class="n">axes</span><span class="p">]</span> <span class="o">+</span> <span class="n">width_dict</span><span class="p">[</span><span class="n">axes</span><span class="p">],</span> <span class="n">y1</span><span class="p">]])</span>
+
+
+<div class="viewcode-block" id="OrthoSlicer.draw_cross"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.OrthoSlicer.draw_cross">[docs]</a>    <span class="k">def</span> <span class="nf">draw_cross</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Draw a crossbar on the plot to show where the cut is</span>
+<span class="sd">            performed.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            cut_coords: 3-tuple of floats, optional</span>
+<span class="sd">                The position of the cross to draw. If none is passed, the</span>
+<span class="sd">                ortho_slicer&#39;s cut coordinnates are used.</span>
+<span class="sd">            kwargs:</span>
+<span class="sd">                Extra keyword arguments are passed to axhline</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cut_coords</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cut_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cut_coords</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">cut_coords</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;color&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_black_bg</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;.8&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;k&#39;</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">ax</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ymin</span><span class="o">=.</span><span class="mi">05</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=.</span><span class="mi">95</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">ax</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">ymin</span><span class="o">=.</span><span class="mi">05</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=.</span><span class="mi">95</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=.</span><span class="mi">95</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">ax</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ymin</span><span class="o">=.</span><span class="mi">05</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=.</span><span class="mi">95</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+
+
+
+<div class="viewcode-block" id="demo_ortho_slicer"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.demo_ortho_slicer">[docs]</a><span class="k">def</span> <span class="nf">demo_ortho_slicer</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; A small demo of the OrthoSlicer functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+    <span class="n">oslicer</span> <span class="o">=</span> <span class="n">OrthoSlicer</span><span class="p">(</span><span class="n">cut_coords</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="kn">from</span> <span class="nn">.anat_cache</span> <span class="k">import</span> <span class="n">_AnatCache</span>
+    <span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_AnatCache</span><span class="o">.</span><span class="n">get_anat</span><span class="p">()</span>
+    <span class="n">oslicer</span><span class="o">.</span><span class="n">plot_map</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">pl</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">gray</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">oslicer</span></div>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1"># class BaseStackedSlicer</span>
+<span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="BaseStackedSlicer"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseStackedSlicer">[docs]</a><span class="k">class</span> <span class="nc">BaseStackedSlicer</span><span class="p">(</span><span class="n">BaseSlicer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A class to create linked axes for plotting stacked</span>
+<span class="sd">        cuts of 3D maps.</span>
+
+<span class="sd">        Attributes</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        axes: dictionnary of axes</span>
+<span class="sd">            The axes used to plot each view.</span>
+<span class="sd">        frame_axes: axes</span>
+<span class="sd">            The axes framing the whole set of views.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        The extent of the different axes are adjusted to fit the data</span>
+<span class="sd">        best in the viewing area.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="BaseStackedSlicer.find_cut_coords"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseStackedSlicer.find_cut_coords">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">find_cut_coords</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">cut_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">cut_coords</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">bounds</span> <span class="o">=</span> <span class="p">((</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">75</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;mask&#39;</span><span class="p">):</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># The mask will be anything that is fairly different</span>
+                    <span class="c1"># from the values in the corners</span>
+                    <span class="n">edge_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                                     <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                                     <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                                     <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                                    <span class="p">)</span>
+                    <span class="n">edge_value</span> <span class="o">/=</span> <span class="mi">6</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">edge_value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">.</span><span class="mi">005</span><span class="o">*</span><span class="n">data</span><span class="o">.</span><span class="n">ptp</span><span class="p">()</span>
+                <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span> <span class="o">=</span> \
+                                <span class="n">get_mask_bounds</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+                <span class="n">bounds</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">)</span>
+            <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;xyz&#39;</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_direction</span><span class="p">)]</span>
+            <span class="n">cut_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">cut_coords</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_init_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span>
+        <span class="c1"># Create our axes:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">fraction</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cut_coords</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">coord</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cut_coords</span><span class="p">):</span>
+            <span class="n">coord</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="n">fraction</span><span class="o">*</span><span class="n">index</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span>
+                          <span class="n">fraction</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">),</span> <span class="n">y1</span><span class="o">-</span><span class="n">y0</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+            <span class="n">cut_ax</span> <span class="o">=</span> <span class="n">CutAxes</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_direction</span><span class="p">,</span> <span class="n">coord</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="n">coord</span><span class="p">]</span> <span class="o">=</span> <span class="n">cut_ax</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_axes_locator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locator</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_locator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">renderer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The locator function used by matplotlib to position axes.</span>
+<span class="sd">            Here we put the logic used to adjust the size of the axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span>
+        <span class="n">width_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">cut_ax_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span>
+        <span class="k">for</span> <span class="n">cut_ax</span> <span class="ow">in</span> <span class="n">cut_ax_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">bounds</span> <span class="o">=</span> <span class="n">cut_ax</span><span class="o">.</span><span class="n">get_object_bounds</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">bounds</span><span class="p">:</span>
+                <span class="c1"># This happens if the call to _map_show was not</span>
+                <span class="c1"># succesful. As it happens asyncroniously (during a</span>
+                <span class="c1"># refresh of the figure) we capture the problem and</span>
+                <span class="c1"># ignore it: it only adds a non informative traceback</span>
+                <span class="n">bounds</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">bounds</span>
+            <span class="n">width_dict</span><span class="p">[</span><span class="n">cut_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span>
+        <span class="n">total_width</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">width_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">width</span> <span class="ow">in</span> <span class="n">width_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">width_dict</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">width</span><span class="o">/</span><span class="n">total_width</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span> <span class="o">-</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">left_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">left</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">coord</span><span class="p">,</span> <span class="n">cut_ax</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">cut_ax_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">left_dict</span><span class="p">[</span><span class="n">cut_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span> <span class="o">=</span> <span class="n">left</span>
+            <span class="n">this_width</span> <span class="o">=</span> <span class="n">width_dict</span><span class="p">[</span><span class="n">cut_ax</span><span class="o">.</span><span class="n">ax</span><span class="p">]</span>
+            <span class="n">left</span> <span class="o">+=</span> <span class="n">this_width</span>
+        <span class="k">return</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Bbox</span><span class="p">([[</span><span class="n">left_dict</span><span class="p">[</span><span class="n">axes</span><span class="p">],</span> <span class="n">y0</span><span class="p">],</span>
+                                <span class="p">[</span><span class="n">left_dict</span><span class="p">[</span><span class="n">axes</span><span class="p">]</span> <span class="o">+</span> <span class="n">width_dict</span><span class="p">[</span><span class="n">axes</span><span class="p">],</span> <span class="n">y1</span><span class="p">]])</span>
+
+
+<div class="viewcode-block" id="BaseStackedSlicer.draw_cross"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.BaseStackedSlicer.draw_cross">[docs]</a>    <span class="k">def</span> <span class="nf">draw_cross</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Draw a crossbar on the plot to show where the cut is</span>
+<span class="sd">            performed.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            cut_coords: 3-tuple of floats, optional</span>
+<span class="sd">                The position of the cross to draw. If none is passed, the</span>
+<span class="sd">                ortho_slicer&#39;s cut coordinnates are used.</span>
+<span class="sd">            kwargs:</span>
+<span class="sd">                Extra keyword arguments are passed to axhline</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span></div></div>
+
+
+<div class="viewcode-block" id="XSlicer"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.XSlicer">[docs]</a><span class="k">class</span> <span class="nc">XSlicer</span><span class="p">(</span><span class="n">BaseStackedSlicer</span><span class="p">):</span>
+    <span class="n">_direction</span> <span class="o">=</span> <span class="s1">&#39;x&#39;</span>
+    <span class="n">_default_figsize</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.2</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="YSlicer"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.YSlicer">[docs]</a><span class="k">class</span> <span class="nc">YSlicer</span><span class="p">(</span><span class="n">BaseStackedSlicer</span><span class="p">):</span>
+    <span class="n">_direction</span> <span class="o">=</span> <span class="s1">&#39;y&#39;</span>
+    <span class="n">_default_figsize</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.6</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="ZSlicer"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.slicers.html#nipy.labs.viz_tools.slicers.ZSlicer">[docs]</a><span class="k">class</span> <span class="nc">ZSlicer</span><span class="p">(</span><span class="n">BaseStackedSlicer</span><span class="p">):</span>
+    <span class="n">_direction</span> <span class="o">=</span> <span class="s1">&#39;z&#39;</span></div>
+
+
+<span class="n">SLICERS</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">ortho</span><span class="o">=</span><span class="n">OrthoSlicer</span><span class="p">,</span>
+               <span class="n">x</span><span class="o">=</span><span class="n">XSlicer</span><span class="p">,</span>
+               <span class="n">y</span><span class="o">=</span><span class="n">YSlicer</span><span class="p">,</span>
+               <span class="n">z</span><span class="o">=</span><span class="n">ZSlicer</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

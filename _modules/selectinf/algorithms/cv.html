@@ -1,0 +1,426 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.algorithms.cv</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">functools</span><span class="o">,</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">regreg.api</span> <span class="k">as</span> <span class="nn">rr</span>
+
+<span class="kn">from</span> <span class="nn">..randomized.randomization</span> <span class="k">import</span> <span class="n">randomization</span>
+
+<div class="viewcode-block" id="CV"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv.html#selectinf.algorithms.cv.CV">[docs]</a><span class="k">class</span> <span class="nc">CV</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="CV.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv.html#selectinf.algorithms.cv.CV.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">lam_seq</span><span class="p">,</span> <span class="n">objective_randomization</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">folds</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">objective_randomization</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">loss</span><span class="p">,</span>
+                          <span class="n">folds</span><span class="p">,</span>
+                          <span class="n">lam_seq</span><span class="p">,</span>
+                          <span class="n">objective_randomization</span><span class="p">,</span>
+                          <span class="n">epsilon</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">objective_randomization</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">true_divide</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">K</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">folds</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lam_seq</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CV.CV_err"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv.html#selectinf.algorithms.cv.CV.CV_err">[docs]</a>    <span class="k">def</span> <span class="nf">CV_err</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+               <span class="n">penalty</span><span class="p">,</span>
+               <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">residual_randomization</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">scale</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">solve_args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min_its&#39;</span><span class="p">:</span><span class="mi">20</span><span class="p">,</span> <span class="s1">&#39;tol&#39;</span><span class="p">:</span><span class="mf">1.e-1</span><span class="p">}):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the non-randomized CV error and the one with added residual randomization</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">)</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">CV_err</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">CV_err_squared</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">residual_randomization</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">CV_err_randomized</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">CV_err_squared_randomized</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.</span>
+
+        <span class="k">for</span> <span class="n">fold</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">folds</span><span class="p">):</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">folds</span> <span class="o">==</span> <span class="n">fold</span>
+            <span class="n">train</span> <span class="o">=</span> <span class="o">~</span><span class="n">test</span>
+
+            <span class="n">loss_train</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">train</span><span class="p">)</span>
+            <span class="n">loss_test</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+            <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">test</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">test</span><span class="p">]</span>
+            <span class="n">n_test</span> <span class="o">=</span> <span class="n">y_test</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">objective_randomization</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">randomized_train_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objective_randomization</span><span class="o">.</span><span class="n">randomize</span><span class="p">(</span><span class="n">loss_train</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># randomized train loss</span>
+                <span class="n">problem</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">simple_problem</span><span class="p">(</span><span class="n">randomized_train_loss</span><span class="p">,</span> <span class="n">penalty</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">problem</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">simple_problem</span><span class="p">(</span><span class="n">loss_train</span><span class="p">,</span> <span class="n">penalty</span><span class="p">)</span>
+            <span class="n">beta_train</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="o">**</span><span class="n">solve_args</span><span class="p">)</span>
+
+            <span class="n">_mu</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="n">loss_test</span><span class="o">.</span><span class="n">saturated_loss</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span>
+            <span class="n">resid</span> <span class="o">=</span> <span class="n">y_test</span> <span class="o">-</span> <span class="n">_mu</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">beta_train</span><span class="p">)</span>
+            <span class="n">cur</span> <span class="o">=</span> <span class="p">(</span><span class="n">resid</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">n_test</span>
+            <span class="n">CV_err</span> <span class="o">+=</span> <span class="n">cur</span>
+            <span class="n">CV_err_squared</span> <span class="o">+=</span> <span class="p">(</span><span class="n">cur</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">residual_randomization</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">random_noise</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n_test</span><span class="p">)</span>
+                <span class="n">cur_randomized</span> <span class="o">=</span> <span class="p">((</span><span class="n">resid</span> <span class="o">+</span> <span class="n">random_noise</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">n_test</span>
+                <span class="n">CV_err_randomized</span> <span class="o">+=</span> <span class="n">cur_randomized</span>
+                <span class="n">CV_err_squared_randomized</span> <span class="o">+=</span> <span class="n">cur_randomized</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">SD_CV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">CV_err_squared</span> <span class="o">-</span> <span class="p">((</span><span class="n">CV_err</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">))</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">residual_randomization</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">SD_CV_randomized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">CV_err_squared_randomized</span> <span class="o">-</span> <span class="p">(</span><span class="n">CV_err_randomized</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">CV_err</span><span class="p">,</span> <span class="n">SD_CV</span><span class="p">,</span> <span class="n">CV_err_randomized</span><span class="p">,</span> <span class="n">SD_CV_randomized</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">CV_err</span><span class="p">,</span> <span class="n">SD_CV</span></div>
+
+
+<div class="viewcode-block" id="CV.choose_lambda_CVr"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv.html#selectinf.algorithms.cv.CV.choose_lambda_CVr">[docs]</a>    <span class="k">def</span> <span class="nf">choose_lambda_CVr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Minimizes CV error curve without randomization and the one with residual randomization</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;scale&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
+
+        <span class="n">CV_curve</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">lam</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="p">:</span>
+            <span class="n">penalty</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">l1norm</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">lagrange</span><span class="o">=</span><span class="n">lam</span><span class="p">)</span>
+            <span class="c1"># CV_curve.append(self.CV_err(penalty, loss) + (lam,))</span>
+            <span class="n">CV_curve</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CV_err</span><span class="p">(</span><span class="n">penalty</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">residual_randomization</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">))</span>
+
+        <span class="n">CV_curve</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CV_curve</span><span class="p">)</span>
+        <span class="n">CV_val</span> <span class="o">=</span> <span class="n">CV_curve</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">CV_val_randomized</span> <span class="o">=</span> <span class="n">CV_curve</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">lam_CV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">CV_val</span><span class="p">)]</span>
+        <span class="n">lam_CV_randomized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">CV_val_randomized</span><span class="p">)]</span>
+
+        <span class="n">SD_val</span> <span class="o">=</span> <span class="n">CV_curve</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">SD_val_randomized</span> <span class="o">=</span> <span class="n">CV_curve</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">lam_CV</span><span class="p">,</span> <span class="n">CV_val</span><span class="p">,</span> <span class="n">SD_val</span><span class="p">,</span> <span class="n">lam_CV_randomized</span><span class="p">,</span> <span class="n">CV_val_randomized</span><span class="p">,</span> <span class="n">SD_val_randomized</span></div>
+
+
+<div class="viewcode-block" id="CV.bootstrap_CVr_curve"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv.html#selectinf.algorithms.cv.CV.bootstrap_CVr_curve">[docs]</a>    <span class="k">def</span> <span class="nf">bootstrap_CVr_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bootstrap of CV error curve with residual randomization</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">_boot_CV_curve</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">folds_star</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">folds_star</span><span class="p">)</span>
+            <span class="n">loss_star</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="c1"># loss_star = rr.glm.gaussian(X[indices,:], y[indices])</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">choose_lambda_CVr</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">loss_star</span><span class="p">)</span>
+            <span class="n">CV_val</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CV_val</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_boot_CVr_curve</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">folds_star</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">folds_star</span><span class="p">)</span>
+            <span class="n">loss_star</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="c1">#loss_star = rr.glm.gaussian(X[indices,:], y[indices])</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">choose_lambda_CVr</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="n">loss_star</span><span class="p">)</span>
+            <span class="n">CV_val_randomized</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CV_val_randomized</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_boot_CV_curve</span><span class="p">,</span> <span class="n">_boot_CVr_curve</span></div>
+
+
+<div class="viewcode-block" id="CV.choose_lambda_CVR"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv.html#selectinf.algorithms.cv.CV.choose_lambda_CVR">[docs]</a>    <span class="k">def</span> <span class="nf">choose_lambda_CVR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">scale1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Minimizes CV error curve with additive randomization (CVR=CV+R1+R2=CV1+R2)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">)</span>
+        <span class="n">CV_curve</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">lam</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="p">:</span>
+            <span class="n">penalty</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">l1norm</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">lagrange</span><span class="o">=</span><span class="n">lam</span><span class="p">)</span>
+            <span class="c1">#CV_curve.append(self.CV_err(penalty, loss) + (lam,))</span>
+            <span class="n">CV_curve</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CV_err</span><span class="p">(</span><span class="n">penalty</span><span class="p">,</span> <span class="n">loss</span><span class="p">))</span>
+
+        <span class="n">CV_curve</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CV_curve</span><span class="p">)</span>
+
+        <span class="n">rv1</span><span class="p">,</span> <span class="n">rv2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">scale1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomization1</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale1</span><span class="p">)</span>
+            <span class="n">rv1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">randomization1</span><span class="o">.</span><span class="n">_sampler</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)))</span>
+        <span class="k">if</span> <span class="n">scale2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">randomization2</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale2</span><span class="p">)</span>
+            <span class="n">rv2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">randomization2</span><span class="o">.</span><span class="n">_sampler</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)))</span>
+        <span class="n">CVR_val</span> <span class="o">=</span> <span class="n">CV_curve</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">rv1</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">+</span><span class="n">rv2</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">lam_CVR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">CVR_val</span><span class="p">)]</span> <span class="c1"># lam_CVR minimizes CVR</span>
+        <span class="n">CV1_val</span> <span class="o">=</span> <span class="n">CV_curve</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">rv1</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="n">SD</span> <span class="o">=</span> <span class="n">CV_curve</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">lam_CVR</span><span class="p">,</span> <span class="n">SD</span><span class="p">,</span> <span class="n">CVR_val</span><span class="p">,</span> <span class="n">CV1_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam_seq</span></div>
+
+
+<div class="viewcode-block" id="CV.bootstrap_CVR_curve"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv.html#selectinf.algorithms.cv.CV.bootstrap_CVR_curve">[docs]</a>    <span class="k">def</span> <span class="nf">bootstrap_CVR_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bootstrap of CVR=CV+R1+R2 and CV1=CV+R1 curves</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_bootstrap_CVerr_curve</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">folds_star</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">folds_star</span><span class="p">)</span>
+            <span class="n">loss_star</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="c1">#loss_star = rr.glm.gaussian(X[indices,:], y[indices])</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">CVR_val</span><span class="p">,</span> <span class="n">CV1_val</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">choose_lambda_CVR</span><span class="p">(</span><span class="n">scale1</span><span class="p">,</span> <span class="n">scale2</span><span class="p">,</span> <span class="n">loss_star</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CVR_val</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">CV1_val</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_CVR_boot</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">_bootstrap_CVerr_curve</span><span class="p">(</span><span class="n">indices</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">def</span> <span class="nf">_CV1_boot</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">_bootstrap_CVerr_curve</span><span class="p">(</span><span class="n">indices</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">_CVR_boot</span><span class="p">,</span> <span class="n">_CV1_boot</span></div></div>
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.cv.html#selectinf.algorithms.cv.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">...tests.instance</span> <span class="k">import</span> <span class="n">gaussian_instance</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">,</span> <span class="mi">1000</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">nonzero</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">gaussian_instance</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">rr</span><span class="o">.</span><span class="n">glm</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">lam_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.e-6</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">30</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">folds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="n">K</span>
+    <span class="n">CV_compute</span> <span class="o">=</span> <span class="n">CV</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">lam_seq</span><span class="p">)</span>
+    <span class="n">lam_CV</span><span class="p">,</span> <span class="n">CV_val</span><span class="p">,</span> <span class="n">SD_val</span><span class="p">,</span> <span class="n">lam_CV_randomized</span><span class="p">,</span> <span class="n">CV_val_randomized</span><span class="p">,</span> <span class="n">SD_val_randomized</span> <span class="o">=</span> <span class="n">CV_compute</span><span class="o">.</span><span class="n">choose_lambda_CVr</span><span class="p">()</span>
+    <span class="c1">#print(&quot;CV error curve (nonrandomized):&quot;, CV_val)</span>
+
+    <span class="n">minimum_CV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">CV_val</span><span class="p">)</span>
+    <span class="n">lam_idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">lam_seq</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">lam_CV</span><span class="p">)</span>
+    <span class="n">SD_min</span> <span class="o">=</span> <span class="n">SD_val</span><span class="p">[</span><span class="n">lam_idx</span><span class="p">]</span>
+    <span class="n">lam_1SD</span> <span class="o">=</span> <span class="n">lam_seq</span><span class="p">[</span><span class="nb">max</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lam_seq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">CV_val</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">minimum_CV</span> <span class="o">+</span> <span class="n">SD_min</span><span class="p">])]</span>
+
+    <span class="c1">#print(lam_CV, lam_1SD)</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">lam_seq</span><span class="p">),</span> <span class="n">CV_val</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

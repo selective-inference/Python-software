@@ -1,0 +1,888 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="distributions.discrete_multiparameter" href="selectinf.distributions.discrete_multiparameter.html" />
+    <link rel="prev" title="distributions.chisq" href="selectinf.distributions.chisq.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">distributions.discrete_family</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-distributions-discrete-family">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.discrete_family</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#discrete-family"><code class="xref py py-class docutils literal notranslate"><span class="pre">discrete_family</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.distributions.discrete_family.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="distributions-discrete-family">
+<h1>distributions.discrete_family<a class="headerlink" href="#distributions-discrete-family" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-distributions-discrete-family">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.discrete_family</span></code><a class="headerlink" href="#module-distributions-discrete-family" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.distributions.discrete_family</span></code>:</p>
+digraph inheritance95e2fa9b07 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;distributions.discrete_family.discrete_family&quot; [URL=&quot;#selectinf.distributions.discrete_family.discrete_family&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+}
+<span class="target" id="module-selectinf.distributions.discrete_family"></span><p>This module contains a class for discrete 
+1-dimensional exponential families. The main
+uses for this class are exact (post-selection)
+hypothesis tests and confidence intervals.</p>
+</div>
+<div class="section" id="discrete-family">
+<h2><a class="reference internal" href="#selectinf.distributions.discrete_family.discrete_family" title="selectinf.distributions.discrete_family.discrete_family"><code class="xref py py-class docutils literal notranslate"><span class="pre">discrete_family</span></code></a><a class="headerlink" href="#discrete-family" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="selectinf.distributions.discrete_family.discrete_family">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.distributions.discrete_family.</code><code class="sig-name descname">discrete_family</code><span class="sig-paren">(</span><em class="sig-param">sufficient_stat</em>, <em class="sig-param">weights</em>, <em class="sig-param">theta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">sufficient_stat</em>, <em class="sig-param">weights</em>, <em class="sig-param">theta=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>A  discrete 1-dimensional
+exponential family with reference measure <span class="math notranslate nohighlight">\(\sum_j w_j \delta_{X_j}\)</span>
+and sufficient statistic <cite>sufficient_stat</cite>. For any <span class="math notranslate nohighlight">\(\theta\)</span>, the distribution
+is</p>
+<div class="math notranslate nohighlight">
+\[P_{\theta} = \sum_{j} e^{\theta X_j - \Lambda(\theta)} w_j \delta_{X_j}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[\Lambda(\theta) = \log \left(\sum_j w_j e^{\theta X_j} \right).\]</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sufficient_stat</strong> : <cite>np.float((n))</cite></p>
+<p><strong>weights</strong> : <cite>np.float(n)</cite></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The weights are normalized to sum to 1.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.theta">
+<em class="property">property </em><code class="sig-name descname">theta</code><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.theta" title="Permalink to this definition">¶</a></dt>
+<dd><p>The natural parameter of the family.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.partition">
+<em class="property">property </em><code class="sig-name descname">partition</code><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.partition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Partition function at <cite>self.theta</cite>:</p>
+<div class="math notranslate nohighlight">
+\[\sum_j e^{\theta X_j} w_j\]</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.sufficient_stat">
+<em class="property">property </em><code class="sig-name descname">sufficient_stat</code><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.sufficient_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sufficient statistics of the exponential family.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.weights">
+<em class="property">property </em><code class="sig-name descname">weights</code><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Weights of the exponential family.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.pdf">
+<code class="sig-name descname">pdf</code><span class="sig-paren">(</span><em class="sig-param">theta</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.pdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Density of <span class="math notranslate nohighlight">\(P_{\theta}\)</span> with respect to <span class="math notranslate nohighlight">\(P_0\)</span>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pdf</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.cdf">
+<code class="sig-name descname">cdf</code><span class="sig-paren">(</span><em class="sig-param">theta</em>, <em class="sig-param">x=None</em>, <em class="sig-param">gamma=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.cdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>The cumulative distribution function of <span class="math notranslate nohighlight">\(P_{\theta}\)</span> with
+weight <cite>gamma</cite> at <cite>x</cite></p>
+<div class="math notranslate nohighlight">
+\[P_{\theta}(X &lt; x) + \gamma * P_{\theta}(X = x)\]</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter.</p>
+</div></blockquote>
+<p><strong>x</strong> : float (optional)</p>
+<blockquote>
+<div><p>Where to evaluate CDF.</p>
+</div></blockquote>
+<p><strong>gamma</strong> : float(optional)</p>
+<blockquote>
+<div><p>Weight given at <cite>x</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>cdf</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.ccdf">
+<code class="sig-name descname">ccdf</code><span class="sig-paren">(</span><em class="sig-param">theta</em>, <em class="sig-param">x=None</em>, <em class="sig-param">gamma=0</em>, <em class="sig-param">return_unnorm=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.ccdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.ccdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>The complementary cumulative distribution function 
+(i.e. survival function) of <span class="math notranslate nohighlight">\(P_{\theta}\)</span> with
+weight <cite>gamma</cite> at <cite>x</cite></p>
+<div class="math notranslate nohighlight">
+\[P_{\theta}(X &gt; x) + \gamma * P_{\theta}(X = x)\]</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter.</p>
+</div></blockquote>
+<p><strong>x</strong> : float (optional)</p>
+<blockquote>
+<div><p>Where to evaluate CCDF.</p>
+</div></blockquote>
+<p><strong>gamma</strong> : float(optional)</p>
+<blockquote>
+<div><p>Weight given at <cite>x</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ccdf</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.E">
+<code class="sig-name descname">E</code><span class="sig-paren">(</span><em class="sig-param">theta</em>, <em class="sig-param">func</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.E"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.E" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expectation of <cite>func</cite> under <span class="math notranslate nohighlight">\(P_{\theta}\)</span></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter.</p>
+</div></blockquote>
+<p><strong>func</strong> : callable</p>
+<blockquote>
+<div><p>Assumed to be vectorized.</p>
+</div></blockquote>
+<p><strong>gamma</strong> : float(optional)</p>
+<blockquote>
+<div><p>Weight given at <cite>x</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>E</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.Var">
+<code class="sig-name descname">Var</code><span class="sig-paren">(</span><em class="sig-param">theta</em>, <em class="sig-param">func</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.Var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.Var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Variance of <cite>func</cite> under <span class="math notranslate nohighlight">\(P_{\theta}\)</span></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter.</p>
+</div></blockquote>
+<p><strong>func</strong> : callable</p>
+<blockquote>
+<div><p>Assumed to be vectorized.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>var</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.Cov">
+<code class="sig-name descname">Cov</code><span class="sig-paren">(</span><em class="sig-param">theta</em>, <em class="sig-param">func1</em>, <em class="sig-param">func2</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.Cov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.Cov" title="Permalink to this definition">¶</a></dt>
+<dd><p>Covariance of <cite>func1</cite> and <cite>func2</cite> under <span class="math notranslate nohighlight">\(P_{\theta}\)</span></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter.</p>
+</div></blockquote>
+<p><strong>func1, func2</strong> : callable</p>
+<blockquote>
+<div><p>Assumed to be vectorized.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>cov</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.two_sided_acceptance">
+<code class="sig-name descname">two_sided_acceptance</code><span class="sig-paren">(</span><em class="sig-param">theta</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">tol=1e-06</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.two_sided_acceptance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.two_sided_acceptance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute cutoffs of UMPU two-sided test.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float (optional)</p>
+<blockquote>
+<div><p>Size of two-sided test.</p>
+</div></blockquote>
+<p><strong>tol</strong> : float</p>
+<blockquote>
+<div><p>Tolerance for root-finding.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>left_cut</strong> : (float, float)</p>
+<blockquote>
+<div><p>Boundary and randomization weight for left endpoint.</p>
+</div></blockquote>
+<p><strong>right_cut</strong> : (float, float)</p>
+<blockquote>
+<div><p>Boundary and randomization weight for right endpoint.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.two_sided_test">
+<code class="sig-name descname">two_sided_test</code><span class="sig-paren">(</span><em class="sig-param">theta0</em>, <em class="sig-param">observed</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">randomize=True</em>, <em class="sig-param">auxVar=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.two_sided_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.two_sided_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform UMPU two-sided test.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta0</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter under null hypothesis.</p>
+</div></blockquote>
+<p><strong>observed</strong> : float</p>
+<blockquote>
+<div><p>Observed sufficient statistic.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float (optional)</p>
+<blockquote>
+<div><p>Size of two-sided test.</p>
+</div></blockquote>
+<p><strong>randomize</strong> : bool</p>
+<blockquote>
+<div><p>Perform the randomized test (or conservative test).</p>
+</div></blockquote>
+<p><strong>auxVar</strong> : [None, float]</p>
+<blockquote>
+<div><p>If randomizing and not None, use this
+as the random uniform variate.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>decision</strong> : np.bool</p>
+<blockquote>
+<div><p>Is the null hypothesis <span class="math notranslate nohighlight">\(H_0:\theta=\theta_0\)</span> rejected?</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>We need an auxiliary uniform variable to carry out the randomized test.
+Larger auxVar corresponds to x being slightly “larger.” It can be passed in,
+or chosen at random. If randomize=False, we get a conservative test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.one_sided_test">
+<code class="sig-name descname">one_sided_test</code><span class="sig-paren">(</span><em class="sig-param">theta0</em>, <em class="sig-param">observed</em>, <em class="sig-param">alternative='greater'</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">randomize=True</em>, <em class="sig-param">auxVar=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.one_sided_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.one_sided_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform UMPU one-sided test.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta0</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter under null hypothesis.</p>
+</div></blockquote>
+<p><strong>observed</strong> : float</p>
+<blockquote>
+<div><p>Observed sufficient statistic.</p>
+</div></blockquote>
+<p><strong>alternative</strong> : str</p>
+<blockquote>
+<div><p>One of [‘greater’, ‘less’]</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float (optional)</p>
+<blockquote>
+<div><p>Size of two-sided test.</p>
+</div></blockquote>
+<p><strong>randomize</strong> : bool</p>
+<blockquote>
+<div><p>Perform the randomized test (or conservative test).</p>
+</div></blockquote>
+<p><strong>auxVar</strong> : [None, float]</p>
+<blockquote>
+<div><p>If randomizing and not None, use this
+as the random uniform variate.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>decision</strong> : np.bool</p>
+<blockquote>
+<div><p>Is the null hypothesis <span class="math notranslate nohighlight">\(H_0:\theta=\theta_0\)</span> rejected?</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>We need an auxiliary uniform variable to carry out the randomized test.
+Larger auxVar corresponds to x being slightly “larger.” It can be passed in,
+or chosen at random. If randomize=False, we get a conservative test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.interval">
+<code class="sig-name descname">interval</code><span class="sig-paren">(</span><em class="sig-param">observed</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">randomize=True</em>, <em class="sig-param">auxVar=None</em>, <em class="sig-param">tol=1e-06</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Form UMAU confidence interval.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : float</p>
+<blockquote>
+<div><p>Observed sufficient statistic.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float (optional)</p>
+<blockquote>
+<div><p>Size of two-sided test.</p>
+</div></blockquote>
+<p><strong>randomize</strong> : bool</p>
+<blockquote>
+<div><p>Perform the randomized test (or conservative test).</p>
+</div></blockquote>
+<p><strong>auxVar</strong> : [None, float]</p>
+<blockquote>
+<div><p>If randomizing and not None, use this
+as the random uniform variate.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>lower, upper</strong> : float</p>
+<blockquote>
+<div><p>Limits of confidence interval.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.equal_tailed_interval">
+<code class="sig-name descname">equal_tailed_interval</code><span class="sig-paren">(</span><em class="sig-param">observed</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">randomize=True</em>, <em class="sig-param">auxVar=None</em>, <em class="sig-param">tol=1e-06</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.equal_tailed_interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.equal_tailed_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Form interval by inverting
+equal-tailed test with <span class="math notranslate nohighlight">\(lpha/2\)</span> in each tail.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : float</p>
+<blockquote>
+<div><p>Observed sufficient statistic.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float (optional)</p>
+<blockquote>
+<div><p>Size of two-sided test.</p>
+</div></blockquote>
+<p><strong>randomize</strong> : bool</p>
+<blockquote>
+<div><p>Perform the randomized test (or conservative test).</p>
+</div></blockquote>
+<p><strong>auxVar</strong> : [None, float]</p>
+<blockquote>
+<div><p>If randomizing and not None, use this
+as the random uniform variate.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>lower, upper</strong> : float</p>
+<blockquote>
+<div><p>Limits of confidence interval.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.equal_tailed_test">
+<code class="sig-name descname">equal_tailed_test</code><span class="sig-paren">(</span><em class="sig-param">theta0</em>, <em class="sig-param">observed</em>, <em class="sig-param">alpha=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.equal_tailed_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.equal_tailed_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform UMPU two-sided test.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta0</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter under null hypothesis.</p>
+</div></blockquote>
+<p><strong>observed</strong> : float</p>
+<blockquote>
+<div><p>Observed sufficient statistic.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float (optional)</p>
+<blockquote>
+<div><p>Size of two-sided test.</p>
+</div></blockquote>
+<p><strong>randomize</strong> : bool</p>
+<blockquote>
+<div><p>Perform the randomized test (or conservative test).</p>
+</div></blockquote>
+<p><strong>auxVar</strong> : [None, float]</p>
+<blockquote>
+<div><p>If randomizing and not None, use this
+as the random uniform variate.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>decision</strong> : np.bool</p>
+<blockquote>
+<div><p>Is the null hypothesis <span class="math notranslate nohighlight">\(H_0:\theta=\theta_0\)</span> rejected?</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>We need an auxiliary uniform variable to carry out the randomized test.
+Larger auxVar corresponds to x being slightly “larger.” It can be passed in,
+or chosen at random. If randomize=False, we get a conservative test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.one_sided_acceptance">
+<code class="sig-name descname">one_sided_acceptance</code><span class="sig-paren">(</span><em class="sig-param">theta</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">alternative='greater'</em>, <em class="sig-param">tol=1e-06</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.one_sided_acceptance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.one_sided_acceptance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the acceptance region cutoffs of UMPU one-sided test.</p>
+<p>TODO: Include randomization?</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float (optional)</p>
+<blockquote>
+<div><p>Size of two-sided test.</p>
+</div></blockquote>
+<p><strong>alternative</strong> : str</p>
+<blockquote>
+<div><p>One of [‘greater’, ‘less’].</p>
+</div></blockquote>
+<p><strong>tol</strong> : float</p>
+<blockquote>
+<div><p>Tolerance for root-finding.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>left_cut</strong> : (float, float)</p>
+<blockquote>
+<div><p>Boundary and randomization weight for left endpoint.</p>
+</div></blockquote>
+<p><strong>right_cut</strong> : (float, float)</p>
+<blockquote>
+<div><p>Boundary and randomization weight for right endpoint.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.equal_tailed_acceptance">
+<code class="sig-name descname">equal_tailed_acceptance</code><span class="sig-paren">(</span><em class="sig-param">theta0</em>, <em class="sig-param">alpha=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.equal_tailed_acceptance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.equal_tailed_acceptance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the acceptance region cutoffs of 
+equal-tailed test (without randomization).
+Therefore, size may not be exactly <span class="math notranslate nohighlight">\(\alpha\)</span>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>theta0</strong> : float</p>
+<blockquote>
+<div><p>Natural parameter under null hypothesis.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float (optional)</p>
+<blockquote>
+<div><p>Size of two-sided test.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>left_cut</strong> : (float, float)</p>
+<blockquote>
+<div><p>Boundary and randomization weight for left endpoint.</p>
+</div></blockquote>
+<p><strong>right_cut</strong> : (float, float)</p>
+<blockquote>
+<div><p>Boundary and randomization weight for right endpoint.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.distributions.discrete_family.discrete_family.MLE">
+<code class="sig-name descname">MLE</code><span class="sig-paren">(</span><em class="sig-param">observed</em>, <em class="sig-param">initial=0</em>, <em class="sig-param">max_iter=20</em>, <em class="sig-param">tol=0.0001</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#discrete_family.MLE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.discrete_family.MLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the maximum likelihood estimator
+based on observed sufficient statistic <cite>observed</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observed</strong> : float</p>
+<blockquote>
+<div><p>Observed value of sufficient statistic</p>
+</div></blockquote>
+<p><strong>initial</strong> : float</p>
+<blockquote>
+<div><p>Starting point for Newton-Raphson</p>
+</div></blockquote>
+<p><strong>max_iter</strong> : int (optional)</p>
+<blockquote>
+<div><p>Maximum number of Newton-Raphson iterations</p>
+</div></blockquote>
+<p><strong>tol</strong> : float (optional)</p>
+<blockquote>
+<div><p>Tolerance parameter for stopping, based
+on relative change in parameter estimate.
+Iteration stops when the change is smaller
+than <cite>tol * max(1, np.fabs(cur_estimate))</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>theta_hat</strong> : float</p>
+<blockquote>
+<div><p>Maximum likelihood estimator.</p>
+</div></blockquote>
+<p><strong>std_err</strong> : float</p>
+<blockquote>
+<div><p>Estimated variance of <cite>theta_hat</cite> based
+on inverse of variance of sufficient
+statistic at <cite>theta_hat</cite>, i.e. the
+observed Fisher information.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.distributions.discrete_family.crit_func">
+<code class="sig-prename descclassname">selectinf.distributions.discrete_family.</code><code class="sig-name descname">crit_func</code><span class="sig-paren">(</span><em class="sig-param">test_statistic</em>, <em class="sig-param">left_cut</em>, <em class="sig-param">right_cut</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/distributions/discrete_family.html#crit_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.distributions.discrete_family.crit_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generic critical function for an interval,
+with weights at the endpoints.</p>
+<dl class="simple">
+<dt>((test_statistic &lt; CL) + (test_statistic &gt; CR) + </dt><dd><p>gammaL * (test_statistic == CL) + 
+gammaR * (test_statistic == CR))</p>
+</dd>
+</dl>
+<p>where (CL, gammaL) = left_cut, (CR, gammaR) = right_cut.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>test_statistic</strong> : np.float</p>
+<blockquote>
+<div><p>Observed value of test statistic.</p>
+</div></blockquote>
+<p><strong>left_cut</strong> : (float, float)</p>
+<blockquote>
+<div><p>(CL, gammaL): left endpoint and value at exactly the left endpoint (should be in [0,1]).</p>
+</div></blockquote>
+<p><strong>right_cut</strong> : (float, float)</p>
+<blockquote>
+<div><p>(CR, gammaR): right endpoint and value at exactly the right endpoint (should be in [0,1]).</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>decision</strong> : np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.distributions.discrete_multiparameter.html" class="btn btn-neutral float-right" title="distributions.discrete_multiparameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.distributions.chisq.html" class="btn btn-neutral float-left" title="distributions.chisq" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

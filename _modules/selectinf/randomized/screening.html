@@ -1,0 +1,569 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.randomized.screening</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">ndist</span>
+
+<span class="kn">import</span> <span class="nn">regreg.api</span> <span class="k">as</span> <span class="nn">rr</span>
+
+<span class="kn">from</span> <span class="nn">.query</span> <span class="k">import</span> <span class="n">gaussian_query</span>
+<span class="kn">from</span> <span class="nn">.randomization</span> <span class="k">import</span> <span class="n">randomization</span>
+
+<div class="viewcode-block" id="screening"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.screening">[docs]</a><span class="k">class</span> <span class="nc">screening</span><span class="p">(</span><span class="n">gaussian_query</span><span class="p">):</span>
+
+<div class="viewcode-block" id="screening.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.screening.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">observed_data</span><span class="p">,</span>
+                 <span class="n">covariance</span><span class="p">,</span> 
+                 <span class="n">randomizer</span><span class="p">,</span>
+                 <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span> <span class="o">=</span> <span class="o">-</span><span class="n">observed_data</span>  <span class="c1"># -Z if Z \sim N(\mu,\Sigma), X^Ty in regression setting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span> <span class="o">=</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span> <span class="o">=</span> <span class="n">perturb</span></div>
+
+<div class="viewcode-block" id="screening.fit"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.screening.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">gaussian_query</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_randomized_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_omega</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_randomized_score</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_randomized_score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="screening.multivariate_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.screening.multivariate_targets">[docs]</a>    <span class="k">def</span> <span class="nf">multivariate_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">dispersion</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Entries of the mean of \Sigma[E,E]^{-1}Z_E</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">score_linear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">[:,</span> <span class="n">features</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="o">/</span> <span class="n">dispersion</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">score_linear</span><span class="p">[</span><span class="n">features</span><span class="p">]</span>
+        <span class="n">cov_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+        <span class="n">observed_target</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span><span class="p">[</span><span class="n">features</span><span class="p">])</span>
+        <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="o">-</span><span class="n">score_linear</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">cov_target</span><span class="p">)</span>
+        <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">crosscov_target_score</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">alternatives</span></div>
+
+<div class="viewcode-block" id="screening.full_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.screening.full_targets">[docs]</a>    <span class="k">def</span> <span class="nf">full_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">dispersion</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Entries of the mean of \Sigma[E,E]^{-1}Z_E</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">score_linear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">[:,</span> <span class="n">features</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="o">/</span> <span class="n">dispersion</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">/</span> <span class="n">dispersion</span>
+        <span class="n">cov_target</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Q</span><span class="p">)[</span><span class="n">features</span><span class="p">])[:,</span> <span class="n">features</span><span class="p">]</span>
+        <span class="n">observed_target</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span><span class="p">)[</span><span class="n">features</span><span class="p">]</span>
+        <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])[:,</span> <span class="n">features</span><span class="p">]</span>
+        <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">crosscov_target_score</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">alternatives</span></div>
+
+<div class="viewcode-block" id="screening.marginal_targets"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.screening.marginal_targets">[docs]</a>    <span class="k">def</span> <span class="nf">marginal_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Entries of the mean of Z_E</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">score_linear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">[:,</span> <span class="n">features</span><span class="p">]</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">score_linear</span><span class="p">[</span><span class="n">features</span><span class="p">]</span>
+        <span class="n">cov_target</span> <span class="o">=</span> <span class="n">Q</span>
+        <span class="n">observed_target</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">observed_score_state</span><span class="p">[</span><span class="n">features</span><span class="p">]</span>
+        <span class="n">crosscov_target_score</span> <span class="o">=</span> <span class="o">-</span><span class="n">score_linear</span>
+        <span class="n">alternatives</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;twosided&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">features</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">observed_target</span><span class="p">,</span> <span class="n">cov_target</span><span class="p">,</span> <span class="n">crosscov_target_score</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">alternatives</span></div></div>
+
+<div class="viewcode-block" id="marginal_screening"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.marginal_screening">[docs]</a><span class="k">class</span> <span class="nc">marginal_screening</span><span class="p">(</span><span class="n">screening</span><span class="p">):</span>
+
+<div class="viewcode-block" id="marginal_screening.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.marginal_screening.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">observed_data</span><span class="p">,</span>
+                 <span class="n">covariance</span><span class="p">,</span> 
+                 <span class="n">randomizer</span><span class="p">,</span>
+                 <span class="n">threshold</span><span class="p">,</span>
+                 <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">threshold</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="n">threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">observed_data</span><span class="p">)</span> <span class="o">*</span> <span class="n">threshold</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="n">screening</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                           <span class="n">observed_data</span><span class="p">,</span>
+                           <span class="n">covariance</span><span class="p">,</span> 
+                           <span class="n">randomizer</span><span class="p">,</span>
+                           <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>                           </div>
+
+<div class="viewcode-block" id="marginal_screening.fit"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.marginal_screening.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">_randomized_score</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">screening</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">)</span>
+        <span class="n">active</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">_randomized_score</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span> <span class="o">=</span> <span class="n">active</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span>
+        <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="n">_randomized_score</span><span class="p">)</span>
+        <span class="n">active_signs</span> <span class="o">=</span> <span class="n">sign</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">]</span>
+        <span class="n">sign</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sign&#39;</span><span class="p">:</span> <span class="n">sign</span><span class="p">,</span>
+                                   <span class="s1">&#39;variables&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="o">.</span><span class="n">copy</span><span class="p">()}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">_randomized_score</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">opt_linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">))</span>
+        <span class="n">opt_linear</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">active_signs</span><span class="p">)</span>
+        <span class="n">opt_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">opt_offset</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_signs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">]</span>
+        <span class="n">opt_offset</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span><span class="p">]</span> <span class="o">=</span> <span class="n">_randomized_score</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">A_scaling</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">active_signs</span><span class="p">))</span>
+        <span class="n">b_scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler</span><span class="p">(</span><span class="n">A_scaling</span><span class="p">,</span>
+                            <span class="n">b_scaling</span><span class="p">,</span>
+                            <span class="n">opt_linear</span><span class="p">,</span>
+                            <span class="n">opt_offset</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span></div>
+
+<div class="viewcode-block" id="marginal_screening.type1"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.marginal_screening.type1">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">type1</span><span class="p">(</span><span class="n">observed_data</span><span class="p">,</span>
+              <span class="n">covariance</span><span class="p">,</span> 
+              <span class="n">marginal_level</span><span class="p">,</span>
+              <span class="n">randomizer_scale</span><span class="p">,</span>
+              <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Threshold</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">randomized_stdev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span> <span class="o">+</span> <span class="n">randomizer_scale</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">covariance</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="n">p</span><span class="p">,),</span> <span class="n">randomizer_scale</span><span class="p">)</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">randomized_stdev</span> <span class="o">*</span> <span class="n">ndist</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">marginal_level</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">marginal_screening</span><span class="p">(</span><span class="n">observed_data</span><span class="p">,</span>
+                                  <span class="n">covariance</span><span class="p">,</span> 
+                                  <span class="n">randomizer</span><span class="p">,</span>
+                                  <span class="n">threshold</span><span class="p">,</span>
+                                  <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">)</span></div></div>
+
+<span class="c1"># Stepup procedures like Benjamini-Hochberg</span>
+
+<div class="viewcode-block" id="stepup_selection"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.stepup_selection">[docs]</a><span class="k">def</span> <span class="nf">stepup_selection</span><span class="p">(</span><span class="n">Z_values</span><span class="p">,</span> <span class="n">stepup_Z</span><span class="p">):</span>
+
+    <span class="n">absZ_argsort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">Z_values</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">absZ_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">Z_values</span><span class="p">)[</span><span class="n">absZ_argsort</span><span class="p">]</span>
+    <span class="n">survivors</span> <span class="o">=</span> <span class="n">absZ_sorted</span> <span class="o">-</span> <span class="n">stepup_Z</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">survivors</span><span class="p">):</span>
+        <span class="n">num_selected</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">survivors</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">num_selected</span><span class="p">,</span>                    <span class="c1"># how many selected</span>
+                <span class="n">absZ_argsort</span><span class="p">[:</span><span class="n">num_selected</span><span class="p">],</span>     <span class="c1"># ordered indices of those selected</span>
+                <span class="n">stepup_Z</span><span class="p">[</span><span class="n">num_selected</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>      <span class="c1"># the selected are greater than this number </span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="stepup"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.stepup">[docs]</a><span class="k">class</span> <span class="nc">stepup</span><span class="p">(</span><span class="n">screening</span><span class="p">):</span>
+
+<div class="viewcode-block" id="stepup.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.stepup.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">observed_data</span><span class="p">,</span>
+                 <span class="n">covariance</span><span class="p">,</span> 
+                 <span class="n">randomizer</span><span class="p">,</span>
+                 <span class="n">stepup_Z</span><span class="p">,</span>
+                 <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">screening</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                           <span class="n">observed_data</span><span class="p">,</span>
+                           <span class="n">covariance</span><span class="p">,</span> 
+                           <span class="n">randomizer</span><span class="p">,</span>
+                           <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>                           
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepup_Z</span> <span class="o">=</span> <span class="n">stepup_Z</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stepup_Z</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepup_Z</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">greater_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stepup_Z</span><span class="p">,</span> <span class="mi">0</span><span class="p">))):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;stepup Z values should be non-negative and non-increasing&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="stepup.fit"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.stepup.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1"># condition on all those that survive, their sign,</span>
+        <span class="c1"># which was the last past the threshold</span>
+        <span class="c1"># and the observed (randomized) Z values of those that don&#39;t</span>
+
+        <span class="n">_randomized_score</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">screening</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">)</span>
+
+        <span class="n">K</span><span class="p">,</span> <span class="n">selected_idx</span><span class="p">,</span> <span class="n">last_cutoff</span> <span class="o">=</span> <span class="n">stepup_selection</span><span class="p">(</span><span class="n">_randomized_score</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepup_Z</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">K</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">[</span><span class="n">selected_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span>
+
+            <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="n">_randomized_score</span><span class="p">)</span>
+            <span class="n">active_signs</span> <span class="o">=</span> <span class="n">sign</span><span class="p">[</span><span class="n">selected_idx</span><span class="p">]</span>
+            <span class="n">sign</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sign&#39;</span><span class="p">:</span> <span class="n">sign</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                                       <span class="s1">&#39;variables&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                                       <span class="p">}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">_randomized_score</span><span class="p">[</span><span class="n">selected_idx</span><span class="p">])</span> <span class="o">-</span> <span class="n">last_cutoff</span>
+
+            <span class="n">opt_linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">):</span>
+                <span class="n">opt_linear</span><span class="p">[</span><span class="n">selected_idx</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_signs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+            <span class="n">opt_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">opt_offset</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_signs</span> <span class="o">*</span> <span class="n">last_cutoff</span>
+            <span class="n">opt_offset</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span><span class="p">]</span> <span class="o">=</span> <span class="n">_randomized_score</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">A_scaling</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+            <span class="n">b_scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler</span><span class="p">(</span><span class="n">A_scaling</span><span class="p">,</span>
+                                <span class="n">b_scaling</span><span class="p">,</span>
+                                <span class="n">opt_linear</span><span class="p">,</span>
+                                <span class="n">opt_offset</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span></div>
+
+
+<div class="viewcode-block" id="stepup.BH"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.stepup.BH">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">BH</span><span class="p">(</span><span class="n">observed_score</span><span class="p">,</span>
+           <span class="n">covariance</span><span class="p">,</span> 
+           <span class="n">randomizer_scale</span><span class="p">,</span>
+           <span class="n">q</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+           <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">covariance</span><span class="p">),</span> <span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Benjamin-Hochberg expecting Z scores with identical variance, standardize your Z&#39;</span><span class="p">)</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="n">observed_score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">randomized_stdev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">randomizer_scale</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">isotropic_gaussian</span><span class="p">((</span><span class="n">p</span><span class="p">,),</span> <span class="n">randomizer_scale</span><span class="p">)</span>
+
+        <span class="c1"># Benjamini-Hochberg cutoffs</span>
+        <span class="n">stepup_Z</span> <span class="o">=</span> <span class="n">randomized_stdev</span> <span class="o">*</span> <span class="n">ndist</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">q</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">stepup</span><span class="p">(</span><span class="n">observed_score</span><span class="p">,</span>
+                      <span class="n">covariance</span><span class="p">,</span>
+                      <span class="n">randomizer</span><span class="p">,</span>
+                      <span class="n">stepup_Z</span><span class="p">,</span>
+                      <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="stepup.BH_general"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.stepup.BH_general">[docs]</a>    <span class="k">def</span> <span class="nf">BH_general</span><span class="p">(</span><span class="n">observed_score</span><span class="p">,</span>
+                   <span class="n">covariance</span><span class="p">,</span> 
+                   <span class="n">randomizer_cov</span><span class="p">,</span>
+                   <span class="n">q</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                   <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">covariance</span><span class="p">),</span> <span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Benjamin-Hochberg expecting Z scores with identical variance, standardize your Z&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">randomizer_cov</span><span class="p">),</span> <span class="n">randomizer_cov</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Benjamin-Hochberg expecting Z scores with identical variance, standardize your randomization&#39;</span><span class="p">)</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="n">observed_score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">randomizer</span> <span class="o">=</span> <span class="n">randomization</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">randomizer_cov</span><span class="p">)</span>
+        <span class="n">randomized_stdev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">randomizer_cov</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># Benjamini-Hochberg cutoffs</span>
+        <span class="n">stepup_Z</span> <span class="o">=</span> <span class="n">randomized_stdev</span> <span class="o">*</span> <span class="n">ndist</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">q</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">stepup</span><span class="p">(</span><span class="n">observed_score</span><span class="p">,</span>
+                      <span class="n">covariance</span><span class="p">,</span>
+                      <span class="n">randomizer</span><span class="p">,</span>
+                      <span class="n">stepup_Z</span><span class="p">,</span>
+                      <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="topK"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.topK">[docs]</a><span class="k">class</span> <span class="nc">topK</span><span class="p">(</span><span class="n">screening</span><span class="p">):</span>
+
+<div class="viewcode-block" id="topK.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.topK.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">observed_data</span><span class="p">,</span>
+                 <span class="n">covariance</span><span class="p">,</span> 
+                 <span class="n">randomizer</span><span class="p">,</span>
+                 <span class="n">K</span><span class="p">,</span>         <span class="c1"># how many to select?</span>
+                 <span class="nb">abs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="c1"># absolute value of scores or not?</span>
+                 <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">screening</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                           <span class="n">observed_data</span><span class="p">,</span>
+                           <span class="n">covariance</span><span class="p">,</span> 
+                           <span class="n">randomizer</span><span class="p">,</span>
+                           <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>                           
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">K</span> <span class="o">=</span> <span class="n">K</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_abs</span> <span class="o">=</span> <span class="nb">abs</span></div>
+
+<div class="viewcode-block" id="topK.fit"><a class="viewcode-back" href="../../../api/generated/selectinf.randomized.screening.html#selectinf.randomized.screening.topK.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">_randomized_score</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">screening</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturb</span><span class="o">=</span><span class="n">perturb</span><span class="p">)</span>
+
+        <span class="c1"># fixing the topK</span>
+        <span class="c1"># gives us that u=\omega - Z is in a particular cone</span>
+        <span class="c1"># like: s_i u_i \geq |u_j|  1 \leq i \leq K, K+1 \leq j \leq p (when abs is True and s_i are topK signs) or</span>
+        <span class="c1"># u_i \geq u_j  1 \leq i \leq K, K+1 \leq j \leq p (when abs is False)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_abs</span><span class="p">:</span>
+
+            <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="o">-</span><span class="n">_randomized_score</span><span class="p">)</span>
+            <span class="n">topK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">Z</span><span class="p">)[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">:]</span>
+
+            <span class="n">selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="n">selected</span><span class="p">[</span><span class="n">topK</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span> <span class="o">=</span> <span class="n">selected</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span>
+
+            <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+            <span class="n">topK_signs</span> <span class="o">=</span> <span class="n">sign</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">]</span>
+            <span class="n">sign</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sign&#39;</span><span class="p">:</span> <span class="n">sign</span><span class="p">,</span>
+                                       <span class="s1">&#39;variables&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="o">.</span><span class="n">copy</span><span class="p">()}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">opt_linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">))</span>
+            <span class="n">opt_linear</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">topK_signs</span><span class="p">)</span>
+            <span class="n">opt_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>  
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">Z</span> <span class="o">=</span> <span class="o">-</span><span class="n">_randomized_score</span>
+            <span class="n">topK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">Z</span><span class="p">)[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">:]</span>
+
+            <span class="n">selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nfeature</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="n">selected</span><span class="p">[</span><span class="n">topK</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span> <span class="o">=</span> <span class="n">selected</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">selection_variable</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;variables&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="o">.</span><span class="n">copy</span><span class="p">()}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span> <span class="o">=</span> <span class="n">Z</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_opt_state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">opt_linear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">))</span>
+            <span class="n">opt_linear</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+            <span class="n">opt_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>  
+
+        <span class="c1"># in both cases, this conditioning means we just need to compute</span>
+        <span class="c1"># the observed lower bound</span>
+        <span class="c1"># XXX what about abs?</span>
+
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_not_selected</span><span class="p">])</span>
+
+        <span class="n">A_scaling</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span>
+        <span class="n">b_scaling</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_opt_var</span><span class="p">)</span> <span class="o">*</span> <span class="n">lower_bound</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_sampler</span><span class="p">(</span><span class="n">A_scaling</span><span class="p">,</span>
+                            <span class="n">b_scaling</span><span class="p">,</span>
+                            <span class="n">opt_linear</span><span class="p">,</span>
+                            <span class="n">opt_offset</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span></div></div>
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

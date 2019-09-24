@@ -1,0 +1,398 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.core.reference.array_coords.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="core-reference-array-coords">
+<h1>core.reference.array_coords<a class="headerlink" href="#core-reference-array-coords" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-core-reference-array-coords">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">core.reference.array_coords</span></code><a class="headerlink" href="#module-core-reference-array-coords" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.core.reference.array_coords</span></code>:</p>
+digraph inheritanceb0d1d58ea9 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;reference.array_coords.ArrayCoordMap&quot; [URL=&quot;#nipy.core.reference.array_coords.ArrayCoordMap&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class combining coordinate map and array shape&quot;];
+  &quot;reference.array_coords.Grid&quot; [URL=&quot;#nipy.core.reference.array_coords.Grid&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Simple class to construct AffineTransform instances with slice notation&quot;];
+}
+<span class="target" id="module-nipy.core.reference.array_coords"></span><p>Some CoordinateMaps have a domain that are ‘array’ coordinates,
+hence the function of the CoordinateMap can be evaluated at these
+‘array’ points.</p>
+<p>This module tries to make these operations easier by defining a class
+ArrayCoordMap that is essentially a CoordinateMap and a shape.</p>
+<p>This class has two properties: values, transposed_values the
+CoordinateMap at np.indices(shape).</p>
+<p>The class Grid is meant to take a CoordinateMap and an np.mgrid-like
+notation to create an ArrayCoordMap.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="arraycoordmap">
+<h3><a class="reference internal" href="#nipy.core.reference.array_coords.ArrayCoordMap" title="nipy.core.reference.array_coords.ArrayCoordMap"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayCoordMap</span></code></a><a class="headerlink" href="#arraycoordmap" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.core.reference.array_coords.ArrayCoordMap">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.core.reference.array_coords.</code><code class="sig-name descname">ArrayCoordMap</code><span class="sig-paren">(</span><em class="sig-param">coordmap</em>, <em class="sig-param">shape</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/array_coords.html#ArrayCoordMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.array_coords.ArrayCoordMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class combining coordinate map and array shape</p>
+<p>When the function_domain of a CoordinateMap can be thought of as
+‘array’ coordinates, i.e. an ‘input_shape’ makes sense. We can
+than evaluate the CoordinateMap at np.indices(input_shape)</p>
+<dl class="method">
+<dt id="nipy.core.reference.array_coords.ArrayCoordMap.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">coordmap</em>, <em class="sig-param">shape</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/array_coords.html#ArrayCoordMap.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.array_coords.ArrayCoordMap.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coordmap</strong> : <code class="docutils literal notranslate"><span class="pre">CoordinateMap</span></code></p>
+<blockquote>
+<div><p>A CoordinateMap with function_domain that are ‘array’
+coordinates.</p>
+</div></blockquote>
+<p><strong>shape</strong> : sequence of int</p>
+<blockquote>
+<div><p>The size of the (implied) underlying array.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">0.6</span><span class="p">,</span><span class="mf">1.1</span><span class="p">,</span><span class="mf">2.3</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmap</span> <span class="o">=</span> <span class="n">AffineTransform</span><span class="o">.</span><span class="n">from_params</span><span class="p">(</span><span class="s1">&#39;ijk&#39;</span><span class="p">,</span> <span class="s1">&#39;xyz&#39;</span><span class="p">,</span> <span class="n">aff</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmap</span><span class="o">.</span><span class="n">ndims</span> <span class="c1"># number of (input, output) dimensions</span>
+<span class="go">(3, 3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">acmap</span> <span class="o">=</span> <span class="n">ArrayCoordMap</span><span class="p">(</span><span class="n">cmap</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Real world values at each array coordinate, one row per array
+coordinate (6 in this case), one column for each output
+dimension (3 in this case)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">acmap</span><span class="o">.</span><span class="n">values</span>
+<span class="go">array([[ 0.1,  0.2,  0.3],</span>
+<span class="go">       [ 0.1,  0.2,  2.6],</span>
+<span class="go">       [ 0.1,  0.2,  4.9],</span>
+<span class="go">       [ 0.1,  1.3,  0.3],</span>
+<span class="go">       [ 0.1,  1.3,  2.6],</span>
+<span class="go">       [ 0.1,  1.3,  4.9]])</span>
+</pre></div>
+</div>
+<p>Same values, but arranged in np.indices / np.mgrid format, first
+axis is for number of output coordinates (3 in our case), the
+rest are for the input shape (1, 2, 3)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">acmap</span><span class="o">.</span><span class="n">transposed_values</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(3, 1, 2, 3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">acmap</span><span class="o">.</span><span class="n">transposed_values</span>
+<span class="go">array([[[[ 0.1,  0.1,  0.1],</span>
+<span class="go">         [ 0.1,  0.1,  0.1]]],</span>
+
+
+<span class="go">       [[[ 0.2,  0.2,  0.2],</span>
+<span class="go">         [ 1.3,  1.3,  1.3]]],</span>
+
+
+<span class="go">       [[[ 0.3,  2.6,  4.9],</span>
+<span class="go">         [ 0.3,  2.6,  4.9]]]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.core.reference.array_coords.ArrayCoordMap.values">
+<em class="property">property </em><code class="sig-name descname">values</code><a class="headerlink" href="#nipy.core.reference.array_coords.ArrayCoordMap.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get values of ArrayCoordMap in a 2-dimensional array of shape (product(self.shape), self.coordmap.ndims[1]))</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.core.reference.array_coords.ArrayCoordMap.transposed_values">
+<em class="property">property </em><code class="sig-name descname">transposed_values</code><a class="headerlink" href="#nipy.core.reference.array_coords.ArrayCoordMap.transposed_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get values of ArrayCoordMap in an array of shape (self.coordmap.ndims[1],) + self.shape)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.core.reference.array_coords.ArrayCoordMap.from_shape">
+<em class="property">static </em><code class="sig-name descname">from_shape</code><span class="sig-paren">(</span><em class="sig-param">coordmap</em>, <em class="sig-param">shape</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/array_coords.html#ArrayCoordMap.from_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.array_coords.ArrayCoordMap.from_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an evaluator assuming that coordmap.function_domain
+are ‘array’ coordinates.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="grid">
+<h3><a class="reference internal" href="#nipy.core.reference.array_coords.Grid" title="nipy.core.reference.array_coords.Grid"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grid</span></code></a><a class="headerlink" href="#grid" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.core.reference.array_coords.Grid">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.core.reference.array_coords.</code><code class="sig-name descname">Grid</code><span class="sig-paren">(</span><em class="sig-param">coords</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/array_coords.html#Grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.array_coords.Grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Simple class to construct AffineTransform instances with slice notation
+like np.ogrid/np.mgrid.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">CoordinateSystem</span><span class="p">(</span><span class="s1">&#39;xy&#39;</span><span class="p">,</span> <span class="s1">&#39;input&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Grid</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">points</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="mi">21</span><span class="n">j</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">31</span><span class="n">j</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">points</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">affine</span>
+<span class="go">array([[ 0.1,  0. , -1. ],</span>
+<span class="go">       [ 0. ,  0.2, -2. ],</span>
+<span class="go">       [ 0. ,  0. ,  1. ]])</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">points</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="p">)</span>
+<span class="go">CoordinateSystem(coord_names=(&#39;i0&#39;, &#39;i1&#39;), name=&#39;product&#39;, coord_dtype=float64)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">points</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_range</span><span class="p">)</span>
+<span class="go">CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;), name=&#39;input&#39;, coord_dtype=float64)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">points</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(21, 31)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">points</span><span class="o">.</span><span class="n">transposed_values</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="go">(2, 21, 31)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">points</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="go">(651, 2)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="nipy.core.reference.array_coords.Grid.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">coords</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/array_coords.html#Grid.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.array_coords.Grid.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize Grid object</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coords: ``CoordinateMap`` or ``CoordinateSystem``</strong></p>
+<blockquote>
+<div><p>A coordinate map to be ‘sliced’ into. If
+coords is a CoordinateSystem, then an
+AffineTransform instance is created with coords
+with identity transformation.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

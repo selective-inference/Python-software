@@ -1,0 +1,578 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.datasets.volumes.volume_img</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">An image that stores the data as an (x, y, z, ...) array, with an</span>
+<span class="sd">affine mapping to the world space</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">ndimage</span>
+
+<span class="c1"># Local imports</span>
+<span class="kn">from</span> <span class="nn">..transforms.affine_utils</span> <span class="k">import</span> <span class="n">to_matrix_vector</span><span class="p">,</span> \
+                <span class="n">from_matrix_vector</span><span class="p">,</span> <span class="n">get_bounds</span>
+<span class="kn">from</span> <span class="nn">..transforms.affine_transform</span> <span class="k">import</span> <span class="n">AffineTransform</span>
+<span class="kn">from</span> <span class="nn">..transforms.transform</span> <span class="k">import</span> <span class="n">CompositionError</span>
+
+<span class="kn">from</span> <span class="nn">.volume_grid</span> <span class="k">import</span> <span class="n">VolumeGrid</span>
+
+<span class="c1">################################################################################</span>
+<span class="c1"># class `VolumeImg`</span>
+<span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="VolumeImg"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_img.html#nipy.labs.datasets.volumes.volume_img.VolumeImg">[docs]</a><span class="k">class</span> <span class="nc">VolumeImg</span><span class="p">(</span><span class="n">VolumeGrid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A regularly-spaced image for embedding data in an x, y, z 3D</span>
+<span class="sd">        world, for neuroimaging.</span>
+
+<span class="sd">        This object is an ndarray representing a volume, with the first 3</span>
+<span class="sd">        dimensions being spatial, and mapped to a named world space using</span>
+<span class="sd">        an affine (4x4 matrix).</span>
+
+<span class="sd">        Attributes</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        affine : 4x4 ndarray</span>
+<span class="sd">            Affine mapping from indices to world coordinates.</span>
+<span class="sd">        world_space : string</span>
+<span class="sd">            Name of the world space the data is embedded in. For</span>
+<span class="sd">            instance `mni152`.</span>
+<span class="sd">        metadata : dictionnary</span>
+<span class="sd">            Optional, user-defined, dictionnary used to carry around</span>
+<span class="sd">            extra information about the data as it goes through</span>
+<span class="sd">            transformations. The consistency of this information may not</span>
+<span class="sd">            be maintained as the data is modified.</span>
+<span class="sd">        interpolation : &#39;continuous&#39; or &#39;nearest&#39;</span>
+<span class="sd">            String giving the interpolation logic used when calculating</span>
+<span class="sd">            values in different world spaces</span>
+<span class="sd">        _data : </span>
+<span class="sd">            Private pointer to the data.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        ------</span>
+
+<span class="sd">        The data is stored in an undefined way: prescalings might need to</span>
+<span class="sd">        be applied to it before using it, or the data might be loaded on</span>
+<span class="sd">        demand. The best practice to access the data is not to access the</span>
+<span class="sd">        _data attribute, but to use the `get_data` method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># most attributes are given by the VolumeField interface </span>
+
+    <span class="c1">#---------------------------------------------------------------------------</span>
+    <span class="c1"># Attributes, VolumeImg interface</span>
+    <span class="c1">#---------------------------------------------------------------------------</span>
+
+    <span class="c1"># The affine (4x4 ndarray)</span>
+    <span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="c1">#---------------------------------------------------------------------------</span>
+    <span class="c1"># VolumeField interface</span>
+    <span class="c1">#---------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="VolumeImg.__init__"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_img.html#nipy.labs.datasets.volumes.volume_img.VolumeImg.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">world_space</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                 <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;continuous&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a new neuroimaging image with an affine mapping.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+
+<span class="sd">            data : ndarray</span>
+<span class="sd">                ndarray representing the data.</span>
+<span class="sd">            affine : 4x4 ndarray</span>
+<span class="sd">                affine transformation to the reference world space</span>
+<span class="sd">            world_space : string</span>
+<span class="sd">                name of the reference world space.</span>
+<span class="sd">            metadata : dictionnary</span>
+<span class="sd">                dictionnary of user-specified information to store with</span>
+<span class="sd">                the image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">interpolation</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;continuous&#39;</span><span class="p">,</span> <span class="s1">&#39;nearest&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;interpolation must be either continuous &#39;</span>
+                             <span class="s1">&#39;or nearest&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">affine</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The affine should be a 4x4 array&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine</span> <span class="o">=</span> <span class="n">affine</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">world_space</span> <span class="o">=</span> <span class="n">world_space</span>
+        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span></div>
+
+    
+<div class="viewcode-block" id="VolumeImg.like_from_data"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_img.html#nipy.labs.datasets.volumes.volume_img.VolumeImg.like_from_data">[docs]</a>    <span class="k">def</span> <span class="nf">like_from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># Use self.__class__ for subclassing.</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">,</span> \
+            <span class="s1">&#39;The data passed must be an array of at least 3 dimensions&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> 
+                              <span class="n">affine</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">),</span>
+                              <span class="n">world_space</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">world_space</span><span class="p">,</span>
+                              <span class="n">metadata</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">),</span>
+                              <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span>
+                              <span class="p">)</span></div>
+
+    <span class="c1"># Inherit docstring</span>
+    <span class="n">like_from_data</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">VolumeGrid</span><span class="o">.</span><span class="n">like_from_data</span><span class="o">.</span><span class="vm">__doc__</span>
+
+
+<div class="viewcode-block" id="VolumeImg.get_transform"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_img.html#nipy.labs.datasets.volumes.volume_img.VolumeImg.get_transform">[docs]</a>    <span class="k">def</span> <span class="nf">get_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">AffineTransform</span><span class="p">(</span><span class="s1">&#39;voxel_space&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_space</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span></div>
+
+    <span class="c1"># Inherit docstring</span>
+    <span class="n">get_transform</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">VolumeGrid</span><span class="o">.</span><span class="n">get_transform</span><span class="o">.</span><span class="vm">__doc__</span>
+
+<div class="viewcode-block" id="VolumeImg.get_affine"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_img.html#nipy.labs.datasets.volumes.volume_img.VolumeImg.get_affine">[docs]</a>    <span class="k">def</span> <span class="nf">get_affine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span></div>
+
+<div class="viewcode-block" id="VolumeImg.resampled_to_img"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_img.html#nipy.labs.datasets.volumes.volume_img.VolumeImg.resampled_to_img">[docs]</a>    <span class="k">def</span> <span class="nf">resampled_to_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_image</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_image</span><span class="p">,</span> <span class="s1">&#39;world_space&#39;</span><span class="p">):</span>
+            <span class="kn">from</span> <span class="nn">..converters</span> <span class="k">import</span> <span class="n">as_volume_img</span>
+            <span class="n">target_image</span> <span class="o">=</span> <span class="n">as_volume_img</span><span class="p">(</span><span class="n">target_image</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_image</span><span class="o">.</span><span class="n">world_space</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_space</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CompositionError</span><span class="p">(</span>
+                <span class="s1">&#39;The two images are not embedded in the same world space&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_image</span><span class="p">,</span> <span class="n">VolumeImg</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_volume_img</span><span class="p">(</span><span class="n">affine</span><span class="o">=</span><span class="n">target_image</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span>
+                                    <span class="n">shape</span><span class="o">=</span><span class="n">target_image</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span>
+                                    <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># IMPORTANT: Polymorphism can be implemented by walking the </span>
+            <span class="c1"># MRO and finding a method that does not raise</span>
+            <span class="c1"># NotImplementedError. </span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">VolumeImg</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">resampled_to_img</span><span class="p">(</span><span class="n">target_image</span><span class="p">,</span>
+                                    <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Inherit docstring</span>
+    <span class="n">resampled_to_img</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">VolumeGrid</span><span class="o">.</span><span class="n">resampled_to_img</span><span class="o">.</span><span class="vm">__doc__</span>
+
+
+<div class="viewcode-block" id="VolumeImg.as_volume_img"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_img.html#nipy.labs.datasets.volumes.volume_img.VolumeImg.as_volume_img">[docs]</a>    <span class="k">def</span> <span class="nf">as_volume_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                        <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">affine</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">copy</span>
+                <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">affine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">affine</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c1"># We have a 3D affine, we need to find out the offset and</span>
+            <span class="c1"># shape to keep the same bounding box in the new space</span>
+            <span class="n">affine4d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">affine4d</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">affine</span>
+            <span class="n">transform_affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">affine4d</span><span class="p">),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span> 
+                                     <span class="p">)</span>
+            <span class="c1"># The bounding box in the new world, if no offset is given</span>
+            <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_bounds</span><span class="p">(</span>
+                                                        <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> 
+                                                        <span class="n">transform_affine</span><span class="p">,</span>
+                                                        <span class="p">)</span>
+
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">))</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+            <span class="n">affine</span> <span class="o">=</span> <span class="n">from_matrix_vector</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">offset</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+                     <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+                     <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The shape specified should be the shape &#39;</span>
+                <span class="s1">&#39;the 3D grid, and thus of length 3. </span><span class="si">%s</span><span class="s1"> was specified&#39;</span>
+                <span class="o">%</span> <span class="n">shape</span> <span class="p">)</span>
+        <span class="n">interpolation_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_interpolation_order</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">affine</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">):</span>
+            <span class="c1"># Small trick to be more numericaly stable</span>
+            <span class="n">transform_affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">transform_affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">),</span> <span class="n">affine</span><span class="p">)</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">to_matrix_vector</span><span class="p">(</span><span class="n">transform_affine</span><span class="p">)</span>
+        <span class="n">A_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="c1"># If A is diagonal, ndimage.affine_transform is clever-enough </span>
+        <span class="c1"># to use a better algorithm</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">A</span><span class="p">))</span> <span class="o">==</span> <span class="n">A</span><span class="p">):</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="c1"># For images with dimensions larger than 3D:</span>
+        <span class="n">data_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c1"># Iter in a set of 3D volumes, as the interpolation problem is </span>
+            <span class="c1"># separable in the extra dimensions. This reduces the</span>
+            <span class="c1"># computational cost</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">data_shape</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">resampled_data</span> <span class="o">=</span> <span class="p">[</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">affine_transform</span><span class="p">(</span><span class="nb">slice</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span>
+                                                <span class="n">offset</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A_inv</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span>
+                                                <span class="n">output_shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                                                <span class="n">order</span><span class="o">=</span><span class="n">interpolation_order</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+            <span class="n">resampled_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+                                             <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">resampled_data</span><span class="p">],</span> 
+                                            <span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">resampled_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">resampled_data</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span>
+                                            <span class="nb">list</span><span class="p">(</span><span class="n">data_shape</span><span class="p">[</span><span class="mi">3</span><span class="p">:]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">resampled_data</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">affine_transform</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span>
+                                                <span class="n">offset</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A_inv</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span>
+                                                <span class="n">output_shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                                                <span class="n">order</span><span class="o">=</span><span class="n">interpolation_order</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">resampled_data</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> 
+                           <span class="bp">self</span><span class="o">.</span><span class="n">world_space</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+                           <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Inherit docstring</span>
+    <span class="n">as_volume_img</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">VolumeGrid</span><span class="o">.</span><span class="n">as_volume_img</span><span class="o">.</span><span class="vm">__doc__</span>
+
+
+    <span class="c1">#---------------------------------------------------------------------------</span>
+    <span class="c1"># VolumeImg interface</span>
+    <span class="c1">#---------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="VolumeImg.xyz_ordered"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_img.html#nipy.labs.datasets.volumes.volume_img.VolumeImg.xyz_ordered">[docs]</a>    <span class="k">def</span> <span class="nf">xyz_ordered</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns an image with the affine diagonal and positive</span>
+<span class="sd">            in the world space it is embedded in. </span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            -----------</span>
+<span class="sd">            resample: boolean, optional</span>
+<span class="sd">                If resample is False, no resampling is performed, the</span>
+<span class="sd">                axis are only permuted. If it is impossible</span>
+<span class="sd">                to get xyz ordering by permuting the axis, a</span>
+<span class="sd">                &#39;CompositionError&#39; is raised.</span>
+<span class="sd">            copy: boolean, optional</span>
+<span class="sd">                If copy is True, a deep copy of the image (including the</span>
+<span class="sd">                data) is made.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">to_matrix_vector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.001</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">resample</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">CompositionError</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot reorder the axis: the image affine contains rotations&#39;</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Identify the voxel size using a QR decomposition of the</span>
+                <span class="c1"># affine</span>
+                <span class="n">R</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">])</span>
+                <span class="n">target_affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Q</span><span class="p">))[</span>
+                                                    <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">R</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)])</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_volume_img</span><span class="p">(</span><span class="n">affine</span><span class="o">=</span><span class="n">target_affine</span><span class="p">)</span>
+        <span class="c1"># Copy the image, we don&#39;t want to modify in place.</span>
+        <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__copy__</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">axis_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">A</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">axis_numbers</span><span class="p">)</span> <span class="o">==</span> <span class="n">axis_numbers</span><span class="p">):</span>
+            <span class="n">first_inversion</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">axis_numbers</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">_swapaxes</span><span class="p">(</span><span class="n">first_inversion</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">first_inversion</span><span class="p">)</span>
+            <span class="n">A</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">to_matrix_vector</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+            <span class="n">axis_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">A</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Now make sure the affine is positive</span>
+        <span class="n">pixdim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pixdim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pixdim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">pixdim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">pixdim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">slice1</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">slice1</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pixdim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">pixdim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">pixdim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">pixdim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">slice2</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">slice2</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pixdim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">pixdim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">pixdim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">pixdim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">slice3</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">slice3</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">slice3</span><span class="p">]</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">affine</span> <span class="o">=</span> <span class="n">from_matrix_vector</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">pixdim</span><span class="p">),</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span></div>
+    
+
+    <span class="k">def</span> <span class="nf">_swapaxes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis1</span><span class="p">,</span> <span class="n">axis2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Swap the axis axis1 and axis2 of the data array and reorder the </span>
+<span class="sd">            affine matrix to stay consistent with the data</span>
+
+<span class="sd">            See also</span>
+<span class="sd">            --------</span>
+<span class="sd">            self.xyz_ordered</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">axis1</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">axis2</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Can swap axis only on spatial axis. &#39;</span>
+                             <span class="s1">&#39;Use np.swapaxes of the data array.&#39;</span><span class="p">)</span>
+        <span class="n">reordered_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">axis1</span><span class="p">,</span> <span class="n">axis2</span><span class="p">)</span>
+        <span class="n">new_affine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">order</span><span class="p">[</span><span class="n">axis1</span><span class="p">]</span> <span class="o">=</span> <span class="n">axis2</span>
+        <span class="n">order</span><span class="p">[</span><span class="n">axis2</span><span class="p">]</span> <span class="o">=</span> <span class="n">axis1</span>
+        <span class="n">new_affine</span> <span class="o">=</span> <span class="n">new_affine</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">order</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">return</span> <span class="n">VolumeImg</span><span class="p">(</span><span class="n">reordered_data</span><span class="p">,</span> <span class="n">new_affine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_space</span><span class="p">,</span> 
+                                           <span class="n">metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+
+    <span class="c1">#---------------------------------------------------------------------------</span>
+    <span class="c1"># Private methods</span>
+    <span class="c1">#---------------------------------------------------------------------------</span>
+
+    <span class="k">def</span> <span class="nf">_apply_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w2w_transform</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Used for subclassing only. Do not call</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_v2w_transform</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">get_transform</span><span class="p">()</span><span class="o">.</span><span class="n">composed_with</span><span class="p">(</span><span class="n">w2w_transform</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_v2w_transform</span><span class="p">,</span> <span class="s1">&#39;affine&#39;</span><span class="p">):</span>
+            <span class="n">new_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span>
+                                     <span class="n">new_v2w_transform</span><span class="o">.</span><span class="n">affine</span><span class="p">,</span>
+                                     <span class="n">new_v2w_transform</span><span class="o">.</span><span class="n">output_space</span><span class="p">,</span>
+                                     <span class="n">metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+                                     <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_img</span> <span class="o">=</span> <span class="n">VolumeGrid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span>
+                                <span class="n">transform</span><span class="o">=</span><span class="n">new_v2w_transform</span><span class="p">,</span>
+                                <span class="n">metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+                                <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_img</span> 
+
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">get_printoptions</span><span class="p">()</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">edgeitems</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">representation</span> <span class="o">=</span> \
+                <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(</span><span class="se">\n</span><span class="s1">  data=</span><span class="si">%s</span><span class="s1">,</span><span class="se">\n</span><span class="s1">  affine=</span><span class="si">%s</span><span class="s1">,</span><span class="se">\n</span><span class="s1">  world_space=</span><span class="si">%s</span><span class="s1">,</span><span class="se">\n</span><span class="s1">  interpolation=</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">       &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)),</span>
+                <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">         &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)),</span>
+                <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_space</span><span class="p">),</span>
+                <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">))</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">representation</span>
+
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>    <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">get_data</span><span class="p">())</span>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_space</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">world_space</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span>
+               <span class="p">)</span></div>
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

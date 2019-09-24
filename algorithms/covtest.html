@@ -1,0 +1,719 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The spacings test" href="spacings.html" />
+    <link rel="prev" title="Non-randomized algorithms" href="index.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html">
+          
+
+          
+            
+            <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Selection documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Non-randomized algorithms</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The covariance test</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Covariance-test-for-regression">Covariance test for regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Null">Null</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#1-sparse">1-sparse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#2-sparse">2-sparse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#5-sparse">5-sparse</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="spacings.html">The spacings test</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Non-randomized algorithms</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/algorithms/covtest.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 5ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="The-covariance-test">
+<h1>The covariance test<a class="headerlink" href="#The-covariance-test" title="Permalink to this headline">¶</a></h1>
+<p>One of the first works in this framework of post-selection inference is the <a class="reference external" href="http://arxiv.org/abs/1301.7161">covariance test</a>. The test was motivated by a drop in covariance of the residual through one step of the <a class="reference external" href="http://projecteuclid.org/DPubS?verb=Display&amp;version=1.0&amp;service=UI&amp;handle=euclid.aos/1083178935&amp;page=record">LARS path</a>.</p>
+<p>The basic theory behind the <code class="docutils literal notranslate"><span class="pre">covtest</span></code> can be seen by sampling <span class="math notranslate nohighlight">\(n\)</span> IID Gaussians and looking at the spacings between the top two. A simple calculation Mills’ ratio calculation leads to</p>
+<div class="math notranslate nohighlight">
+\[Z^n_{(1)} (Z^n_{(1)} - Z^n_{(2)}) \overset{D}{\to} \text{Exp}(1)\]</div>
+<p>Here is a little simulation.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>import numpy as np
+np.random.seed(0)
+%matplotlib inline
+import matplotlib.pyplot as plt
+from statsmodels.distributions import ECDF
+from selectinf.algorithms.covtest import covtest
+
+</pre></div>
+</div>
+</div>
+<p>We will sample 2000 times from <span class="math notranslate nohighlight">\(Z \sim N(0,I_{50 \times 50})\)</span> and look at the normalized spacing between the top 2 values.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>Z = np.random.standard_normal((2000,50))
+T = np.zeros(2000)
+for i in range(2000):
+    W = np.sort(Z[i])
+    T[i] = W[-1] * (W[-1] - W[-2])
+
+Ugrid = np.linspace(0,1,101)
+covtest_fig = plt.figure(figsize=(6,6))
+ax = covtest_fig.gca()
+ax.plot(Ugrid, ECDF(np.exp(-T))(Ugrid), drawstyle=&#39;steps&#39;, c=&#39;k&#39;,
+        label=&#39;covtest&#39;, linewidth=3)
+ax.set_title(&#39;Null distribution&#39;)
+ax.legend(loc=&#39;upper left&#39;);
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/algorithms_covtest_4_0.png" src="../_images/algorithms_covtest_4_0.png" />
+</div>
+</div>
+<p>The covariance test is an asymptotic result, and can be used in a sequential procedure called <a class="reference external" href="http://arxiv.org/abs/1309.5352">forward stop</a> to determine when to stop the LASSO path.</p>
+<p>An exact version of the covariance test was developed in a general framework for problems beyond the LASSO using the <a class="reference external" href="http://arxiv.org/abs/1308.3020">Kac-Rice formula</a>. A sequential version along the LARS path was developed, which we refer to as the <a class="reference external" href="http://arxiv.org/abs/1401.3889">spacings test</a>.</p>
+<p>Here is the exact test, which is the first step of the spacings test.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from scipy.stats import norm as ndist
+Texact = np.zeros(2000)
+for i in range(2000):
+    W = np.sort(Z[i])
+    Texact[i] = ndist.sf(W[-1]) / ndist.sf(W[-2])
+ax.plot(Ugrid, ECDF(Texact)(Ugrid), c=&#39;blue&#39;, drawstyle=&#39;steps&#39;, label=&#39;exact covTest&#39;,
+        linewidth=3)
+covtest_fig
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/algorithms_covtest_6_0.png" src="../_images/algorithms_covtest_6_0.png" />
+</div>
+</div>
+<div class="section" id="Covariance-test-for-regression">
+<h2>Covariance test for regression<a class="headerlink" href="#Covariance-test-for-regression" title="Permalink to this headline">¶</a></h2>
+<p>The above tests were based on an IID sample, though both the <code class="docutils literal notranslate"><span class="pre">covtest</span></code> and its exact version can be used in a regression setting. Both tests need access to the covariance of the noise.</p>
+<p>Formally, suppose</p>
+<div class="math notranslate nohighlight">
+\[y|X \sim N(\mu, \Sigma)\]</div>
+<p>the exact test is a test of</p>
+<div class="math notranslate nohighlight">
+\[H_0:\mu=0.\]</div>
+<p>The test is based on</p>
+<div class="math notranslate nohighlight">
+\[\lambda_{\max} = \|X^Ty\|_{\infty}.\]</div>
+<p>This value of <span class="math notranslate nohighlight">\(\lambda\)</span> is the value at which the first variable enters the LASSO. That is, <span class="math notranslate nohighlight">\(\lambda_{\max}\)</span> is the smallest <span class="math notranslate nohighlight">\(\lambda\)</span> for which 0 solves</p>
+<div class="math notranslate nohighlight">
+\[\text{minimize}_{\beta} \frac{1}{2} \|y-X\beta\|^2_2 + \lambda \|\beta\|_1.\]</div>
+<p>Formally, the exact test conditions on the variable <span class="math notranslate nohighlight">\(i^*(y)\)</span> that achieves <span class="math notranslate nohighlight">\(\lambda_{\max}\)</span> and tests a weaker null hypothesis</p>
+<div class="math notranslate nohighlight">
+\[H_0:X[:,i^*(y)]^T\mu=0.\]</div>
+<p>The covtest is an approximation of this test, based on the same Mills ratio calculation. (This calculation roughly says that the overshoot of a Gaussian above a level <span class="math notranslate nohighlight">\(u\)</span> is roughly an exponential random variable with mean <span class="math notranslate nohighlight">\(u^{-1}\)</span>).</p>
+<p>Here is a simulation under <span class="math notranslate nohighlight">\(\Sigma = \sigma^2 I\)</span> with <span class="math notranslate nohighlight">\(\sigma\)</span> known. The design matrix, before standardization, is Gaussian equicorrelated in the population with parameter 1/2.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>n, p, nsim, sigma = 50, 200, 1000, 1.5
+
+def instance(n, p, beta=None, sigma=sigma):
+    X = (np.random.standard_normal((n,p)) + np.random.standard_normal(n)[:,None])
+    X /= X.std(0)[None,:]
+    X /= np.sqrt(n)
+    Y = np.random.standard_normal(n) * sigma
+    if beta is not None:
+        Y += np.dot(X, beta)
+    return X, Y
+</pre></div>
+</div>
+</div>
+<p>Let’s make a dataset under our global null and compute the exact covtest <span class="math notranslate nohighlight">\(p\)</span>-value.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>X, Y = instance(n, p, sigma=sigma)
+cone, pval, idx, sign = covtest(X, Y, exact=False)
+pval
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
+<span></span>0.06488988967797554
+</pre></div>
+</div>
+</div>
+<p>The object <code class="docutils literal notranslate"><span class="pre">cone</span></code> is an instance of <code class="docutils literal notranslate"><span class="pre">selection.affine.constraints</span></code> which does much of the work for affine selection procedures. The variables <code class="docutils literal notranslate"><span class="pre">idx</span></code> and <code class="docutils literal notranslate"><span class="pre">sign</span></code> store which variable achieved <span class="math notranslate nohighlight">\(\lambda_{\max}\)</span> and the sign of its correlation with <span class="math notranslate nohighlight">\(y\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>cone
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="math notranslate nohighlight">
+$$Z \sim N(\mu,\Sigma) | AZ \leq b$$</div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>def simulation(beta):
+    Pcov = []
+    Pexact = []
+
+    for i in range(nsim):
+        X, Y = instance(n, p, sigma=sigma, beta=beta)
+        Pcov.append(covtest(X, Y, sigma=sigma, exact=False)[1])
+        Pexact.append(covtest(X, Y, sigma=sigma, exact=True)[1])
+
+    Ugrid = np.linspace(0,1,101)
+    plt.figure(figsize=(6,6))
+    plt.plot(Ugrid, ECDF(Pcov)(Ugrid), label=&#39;covtest&#39;, ds=&#39;steps&#39;, c=&#39;k&#39;, linewidth=3)
+    plt.plot(Ugrid, ECDF(Pexact)(Ugrid), label=&#39;exact covtest&#39;, ds=&#39;steps&#39;, c=&#39;blue&#39;, linewidth=3)
+    plt.legend(loc=&#39;lower right&#39;)
+
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Null">
+<h2>Null<a class="headerlink" href="#Null" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>beta = np.zeros(p)
+simulation(beta)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/algorithms_covtest_16_0.png" src="../_images/algorithms_covtest_16_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="1-sparse">
+<h2>1-sparse<a class="headerlink" href="#1-sparse" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>beta = np.zeros(p)
+beta[0] = 4
+simulation(beta)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/algorithms_covtest_18_0.png" src="../_images/algorithms_covtest_18_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="2-sparse">
+<h2>2-sparse<a class="headerlink" href="#2-sparse" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>beta = np.zeros(p)
+beta[:2] = 4
+simulation(beta)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/algorithms_covtest_20_0.png" src="../_images/algorithms_covtest_20_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="5-sparse">
+<h2>5-sparse<a class="headerlink" href="#5-sparse" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>beta = np.zeros(p)
+beta[:5] = 4
+simulation(beta)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/algorithms_covtest_22_0.png" src="../_images/algorithms_covtest_22_0.png" />
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="spacings.html" class="btn btn-neutral float-right" title="The spacings test" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Non-randomized algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

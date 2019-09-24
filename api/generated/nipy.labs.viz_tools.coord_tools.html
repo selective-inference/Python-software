@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.viz_tools.coord_tools.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-viz-tools-coord-tools">
+<h1>labs.viz_tools.coord_tools<a class="headerlink" href="#labs-viz-tools-coord-tools" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.labs.viz_tools.coord_tools">
+<span id="module-labs-viz-tools-coord-tools"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.viz_tools.coord_tools</span></code><a class="headerlink" href="#module-nipy.labs.viz_tools.coord_tools" title="Permalink to this headline">¶</a></h2>
+<p>Misc tools to find activations and cut on maps</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.viz_tools.coord_tools.coord_transform">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.coord_tools.</code><code class="sig-name descname">coord_transform</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">z</em>, <em class="sig-param">affine</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/coord_tools.html#coord_transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.coord_tools.coord_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert x, y, z coordinates from one image space to another space.</p>
+<p>Warning: x, y and z have Talairach ordering, not 3D numpy image ordering.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> : number or ndarray</p>
+<blockquote>
+<div><p>The x coordinates in the input space</p>
+</div></blockquote>
+<p><strong>y</strong> : number or ndarray</p>
+<blockquote>
+<div><p>The y coordinates in the input space</p>
+</div></blockquote>
+<p><strong>z</strong> : number or ndarray</p>
+<blockquote>
+<div><p>The z coordinates in the input space</p>
+</div></blockquote>
+<p><strong>affine</strong> : 2D 4x4 ndarray</p>
+<blockquote>
+<div><p>affine that maps from input to output space.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>x</strong> : number or ndarray</p>
+<blockquote>
+<div><p>The x coordinates in the output space</p>
+</div></blockquote>
+<p><strong>y</strong> : number or ndarray</p>
+<blockquote>
+<div><p>The y coordinates in the output space</p>
+</div></blockquote>
+<p><strong>z</strong> : number or ndarray</p>
+<blockquote>
+<div><p>The z coordinates in the output space</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.coord_tools.find_cut_coords">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.coord_tools.</code><code class="sig-name descname">find_cut_coords</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">activation_threshold=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/coord_tools.html#find_cut_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.coord_tools.find_cut_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the center of the largest activation connect component.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map</strong> : 3D ndarray</p>
+<blockquote>
+<div><p>The activation map, as a 3D image.</p>
+</div></blockquote>
+<p><strong>mask</strong> : 3D ndarray, boolean, optional</p>
+<blockquote>
+<div><p>An optional brain mask.</p>
+</div></blockquote>
+<p><strong>activation_threshold</strong> : float, optional</p>
+<blockquote>
+<div><p>The lower threshold to the positive activation. If None, the 
+activation threshold is computed using find_activation.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>x: float</p>
+<blockquote>
+<div><p>the x coordinate in voxels.</p>
+</div></blockquote>
+<p>y: float</p>
+<blockquote>
+<div><p>the y coordinate in voxels.</p>
+</div></blockquote>
+<p>z: float</p>
+<blockquote>
+<div><p>the z coordinate in voxels.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.coord_tools.find_maxsep_cut_coords">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.coord_tools.</code><code class="sig-name descname">find_maxsep_cut_coords</code><span class="sig-paren">(</span><em class="sig-param">map3d</em>, <em class="sig-param">affine</em>, <em class="sig-param">slicer='z'</em>, <em class="sig-param">n_cuts=None</em>, <em class="sig-param">threshold=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/coord_tools.html#find_maxsep_cut_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.coord_tools.find_maxsep_cut_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Heuristic finds <cite>n_cuts</cite> with max separation along a given axis</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map3d</strong> : 3D array</p>
+<blockquote>
+<div><p>the data under consideration</p>
+</div></blockquote>
+<p><strong>affine</strong> : array shape (4, 4)</p>
+<blockquote>
+<div><p>Affine mapping between array coordinates of <cite>map3d</cite> and real-world
+coordinates.</p>
+</div></blockquote>
+<p><strong>slicer</strong> : string, optional</p>
+<blockquote>
+<div><p>sectional slicer; possible values are “x”, “y”, or “z”</p>
+</div></blockquote>
+<p><strong>n_cuts</strong> : None or int &gt;= 1, optional</p>
+<blockquote>
+<div><p>Number of cuts in the plot; if None, then a default value of 5 is
+forced.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : None or float, optional</p>
+<blockquote>
+<div><p>Thresholding to be applied to the map.  Values less than <cite>threshold</cite>
+set to 0.  If None, no thresholding applied.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>cuts</strong> : 1D array of length <cite>n_cuts</cite></p>
+<blockquote>
+<div><p>the computed cuts</p>
+</div></blockquote>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError:</strong></p>
+<blockquote>
+<div><p>If <cite>slicer</cite> not in ‘xyz’</p>
+</div></blockquote>
+<p><strong>ValueError</strong></p>
+<blockquote>
+<div><p>If <cite>ncuts</cite> &lt; 1</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.viz_tools.coord_tools.get_mask_bounds">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.coord_tools.</code><code class="sig-name descname">get_mask_bounds</code><span class="sig-paren">(</span><em class="sig-param">mask</em>, <em class="sig-param">affine</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/coord_tools.html#get_mask_bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.coord_tools.get_mask_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the world-space bounds occupied by a mask given an affine.</p>
+<p class="rubric">Notes</p>
+<p>The mask should have only one connect component.</p>
+<p>The affine should be diagonal or diagonal-permuted.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

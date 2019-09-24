@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.datasets.transforms.affine_transform.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-datasets-transforms-affine-transform">
+<h1>labs.datasets.transforms.affine_transform<a class="headerlink" href="#labs-datasets-transforms-affine-transform" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-labs-datasets-transforms-affine-transform">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.datasets.transforms.affine_transform</span></code><a class="headerlink" href="#module-labs-datasets-transforms-affine-transform" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.labs.datasets.transforms.affine_transform</span></code>:</p>
+digraph inheritance9f44365024 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;transforms.affine_transform.AffineTransform&quot; [URL=&quot;#nipy.labs.datasets.transforms.affine_transform.AffineTransform&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A transformation from an input 3D space to an output 3D space defined&quot;];
+  &quot;transforms.transform.Transform&quot; -&gt; &quot;transforms.affine_transform.AffineTransform&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;transforms.transform.Transform&quot; [URL=&quot;nipy.labs.datasets.transforms.transform.html#nipy.labs.datasets.transforms.transform.Transform&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A transform is a representation of a transformation from one 3D space to&quot;];
+}
+<span class="target" id="module-nipy.labs.datasets.transforms.affine_transform"></span><p>The AffineTransform class</p>
+</div>
+<div class="section" id="affinetransform">
+<h2><a class="reference internal" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform" title="nipy.labs.datasets.transforms.affine_transform.AffineTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">AffineTransform</span></code></a><a class="headerlink" href="#affinetransform" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.datasets.transforms.affine_transform.</code><code class="sig-name descname">AffineTransform</code><span class="sig-paren">(</span><em class="sig-param">input_space</em>, <em class="sig-param">output_space</em>, <em class="sig-param">affine</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/datasets/transforms/affine_transform.html#AffineTransform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="nipy.labs.datasets.transforms.transform.html#nipy.labs.datasets.transforms.transform.Transform" title="nipy.labs.datasets.transforms.transform.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.datasets.transforms.transform.Transform</span></code></a></p>
+<p>A transformation from an input 3D space to an output 3D space defined
+by an affine matrix.</p>
+<p>It is defined by the affine matrix , and the name of the input and output 
+spaces.</p>
+<dl class="method">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">input_space</em>, <em class="sig-param">output_space</em>, <em class="sig-param">affine</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/datasets/transforms/affine_transform.html#AffineTransform.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new affine transform object.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_space: string</strong></p>
+<blockquote>
+<div><p>Name of the input space</p>
+</div></blockquote>
+<p><strong>output_space: string</strong></p>
+<blockquote>
+<div><p>Name of the output space</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>Affine matrix giving the coordinate mapping between the 
+input and output space.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform.affine">
+<code class="sig-name descname">affine</code><em class="property"> = None</em><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform.affine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform.input_space">
+<code class="sig-name descname">input_space</code><em class="property"> = ''</em><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform.input_space" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform.output_space">
+<code class="sig-name descname">output_space</code><em class="property"> = ''</em><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform.output_space" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform.composed_with">
+<code class="sig-name descname">composed_with</code><span class="sig-paren">(</span><em class="sig-param">transform</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/datasets/transforms/affine_transform.html#AffineTransform.composed_with"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform.composed_with" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new transform obtained by composing this transform
+with the one provided.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>transform: nipy.core.transforms.transform object</strong></p>
+<blockquote>
+<div><p>The transform to compose with.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform.get_inverse">
+<code class="sig-name descname">get_inverse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/datasets/transforms/affine_transform.html#AffineTransform.get_inverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform.get_inverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the inverse transform.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform.inverse_mapping">
+<code class="sig-name descname">inverse_mapping</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/datasets/transforms/affine_transform.html#AffineTransform.inverse_mapping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform.inverse_mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform the given coordinate from output space to input space.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: number or ndarray</strong></p>
+<blockquote>
+<div><p>The x coordinates</p>
+</div></blockquote>
+<p><strong>y: number or ndarray</strong></p>
+<blockquote>
+<div><p>The y coordinates</p>
+</div></blockquote>
+<p><strong>z: number or ndarray</strong></p>
+<blockquote>
+<div><p>The z coordinates</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.datasets.transforms.affine_transform.AffineTransform.mapping">
+<code class="sig-name descname">mapping</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/datasets/transforms/affine_transform.html#AffineTransform.mapping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.datasets.transforms.affine_transform.AffineTransform.mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform the given coordinate from input space to output space.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: number or ndarray</strong></p>
+<blockquote>
+<div><p>The x coordinates</p>
+</div></blockquote>
+<p><strong>y: number or ndarray</strong></p>
+<blockquote>
+<div><p>The y coordinates</p>
+</div></blockquote>
+<p><strong>z: number or ndarray</strong></p>
+<blockquote>
+<div><p>The z coordinates</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

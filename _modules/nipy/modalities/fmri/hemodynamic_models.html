@@ -1,0 +1,583 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.modalities.fmri.hemodynamic_models</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is for canonical hrf specification.</span>
+<span class="sd">Here we provide for SPM, Glover hrfs and finite timpulse response (FIR) models.</span>
+<span class="sd">This module closely follows SPM implementation</span>
+
+<span class="sd">Author: Bertrand Thirion, 2011--2013</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">gamma</span>
+
+<span class="kn">from</span> <span class="nn">nipy.externals.six.moves</span> <span class="k">import</span> <span class="nb">map</span>
+
+
+<span class="k">def</span> <span class="nf">_gamma_difference_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">time_length</span><span class="o">=</span><span class="mf">32.</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                         <span class="n">delay</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">undershoot</span><span class="o">=</span><span class="mf">16.</span><span class="p">,</span> <span class="n">dispersion</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                         <span class="n">u_dispersion</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">ratio</span><span class="o">=</span><span class="mf">0.167</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute an hrf as the difference of two gamma functions</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tr: float, scan repeat time, in seconds</span>
+<span class="sd">    oversampling: int, temporal oversampling factor, optional</span>
+<span class="sd">    time_length: float, hrf kernel length, in seconds</span>
+<span class="sd">    onset: float, onset of the hrf</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hrf: array of shape(length / tr * oversampling, float),</span>
+<span class="sd">         hrf sampling on the oversampled time grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">tr</span> <span class="o">/</span> <span class="n">oversampling</span>
+    <span class="n">time_stamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">time_length</span><span class="p">)</span> <span class="o">/</span> <span class="n">dt</span><span class="p">))</span>
+    <span class="n">time_stamps</span> <span class="o">-=</span> <span class="n">onset</span> <span class="o">/</span> <span class="n">dt</span>
+    <span class="n">hrf</span> <span class="o">=</span> <span class="n">gamma</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">time_stamps</span><span class="p">,</span> <span class="n">delay</span> <span class="o">/</span> <span class="n">dispersion</span><span class="p">,</span> <span class="n">dt</span> <span class="o">/</span> <span class="n">dispersion</span><span class="p">)</span> <span class="o">-</span> \
+        <span class="n">ratio</span> <span class="o">*</span> <span class="n">gamma</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+        <span class="n">time_stamps</span><span class="p">,</span> <span class="n">undershoot</span> <span class="o">/</span> <span class="n">u_dispersion</span><span class="p">,</span> <span class="n">dt</span> <span class="o">/</span> <span class="n">u_dispersion</span><span class="p">)</span>
+    <span class="n">hrf</span> <span class="o">/=</span> <span class="n">hrf</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">hrf</span>
+
+
+<div class="viewcode-block" id="spm_hrf"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hemodynamic_models.html#nipy.modalities.fmri.hemodynamic_models.spm_hrf">[docs]</a><span class="k">def</span> <span class="nf">spm_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">time_length</span><span class="o">=</span><span class="mf">32.</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Implementation of the SPM hrf model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tr: float, scan repeat time, in seconds</span>
+<span class="sd">    oversampling: int, temporal oversampling factor, optional</span>
+<span class="sd">    time_length: float, hrf kernel length, in seconds</span>
+<span class="sd">    onset: float, onset of the response</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hrf: array of shape(length / tr * oversampling, float),</span>
+<span class="sd">         hrf sampling on the oversampled time grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_gamma_difference_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">onset</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="glover_hrf"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hemodynamic_models.html#nipy.modalities.fmri.hemodynamic_models.glover_hrf">[docs]</a><span class="k">def</span> <span class="nf">glover_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">time_length</span><span class="o">=</span><span class="mf">32.</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Implementation of the Glover hrf model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tr: float, scan repeat time, in seconds</span>
+<span class="sd">    oversampling: int, temporal oversampling factor, optional</span>
+<span class="sd">    time_length: float, hrf kernel length, in seconds</span>
+<span class="sd">    onset: float, onset of the response</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hrf: array of shape(length / tr * oversampling, float),</span>
+<span class="sd">         hrf sampling on the oversampled time grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_gamma_difference_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span>
+                                <span class="n">delay</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">undershoot</span><span class="o">=</span><span class="mf">12.</span><span class="p">,</span> <span class="n">dispersion</span><span class="o">=.</span><span class="mi">9</span><span class="p">,</span>
+                                <span class="n">u_dispersion</span><span class="o">=.</span><span class="mi">9</span><span class="p">,</span> <span class="n">ratio</span><span class="o">=.</span><span class="mi">35</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="spm_time_derivative"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hemodynamic_models.html#nipy.modalities.fmri.hemodynamic_models.spm_time_derivative">[docs]</a><span class="k">def</span> <span class="nf">spm_time_derivative</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">time_length</span><span class="o">=</span><span class="mf">32.</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Implementation of the SPM time derivative hrf (dhrf) model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tr: float, scan repeat time, in seconds</span>
+<span class="sd">    oversampling: int, temporal oversampling factor, optional</span>
+<span class="sd">    time_length: float, hrf kernel length, in seconds</span>
+<span class="sd">    onset: float, onset of the response</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dhrf: array of shape(length / tr, float),</span>
+<span class="sd">          dhrf sampling on the provided grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do</span> <span class="o">=</span> <span class="o">.</span><span class="mi">1</span>
+    <span class="n">dhrf</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">do</span> <span class="o">*</span> <span class="p">(</span><span class="n">spm_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">onset</span> <span class="o">+</span> <span class="n">do</span><span class="p">)</span> <span class="o">-</span>
+                      <span class="n">spm_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">onset</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dhrf</span></div>
+
+
+<div class="viewcode-block" id="glover_time_derivative"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hemodynamic_models.html#nipy.modalities.fmri.hemodynamic_models.glover_time_derivative">[docs]</a><span class="k">def</span> <span class="nf">glover_time_derivative</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">time_length</span><span class="o">=</span><span class="mf">32.</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Implementation of the flover time derivative hrf (dhrf) model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tr: float, scan repeat time, in seconds</span>
+<span class="sd">    oversampling: int, temporal oversampling factor, optional</span>
+<span class="sd">    time_length: float, hrf kernel length, in seconds</span>
+<span class="sd">    onset: float, onset of the response</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dhrf: array of shape(length / tr, float),</span>
+<span class="sd">          dhrf sampling on the provided grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do</span> <span class="o">=</span> <span class="o">.</span><span class="mi">1</span>
+    <span class="n">dhrf</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">do</span> <span class="o">*</span> <span class="p">(</span><span class="n">glover_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">onset</span> <span class="o">+</span> <span class="n">do</span><span class="p">)</span> <span class="o">-</span>
+                      <span class="n">glover_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">onset</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dhrf</span></div>
+
+
+<div class="viewcode-block" id="spm_dispersion_derivative"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hemodynamic_models.html#nipy.modalities.fmri.hemodynamic_models.spm_dispersion_derivative">[docs]</a><span class="k">def</span> <span class="nf">spm_dispersion_derivative</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">time_length</span><span class="o">=</span><span class="mf">32.</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Implementation of the SPM dispersion derivative hrf model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tr: float, scan repeat time, in seconds</span>
+<span class="sd">    oversampling: int, temporal oversampling factor, optional</span>
+<span class="sd">    time_length: float, hrf kernel length, in seconds</span>
+<span class="sd">    onset: float, onset of the response</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dhrf: array of shape(length / tr * oversampling, float),</span>
+<span class="sd">          dhrf sampling on the oversampled time grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dd</span> <span class="o">=</span> <span class="o">.</span><span class="mi">01</span>
+    <span class="n">dhrf</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">dd</span> <span class="o">*</span> <span class="p">(</span><span class="n">_gamma_difference_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span>
+                                           <span class="n">onset</span><span class="p">,</span> <span class="n">dispersion</span><span class="o">=</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">dd</span><span class="p">)</span> <span class="o">-</span>
+                      <span class="n">spm_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">time_length</span><span class="p">,</span> <span class="n">onset</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dhrf</span></div>
+
+
+<span class="k">def</span> <span class="nf">_sample_condition</span><span class="p">(</span><span class="n">exp_condition</span><span class="p">,</span> <span class="n">frametimes</span><span class="p">,</span> <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                     <span class="n">min_onset</span><span class="o">=-</span><span class="mi">24</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a possibly oversampled event regressor from condition information.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    exp_condition: 3 x n_events arraylike</span>
+<span class="sd">        (onsets, durations, amplitudes) of events for this condition</span>
+<span class="sd">    frametimes: array of shape(n)</span>
+<span class="sd">        timepoints corresponding to sampled data</span>
+<span class="sd">    over_sampling: int, optional</span>
+<span class="sd">        factor for oversampling event regressor</span>
+<span class="sd">    min_onset: float, optional</span>
+<span class="sd">        minimal onset relative to frametimes[0] (in seconds)</span>
+<span class="sd">        events that start before frametimes[0] + min_onset are not considered</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    regressor: array of shape(n)</span>
+<span class="sd">        possibly oversampled event regressor</span>
+<span class="sd">    hr_frametimes : array of shape(n)</span>
+<span class="sd">        frametimes corresponding to regressor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Find the high-resolution frametimes</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">frametimes</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">min_onset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_onset</span><span class="p">)</span>
+    <span class="n">n_hr</span> <span class="o">=</span> <span class="p">((</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">frametimes</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">frametimes</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">*</span>
+            <span class="p">(</span><span class="n">frametimes</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">-</span> <span class="n">frametimes</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">-</span>
+             <span class="n">min_onset</span><span class="p">)</span> <span class="o">*</span> <span class="n">oversampling</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">hr_frametimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">frametimes</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">+</span> <span class="n">min_onset</span><span class="p">,</span>
+                                <span class="n">frametimes</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)),</span>
+                                <span class="nb">int</span><span class="p">(</span><span class="n">n_hr</span><span class="p">))</span>
+
+    <span class="c1"># Get the condition information</span>
+    <span class="n">onsets</span><span class="p">,</span> <span class="n">durations</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asanyarray</span><span class="p">,</span> <span class="n">exp_condition</span><span class="p">))</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">onsets</span> <span class="o">&lt;</span> <span class="n">frametimes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">min_onset</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">((</span><span class="s1">&#39;Some stimulus onsets are earlier than </span><span class="si">%d</span><span class="s1"> in the&#39;</span> <span class="o">+</span>
+                       <span class="s1">&#39; experiment and are thus not considered in the model&#39;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">frametimes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">min_onset</span><span class="p">)),</span> <span class="ne">UserWarning</span><span class="p">)</span>
+
+    <span class="c1"># Set up the regressor timecourse</span>
+    <span class="n">tmax</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hr_frametimes</span><span class="p">)</span>
+    <span class="n">regressor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">hr_frametimes</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+    <span class="n">t_onset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">hr_frametimes</span><span class="p">,</span> <span class="n">onsets</span><span class="p">),</span> <span class="n">tmax</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">regressor</span><span class="p">[</span><span class="n">t_onset</span><span class="p">]</span> <span class="o">+=</span> <span class="n">values</span>
+    <span class="n">t_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">hr_frametimes</span><span class="p">,</span> <span class="n">onsets</span> <span class="o">+</span> <span class="n">durations</span><span class="p">),</span>
+                          <span class="n">tmax</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Handle the case where duration is 0 by offsetting at t + 1</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">to</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">t_offset</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">to</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">tmax</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">to</span> <span class="o">==</span> <span class="n">t_onset</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="n">t_offset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">regressor</span><span class="p">[</span><span class="n">t_offset</span><span class="p">]</span> <span class="o">-=</span> <span class="n">values</span>
+    <span class="n">regressor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">regressor</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">regressor</span><span class="p">,</span> <span class="n">hr_frametimes</span>
+
+
+<span class="k">def</span> <span class="nf">_resample_regressor</span><span class="p">(</span><span class="n">hr_regressor</span><span class="p">,</span> <span class="n">hr_frametimes</span><span class="p">,</span> <span class="n">frametimes</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this function samples the regressors at frametimes</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hr_regressor: array of shape(n),</span>
+<span class="sd">                  the regressor time course sampled at high temporal resolution</span>
+<span class="sd">    hr_frametimes: array of shape(n),</span>
+<span class="sd">                   the corresponding time stamps</span>
+<span class="sd">    frametimes: array of shape(p),</span>
+<span class="sd">                the desired time stamps</span>
+<span class="sd">    kind: string, optional, the kind of desired interpolation</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    regressor: array of shape(p), the resampled regressor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">interp1d</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">hr_frametimes</span><span class="p">,</span> <span class="n">hr_regressor</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="n">frametimes</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+
+<span class="k">def</span> <span class="nf">_orthogonalize</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Orthogonalize every column of design `X` w.r.t preceding columns</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X: array of shape(n, p), the data to be orthogonalized</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    X: after orthogonalization</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    X is changed in place. the columns are not normalized</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">X</span>
+    <span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">pinv</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">X</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="p">:</span><span class="n">i</span><span class="p">],</span> <span class="n">pinv</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="p">:</span><span class="n">i</span><span class="p">])))</span>
+    <span class="k">return</span> <span class="n">X</span>
+
+
+<span class="k">def</span> <span class="nf">_regressor_names</span><span class="p">(</span><span class="n">con_name</span><span class="p">,</span> <span class="n">hrf_model</span><span class="p">,</span> <span class="n">fir_delays</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a list of regressor names, computed from con-name and hrf type</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    con_name: string, identifier of the condition</span>
+<span class="sd">    hrf_model: string, identifier of the hrf model</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    names: a list of strings yielding the regressor names</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;canonical&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">con_name</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s2">&quot;canonical with derivative&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">con_name</span><span class="p">,</span> <span class="n">con_name</span> <span class="o">+</span> <span class="s2">&quot;_derivative&quot;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;spm&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">con_name</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;spm_time&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">con_name</span><span class="p">,</span> <span class="n">con_name</span> <span class="o">+</span> <span class="s2">&quot;_derivative&quot;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;spm_time_dispersion&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">con_name</span><span class="p">,</span> <span class="n">con_name</span> <span class="o">+</span> <span class="s2">&quot;_derivative&quot;</span><span class="p">,</span> <span class="n">con_name</span> <span class="o">+</span> <span class="s2">&quot;_dispersion&quot;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;fir&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">con_name</span> <span class="o">+</span> <span class="s2">&quot;_delay_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">fir_delays</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_hrf_kernel</span><span class="p">(</span><span class="n">hrf_model</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">fir_delays</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Given the specification of the hemodynamic model and time parameters,</span>
+<span class="sd">    return the list of matching kernels</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hrf_model: string, identifier of the hrf model</span>
+<span class="sd">    tr: the repetition time in seconds</span>
+<span class="sd">    oversampling: int, temporal oversampling factor to have a smooth hrf</span>
+<span class="sd">    fir_delays: list of for delays</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hkernel: a list of hrf kernels, depending on the specified hrf model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;spm&#39;</span><span class="p">:</span>
+        <span class="n">hkernel</span> <span class="o">=</span> <span class="p">[</span><span class="n">spm_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;spm_time&#39;</span><span class="p">:</span>
+        <span class="n">hkernel</span> <span class="o">=</span> <span class="p">[</span><span class="n">spm_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">),</span>
+                   <span class="n">spm_time_derivative</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;spm_time_dispersion&#39;</span><span class="p">:</span>
+        <span class="n">hkernel</span> <span class="o">=</span> <span class="p">[</span><span class="n">spm_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">),</span>
+                   <span class="n">spm_time_derivative</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">),</span>
+                   <span class="n">spm_dispersion_derivative</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;canonical&#39;</span><span class="p">:</span>
+        <span class="n">hkernel</span> <span class="o">=</span> <span class="p">[</span><span class="n">glover_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;canonical with derivative&#39;</span><span class="p">:</span>
+        <span class="n">hkernel</span> <span class="o">=</span> <span class="p">[</span><span class="n">glover_hrf</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">),</span>
+                   <span class="n">glover_time_derivative</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">hrf_model</span> <span class="o">==</span> <span class="s1">&#39;fir&#39;</span><span class="p">:</span>
+        <span class="n">hkernel</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">f</span> <span class="o">*</span> <span class="n">oversampling</span><span class="p">),</span>
+                              <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">oversampling</span><span class="p">)))</span>
+                   <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fir_delays</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown hrf model&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hkernel</span>
+
+
+<div class="viewcode-block" id="compute_regressor"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.hemodynamic_models.html#nipy.modalities.fmri.hemodynamic_models.compute_regressor">[docs]</a><span class="k">def</span> <span class="nf">compute_regressor</span><span class="p">(</span><span class="n">exp_condition</span><span class="p">,</span> <span class="n">hrf_model</span><span class="p">,</span> <span class="n">frametimes</span><span class="p">,</span> <span class="n">con_id</span><span class="o">=</span><span class="s1">&#39;cond&#39;</span><span class="p">,</span>
+                      <span class="n">oversampling</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">fir_delays</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_onset</span><span class="o">=-</span><span class="mi">24</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This is the main function to convolve regressors with hrf model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    exp_condition: descriptor of an experimental condition</span>
+<span class="sd">    hrf_model: string, the hrf model to be used. Can be chosen among:</span>
+<span class="sd">               &#39;spm&#39;, &#39;spm_time&#39;, &#39;spm_time_dispersion&#39;, &#39;canonical&#39;,</span>
+<span class="sd">               &#39;canonical_derivative&#39;, &#39;fir&#39;</span>
+<span class="sd">    frametimes: array of shape (n):the sought</span>
+<span class="sd">    con_id: string, optional identifier of the condition</span>
+<span class="sd">    oversampling: int, optional, oversampling factor to perform the convolution</span>
+<span class="sd">    fir_delays: array-like of int, onsets corresponding to the fir basis</span>
+<span class="sd">    min_onset: float, optional</span>
+<span class="sd">        minimal onset relative to frametimes[0] (in seconds)</span>
+<span class="sd">        events that start before frametimes[0] + min_onset are not considered</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    creg: array of shape(n_scans, n_reg): computed regressors sampled</span>
+<span class="sd">                                          at frametimes</span>
+<span class="sd">    reg_names: list of strings, corresponding regressor names</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The different hemodynamic models can be understood as follows:</span>
+<span class="sd">    &#39;spm&#39;: this is the hrf model used in spm</span>
+<span class="sd">    &#39;spm_time&#39;: this is the spm model plus its time derivative (2 regressors)</span>
+<span class="sd">    &#39;spm_time_dispersion&#39;: idem, plus dispersion derivative (3 regressors)</span>
+<span class="sd">    &#39;canonical&#39;: this one corresponds to the Glover hrf</span>
+<span class="sd">    &#39;canonical_derivative&#39;: the Glover hrf + time derivative (2 regressors)</span>
+<span class="sd">    &#39;fir&#39;: finite impulse response basis, a set of delayed dirac models</span>
+<span class="sd">           with arbitrary length. This one currently assumes regularly spaced</span>
+<span class="sd">           frametimes (i.e. fixed time of repetition).</span>
+<span class="sd">    It is expected that spm standard and Glover model would not yield</span>
+<span class="sd">    large differences in most cases.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># this is the average tr in this session, not necessarily the true tr</span>
+    <span class="n">tr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">frametimes</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">frametimes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># 1. create the high temporal resolution regressor</span>
+    <span class="n">hr_regressor</span><span class="p">,</span> <span class="n">hr_frametimes</span> <span class="o">=</span> <span class="n">_sample_condition</span><span class="p">(</span>
+        <span class="n">exp_condition</span><span class="p">,</span> <span class="n">frametimes</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">min_onset</span><span class="p">)</span>
+
+    <span class="c1"># 2. create the  hrf model(s)</span>
+    <span class="n">hkernel</span> <span class="o">=</span> <span class="n">_hrf_kernel</span><span class="p">(</span><span class="n">hrf_model</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">oversampling</span><span class="p">,</span> <span class="n">fir_delays</span><span class="p">)</span>
+
+    <span class="c1"># 3. convolve the regressor and hrf, and downsample the regressor</span>
+    <span class="n">conv_reg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">hr_regressor</span><span class="p">,</span> <span class="n">h</span><span class="p">)[:</span><span class="n">hr_regressor</span><span class="o">.</span><span class="n">size</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hkernel</span><span class="p">])</span>
+
+    <span class="c1"># 4. temporally resample the regressors</span>
+    <span class="n">creg</span> <span class="o">=</span> <span class="n">_resample_regressor</span><span class="p">(</span><span class="n">conv_reg</span><span class="p">,</span> <span class="n">hr_frametimes</span><span class="p">,</span> <span class="n">frametimes</span><span class="p">)</span>
+
+    <span class="c1"># 5. ortogonalize the regressors</span>
+    <span class="k">if</span> <span class="n">hrf_model</span> <span class="o">!=</span> <span class="s1">&#39;fir&#39;</span><span class="p">:</span>
+        <span class="n">creg</span> <span class="o">=</span> <span class="n">_orthogonalize</span><span class="p">(</span><span class="n">creg</span><span class="p">)</span>
+
+    <span class="c1"># 6 generate regressor names</span>
+    <span class="n">reg_names</span> <span class="o">=</span> <span class="n">_regressor_names</span><span class="p">(</span><span class="n">con_id</span><span class="p">,</span> <span class="n">hrf_model</span><span class="p">,</span> <span class="n">fir_delays</span><span class="o">=</span><span class="n">fir_delays</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">creg</span><span class="p">,</span> <span class="n">reg_names</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

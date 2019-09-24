@@ -1,0 +1,985 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.utils.reproducibility_measures</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions for computing reproducibility measures.</span>
+
+<span class="sd">General procedure is:</span>
+<span class="sd"> - dataset is subject to jacknife subampling (&#39;splitting&#39;),</span>
+<span class="sd"> - each subsample being analysed independently,</span>
+<span class="sd"> - a reproducibility measure is then derived;</span>
+
+<span class="sd">It is used to produce the work described in Analysis of a large fMRI</span>
+<span class="sd">cohort:</span>
+
+<span class="sd">Statistical and methodological issues for group analyses.</span>
+<span class="sd">Thirion B, Pinel P, Meriaux S, Roche A, Dehaene S, Poline JB.</span>
+<span class="sd">Neuroimage. 2007 Mar;35(1):105-20.</span>
+
+<span class="sd">Bertrand Thirion, 2009-2010</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nipy.io.nibcompat</span> <span class="k">import</span> <span class="n">get_affine</span>
+<span class="kn">from</span> <span class="nn">nipy.labs.spatial_models.discrete_domain</span> <span class="k">import</span> \
+    <span class="n">grid_domain_from_binary_array</span>
+
+<span class="c1"># ---------------------------------------------------------</span>
+<span class="c1"># ----- cluster handling functions ------------------------</span>
+<span class="c1"># ---------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="histo_repro"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.histo_repro">[docs]</a><span class="k">def</span> <span class="nf">histo_repro</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Given the histogram h, compute a standardized reproducibility measure</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h array of shape(xmax+1), the histogram values</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hr, float: the measure</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="n">k</span>
+    <span class="k">if</span> <span class="n">nf</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.</span>
+    <span class="n">n1k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">n1k</span> <span class="o">*</span> <span class="p">(</span><span class="n">n1k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">res</span> <span class="o">/</span> <span class="n">nf</span></div>
+
+
+<div class="viewcode-block" id="cluster_threshold"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.cluster_threshold">[docs]</a><span class="k">def</span> <span class="nf">cluster_threshold</span><span class="p">(</span><span class="n">stat_map</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">csize</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Perform a thresholding of a map at the cluster-level</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stat_map: array of shape(nbvox)</span>
+<span class="sd">         the input data</span>
+<span class="sd">    domain: Nifti1Image instance,</span>
+<span class="sd">          referential- and domain-defining image</span>
+<span class="sd">    th (float): cluster-forming threshold</span>
+<span class="sd">    csize (int&gt;0): cluster size threshold</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    binary array of shape (nvox): the binarized thresholded map</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Should be replaced by a more standard function in the future</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">stat_map</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">domain</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;incompatible dimensions&#39;</span><span class="p">)</span>
+
+    <span class="c1"># first build a domain of supra_threshold regions</span>
+    <span class="n">thresholded_domain</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">stat_map</span> <span class="o">&gt;</span> <span class="n">th</span><span class="p">)</span>
+
+    <span class="c1"># get the connected components</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="n">thresholded_domain</span><span class="o">.</span><span class="n">connected_components</span><span class="p">()</span>
+
+    <span class="n">binary</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">binary</span><span class="p">[</span><span class="n">stat_map</span> <span class="o">&gt;</span> <span class="n">th</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span>
+    <span class="n">nbcc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbcc</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">label</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">csize</span><span class="p">:</span>
+            <span class="n">binary</span><span class="p">[</span><span class="n">binary</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="n">binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">binary</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">binary</span></div>
+
+
+<div class="viewcode-block" id="get_cluster_position_from_thresholded_map"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.get_cluster_position_from_thresholded_map">[docs]</a><span class="k">def</span> <span class="nf">get_cluster_position_from_thresholded_map</span><span class="p">(</span><span class="n">stat_map</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">thr</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+                                              <span class="n">csize</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    the clusters above thr of size greater than csize in</span>
+<span class="sd">    18-connectivity are computed</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stat_map : array of shape (nbvox),</span>
+<span class="sd">           map to threshold</span>
+<span class="sd">    mask: Nifti1Image instance,</span>
+<span class="sd">          referential- and domain-defining image</span>
+<span class="sd">    thr: float, optional,</span>
+<span class="sd">         cluster-forming threshold</span>
+<span class="sd">    cisze=10: int</span>
+<span class="sd">              cluster size threshold</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    positions array of shape(k,anat_dim):</span>
+<span class="sd">              the cluster positions in physical coordinates</span>
+<span class="sd">              where k= number of clusters</span>
+<span class="sd">              if no such cluster exists, None is returned</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># if no supra-threshold voxel, return</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">stat_map</span> <span class="o">&lt;=</span> <span class="n">thr</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># first build a domain of supra_threshold regions</span>
+    <span class="n">thresholded_domain</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">stat_map</span> <span class="o">&gt;</span> <span class="n">thr</span><span class="p">)</span>
+
+    <span class="c1"># get the connected components</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="n">thresholded_domain</span><span class="o">.</span><span class="n">connected_components</span><span class="p">()</span>
+
+    <span class="c1"># get the coordinates</span>
+    <span class="n">coord</span> <span class="o">=</span> <span class="n">thresholded_domain</span><span class="o">.</span><span class="n">get_coord</span><span class="p">()</span>
+
+    <span class="c1"># get the barycenters</span>
+    <span class="n">baryc</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">label</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">label</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">csize</span><span class="p">:</span>
+            <span class="n">baryc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">coord</span><span class="p">[</span><span class="n">label</span> <span class="o">==</span> <span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">baryc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">baryc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">baryc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">baryc</span></div>
+
+
+<div class="viewcode-block" id="get_peak_position_from_thresholded_map"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.get_peak_position_from_thresholded_map">[docs]</a><span class="k">def</span> <span class="nf">get_peak_position_from_thresholded_map</span><span class="p">(</span><span class="n">stat_map</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The peaks above thr in 18-connectivity are computed</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stat_map: array of shape (nbvox): map to threshold</span>
+<span class="sd">    deomain: referential- and domain-defining image</span>
+<span class="sd">    thr, float: cluster-forming threshold</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    positions array of shape(k,anat_dim):</span>
+<span class="sd">              the cluster positions in physical coordinates</span>
+<span class="sd">              where k= number of clusters</span>
+<span class="sd">              if no such cluster exists, None is returned</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">..statistical_mapping</span> <span class="k">import</span> <span class="n">get_3d_peaks</span>
+
+    <span class="c1"># create an image to represent stat_map</span>
+    <span class="n">simage</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">stat_map</span><span class="p">)</span>
+    
+    <span class="c1"># extract the peaks</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">get_3d_peaks</span><span class="p">(</span><span class="n">simage</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span> <span class="n">order_th</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">peaks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;pos&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peaks</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">pos</span></div>
+
+
+<span class="c1"># ---------------------------------------------------------</span>
+<span class="c1"># ----- data splitting functions ------------------------</span>
+<span class="c1"># ---------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="bootstrap_group"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.bootstrap_group">[docs]</a><span class="k">def</span> <span class="nf">bootstrap_group</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Split the proposed group into redundant subgroups by bootstrap</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nsubj (int) the number of subjects in the population</span>
+<span class="sd">    ngroups(int) Number of subbgroups to be drawn</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    samples: a list of ngroups arrays containing</span>
+<span class="sd">             the indexes of the subjects in each subgroup</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">groupsize</span> <span class="o">=</span> <span class="n">nsubj</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="p">[(</span><span class="n">groupsize</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">groupsize</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+               <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngroups</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">samples</span></div>
+
+
+<div class="viewcode-block" id="split_group"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.split_group">[docs]</a><span class="k">def</span> <span class="nf">split_group</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Split the proposed group into random disjoint subgroups</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nsubj (int) the number of subjects to be split</span>
+<span class="sd">    ngroups(int) Number of subbgroups to be drawn</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    samples: a list of ngroups arrays containing</span>
+<span class="sd">             the indexes of the subjects in each subgroup</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">groupsize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">nsubj</span> <span class="o">/</span> <span class="n">ngroups</span><span class="p">))</span>
+    <span class="n">rperm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">nsubj</span><span class="p">))</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">rperm</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">groupsize</span><span class="p">:</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">groupsize</span><span class="p">]</span>
+              <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngroups</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">samples</span></div>
+
+
+<span class="c1"># ---------------------------------------------------------</span>
+<span class="c1"># ----- statistic computation -----------------------------</span>
+<span class="c1"># ---------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="conjunction"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.conjunction">[docs]</a><span class="k">def</span> <span class="nf">conjunction</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a conjunction statistic as the sum of the k lowest t-values</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array of shape(nrows, ncols),</span>
+<span class="sd">       effect matrix</span>
+<span class="sd">    vx: array of shape(nrows, ncols),</span>
+<span class="sd">        variance matrix</span>
+<span class="sd">    k: int,</span>
+<span class="sd">       number of subjects in the conjunction</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t array of shape(nrows): conjunction statistic</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="mf">1.e-15</span><span class="p">)))</span>
+    <span class="n">cjt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">t</span><span class="p">[:,</span> <span class="p">:</span><span class="n">k</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cjt</span></div>
+
+
+<div class="viewcode-block" id="ttest"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.ttest">[docs]</a><span class="k">def</span> <span class="nf">ttest</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the t-test for each row of the data x</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">..group.onesample</span> <span class="k">import</span> <span class="n">stat</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">stat</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;student&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fttest"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.fttest">[docs]</a><span class="k">def</span> <span class="nf">fttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assuming that x and vx represent a effect and variance estimates,</span>
+<span class="sd">    returns a cumulated (&#39;fixed effects&#39;) t-test of the data over each row</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array of shape(nrows, ncols): effect matrix</span>
+<span class="sd">    vx: array of shape(nrows, ncols): variance matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t array of shape(nrows): fixed effect statistics array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">vx</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incompatible dimensions for x and vx&quot;</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="mf">1.e-15</span><span class="p">))</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t</span></div>
+
+
+<div class="viewcode-block" id="mfx_ttest"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.mfx_ttest">[docs]</a><span class="k">def</span> <span class="nf">mfx_ttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Idem fttest, but returns a mixed-effects statistic</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array of shape(nrows, ncols): effect matrix</span>
+<span class="sd">    vx: array of shape(nrows, ncols): variance matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t array of shape(nrows): mixed effect statistics array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">..group.onesample</span> <span class="k">import</span> <span class="n">stat_mfx</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">stat_mfx</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">vx</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;student_mfx&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="voxel_thresholded_ttest"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.voxel_thresholded_ttest">[docs]</a><span class="k">def</span> <span class="nf">voxel_thresholded_ttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a binary map of the ttest&gt;threshold</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">ttest</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="n">threshold</span></div>
+
+
+<div class="viewcode-block" id="statistics_from_position"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.statistics_from_position">[docs]</a><span class="k">def</span> <span class="nf">statistics_from_position</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a number characterizing how close data is from</span>
+<span class="sd">    target using a kernel-based statistic</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    target: array of shape(nt,anat_dim) or None</span>
+<span class="sd">            the target positions</span>
+<span class="sd">    data: array of shape(nd,anat_dim) or None</span>
+<span class="sd">          the data position</span>
+<span class="sd">    sigma=1.0 (float), kernel parameter</span>
+<span class="sd">              or  a distance that say how good good is</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sensitivity (float): how well the targets are fitted</span>
+<span class="sd">                by the data  in [0,1] interval</span>
+<span class="sd">                1 is good</span>
+<span class="sd">                0 is bad</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">...algorithms.utils.fast_distance</span> <span class="k">import</span> <span class="n">euclidean_distance</span> <span class="k">as</span> <span class="n">ed</span>
+    <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span><span class="c1"># could be 1.0 ?</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span>
+    <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.</span>
+
+    <span class="n">dmatrix</span> <span class="o">=</span> <span class="n">ed</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span>
+    <span class="n">sensitivity</span> <span class="o">=</span> <span class="n">dmatrix</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">sensitivity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sensitivity</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">sensitivity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sensitivity</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sensitivity</span></div>
+
+
+<span class="c1"># -------------------------------------------------------</span>
+<span class="c1"># ---------- The main functions -----------------------------</span>
+<span class="c1"># -------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="voxel_reproducibility"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.voxel_reproducibility">[docs]</a><span class="k">def</span> <span class="nf">voxel_reproducibility</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;crfx&#39;</span><span class="p">,</span>
+                          <span class="n">swap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; return a measure of voxel-level reproducibility of activation patterns</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data: array of shape (nvox,nsubj)</span>
+<span class="sd">          the input data from which everything is computed</span>
+<span class="sd">    vardata: array of shape (nvox,nsubj)</span>
+<span class="sd">             the corresponding variance information</span>
+<span class="sd">             ngroups (int):</span>
+<span class="sd">             Number of subbgroups to be drawn</span>
+<span class="sd">    domain: referential- and domain-defining image</span>
+<span class="sd">    ngourps: int,</span>
+<span class="sd">             number of groups to be used in the resampling procedure</span>
+<span class="sd">    method: string, to be chosen among &#39;crfx&#39;, &#39;cmfx&#39;, &#39;cffx&#39;</span>
+<span class="sd">            inference method under study</span>
+<span class="sd">    verbose: bool, verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    kappa (float): the desired  reproducibility index</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rmap</span> <span class="o">=</span> <span class="n">map_reproducibility</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span>
+                                     <span class="n">swap</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rmap</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngroups</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="n">hr</span> <span class="o">=</span> <span class="n">histo_repro</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hr</span></div>
+
+
+<div class="viewcode-block" id="draw_samples"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.draw_samples">[docs]</a><span class="k">def</span> <span class="nf">draw_samples</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">,</span> <span class="n">split_method</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Draw randomly ngroups sets of samples from [0..nsubj-1]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nsubj, int, the total number of items</span>
+<span class="sd">    ngroups, int, the number of desired groups</span>
+<span class="sd">    split_method: string, optional,</span>
+<span class="sd">                  to be chosen among &#39;default&#39;, &#39;bootstrap&#39;, &#39;jacknife&#39;</span>
+<span class="sd">                  if &#39;bootstrap&#39;, then each group will be nsubj</span>
+<span class="sd">                     drawn with repetitions among nsubj</span>
+<span class="sd">                  if &#39;jacknife&#39; the population is divided into</span>
+<span class="sd">                      ngroups disjoint equally-sized subgroups</span>
+<span class="sd">                  if &#39;default&#39;, &#39;bootstrap&#39; is used when nsubj &lt; 10 * ngroups</span>
+<span class="sd">                     otherwise jacknife is used</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    samples, a list of ngroups array that represent the subsets.</span>
+
+<span class="sd">    fixme : this should allow variable bootstrap,</span>
+<span class="sd">    i.e. draw ngroups of groupsize among nsubj</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">split_method</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">nsubj</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">ngroups</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">split_group</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">bootstrap_group</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">split_method</span> <span class="o">==</span> <span class="s1">&#39;bootstrap&#39;</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">bootstrap_group</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">split_method</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">split_group</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unknown splitting method&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">samples</span></div>
+
+
+<div class="viewcode-block" id="map_reproducibility"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.map_reproducibility">[docs]</a><span class="k">def</span> <span class="nf">map_reproducibility</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;crfx&#39;</span><span class="p">,</span>
+                        <span class="n">swap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a reproducibility map for the given method</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data: array of shape (nvox,nsubj)</span>
+<span class="sd">          the input data from which everything is computed</span>
+<span class="sd">    vardata: array of the same size</span>
+<span class="sd">             the corresponding variance information</span>
+<span class="sd">    domain: referential- and domain-defining image</span>
+<span class="sd">    ngroups (int): the size of each subrgoup to be studied</span>
+<span class="sd">    threshold (float): binarization threshold</span>
+<span class="sd">              (makes sense only if method==rfx)</span>
+<span class="sd">    method=&#39;crfx&#39;, string to be chosen among &#39;crfx&#39;, &#39;cmfx&#39;, &#39;cffx&#39;</span>
+<span class="sd">           inference method under study</span>
+<span class="sd">    verbose=0 : verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rmap: array of shape(nvox)</span>
+<span class="sd">          the reproducibility map</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nsubj</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">nvox</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">draw_samples</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">)</span>
+    <span class="n">rmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nvox</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngroups</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="n">swap</span><span class="p">:</span>
+            <span class="c1"># randomly swap the sign of x</span>
+            <span class="n">x</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;crfx&#39;</span><span class="p">:</span>
+            <span class="n">vx</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[:,</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="n">csize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;csize&#39;</span><span class="p">]</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;threshold&#39;</span><span class="p">]</span>
+
+        <span class="c1"># compute the statistical maps according to the method you like</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;crfx&#39;</span><span class="p">:</span>
+            <span class="n">stat_map</span> <span class="o">=</span> <span class="n">ttest</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cffx&#39;</span><span class="p">:</span>
+            <span class="n">stat_map</span> <span class="o">=</span> <span class="n">fttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cmfx&#39;</span><span class="p">:</span>
+            <span class="n">stat_map</span> <span class="o">=</span> <span class="n">mfx_ttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cjt&#39;</span><span class="p">:</span>
+            <span class="c1"># if kwargs.has_key(&#39;k&#39;):</span>
+            <span class="k">if</span> <span class="s1">&#39;k&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;k&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">nsubj</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">stat_map</span> <span class="o">=</span> <span class="n">conjunction</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unknown method&#39;</span><span class="p">)</span>
+
+        <span class="c1"># add the binarized map to a reproducibility map</span>
+        <span class="n">rmap</span> <span class="o">+=</span> <span class="n">cluster_threshold</span><span class="p">(</span><span class="n">stat_map</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">csize</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">rmap</span></div>
+
+
+<div class="viewcode-block" id="peak_reproducibility"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.peak_reproducibility">[docs]</a><span class="k">def</span> <span class="nf">peak_reproducibility</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;crfx&#39;</span><span class="p">,</span>
+                         <span class="n">swap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a measure of cluster-level reproducibility</span>
+<span class="sd">    of activation patterns</span>
+<span class="sd">    (i.e. how far clusters are from each other)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data: array of shape (nvox,nsubj)</span>
+<span class="sd">          the input data from which everything is computed</span>
+<span class="sd">    vardata: array of shape (nvox,nsubj)</span>
+<span class="sd">             the variance of the data that is also available</span>
+<span class="sd">    domain: referential- and domain-defining image</span>
+<span class="sd">    ngroups (int),</span>
+<span class="sd">             Number of subbgroups to be drawn</span>
+<span class="sd">    sigma: float, parameter that encodes how far far is</span>
+<span class="sd">    threshold: float, binarization threshold</span>
+<span class="sd">    method: string to be chosen among &#39;crfx&#39;, &#39;cmfx&#39; or &#39;cffx&#39;,</span>
+<span class="sd">           inference method under study</span>
+<span class="sd">    swap = False: if True, a random sign swap of the data is performed</span>
+<span class="sd">         This is used to simulate a null hypothesis on the data.</span>
+<span class="sd">    verbose=0 : verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    score (float): the desired  cluster-level reproducibility index</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tiny</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+    <span class="n">nsubj</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">draw_samples</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">)</span>
+    <span class="n">all_pos</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># compute the positions in the different subgroups</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngroups</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="n">swap</span><span class="p">:</span>
+            <span class="c1"># apply a random sign swap to x</span>
+            <span class="n">x</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;crfx&#39;</span><span class="p">:</span>
+            <span class="n">vx</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[:,</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;bsa&#39;</span><span class="p">:</span>
+            <span class="n">threshold</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;threshold&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;crfx&#39;</span><span class="p">:</span>
+                <span class="n">stat_map</span> <span class="o">=</span> <span class="n">ttest</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cmfx&#39;</span><span class="p">:</span>
+                <span class="n">stat_map</span> <span class="o">=</span> <span class="n">mfx_ttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cffx&#39;</span><span class="p">:</span>
+                <span class="n">stat_map</span> <span class="o">=</span> <span class="n">fttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cjt&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;k&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="n">k</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;k&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">k</span> <span class="o">=</span> <span class="n">nsubj</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">stat_map</span> <span class="o">=</span> <span class="n">conjunction</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">get_peak_position_from_thresholded_map</span><span class="p">(</span>
+                <span class="n">stat_map</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+            <span class="n">all_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># method=&#39;bsa&#39; is a special case</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="p">(</span><span class="n">tiny</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vx</span><span class="p">))</span>
+            <span class="n">afname</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;afname&#39;</span><span class="p">]</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">]</span>
+            <span class="n">dmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;dmax&#39;</span><span class="p">]</span>
+            <span class="n">ths</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ths&#39;</span><span class="p">]</span>
+            <span class="n">thq</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;thq&#39;</span><span class="p">]</span>
+            <span class="n">smin</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;smin&#39;</span><span class="p">]</span>
+            <span class="n">niter</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;niter&#39;</span><span class="p">]</span>
+            <span class="n">afname</span> <span class="o">=</span> <span class="n">afname</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%02d</span><span class="s1">_</span><span class="si">%04d</span><span class="s1">.pic&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">niter</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">coord_bsa</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">dmax</span><span class="p">,</span> <span class="n">ths</span><span class="p">,</span> <span class="n">thq</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">afname</span><span class="p">)</span>
+            <span class="n">all_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+
+    <span class="c1"># derive a kernel-based goodness measure from the pairwise comparison</span>
+    <span class="c1"># of sets of positions</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngroups</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="n">statistics_from_position</span><span class="p">(</span><span class="n">all_pos</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">all_pos</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">sigma</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="n">statistics_from_position</span><span class="p">(</span><span class="n">all_pos</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">all_pos</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">score</span> <span class="o">/=</span> <span class="p">(</span><span class="n">ngroups</span> <span class="o">*</span> <span class="p">(</span><span class="n">ngroups</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">score</span></div>
+
+
+<div class="viewcode-block" id="cluster_reproducibility"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.cluster_reproducibility">[docs]</a><span class="k">def</span> <span class="nf">cluster_reproducibility</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span>
+                            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;crfx&#39;</span><span class="p">,</span> <span class="n">swap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a measure of cluster-level reproducibility</span>
+<span class="sd">    of activation patterns</span>
+<span class="sd">    (i.e. how far clusters are from each other)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data: array of shape (nvox,nsubj)</span>
+<span class="sd">          the input data from which everything is computed</span>
+<span class="sd">    vardata: array of shape (nvox,nsubj)</span>
+<span class="sd">             the variance of the data that is also available</span>
+<span class="sd">    domain: referential- and domain- defining image instance</span>
+<span class="sd">    ngroups (int),</span>
+<span class="sd">             Number of subbgroups to be drawn</span>
+<span class="sd">    sigma (float): parameter that encodes how far far is</span>
+<span class="sd">    threshold (float):</span>
+<span class="sd">              binarization threshold</span>
+<span class="sd">    method=&#39;crfx&#39;, string to be chosen among &#39;crfx&#39;, &#39;cmfx&#39; or &#39;cffx&#39;</span>
+<span class="sd">           inference method under study</span>
+<span class="sd">    swap = False: if True, a random sign swap of the data is performed</span>
+<span class="sd">         This is used to simulate a null hypothesis on the data.</span>
+<span class="sd">    verbose=0 : verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    score (float): the desired  cluster-level reproducibility index</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tiny</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+    <span class="n">nsubj</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">draw_samples</span><span class="p">(</span><span class="n">nsubj</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">)</span>
+    <span class="n">all_pos</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># compute the positions in the different subgroups</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngroups</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="n">swap</span><span class="p">:</span>
+            <span class="c1"># apply a random sign swap to x</span>
+            <span class="n">x</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;crfx&#39;</span><span class="p">:</span>
+            <span class="n">vx</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[:,</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;bsa&#39;</span><span class="p">:</span>
+            <span class="n">csize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;csize&#39;</span><span class="p">]</span>
+            <span class="n">threshold</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;threshold&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;crfx&#39;</span><span class="p">:</span>
+                <span class="n">stat_map</span> <span class="o">=</span> <span class="n">ttest</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cmfx&#39;</span><span class="p">:</span>
+                <span class="n">stat_map</span> <span class="o">=</span> <span class="n">mfx_ttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cffx&#39;</span><span class="p">:</span>
+                <span class="n">stat_map</span> <span class="o">=</span> <span class="n">fttest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cjt&#39;</span><span class="p">:</span>
+                <span class="k">if</span>  <span class="s1">&#39;k&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="n">k</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;k&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">k</span> <span class="o">=</span> <span class="n">nsubj</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">stat_map</span> <span class="o">=</span> <span class="n">conjunction</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">get_cluster_position_from_thresholded_map</span><span class="p">(</span><span class="n">stat_map</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span>
+                                                            <span class="n">threshold</span><span class="p">,</span> <span class="n">csize</span><span class="p">)</span>
+            <span class="n">all_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># method=&#39;bsa&#39; is a special case</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="p">(</span><span class="n">tiny</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vx</span><span class="p">))</span>
+            <span class="n">afname</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;afname&#39;</span><span class="p">]</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">]</span>
+            <span class="n">dmax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;dmax&#39;</span><span class="p">]</span>
+            <span class="n">ths</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ths&#39;</span><span class="p">]</span>
+            <span class="n">thq</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;thq&#39;</span><span class="p">]</span>
+            <span class="n">smin</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;smin&#39;</span><span class="p">]</span>
+            <span class="n">niter</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;niter&#39;</span><span class="p">]</span>
+            <span class="n">afname</span> <span class="o">=</span> <span class="n">afname</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%02d</span><span class="s1">_</span><span class="si">%04d</span><span class="s1">.pic&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">niter</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">coord_bsa</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">dmax</span><span class="p">,</span> <span class="n">ths</span><span class="p">,</span> <span class="n">thq</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">afname</span><span class="p">)</span>
+        <span class="n">all_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+
+    <span class="c1"># derive a kernel-based goodness measure from the pairwise comparison</span>
+    <span class="c1"># of sets of positions</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngroups</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="n">statistics_from_position</span><span class="p">(</span><span class="n">all_pos</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">all_pos</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">sigma</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="n">statistics_from_position</span><span class="p">(</span><span class="n">all_pos</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">all_pos</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">sigma</span><span class="p">)</span>
+
+    <span class="n">score</span> <span class="o">/=</span> <span class="p">(</span><span class="n">ngroups</span> <span class="o">*</span> <span class="p">(</span><span class="n">ngroups</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">score</span></div>
+
+
+<div class="viewcode-block" id="group_reproducibility_metrics"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.group_reproducibility_metrics">[docs]</a><span class="k">def</span> <span class="nf">group_reproducibility_metrics</span><span class="p">(</span>
+    <span class="n">mask_images</span><span class="p">,</span> <span class="n">contrast_images</span><span class="p">,</span> <span class="n">variance_images</span><span class="p">,</span> <span class="n">thresholds</span><span class="p">,</span> <span class="n">ngroups</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">,</span> <span class="n">cluster_threshold</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">6.</span><span class="p">,</span>
+    <span class="n">do_clusters</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">do_voxels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">do_peaks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">swap</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Main function to perform reproducibility analysis, including nifti1 io</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    threshold: list or 1-d array,</span>
+<span class="sd">               the thresholds to be tested</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cluster_rep_results: dictionary,</span>
+<span class="sd">                         results of cluster-level reproducibility analysis</span>
+<span class="sd">    voxel_rep_results: dictionary,</span>
+<span class="sd">                       results of voxel-level reproducibility analysis</span>
+<span class="sd">    peak_rep_results: dictionary,</span>
+<span class="sd">                      results of peak-level reproducibility analysis</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">nibabel</span> <span class="k">import</span> <span class="n">load</span>
+    <span class="kn">from</span> <span class="nn">..mask</span> <span class="k">import</span> <span class="n">intersect_masks</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">variance_images</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;crfx&#39;</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Variance images are necessary&#39;</span><span class="p">)</span>
+
+    <span class="n">nsubj</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">contrast_images</span><span class="p">)</span>
+
+    <span class="c1"># compute the group mask</span>
+    <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">load</span><span class="p">(</span><span class="n">mask_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">intersect_masks</span><span class="p">(</span><span class="n">mask_images</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">grid_domain_from_binary_array</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+
+    <span class="c1"># read the data</span>
+    <span class="n">group_con</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">group_var</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsubj</span><span class="p">):</span>
+        <span class="n">group_con</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">load</span><span class="p">(</span><span class="n">contrast_images</span><span class="p">[</span><span class="n">s</span><span class="p">])</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">mask</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variance_images</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">group_var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">load</span><span class="p">(</span><span class="n">variance_images</span><span class="p">[</span><span class="n">s</span><span class="p">])</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="n">mask</span><span class="p">])</span>
+
+    <span class="n">group_con</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">group_con</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">group_con</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">group_con</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variance_images</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">group_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">group_var</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">group_var</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">group_var</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">group_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">group_var</span><span class="p">,</span> <span class="mf">1.e-15</span><span class="p">)</span>
+
+    <span class="c1"># perform the analysis</span>
+    <span class="n">voxel_rep_results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">cluster_rep_results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">peak_rep_results</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">ng</span> <span class="ow">in</span> <span class="n">ngroups</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">do_voxels</span><span class="p">:</span>
+            <span class="n">voxel_rep_results</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ng</span><span class="p">:</span> <span class="p">{}})</span>
+        <span class="k">if</span> <span class="n">do_clusters</span><span class="p">:</span>
+            <span class="n">cluster_rep_results</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ng</span><span class="p">:</span> <span class="p">{}})</span>
+        <span class="k">if</span> <span class="n">do_peaks</span><span class="p">:</span>
+            <span class="n">peak_rep_results</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ng</span><span class="p">:</span> <span class="p">{}})</span>
+        <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="n">thresholds</span><span class="p">:</span>
+            <span class="n">kappa</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">cls</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">pk</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;threshold&#39;</span><span class="p">:</span> <span class="n">th</span><span class="p">,</span> <span class="s1">&#39;csize&#39;</span><span class="p">:</span> <span class="n">cluster_threshold</span><span class="p">}</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">do_voxels</span><span class="p">:</span>
+                    <span class="n">kappa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">voxel_reproducibility</span><span class="p">(</span>
+                            <span class="n">group_con</span><span class="p">,</span> <span class="n">group_var</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">ng</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">swap</span><span class="p">,</span>
+                            <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">do_clusters</span><span class="p">:</span>
+                    <span class="bp">cls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cluster_reproducibility</span><span class="p">(</span>
+                            <span class="n">group_con</span><span class="p">,</span> <span class="n">group_var</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">ng</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span>
+                            <span class="n">swap</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">do_peaks</span><span class="p">:</span>
+                    <span class="n">pk</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak_reproducibility</span><span class="p">(</span>
+                            <span class="n">group_con</span><span class="p">,</span> <span class="n">group_var</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">ng</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span>
+                            <span class="n">swap</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">do_voxels</span><span class="p">:</span>
+                <span class="n">voxel_rep_results</span><span class="p">[</span><span class="n">ng</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">th</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">kappa</span><span class="p">)})</span>
+            <span class="k">if</span> <span class="n">do_clusters</span><span class="p">:</span>
+                <span class="n">cluster_rep_results</span><span class="p">[</span><span class="n">ng</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">th</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">cls</span><span class="p">)})</span>
+            <span class="k">if</span> <span class="n">do_peaks</span><span class="p">:</span>
+                <span class="n">peak_rep_results</span><span class="p">[</span><span class="n">ng</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">th</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">cls</span><span class="p">)})</span>
+
+    <span class="k">return</span> <span class="n">voxel_rep_results</span><span class="p">,</span> <span class="n">cluster_rep_results</span><span class="p">,</span> <span class="n">peak_rep_results</span></div>
+
+
+<span class="c1"># -------------------------------------------------------</span>
+<span class="c1"># ---------- BSA stuff ----------------------------------</span>
+<span class="c1"># -------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="coord_bsa"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.utils.reproducibility_measures.html#nipy.labs.utils.reproducibility_measures.coord_bsa">[docs]</a><span class="k">def</span> <span class="nf">coord_bsa</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">3.</span><span class="p">,</span> <span class="n">dmax</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">thq</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">smin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+              <span class="n">afname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; main function for  performing bsa on a dataset</span>
+<span class="sd">    where bsa =  nipy.labs.spatial_models.bayesian_structural_analysis</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    domain: image instance,</span>
+<span class="sd">          referential- and domain-defining image</span>
+<span class="sd">    betas: array of shape (nbnodes, subjects),</span>
+<span class="sd">           the multi-subject statistical maps</span>
+<span class="sd">    theta: float, optional</span>
+<span class="sd">           first level threshold</span>
+<span class="sd">    dmax: float&gt;0, optional</span>
+<span class="sd">          expected cluster std in the common space in units of coord</span>
+<span class="sd">    ths: int, &gt;=0), optional</span>
+<span class="sd">         representatitivity threshold</span>
+<span class="sd">    thq: float, optional,</span>
+<span class="sd">         posterior significance threshold should be in [0,1]</span>
+<span class="sd">    smin: int, optional,</span>
+<span class="sd">          minimal size of the regions to validate them</span>
+<span class="sd">    afname: string, optional</span>
+<span class="sd">            path where intermediate results cam be pickled</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    afcoord array of shape(number_of_regions,3):</span>
+<span class="sd">            coordinate of the found landmark regions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">..spatial_models.bayesian_structural_analysis</span> <span class="k">import</span> <span class="n">compute_BSA_quick</span>
+
+    <span class="n">crmap</span><span class="p">,</span> <span class="n">AF</span><span class="p">,</span> <span class="n">BF</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">compute_BSA_quick</span><span class="p">(</span>
+        <span class="n">domain</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">dmax</span><span class="p">,</span> <span class="n">thq</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">ths</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">AF</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">afname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">pickle</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">AF</span><span class="p">,</span> <span class="n">afname</span><span class="p">)</span>
+    <span class="n">afcoord</span> <span class="o">=</span> <span class="n">AF</span><span class="o">.</span><span class="n">discrete_to_roi_features</span><span class="p">(</span><span class="s1">&#39;position&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">afcoord</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

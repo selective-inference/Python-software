@@ -1,0 +1,56 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+randomized.group_lasso
+======================
+
+Module: :mod:`randomized.group_lasso`
+-------------------------------------
+Inheritance diagram for ``selection.randomized.group_lasso``:
+
+.. inheritance-diagram:: selection.randomized.group_lasso 
+   :parts: 3
+
+.. automodule:: selection.randomized.group_lasso
+
+.. currentmodule:: selection.randomized.group_lasso
+
+Classes
+-------
+
+:class:`group_lasso`
+~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: group_lasso
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`polynomial_gaussian_sampler`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: polynomial_gaussian_sampler
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Functions
+---------
+
+
+.. autofunction:: selection.randomized.group_lasso.debiased_targets
+
+
+.. autofunction:: selection.randomized.group_lasso.form_targets
+
+
+.. autofunction:: selection.randomized.group_lasso.full_targets
+
+
+.. autofunction:: selection.randomized.group_lasso.selected_targets
+

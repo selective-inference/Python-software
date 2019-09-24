@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.statistics.models.utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-statistics-models-utils">
+<h1>algorithms.statistics.models.utils<a class="headerlink" href="#algorithms-statistics-models-utils" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-statistics-models-utils">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.statistics.models.utils</span></code><a class="headerlink" href="#module-algorithms-statistics-models-utils" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.statistics.models.utils</span></code>:</p>
+digraph inheritance342f4ae605 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;models.utils.StepFunction&quot; [URL=&quot;#nipy.algorithms.statistics.models.utils.StepFunction&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A basic step function&quot;];
+}
+<span class="target" id="module-nipy.algorithms.statistics.models.utils"></span><p>General matrix and other utilities for statistics</p>
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="stepfunction">
+<h2><a class="reference internal" href="#nipy.algorithms.statistics.models.utils.StepFunction" title="nipy.algorithms.statistics.models.utils.StepFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">StepFunction</span></code></a><a class="headerlink" href="#stepfunction" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.algorithms.statistics.models.utils.StepFunction">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.statistics.models.utils.</code><code class="sig-name descname">StepFunction</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">ival=0.0</em>, <em class="sig-param">sorted=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/utils.html#StepFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.utils.StepFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A basic step function</p>
+<p>Values at the ends are handled in the simplest way possible: everything to
+the left of <code class="docutils literal notranslate"><span class="pre">x[0]</span></code> is set to <cite>ival</cite>; everything to the right of <code class="docutils literal notranslate"><span class="pre">x[-1]</span></code>
+is set to <code class="docutils literal notranslate"><span class="pre">y[-1]</span></code>.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">StepFunction</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">(</span><span class="mf">3.2</span><span class="p">)</span>
+<span class="go">3.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">f</span><span class="p">([[</span><span class="mf">3.2</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">],[</span><span class="mi">24</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.1</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">res</span> <span class="o">==</span> <span class="p">[[</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+<span class="gp">... </span>               <span class="p">[</span><span class="mi">19</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.utils.StepFunction.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">ival=0.0</em>, <em class="sig-param">sorted=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/utils.html#StepFunction.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.utils.StepFunction.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.statistics.models.utils.ECDF">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.models.utils.</code><code class="sig-name descname">ECDF</code><span class="sig-paren">(</span><em class="sig-param">values</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/utils.html#ECDF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.utils.ECDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the ECDF of an array as a step function.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.models.utils.mad">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.models.utils.</code><code class="sig-name descname">mad</code><span class="sig-paren">(</span><em class="sig-param">a</em>, <em class="sig-param">c=0.6745</em>, <em class="sig-param">axis=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/utils.html#mad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.utils.mad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Median Absolute Deviation:</p>
+<p>median(abs(a - median(a))) / c</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.models.utils.monotone_fn_inverter">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.models.utils.</code><code class="sig-name descname">monotone_fn_inverter</code><span class="sig-paren">(</span><em class="sig-param">fn</em>, <em class="sig-param">x</em>, <em class="sig-param">vectorized=True</em>, <em class="sig-param">**keywords</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/utils.html#monotone_fn_inverter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.utils.monotone_fn_inverter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a monotone function x (no checking is done to verify monotonicity)
+and a set of x values, return an linearly interpolated approximation
+to its inverse from its values on x.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

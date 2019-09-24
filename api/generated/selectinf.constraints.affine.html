@@ -1,0 +1,1004 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="constraints.base" href="selectinf.constraints.base.html" />
+    <link rel="prev" title="base" href="selectinf.base.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">constraints.affine</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-constraints-affine">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.affine</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.constraints.affine.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="constraints-affine">
+<h1>constraints.affine<a class="headerlink" href="#constraints-affine" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-constraints-affine">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.affine</span></code><a class="headerlink" href="#module-constraints-affine" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.constraints.affine</span></code>:</p>
+digraph inheritance2649dcce62 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;constraints.affine.constraints&quot; [URL=&quot;#selectinf.constraints.affine.constraints&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;This class is the core object for affine selection procedures.&quot;];
+  &quot;constraints.affine.gaussian_hit_and_run&quot; [URL=&quot;#selectinf.constraints.affine.gaussian_hit_and_run&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;distributions.chain.reversible_markov_chain&quot; -&gt; &quot;constraints.affine.gaussian_hit_and_run&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;distributions.chain.markov_chain&quot; [URL=&quot;selectinf.distributions.chain.html#selectinf.distributions.chain.markov_chain&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Abstract implementation of a Markov chain.&quot;];
+  &quot;distributions.chain.reversible_markov_chain&quot; [URL=&quot;selectinf.distributions.chain.html#selectinf.distributions.chain.reversible_markov_chain&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;An abstract representation of a Markov chain that&quot;];
+  &quot;distributions.chain.markov_chain&quot; -&gt; &quot;distributions.chain.reversible_markov_chain&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-selectinf.constraints.affine"></span><p>This module contains the core code needed for post selection
+inference based on affine selection procedures as
+described in the papers <a class="reference external" href="http://arxiv.org/abs/1308.3020">Kac Rice</a>, <a class="reference external" href="http://arxiv.org/abs/1401.3889">Spacings</a>, <a class="reference external" href="http://arxiv.org/abs/1301.7161">covTest</a>
+and <a class="reference external" href="http://arxiv.org/abs/1311.6238">post selection LASSO</a>.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="constraints">
+<h3><a class="reference internal" href="#selectinf.constraints.affine.constraints" title="selectinf.constraints.affine.constraints"><code class="xref py py-class docutils literal notranslate"><span class="pre">constraints</span></code></a><a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.constraints.affine.constraints">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.constraints.affine.</code><code class="sig-name descname">constraints</code><span class="sig-paren">(</span><em class="sig-param">linear_part</em>, <em class="sig-param">offset</em>, <em class="sig-param">covariance=None</em>, <em class="sig-param">mean=None</em>, <em class="sig-param">rank=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This class is the core object for affine selection procedures.
+It is meant to describe sets of the form <span class="math notranslate nohighlight">\(C\)</span>
+where</p>
+<div class="math notranslate nohighlight">
+\[C = \left\{z: Az\leq b \right \}\]</div>
+<p>Its main purpose is to consider slices through <span class="math notranslate nohighlight">\(C\)</span>
+and the conditional distribution of a Gaussian <span class="math notranslate nohighlight">\(N(\mu,\Sigma)\)</span>
+restricted to such slices.</p>
+<p class="rubric">Notes</p>
+<p>In this parameterization, the parameter <cite>self.mean</cite> corresponds
+to the <em>reference measure</em> that is being truncated. It is not the
+mean of the truncated Gaussian.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">positive</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">positive</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span>  
+<span class="go">[4.62...,  10.17...]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">positive</span><span class="o">.</span><span class="n">pivot</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> 
+<span class="go">5.187...-07</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">positive</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span> 
+<span class="go">[1.399..., 7.4..., inf, 1.414...]  </span>
+<span class="gp">&gt;&gt;&gt; </span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">linear_part</em>, <em class="sig-param">offset</em>, <em class="sig-param">covariance=None</em>, <em class="sig-param">mean=None</em>, <em class="sig-param">rank=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new inequality.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>linear_part</strong> : np.float((q,p))</p>
+<blockquote>
+<div><p>The linear part, <span class="math notranslate nohighlight">\(A\)</span> of the affine constraint
+<span class="math notranslate nohighlight">\(\{z:Az \leq b\}\)</span>.</p>
+</div></blockquote>
+<p><strong>offset: np.float(q)</strong></p>
+<blockquote>
+<div><p>The offset part, <span class="math notranslate nohighlight">\(b\)</span> of the affine constraint
+<span class="math notranslate nohighlight">\(\{z:Az \leq b\}\)</span>.</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float((p,p))</p>
+<blockquote>
+<div><p>Covariance matrix of Gaussian distribution to be 
+truncated. Defaults to <cite>np.identity(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>mean</strong> : np.float(p)</p>
+<blockquote>
+<div><p>Mean vector of Gaussian distribution to be 
+truncated. Defaults to <cite>np.zeros(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>rank</strong> : int</p>
+<blockquote>
+<div><p>If not None, this should specify
+the rank of the covariance matrix. Defaults
+to self.dim.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.value">
+<code class="sig-name descname">value</code><span class="sig-paren">(</span><em class="sig-param">Y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute <span class="math notranslate nohighlight">\(\max(Ay-b)\)</span>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.conditional">
+<code class="sig-name descname">conditional</code><span class="sig-paren">(</span><em class="sig-param">linear_part</em>, <em class="sig-param">value</em>, <em class="sig-param">rank=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.conditional"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.conditional" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an equivalent constraint 
+after having conditioned on a linear equality.</p>
+<p>Let the inequality constraints be specified by
+<cite>(A,b)</cite> and the equality constraints be specified
+by <cite>(C,d)</cite>. We form equivalent inequality constraints by 
+considering the residual</p>
+<div class="math notranslate nohighlight">
+\[AY - E(AY|CY=d)\]</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>linear_part</strong> : np.float((k,q))</p>
+<blockquote>
+<div><p>Linear part of equality constraint, <cite>C</cite> above.</p>
+</div></blockquote>
+<p><strong>value</strong> : np.float(k)</p>
+<blockquote>
+<div><p>Value of equality constraint, <cite>b</cite> above.</p>
+</div></blockquote>
+<p><strong>rank</strong> : int</p>
+<blockquote>
+<div><p>If not None, this should specify
+the rank of <cite>linear_part</cite>. Defaults
+to <cite>min(k,q)</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>conditional_con</strong> : <cite>constraints</cite></p>
+<blockquote>
+<div><p>Affine constraints having applied equality constraint.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.bounds">
+<code class="sig-name descname">bounds</code><span class="sig-paren">(</span><em class="sig-param">direction_of_interest</em>, <em class="sig-param">Y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a realization <span class="math notranslate nohighlight">\(Y\)</span> of the random variable <span class="math notranslate nohighlight">\(N(\mu,\Sigma)\)</span>
+truncated to <span class="math notranslate nohighlight">\(C\)</span> specified by <cite>self.constraints</cite> compute
+the slice of the inequality constraints in a 
+given direction <span class="math notranslate nohighlight">\(\eta\)</span>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>A direction <span class="math notranslate nohighlight">\(\eta\)</span> for which we may want to form 
+selection intervals or a test.</p>
+</div></blockquote>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>A realization of <span class="math notranslate nohighlight">\(N(\mu,\Sigma)\)</span> where 
+<span class="math notranslate nohighlight">\(\Sigma\)</span> is <cite>self.covariance</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>L</strong> : np.float</p>
+<blockquote>
+<div><p>Lower truncation bound.</p>
+</div></blockquote>
+<p><strong>Z</strong> : np.float</p>
+<blockquote>
+<div><p>The observed <span class="math notranslate nohighlight">\(\eta^TY\)</span></p>
+</div></blockquote>
+<p><strong>U</strong> : np.float</p>
+<blockquote>
+<div><p>Upper truncation bound.</p>
+</div></blockquote>
+<p><strong>S</strong> : np.float</p>
+<blockquote>
+<div><p>Standard deviation of <span class="math notranslate nohighlight">\(\eta^TY\)</span>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.pivot">
+<code class="sig-name descname">pivot</code><span class="sig-paren">(</span><em class="sig-param">direction_of_interest</em>, <em class="sig-param">Y</em>, <em class="sig-param">null_value=None</em>, <em class="sig-param">alternative='greater'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.pivot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.pivot" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a realization <span class="math notranslate nohighlight">\(Y\)</span> of the random variable <span class="math notranslate nohighlight">\(N(\mu,\Sigma)\)</span>
+truncated to <span class="math notranslate nohighlight">\(C\)</span> specified by <cite>self.constraints</cite> compute
+the slice of the inequality constraints in a 
+given direction <span class="math notranslate nohighlight">\(\eta\)</span> and test whether 
+<span class="math notranslate nohighlight">\(\eta^T\mu\)</span> is greater then 0, less than 0 or equal to 0.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>A direction <span class="math notranslate nohighlight">\(\eta\)</span> for which we may want to form 
+selection intervals or a test.</p>
+</div></blockquote>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>A realization of <span class="math notranslate nohighlight">\(N(0,\Sigma)\)</span> where 
+<span class="math notranslate nohighlight">\(\Sigma\)</span> is <cite>self.covariance</cite>.</p>
+</div></blockquote>
+<p><strong>alternative</strong> : [‘greater’, ‘less’, ‘twosided’]</p>
+<blockquote>
+<div><p>What alternative to use.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>P</strong> : np.float</p>
+<blockquote>
+<div><p><span class="math notranslate nohighlight">\(p\)</span>-value of corresponding test.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>All of the tests are based on the exact pivot <span class="math notranslate nohighlight">\(F\)</span> given
+by the truncated Gaussian distribution for the
+given direction <span class="math notranslate nohighlight">\(\eta\)</span>. If the alternative is ‘greater’
+then we return <span class="math notranslate nohighlight">\(1-F\)</span>; if it is ‘less’ we return <span class="math notranslate nohighlight">\(F\)</span>
+and if it is ‘twosided’ we return <span class="math notranslate nohighlight">\(2 \min(F,1-F)\)</span>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.interval">
+<code class="sig-name descname">interval</code><span class="sig-paren">(</span><em class="sig-param">direction_of_interest</em>, <em class="sig-param">Y</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">UMAU=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a realization <span class="math notranslate nohighlight">\(Y\)</span> of the random variable <span class="math notranslate nohighlight">\(N(\mu,\Sigma)\)</span>
+truncated to <span class="math notranslate nohighlight">\(C\)</span> specified by <cite>self.constraints</cite> compute
+the slice of the inequality constraints in a 
+given direction <span class="math notranslate nohighlight">\(\eta\)</span> and test whether 
+<span class="math notranslate nohighlight">\(\eta^T\mu\)</span> is greater then 0, less than 0 or equal to 0.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>A direction <span class="math notranslate nohighlight">\(\eta\)</span> for which we may want to form 
+selection intervals or a test.</p>
+</div></blockquote>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>A realization of <span class="math notranslate nohighlight">\(N(0,\Sigma)\)</span> where 
+<span class="math notranslate nohighlight">\(\Sigma\)</span> is <cite>self.covariance</cite>.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float</p>
+<blockquote>
+<div><p>What level of confidence?</p>
+</div></blockquote>
+<p><strong>UMAU</strong> : bool</p>
+<blockquote>
+<div><p>Use the UMAU intervals?</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>[U,L]</strong> : selection interval</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.covariance_factors">
+<code class="sig-name descname">covariance_factors</code><span class="sig-paren">(</span><em class="sig-param">force=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.covariance_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.covariance_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Factor <cite>self.covariance</cite>,
+finding a possibly non-square square-root.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>force</strong> : bool</p>
+<blockquote>
+<div><p>If True, force a recomputation of
+the covariance. If not, assumes that
+covariance has not changed.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.estimate_mean">
+<code class="sig-name descname">estimate_mean</code><span class="sig-paren">(</span><em class="sig-param">observed</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.estimate_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.estimate_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Softmax estimator based on an observed data point.</p>
+<p>Makes a whitened copy 
+then returns softmax estimate.</p>
+<p>TODO: what if self.mean != 0 before hand?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.whiten">
+<code class="sig-name descname">whiten</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.whiten"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.whiten" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a whitened version of constraints in a different
+basis, and a change of basis matrix.</p>
+<p>If <cite>self.covariance</cite> is rank deficient, the change-of
+basis matrix will not be square.</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>inverse_map</strong> : callable</p>
+<p><strong>forward_map</strong> : callable</p>
+<p><strong>white_con</strong> : <cite>constraints</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.project_rowspace">
+<code class="sig-name descname">project_rowspace</code><span class="sig-paren">(</span><em class="sig-param">direction</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.project_rowspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.project_rowspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Project a vector onto rowspace
+of the covariance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.constraints.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">direction</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#constraints.solve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.constraints.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the inverse of the covariance
+times a direction vector.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="gaussian-hit-and-run">
+<h3><a class="reference internal" href="#selectinf.constraints.affine.gaussian_hit_and_run" title="selectinf.constraints.affine.gaussian_hit_and_run"><code class="xref py py-class docutils literal notranslate"><span class="pre">gaussian_hit_and_run</span></code></a><a class="headerlink" href="#gaussian-hit-and-run" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.constraints.affine.</code><code class="sig-name descname">gaussian_hit_and_run</code><span class="sig-paren">(</span><em class="sig-param">constraints</em>, <em class="sig-param">state</em>, <em class="sig-param">nstep=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#gaussian_hit_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="selectinf.distributions.chain.html#selectinf.distributions.chain.reversible_markov_chain" title="selectinf.distributions.chain.reversible_markov_chain"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.distributions.chain.reversible_markov_chain</span></code></a></p>
+<dl class="method">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">constraints</em>, <em class="sig-param">state</em>, <em class="sig-param">nstep=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#gaussian_hit_and_run.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run.backward_step">
+<code class="sig-name descname">backward_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run.backward_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a reversible chain, a backward_step is just a step.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run.forward_step">
+<code class="sig-name descname">forward_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run.forward_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a reversible chain, a forward_step is just a step.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run.get_state">
+<code class="sig-name descname">get_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run.get_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run.set_state">
+<code class="sig-name descname">set_state</code><span class="sig-paren">(</span><em class="sig-param">state</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run.set_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run.state">
+<em class="property">property </em><code class="sig-name descname">state</code><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run.state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.constraints.affine.gaussian_hit_and_run.step">
+<code class="sig-name descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#gaussian_hit_and_run.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.gaussian_hit_and_run.step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.constraints.affine.gibbs_test">
+<code class="sig-prename descclassname">selectinf.constraints.affine.</code><code class="sig-name descname">gibbs_test</code><span class="sig-paren">(</span><em class="sig-param">affine_con</em>, <em class="sig-param">Y</em>, <em class="sig-param">direction_of_interest</em>, <em class="sig-param">how_often=-1</em>, <em class="sig-param">ndraw=5000</em>, <em class="sig-param">burnin=2000</em>, <em class="sig-param">white=False</em>, <em class="sig-param">alternative='twosided'</em>, <em class="sig-param">UMPU=True</em>, <em class="sig-param">sigma_known=False</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">pvalue=True</em>, <em class="sig-param">use_constraint_directions=False</em>, <em class="sig-param">use_random_directions=True</em>, <em class="sig-param">tilt=None</em>, <em class="sig-param">test_statistic=None</em>, <em class="sig-param">accept_reject_params=(100</em>, <em class="sig-param">15</em>, <em class="sig-param">2000)</em>, <em class="sig-param">MLE_opts={'burnin': 1000</em>, <em class="sig-param">'hessian_min': 1.0</em>, <em class="sig-param">'how_often': 5</em>, <em class="sig-param">'ndraw': 500</em>, <em class="sig-param">'niter': 10</em>, <em class="sig-param">'startMLE': None</em>, <em class="sig-param">'step_size': 0.2</em>, <em class="sig-param">'tol': 1e-06}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#gibbs_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.gibbs_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Monte Carlo significance test for
+a given function of <cite>con.mean</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>affine_con</strong> : <a href="#id1"><span class="problematic" id="id2">`selection.affine.constraints`_</span></a></p>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>Point satisfying the constraint.</p>
+</div></blockquote>
+<p><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>Which linear function of <cite>con.mean</cite> is of interest?
+(a.k.a. <span class="math notranslate nohighlight">\(\eta\)</span> in many of related papers)</p>
+</div></blockquote>
+<p><strong>how_often</strong> : int (optional)</p>
+<blockquote>
+<div><p>How often should the sampler make a move along <cite>direction_of_interest</cite>?
+If negative, defaults to ndraw+burnin (so it will never be used).</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 5000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 2000.</p>
+</div></blockquote>
+<p><strong>white</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Is con.covariance equal to identity?</p>
+</div></blockquote>
+<p><strong>alternative</strong> : str</p>
+<blockquote>
+<div><p>One of [‘greater’, ‘less’, ‘twosided’]</p>
+</div></blockquote>
+<p><strong>UMPU</strong> : bool</p>
+<blockquote>
+<div><p>Perform the UMPU test?</p>
+</div></blockquote>
+<p><strong>sigma_known</strong> : bool</p>
+<blockquote>
+<div><p>Is <span class="math notranslate nohighlight">\(\sigma\)</span> assumed known?</p>
+</div></blockquote>
+<p><strong>alpha :</strong></p>
+<blockquote>
+<div><p>Level for UMPU test.</p>
+</div></blockquote>
+<p><strong>pvalue :</strong></p>
+<blockquote>
+<div><p>Return a pvalue or just the decision.</p>
+</div></blockquote>
+<p><strong>use_constraint_directions</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Use the directions formed by the constraints as in
+the Gibbs scheme?</p>
+</div></blockquote>
+<p><strong>use_random_directions</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Use additional random directions in
+the Gibbs scheme?</p>
+</div></blockquote>
+<p><strong>tilt</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>If not None, a direction
+to tilt. The likelihood ratio is effectively multiplied
+by <span class="math notranslate nohighlight">\(y^TP\eta\)</span> where <span class="math notranslate nohighlight">\(\eta\)</span> is <cite>tilt</cite>, and <span class="math notranslate nohighlight">\(P\)</span> is 
+projection onto the rowspace of <cite>affine_con</cite>.</p>
+</div></blockquote>
+<p><strong>accept_reject_params</strong> : tuple</p>
+<blockquote>
+<div><p>If not () should be a tuple (num_trial, min_accept, num_draw).
+In this case, we first try num_trial accept-reject samples,
+if at least min_accept of them succeed, we just draw num_draw
+accept_reject samples.</p>
+</div></blockquote>
+<p><strong>MLE_opts</strong> : {}</p>
+<blockquote>
+<div><p>Arguments passed to <cite>one_parameter_MLE</cite> if <cite>tilt</cite> is not None.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>pvalue</strong> : float</p>
+<blockquote>
+<div><p>P-value (using importance weights) for specified hypothesis test.</p>
+</div></blockquote>
+<p><strong>Z</strong> : np.float((ndraw, n))</p>
+<blockquote>
+<div><p>Sample from the sphere intersect the constraints.</p>
+</div></blockquote>
+<p><strong>weights</strong> : np.float(ndraw)</p>
+<blockquote>
+<div><p>Importance weights for the sample.</p>
+</div></blockquote>
+<p><strong>dfam</strong> : discrete_family</p>
+<blockquote>
+<div><p>Discrete exponential family with above sufficient
+statistics Z and weights.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.constraints.affine.interval_constraints">
+<code class="sig-prename descclassname">selectinf.constraints.affine.</code><code class="sig-name descname">interval_constraints</code><span class="sig-paren">(</span><em class="sig-param">support_directions</em>, <em class="sig-param">support_offsets</em>, <em class="sig-param">covariance</em>, <em class="sig-param">observed_data</em>, <em class="sig-param">direction_of_interest</em>, <em class="sig-param">tol=0.0001</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#interval_constraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.interval_constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an affine constraint <span class="math notranslate nohighlight">\(\{z:Az \leq b \leq \}\)</span> (elementwise)
+specified with <span class="math notranslate nohighlight">\(A\)</span> as <cite>support_directions</cite> and <span class="math notranslate nohighlight">\(b\)</span> as
+<cite>support_offset</cite>, a new direction of interest <span class="math notranslate nohighlight">\(\eta\)</span>, and
+an <cite>observed_data</cite> is Gaussian vector <span class="math notranslate nohighlight">\(Z \sim N(\mu,\Sigma)\)</span> 
+with <cite>covariance</cite> matrix <span class="math notranslate nohighlight">\(\Sigma\)</span>, this
+function returns <span class="math notranslate nohighlight">\(\eta^TZ\)</span> as well as an interval
+bounding this value.</p>
+<p>The interval constructed is such that the endpoints are 
+independent of <span class="math notranslate nohighlight">\(\eta^TZ\)</span>, hence the <span class="math notranslate nohighlight">\(p\)</span>-value
+of <a class="reference external" href="http://arxiv.org/abs/1308.3020">Kac Rice</a>
+can be used to form an exact pivot.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>support_directions</strong> : np.float</p>
+<blockquote>
+<div><p>Matrix specifying constraint, <span class="math notranslate nohighlight">\(A\)</span>.</p>
+</div></blockquote>
+<p><strong>support_offsets</strong> : np.float</p>
+<blockquote>
+<div><p>Offset in constraint, <span class="math notranslate nohighlight">\(b\)</span>.</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float</p>
+<blockquote>
+<div><p>Covariance matrix of <cite>observed_data</cite>.</p>
+</div></blockquote>
+<p><strong>observed_data</strong> : np.float</p>
+<blockquote>
+<div><p>Observations.</p>
+</div></blockquote>
+<p><strong>direction_of_interest</strong> : np.float</p>
+<blockquote>
+<div><p>Direction in which we’re interested for the
+contrast.</p>
+</div></blockquote>
+<p><strong>tol</strong> : float</p>
+<blockquote>
+<div><p>Relative tolerance parameter for deciding 
+sign of <span class="math notranslate nohighlight">\(Az-b\)</span>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>lower_bound</strong> : float</p>
+<p><strong>observed</strong> : float</p>
+<p><strong>upper_bound</strong> : float</p>
+<p><strong>sigma</strong> : float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.constraints.affine.sample_from_constraints">
+<code class="sig-prename descclassname">selectinf.constraints.affine.</code><code class="sig-name descname">sample_from_constraints</code><span class="sig-paren">(</span><em class="sig-param">con</em>, <em class="sig-param">Y</em>, <em class="sig-param">direction_of_interest=None</em>, <em class="sig-param">how_often=-1</em>, <em class="sig-param">ndraw=1000</em>, <em class="sig-param">burnin=1000</em>, <em class="sig-param">white=False</em>, <em class="sig-param">use_constraint_directions=True</em>, <em class="sig-param">use_random_directions=True</em>, <em class="sig-param">accept_reject_params=()</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#sample_from_constraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.sample_from_constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use Gibbs sampler to simulate from <cite>con</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>con</strong> : <a href="#id3"><span class="problematic" id="id4">`selection.affine.constraints`_</span></a></p>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>Point satisfying the constraint.</p>
+</div></blockquote>
+<p><strong>direction_of_interest</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>Which projection is of most interest?</p>
+</div></blockquote>
+<p><strong>how_often</strong> : int (optional)</p>
+<blockquote>
+<div><p>How often should the sampler make a move along <cite>direction_of_interest</cite>?
+If negative, defaults to ndraw+burnin (so it will never be used).</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>white</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Is con.covariance equal to identity?</p>
+</div></blockquote>
+<p><strong>use_constraint_directions</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Use the directions formed by the constraints as in
+the Gibbs scheme?</p>
+</div></blockquote>
+<p><strong>use_random_directions</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Use additional random directions in
+the Gibbs scheme?</p>
+</div></blockquote>
+<p><strong>accept_reject_params</strong> : tuple</p>
+<blockquote>
+<div><p>If not () should be a tuple (num_trial, min_accept, num_draw).
+In this case, we first try num_trial accept-reject samples,
+if at least min_accept of them succeed, we just draw num_draw
+accept_reject samples.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Z</strong> : np.float((ndraw, n))</p>
+<blockquote>
+<div><p>Sample from the Gaussian distribution conditioned on the constraints.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.constraints.affine.sample_from_sphere">
+<code class="sig-prename descclassname">selectinf.constraints.affine.</code><code class="sig-name descname">sample_from_sphere</code><span class="sig-paren">(</span><em class="sig-param">con</em>, <em class="sig-param">Y</em>, <em class="sig-param">direction_of_interest=None</em>, <em class="sig-param">how_often=-1</em>, <em class="sig-param">ndraw=1000</em>, <em class="sig-param">burnin=1000</em>, <em class="sig-param">use_constraint_directions=True</em>, <em class="sig-param">use_random_directions=True</em>, <em class="sig-param">white=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#sample_from_sphere"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.sample_from_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use Gibbs sampler to simulate from <cite>con</cite> 
+intersected with (whitened) sphere of radius <cite>np.linalg.norm(Y)</cite>.
+When <cite>con.covariance</cite> is not <span class="math notranslate nohighlight">\(I\)</span>, it samples from the
+ellipse of constant Mahalanobis distance from <cite>con.mean</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>con</strong> : <a href="#id5"><span class="problematic" id="id6">`selection.affine.constraints`_</span></a></p>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>Point satisfying the constraint.</p>
+</div></blockquote>
+<p><strong>direction_of_interest</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>Which projection is of most interest?</p>
+</div></blockquote>
+<p><strong>how_often</strong> : int (optional)</p>
+<blockquote>
+<div><p>How often should the sampler make a move along <cite>direction_of_interest</cite>?
+If negative, defaults to ndraw+burnin (so it will never be used).</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>white</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Is con.covariance equal to identity?</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Z</strong> : np.float((ndraw, n))</p>
+<blockquote>
+<div><p>Sample from the sphere intersect the constraints.</p>
+</div></blockquote>
+<p><strong>weights</strong> : np.float(ndraw)</p>
+<blockquote>
+<div><p>Importance weights for the sample.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.constraints.affine.selection_interval">
+<code class="sig-prename descclassname">selectinf.constraints.affine.</code><code class="sig-name descname">selection_interval</code><span class="sig-paren">(</span><em class="sig-param">support_directions</em>, <em class="sig-param">support_offsets</em>, <em class="sig-param">covariance</em>, <em class="sig-param">observed_data</em>, <em class="sig-param">direction_of_interest</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">UMAU=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#selection_interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.selection_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an affine in cone constraint <span class="math notranslate nohighlight">\(\{z:Az+b \leq 0\}\)</span> (elementwise)
+specified with <span class="math notranslate nohighlight">\(A\)</span> as <cite>support_directions</cite> and <span class="math notranslate nohighlight">\(b\)</span> as
+<cite>support_offset</cite>, a new direction of interest <span class="math notranslate nohighlight">\(\eta\)</span>, and
+an <cite>observed_data</cite> is Gaussian vector <span class="math notranslate nohighlight">\(Z \sim N(\mu,\Sigma)\)</span> 
+with <cite>covariance</cite> matrix <span class="math notranslate nohighlight">\(\Sigma\)</span>, this
+function returns a confidence interval
+for <span class="math notranslate nohighlight">\(\eta^T\mu\)</span>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>support_directions</strong> : np.float</p>
+<blockquote>
+<div><p>Matrix specifying constraint, <span class="math notranslate nohighlight">\(A\)</span>.</p>
+</div></blockquote>
+<p><strong>support_offset</strong> : np.float</p>
+<blockquote>
+<div><p>Offset in constraint, <span class="math notranslate nohighlight">\(b\)</span>.</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float</p>
+<blockquote>
+<div><p>Covariance matrix of <cite>observed_data</cite>.</p>
+</div></blockquote>
+<p><strong>observed_data</strong> : np.float</p>
+<blockquote>
+<div><p>Observations.</p>
+</div></blockquote>
+<p><strong>direction_of_interest</strong> : np.float</p>
+<blockquote>
+<div><p>Direction in which we’re interested for the
+contrast.</p>
+</div></blockquote>
+<p><strong>tol</strong> : float</p>
+<blockquote>
+<div><p>Relative tolerance parameter for deciding 
+sign of <span class="math notranslate nohighlight">\(Az-b\)</span>.</p>
+</div></blockquote>
+<p><strong>UMAU</strong> : bool</p>
+<blockquote>
+<div><p>Use the UMAU interval, or twosided pivot.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>selection_interval</strong> : (float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.constraints.affine.stack">
+<code class="sig-prename descclassname">selectinf.constraints.affine.</code><code class="sig-name descname">stack</code><span class="sig-paren">(</span><em class="sig-param">*cons</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/constraints/affine.html#stack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.constraints.affine.stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combine constraints into a large constaint
+by intersection.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cons</strong> : [<a href="#id7"><span class="problematic" id="id8">`selection.affine.constraints`_</span></a>]</p>
+<blockquote>
+<div><p>A sequence of constraints.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>intersection</strong> : <a href="#id9"><span class="problematic" id="id10">`selection.affine.constraints`_</span></a></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Resulting constraint will have mean 0 and covariance <span class="math notranslate nohighlight">\(I\)</span>.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.constraints.base.html" class="btn btn-neutral float-right" title="constraints.base" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.base.html" class="btn btn-neutral float-left" title="base" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

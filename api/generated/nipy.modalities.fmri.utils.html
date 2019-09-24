@@ -1,0 +1,800 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.modalities.fmri.utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="modalities-fmri-utils">
+<h1>modalities.fmri.utils<a class="headerlink" href="#modalities-fmri-utils" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-modalities-fmri-utils">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">modalities.fmri.utils</span></code><a class="headerlink" href="#module-modalities-fmri-utils" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.modalities.fmri.utils</span></code>:</p>
+digraph inheritance24aa149a64 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;fmri.utils.Interp1dNumeric&quot; [URL=&quot;#nipy.modalities.fmri.utils.Interp1dNumeric&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Wrapper for interp1 to raise TypeError for object array input&quot;];
+  &quot;interpolate.interpolate.interp1d&quot; -&gt; &quot;fmri.utils.Interp1dNumeric&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;fmri.utils.TimeConvolver&quot; [URL=&quot;#nipy.modalities.fmri.utils.TimeConvolver&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Make a convolution kernel from a symbolic function of t&quot;];
+  &quot;interpolate.interpolate.interp1d&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;Interpolate a 1-D function.&quot;];
+}
+<span class="target" id="module-nipy.modalities.fmri.utils"></span><p>This module defines some convenience functions of time.</p>
+<p>interp : an expresion for a interpolated function of time</p>
+<dl class="simple">
+<dt>linear_interp<span class="classifier">an expression for a linearly interpolated function of</span></dt><dd><p>time</p>
+</dd>
+</dl>
+<p>step_function : an expression for a step function of time</p>
+<p>events : a convenience function to generate sums of events</p>
+<p>blocks : a convenience function to generate sums of blocks</p>
+<p>convolve_functions : numerically convolve two functions of time</p>
+<p>fourier_basis : a convenience function to generate a Fourier basis</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="interp1dnumeric">
+<h3><a class="reference internal" href="#nipy.modalities.fmri.utils.Interp1dNumeric" title="nipy.modalities.fmri.utils.Interp1dNumeric"><code class="xref py py-class docutils literal notranslate"><span class="pre">Interp1dNumeric</span></code></a><a class="headerlink" href="#interp1dnumeric" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.modalities.fmri.utils.Interp1dNumeric">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">Interp1dNumeric</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">kind='linear'</em>, <em class="sig-param">axis=-1</em>, <em class="sig-param">copy=True</em>, <em class="sig-param">bounds_error=None</em>, <em class="sig-param">fill_value=nan</em>, <em class="sig-param">assume_sorted=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#Interp1dNumeric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.Interp1dNumeric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">scipy.interpolate.interpolate.interp1d</span></code></p>
+<p>Wrapper for interp1 to raise TypeError for object array input</p>
+<p>We need this because sympy will try to evaluate interpolated functions when
+constructing expressions involving floats.  At least sympy 1.0 only accepts
+TypeError or AttributeError as indication that the implemented value cannot
+be sampled with the sympy expression.  Therefore, raise a TypeError
+directly for an input giving an object array (such as a sympy expression),
+rather than letting interp1d raise a ValueError.</p>
+<p>See:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/nipy/nipy/issues/395">https://github.com/nipy/nipy/issues/395</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sympy/sympy/issues/10810">https://github.com/sympy/sympy/issues/10810</a></p></li>
+</ul>
+<dl class="method">
+<dt id="nipy.modalities.fmri.utils.Interp1dNumeric.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">kind='linear'</em>, <em class="sig-param">axis=-1</em>, <em class="sig-param">copy=True</em>, <em class="sig-param">bounds_error=None</em>, <em class="sig-param">fill_value=nan</em>, <em class="sig-param">assume_sorted=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.modalities.fmri.utils.Interp1dNumeric.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a 1D linear interpolation class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.modalities.fmri.utils.Interp1dNumeric.dtype">
+<code class="sig-name descname">dtype</code><a class="headerlink" href="#nipy.modalities.fmri.utils.Interp1dNumeric.dtype" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.modalities.fmri.utils.Interp1dNumeric.fill_value">
+<em class="property">property </em><code class="sig-name descname">fill_value</code><a class="headerlink" href="#nipy.modalities.fmri.utils.Interp1dNumeric.fill_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="timeconvolver">
+<h3><a class="reference internal" href="#nipy.modalities.fmri.utils.TimeConvolver" title="nipy.modalities.fmri.utils.TimeConvolver"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimeConvolver</span></code></a><a class="headerlink" href="#timeconvolver" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.modalities.fmri.utils.TimeConvolver">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">TimeConvolver</code><span class="sig-paren">(</span><em class="sig-param">expr</em>, <em class="sig-param">support</em>, <em class="sig-param">delta</em>, <em class="sig-param">fill=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#TimeConvolver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.TimeConvolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Make a convolution kernel from a symbolic function of t</p>
+<p>A convolution kernel is a function with extra attributes to allow it to
+function as a kernel for numerical convolution (see
+<a class="reference internal" href="#nipy.modalities.fmri.utils.convolve_functions" title="nipy.modalities.fmri.utils.convolve_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">convolve_functions()</span></code></a>).</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>expr</strong> : sympy expression</p>
+<blockquote>
+<div><p>An expression that is a function of t only.</p>
+</div></blockquote>
+<p><strong>support</strong> : 2 sequence</p>
+<blockquote>
+<div><p>Sequence is <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high)</span></code> where expression is defined between <code class="docutils literal notranslate"><span class="pre">low</span></code>
+and <code class="docutils literal notranslate"><span class="pre">high</span></code>, and can be assumed to be <cite>fill</cite> otherwise</p>
+</div></blockquote>
+<p><strong>delta</strong> : float</p>
+<blockquote>
+<div><p>smallest change in domain of <cite>expr</cite> to use for numerical evaluation of
+<cite>expr</cite></p>
+</div></blockquote>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nipy.modalities.fmri.utils.TimeConvolver.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">expr</em>, <em class="sig-param">support</em>, <em class="sig-param">delta</em>, <em class="sig-param">fill=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#TimeConvolver.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.TimeConvolver.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.modalities.fmri.utils.TimeConvolver.convolve">
+<code class="sig-name descname">convolve</code><span class="sig-paren">(</span><em class="sig-param">g</em>, <em class="sig-param">g_interval</em>, <em class="sig-param">name=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#TimeConvolver.convolve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.TimeConvolver.convolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convolve sympy expression <cite>g</cite> with this kernel</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>g</strong> : sympy expr</p>
+<blockquote>
+<div><p>An expression that is a function of t only.</p>
+</div></blockquote>
+<p><strong>g_interval</strong> : (2,) sequence of floats</p>
+<blockquote>
+<div><p>Start and end of the interval of t over which to convolve g</p>
+</div></blockquote>
+<p><strong>name</strong> : None or str, optional</p>
+<blockquote>
+<div><p>Name of the convolved function in the resulting expression.
+Defaults to one created by <code class="docutils literal notranslate"><span class="pre">utils.interp</span></code>.</p>
+</div></blockquote>
+<p><strong>**kwargs</strong> : keyword args, optional</p>
+<blockquote>
+<div><p>Any other arguments to pass to the <code class="docutils literal notranslate"><span class="pre">interp1d</span></code> function in creating
+the numerical function for <cite>fg</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fg</strong> : sympy expr</p>
+<blockquote>
+<div><p>An symbolic expression that is a function of t only, and that can be
+lambdified to produce a function returning the convolved series from
+an input array.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.blocks">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">blocks</code><span class="sig-paren">(</span><em class="sig-param">intervals</em>, <em class="sig-param">amplitudes=None</em>, <em class="sig-param">name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#blocks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.blocks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Step function based on a sequence of intervals.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>intervals</strong> : (S,) sequence of (2,) sequences</p>
+<blockquote>
+<div><p>Sequence (S0, S1, … S(N-1)) of sequences, where S0 (etc) are
+sequences of length 2, giving ‘on’ and ‘off’ times of block</p>
+</div></blockquote>
+<p><strong>amplitudes</strong> : (S,) sequence of float, optional</p>
+<blockquote>
+<div><p>Optional amplitudes for each block. Defaults to 1.</p>
+</div></blockquote>
+<p><strong>name</strong> : None or str, optional</p>
+<blockquote>
+<div><p>Name of the convolved function in the resulting expression.
+Defaults to one created by <code class="docutils literal notranslate"><span class="pre">utils.interp</span></code>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>b_of_t</strong> : sympy expr</p>
+<blockquote>
+<div><p>Sympy expression b(t) where b is a sympy anonymous function of
+time that implements the block step function</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">on_off</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">2.4</span><span class="p">,</span><span class="mf">3.4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">blocks</span><span class="p">(</span><span class="n">on_off</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lam</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lam</span><span class="p">(</span><span class="n">tval</span><span class="p">)</span>
+<span class="go">array([ 0.,  1.,  0.,  1.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">blocks</span><span class="p">(</span><span class="n">on_off</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lam</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lam</span><span class="p">(</span><span class="n">tval</span><span class="p">)</span>
+<span class="go">array([ 0.,  3.,  0.,  5.])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.convolve_functions">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">convolve_functions</code><span class="sig-paren">(</span><em class="sig-param">f</em>, <em class="sig-param">g</em>, <em class="sig-param">f_interval</em>, <em class="sig-param">g_interval</em>, <em class="sig-param">dt</em>, <em class="sig-param">fill=0</em>, <em class="sig-param">name=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#convolve_functions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.convolve_functions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expression containing numerical convolution of <cite>fn1</cite> with <cite>fn2</cite></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>f</strong> : sympy expr</p>
+<blockquote>
+<div><p>An expression that is a function of t only.</p>
+</div></blockquote>
+<p><strong>g</strong> : sympy expr</p>
+<blockquote>
+<div><p>An expression that is a function of t only.</p>
+</div></blockquote>
+<p><strong>f_interval</strong> : (2,) sequence of float</p>
+<blockquote>
+<div><p>The start and end of the interval of t over which to convolve values of f</p>
+</div></blockquote>
+<p><strong>g_interval</strong> : (2,) sequence of floats</p>
+<blockquote>
+<div><p>Start and end of the interval of t over which to convolve g</p>
+</div></blockquote>
+<p><strong>dt</strong> : float</p>
+<blockquote>
+<div><p>Time step for discretization.  We use this for creating the
+interpolator to form the numerical implementation</p>
+</div></blockquote>
+<p><strong>fill</strong> : None or float</p>
+<blockquote>
+<div><p>Value to return from sampling output <cite>fg</cite> function outside range.</p>
+</div></blockquote>
+<p><strong>name</strong> : None or str, optional</p>
+<blockquote>
+<div><p>Name of the convolved function in the resulting expression.
+Defaults to one created by <code class="docutils literal notranslate"><span class="pre">utils.interp</span></code>.</p>
+</div></blockquote>
+<p><strong>**kwargs</strong> : keyword args, optional</p>
+<blockquote>
+<div><p>Any other arguments to pass to the <code class="docutils literal notranslate"><span class="pre">interp1d</span></code> function in creating the
+numerical function for <cite>fg</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fg</strong> : sympy expr</p>
+<blockquote>
+<div><p>An symbolic expression that is a function of t only, and that can be
+lambdified to produce a function returning the convolved series from an
+input array.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.algorithms.statistics.formula.formulae</span> <span class="k">import</span> <span class="n">Term</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Term</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is a square wave on [0,1]</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The convolution of <code class="docutils literal notranslate"><span class="pre">f1</span></code> with itself is a triangular wave on [0, 2],
+peaking at 1 with height 1</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tri</span> <span class="o">=</span> <span class="n">convolve_functions</span><span class="p">(</span><span class="n">f1</span><span class="p">,</span> <span class="n">f1</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mf">1.0e-3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;conv&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The result is a symbolic function</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">tri</span><span class="p">)</span>
+<span class="go">conv(t)</span>
+</pre></div>
+</div>
+<p>Get the numerical values for a time vector</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ftri</span> <span class="o">=</span> <span class="n">lambdify</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tri</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">ftri</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The peak is at 1
+&gt;&gt;&gt; x[np.argmax(y)]
+1.0</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.define">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">define</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">expr</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#define"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.define" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create function of t expression from arbitrary expression <cite>expr</cite></p>
+<p>Take an arbitrarily complicated expression <cite>expr</cite> of ‘t’ and make it
+an expression that is a simple function of t, of form <code class="docutils literal notranslate"><span class="pre">'%s(t)'</span> <span class="pre">%</span>
+<span class="pre">name</span></code> such that when it evaluates (via <code class="docutils literal notranslate"><span class="pre">lambdify</span></code>) it has the
+right values.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>expr</strong> : sympy expression</p>
+<blockquote>
+<div><p>with only ‘t’ as a Symbol</p>
+</div></blockquote>
+<p><strong>name</strong> : str</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>nexpr: sympy expression</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Term</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">t</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>  
+<span class="go">3*t + t**2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">newexpr</span> <span class="o">=</span> <span class="n">define</span><span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">newexpr</span><span class="p">)</span>
+<span class="go">f(t)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">newexpr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">28</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="mi">3</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">4</span><span class="o">**</span><span class="mi">2</span>
+<span class="go">28</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.events">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">events</code><span class="sig-paren">(</span><em class="sig-param">times</em>, <em class="sig-param">amplitudes=None</em>, <em class="sig-param">f=DiracDelta</em>, <em class="sig-param">g=a</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a sum of functions based on a sequence of times.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>times</strong> : sequence</p>
+<blockquote>
+<div><p>vector of onsets length <span class="math notranslate nohighlight">\(N\)</span></p>
+</div></blockquote>
+<p><strong>amplitudes</strong> : None or sequence length <span class="math notranslate nohighlight">\(N\)</span>, optional</p>
+<blockquote>
+<div><p>Optional sequence of amplitudes. None (default) results in
+sequence length <span class="math notranslate nohighlight">\(N\)</span> of 1s</p>
+</div></blockquote>
+<p><strong>f</strong> : sympy.Function, optional</p>
+<blockquote>
+<div><p>Optional function. Defaults to DiracDelta, can be replaced with
+another function, f, in which case the result is the convolution
+with f.</p>
+</div></blockquote>
+<p><strong>g</strong> : sympy.Basic, optional</p>
+<blockquote>
+<div><p>Optional sympy expression function of amplitudes.  The
+amplitudes, should be represented by the symbol ‘a’, which will
+be substituted, by the corresponding value in <cite>amplitudes</cite>.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>sum_expression</strong> : Sympy.Add</p>
+<blockquote>
+<div><p>Sympy expression of time <span class="math notranslate nohighlight">\(t\)</span>, where onsets, as a function of <span class="math notranslate nohighlight">\(t\)</span>,
+have been symbolically convolved with function <cite>f</cite>, and any
+function <cite>g</cite> of corresponding amplitudes.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>We import some sympy stuff so we can test if we’ve got what we
+expected</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sympy</span> <span class="k">import</span> <span class="n">DiracDelta</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">,</span> <span class="n">Function</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.modalities.fmri.utils</span> <span class="k">import</span> <span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evs</span> <span class="o">=</span> <span class="n">events</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evs</span> <span class="o">==</span> <span class="n">DiracDelta</span><span class="p">(</span><span class="o">-</span><span class="mi">9</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="n">DiracDelta</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="n">DiracDelta</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">hrf</span> <span class="o">=</span> <span class="n">Function</span><span class="p">(</span><span class="s1">&#39;hrf&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evs</span> <span class="o">=</span> <span class="n">events</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span> <span class="n">f</span><span class="o">=</span><span class="n">hrf</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evs</span> <span class="o">==</span> <span class="n">hrf</span><span class="p">(</span><span class="o">-</span><span class="mi">9</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="n">hrf</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="n">hrf</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evs</span> <span class="o">=</span> <span class="n">events</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span> <span class="n">amplitudes</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evs</span> <span class="o">==</span> <span class="o">-</span><span class="n">DiracDelta</span><span class="p">(</span><span class="o">-</span><span class="mi">9</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">DiracDelta</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="n">DiracDelta</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span> <span class="o">+</span> <span class="n">T</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.fourier_basis">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">fourier_basis</code><span class="sig-paren">(</span><em class="sig-param">freq</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#fourier_basis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.fourier_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>sin and cos Formula for Fourier drift</p>
+<p>The Fourier basis consists of sine and cosine waves of given
+frequencies.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>freq</strong> : sequence of float</p>
+<blockquote>
+<div><p>Frequencies for the terms in the Fourier basis.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>f</strong> : Formula</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">=</span><span class="n">fourier_basis</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">terms</span>
+<span class="go">array([cos(2*pi*t), sin(2*pi*t), cos(4*pi*t), sin(4*pi*t), cos(6*pi*t),</span>
+<span class="go">       sin(6*pi*t)], dtype=object)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">mean</span>
+<span class="go">_b0*cos(2*pi*t) + _b1*sin(2*pi*t) + _b2*cos(4*pi*t) + _b3*sin(4*pi*t) + _b4*cos(6*pi*t) + _b5*sin(6*pi*t)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.interp">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">interp</code><span class="sig-paren">(</span><em class="sig-param">times</em>, <em class="sig-param">values</em>, <em class="sig-param">fill=0</em>, <em class="sig-param">name=None</em>, <em class="sig-param">**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#interp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.interp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic interpolation function of t given <cite>times</cite> and <cite>values</cite></p>
+<p>Imterpolator such that:</p>
+<p>f(times[i]) = values[i]</p>
+<dl class="simple">
+<dt>if t &lt; times[0] or t &gt; times[-1]:</dt><dd><p>f(t) = fill</p>
+</dd>
+</dl>
+<p>See <code class="docutils literal notranslate"><span class="pre">scipy.interpolate.interp1d</span></code> for details of interpolation
+types and other keyword arguments.  Default is ‘kind’ is linear,
+making this function, by default, have the same behavior as
+<code class="docutils literal notranslate"><span class="pre">linear_interp</span></code>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>times</strong> : array-like</p>
+<blockquote>
+<div><p>Increasing sequence of times</p>
+</div></blockquote>
+<p><strong>values</strong> : array-like</p>
+<blockquote>
+<div><p>Values at the specified times</p>
+</div></blockquote>
+<p><strong>fill</strong> : None or float, optional</p>
+<blockquote>
+<div><p>Value on the interval (-np.inf, times[0]). Default 0. If None, raises
+error outside bounds</p>
+</div></blockquote>
+<p><strong>name</strong> : None or str, optional</p>
+<blockquote>
+<div><p>Name of symbolic expression to use. If None, a default is used.</p>
+</div></blockquote>
+<p><strong>**kw</strong> : keyword args, optional</p>
+<blockquote>
+<div><p>passed to <code class="docutils literal notranslate"><span class="pre">interp1d</span></code></p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>f</strong> : sympy expression</p>
+<blockquote>
+<div><p>A Function of t.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">interp</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mf">5.</span><span class="p">],[</span><span class="mf">2.</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">3.9</span><span class="p">,</span><span class="mf">4.1</span><span class="p">,</span><span class="mf">5.1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">s</span><span class="p">)(</span><span class="n">tval</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>0 outside bounds by default</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.05</span><span class="p">,</span> <span class="mf">3.95</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.lambdify_t">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">lambdify_t</code><span class="sig-paren">(</span><em class="sig-param">expr</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#lambdify_t"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.lambdify_t" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return sympy function of t <cite>expr</cite> lambdified as function of t</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>expr</strong> : sympy expr</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>func</strong> : callable</p>
+<blockquote>
+<div><p>Numerical implementation of function</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.linear_interp">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">linear_interp</code><span class="sig-paren">(</span><em class="sig-param">times</em>, <em class="sig-param">values</em>, <em class="sig-param">fill=0</em>, <em class="sig-param">name=None</em>, <em class="sig-param">**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#linear_interp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.linear_interp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Linear interpolation function of t given <cite>times</cite> and <cite>values</cite></p>
+<p>Imterpolator such that:</p>
+<p>f(times[i]) = values[i]</p>
+<dl class="simple">
+<dt>if t &lt; times[0] or t &gt; times[-1]:</dt><dd><p>f(t) = fill</p>
+</dd>
+</dl>
+<p>This version of the function enforces the ‘linear’ kind of interpolation
+(argument to <code class="docutils literal notranslate"><span class="pre">scipy.interpolate.interp1d</span></code>).</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>times</strong> : array-like</p>
+<blockquote>
+<div><p>Increasing sequence of times</p>
+</div></blockquote>
+<p><strong>values</strong> : array-like</p>
+<blockquote>
+<div><p>Values at the specified times</p>
+</div></blockquote>
+<p><strong>fill</strong> : None or float, optional</p>
+<blockquote>
+<div><p>Value on the interval (-np.inf, times[0]). Default 0. If None, raises
+error outside bounds</p>
+</div></blockquote>
+<p><strong>name</strong> : None or str, optional</p>
+<blockquote>
+<div><p>Name of symbolic expression to use. If None, a default is used.</p>
+</div></blockquote>
+<p><strong>**kw</strong> : keyword args, optional</p>
+<blockquote>
+<div><p>passed to <code class="docutils literal notranslate"><span class="pre">interp1d</span></code></p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>f</strong> : sympy expression</p>
+<blockquote>
+<div><p>A Function of t.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">linear_interp</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mf">5.</span><span class="p">],[</span><span class="mf">2.</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">3.9</span><span class="p">,</span><span class="mf">4.1</span><span class="p">,</span><span class="mf">5.1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">s</span><span class="p">)(</span><span class="n">tval</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>0 outside bounds by default</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">2.05</span><span class="p">,</span> <span class="mf">3.95</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.utils.step_function">
+<code class="sig-prename descclassname">nipy.modalities.fmri.utils.</code><code class="sig-name descname">step_function</code><span class="sig-paren">(</span><em class="sig-param">times</em>, <em class="sig-param">values</em>, <em class="sig-param">name=None</em>, <em class="sig-param">fill=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/utils.html#step_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.utils.step_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Right-continuous step function of time t</p>
+<p>Function of t such that</p>
+<p>f(times[i]) = values[i]</p>
+<dl class="simple">
+<dt>if t &lt; times[0]:</dt><dd><p>f(t) = fill</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>times</strong> : (N,) sequence</p>
+<blockquote>
+<div><p>Increasing sequence of times</p>
+</div></blockquote>
+<p><strong>values</strong> : (N,) sequence</p>
+<blockquote>
+<div><p>Values at the specified times</p>
+</div></blockquote>
+<p><strong>fill</strong> : float</p>
+<blockquote>
+<div><p>Value on the interval (-np.inf, times[0])</p>
+</div></blockquote>
+<p><strong>name</strong> : str</p>
+<blockquote>
+<div><p>Name of symbolic expression to use. If None, a default is used.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>f_t</strong> : sympy expr</p>
+<blockquote>
+<div><p>Sympy expression f(t) where f is a sympy implemented anonymous
+function of time that implements the step function.  To get the
+numerical version of the function, use <code class="docutils literal notranslate"><span class="pre">lambdify_t(f_t)</span></code></p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">step_function</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">3.9</span><span class="p">,</span><span class="mf">4.1</span><span class="p">,</span><span class="mf">5.1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lam</span> <span class="o">=</span> <span class="n">lambdify_t</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lam</span><span class="p">(</span><span class="n">tval</span><span class="p">)</span>
+<span class="go">array([ 0.,  2.,  4.,  6.])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,395 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.segmentation.segmentation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-segmentation-segmentation">
+<h1>algorithms.segmentation.segmentation<a class="headerlink" href="#algorithms-segmentation-segmentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-segmentation-segmentation">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.segmentation.segmentation</span></code><a class="headerlink" href="#module-algorithms-segmentation-segmentation" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.segmentation.segmentation</span></code>:</p>
+digraph inheritance3b6d38802f {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;segmentation.segmentation.Segmentation&quot; [URL=&quot;#nipy.algorithms.segmentation.segmentation.Segmentation&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+}
+<span class="target" id="module-nipy.algorithms.segmentation.segmentation"></span></div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="segmentation">
+<h2><a class="reference internal" href="#nipy.algorithms.segmentation.segmentation.Segmentation" title="nipy.algorithms.segmentation.segmentation.Segmentation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Segmentation</span></code></a><a class="headerlink" href="#segmentation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.segmentation.segmentation.</code><code class="sig-name descname">Segmentation</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">mu=None</em>, <em class="sig-param">sigma=None</em>, <em class="sig-param">ppm=None</em>, <em class="sig-param">prior=None</em>, <em class="sig-param">U=None</em>, <em class="sig-param">ngb_size=26</em>, <em class="sig-param">beta=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">mu=None</em>, <em class="sig-param">sigma=None</em>, <em class="sig-param">ppm=None</em>, <em class="sig-param">prior=None</em>, <em class="sig-param">U=None</em>, <em class="sig-param">ngb_size=26</em>, <em class="sig-param">beta=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for multichannel Markov random field image segmentation
+using the variational EM algorithm. For details regarding the
+underlying algorithm, see:</p>
+<p>Roche et al, 2011. On the convergence of EM-like algorithms
+for image segmentation using Markov random fields. Medical
+Image Analysis (DOI: 10.1016/j.media.2011.05.002).</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> : array-like</p>
+<blockquote>
+<div><p>Input image array</p>
+</div></blockquote>
+<p><strong>mask</strong> : array-like or tuple of array</p>
+<blockquote>
+<div><p>Input mask to restrict the segmentation</p>
+</div></blockquote>
+<p><strong>beta</strong> : float</p>
+<blockquote>
+<div><p>Markov regularization parameter</p>
+</div></blockquote>
+<p><strong>mu</strong> : array-like</p>
+<blockquote>
+<div><p>Initial class-specific means</p>
+</div></blockquote>
+<p><strong>sigma</strong> : array-like</p>
+<blockquote>
+<div><p>Initial class-specific variances</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.set_markov_prior">
+<code class="sig-name descname">set_markov_prior</code><span class="sig-paren">(</span><em class="sig-param">beta</em>, <em class="sig-param">U=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.set_markov_prior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.set_markov_prior" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.vm_step">
+<code class="sig-name descname">vm_step</code><span class="sig-paren">(</span><em class="sig-param">freeze=()</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.vm_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.vm_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.log_external_field">
+<code class="sig-name descname">log_external_field</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.log_external_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.log_external_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the logarithm of the external field, where the
+external field is defined as the likelihood times the
+first-order component of the prior.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.normalized_external_field">
+<code class="sig-name descname">normalized_external_field</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.normalized_external_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.normalized_external_field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.ve_step">
+<code class="sig-name descname">ve_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.ve_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.ve_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">niters=10</em>, <em class="sig-param">freeze=()</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.map">
+<code class="sig-name descname">map</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the maximum a posterior label map</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.segmentation.segmentation.Segmentation.free_energy">
+<code class="sig-name descname">free_energy</code><span class="sig-paren">(</span><em class="sig-param">ppm=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#Segmentation.free_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.Segmentation.free_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the free energy defined as:</p>
+<p>F(q, theta) = int q(x) log q(x)/p(x,y/theta) dx</p>
+<p>associated with input parameters mu,
+sigma and beta (up to an ignored constant).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.segmentation.segmentation.binarize_ppm">
+<code class="sig-prename descclassname">nipy.algorithms.segmentation.segmentation.</code><code class="sig-name descname">binarize_ppm</code><span class="sig-paren">(</span><em class="sig-param">q</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#binarize_ppm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.binarize_ppm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assume input ppm is masked (ndim==2)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.segmentation.segmentation.map_from_ppm">
+<code class="sig-prename descclassname">nipy.algorithms.segmentation.segmentation.</code><code class="sig-name descname">map_from_ppm</code><span class="sig-paren">(</span><em class="sig-param">ppm</em>, <em class="sig-param">mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#map_from_ppm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.map_from_ppm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.segmentation.segmentation.moment_matching">
+<code class="sig-prename descclassname">nipy.algorithms.segmentation.segmentation.</code><code class="sig-name descname">moment_matching</code><span class="sig-paren">(</span><em class="sig-param">dat</em>, <em class="sig-param">mu</em>, <em class="sig-param">sigma</em>, <em class="sig-param">glob_mu</em>, <em class="sig-param">glob_sigma</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/segmentation/segmentation.html#moment_matching"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.segmentation.segmentation.moment_matching" title="Permalink to this definition">¶</a></dt>
+<dd><p>Moment matching strategy for parameter initialization to feed a
+segmentation algorithm.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data: array</strong></p>
+<blockquote>
+<div><p>Image data.</p>
+</div></blockquote>
+<p><strong>mu</strong> : array</p>
+<blockquote>
+<div><p>Template class-specific intensity means</p>
+</div></blockquote>
+<p><strong>sigma</strong> : array</p>
+<blockquote>
+<div><p>Template class-specific intensity variances</p>
+</div></blockquote>
+<p><strong>glob_mu</strong> : float</p>
+<blockquote>
+<div><p>Template global intensity mean</p>
+</div></blockquote>
+<p><strong>glob_sigma</strong> : float</p>
+<blockquote>
+<div><p>Template global intensity variance</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dat_mu: array</p>
+<blockquote>
+<div><p>Guess of class-specific intensity means</p>
+</div></blockquote>
+<p>dat_sigma: array</p>
+<blockquote>
+<div><p>Guess of class-specific intensity variances</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

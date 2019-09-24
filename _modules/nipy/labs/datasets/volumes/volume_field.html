@@ -1,0 +1,404 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.datasets.volumes.volume_field</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The base volumetric field interface </span>
+
+<span class="sd">This defines the nipy volumetric structure interface.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">..transforms.transform</span> <span class="k">import</span> <span class="n">CompositionError</span>
+
+<span class="c1">################################################################################</span>
+<span class="c1"># class `VolumeField`</span>
+<span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="VolumeField"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_field.html#nipy.labs.datasets.volumes.volume_data.VolumeField">[docs]</a><span class="k">class</span> <span class="nc">VolumeField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The base volumetric structure.</span>
+
+<span class="sd">        This object represents numerical values embedded in a</span>
+<span class="sd">        3-dimensional world space (called a field in physics and</span>
+<span class="sd">        engineering)</span>
+<span class="sd">        </span>
+<span class="sd">        This is an abstract base class: it defines the interface, but not</span>
+<span class="sd">        the logics.</span>
+
+<span class="sd">        Attributes</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        world_space: string </span>
+<span class="sd">            World space the data is embedded in. For instance `mni152`.</span>
+<span class="sd">        metadata: dictionnary</span>
+<span class="sd">            Optional, user-defined, dictionnary used to carry around</span>
+<span class="sd">            extra information about the data as it goes through</span>
+<span class="sd">            transformations. The consistency of this information is not</span>
+<span class="sd">            maintained as the data is modified.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#---------------------------------------------------------------------------</span>
+    <span class="c1"># Public attributes -- VolumeField interface</span>
+    <span class="c1">#---------------------------------------------------------------------------</span>
+
+    <span class="c1"># The name of the reference coordinate system</span>
+    <span class="n">world_space</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="c1"># User defined meta data</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="c1">#---------------------------------------------------------------------------</span>
+    <span class="c1"># Public methods -- VolumeField interface</span>
+    <span class="c1">#---------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="VolumeField.get_transform"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_field.html#nipy.labs.datasets.volumes.volume_data.VolumeField.get_transform">[docs]</a>    <span class="k">def</span> <span class="nf">get_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the transform object associated with the volumetric</span>
+<span class="sd">            structure which is a general description of the mapping from </span>
+<span class="sd">            the values to the world space.</span>
+<span class="sd">            </span>
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            transform : nipy.datasets.Transform object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span> </div>
+
+
+<div class="viewcode-block" id="VolumeField.resampled_to_img"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_field.html#nipy.labs.datasets.volumes.volume_data.VolumeField.resampled_to_img">[docs]</a>    <span class="k">def</span> <span class="nf">resampled_to_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_image</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Resample the volume to be sampled similarly than the target </span>
+<span class="sd">            volumetric structure.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            target_image : nipy volume </span>
+<span class="sd">                Nipy volume structure onto the grid of which the data will be</span>
+<span class="sd">                resampled.</span>
+<span class="sd">            interpolation : None, &#39;continuous&#39; or &#39;nearest&#39;, optional</span>
+<span class="sd">                Interpolation type used when calculating values in</span>
+<span class="sd">                different word spaces. If None, the volume&#39;s interpolation</span>
+<span class="sd">                logic is used.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            resampled_image : nipy_image</span>
+<span class="sd">                New nipy image with the data resampled.</span>
+
+<span class="sd">            Notes</span>
+<span class="sd">            -----</span>
+<span class="sd">            Both the target image and the original image should be</span>
+<span class="sd">            embedded in the same world space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># IMPORTANT: Polymorphism can be implemented by walking the </span>
+        <span class="c1"># MRO and finding a method that does not raise</span>
+        <span class="c1"># NotImplementedError. </span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="VolumeField.as_volume_img"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_field.html#nipy.labs.datasets.volumes.volume_data.VolumeField.as_volume_img">[docs]</a>    <span class="k">def</span> <span class="nf">as_volume_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Resample the image to be an image with the data points lying</span>
+<span class="sd">            on a regular grid with an affine mapping to the word space (a</span>
+<span class="sd">            nipy VolumeImg).</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            affine: 4x4 or 3x3 ndarray, optional</span>
+<span class="sd">                Affine of the new voxel grid or transform object pointing</span>
+<span class="sd">                to the new voxel coordinate grid. If a 3x3 ndarray is given, </span>
+<span class="sd">                it is considered to be the rotation part of the affine, </span>
+<span class="sd">                and the best possible bounding box is calculated,</span>
+<span class="sd">                in this case, the shape argument is not used. If None</span>
+<span class="sd">                is given, a default affine is provided by the image.</span>
+<span class="sd">            shape: (n_x, n_y, n_z), tuple of integers, optional</span>
+<span class="sd">                The shape of the grid used for sampling, if None</span>
+<span class="sd">                is given, a default affine is provided by the image.</span>
+<span class="sd">            interpolation : None, &#39;continuous&#39; or &#39;nearest&#39;, optional</span>
+<span class="sd">                Interpolation type used when calculating values in</span>
+<span class="sd">                different word spaces. If None, the image&#39;s interpolation</span>
+<span class="sd">                logic is used.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            resampled_image : nipy VolumeImg</span>
+<span class="sd">                New nipy VolumeImg with the data sampled on the grid</span>
+<span class="sd">                defined by the affine and shape.</span>
+
+<span class="sd">            Notes</span>
+<span class="sd">            -----</span>
+<span class="sd">            The coordinate system of the image is not changed: the</span>
+<span class="sd">            returned image points to the same world space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="VolumeField.values_in_world"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_field.html#nipy.labs.datasets.volumes.volume_data.VolumeField.values_in_world">[docs]</a>    <span class="k">def</span> <span class="nf">values_in_world</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return the values of the data at the world-space positions given by </span>
+<span class="sd">            x, y, z</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            x : number or ndarray</span>
+<span class="sd">                x positions in world space, in other words milimeters</span>
+<span class="sd">            y : number or ndarray</span>
+<span class="sd">                y positions in world space, in other words milimeters.</span>
+<span class="sd">                The shape of y should match the shape of x</span>
+<span class="sd">            z : number or ndarray</span>
+<span class="sd">                z positions in world space, in other words milimeters.</span>
+<span class="sd">                The shape of z should match the shape of x</span>
+<span class="sd">            interpolation : None, &#39;continuous&#39; or &#39;nearest&#39;, optional</span>
+<span class="sd">                Interpolation type used when calculating values in</span>
+<span class="sd">                different word spaces. If None, the image&#39;s interpolation</span>
+<span class="sd">                logic is used.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            values : number or ndarray</span>
+<span class="sd">                Data values interpolated at the given world position.</span>
+<span class="sd">                This is a number or an ndarray, depending on the shape of</span>
+<span class="sd">                the input coordinate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="VolumeField.composed_with_transform"><a class="viewcode-back" href="../../../../../api/generated/nipy.labs.datasets.volumes.volume_field.html#nipy.labs.datasets.volumes.volume_data.VolumeField.composed_with_transform">[docs]</a>    <span class="k">def</span> <span class="nf">composed_with_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w2w_transform</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a new image embedding the same data in a different </span>
+<span class="sd">            word space using the given world to world transform.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            w2w_transform : transform object</span>
+<span class="sd">                The transform object giving the mapping between</span>
+<span class="sd">                the current world space of the image, and the new</span>
+<span class="sd">                word space.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            --------</span>
+<span class="sd">            remapped_image : nipy image</span>
+<span class="sd">                An image containing the same data, expressed</span>
+<span class="sd">                in the new world space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">w2w_transform</span><span class="o">.</span><span class="n">input_space</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_space</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CompositionError</span><span class="p">(</span>
+                <span class="s2">&quot;The transform given does not apply to &quot;</span>
+                <span class="s2">&quot;the image&#39;s world space:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> 
+                <span class="p">(</span><span class="n">w2w_transform</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+                <span class="p">)</span>
+        <span class="n">new_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_transform</span><span class="p">(</span><span class="n">w2w_transform</span><span class="p">)</span>
+        <span class="n">new_img</span><span class="o">.</span><span class="n">world_space</span> <span class="o">=</span> <span class="n">w2w_transform</span><span class="o">.</span><span class="n">output_space</span>
+        <span class="k">return</span> <span class="n">new_img</span> </div>
+
+
+    <span class="c1">#---------------------------------------------------------------------------</span>
+    <span class="c1"># Private methods</span>
+    <span class="c1">#---------------------------------------------------------------------------</span>
+
+    <span class="c1"># The subclasses should implement __repr__, __copy__, __deepcopy__,</span>
+    <span class="c1"># __eq__ </span>
+    <span class="c1"># TODO: We need to implement (or check if implemented) hashing,</span>
+    <span class="c1"># weakref, pickling? </span>
+        
+    <span class="k">def</span> <span class="nf">_apply_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w2w_transform</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Implement this method to put in the logic of applying a</span>
+<span class="sd">            transformation on the image class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

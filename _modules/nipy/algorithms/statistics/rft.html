@@ -1,0 +1,984 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.statistics.rft</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; Random field theory routines</span>
+
+<span class="sd">The theoretical results for  the EC densities appearing in this module</span>
+<span class="sd">were partially supported by NSF grant DMS-0405970.</span>
+
+<span class="sd">Taylor, J.E. &amp; Worsley, K.J. (2012).  &quot;Detecting sparse cone alternatives</span>
+<span class="sd">   for Gaussian random fields, with an application to fMRI&quot;. arXiv:1207.3840</span>
+<span class="sd">   [math.ST] and Statistica Sinica 23 (2013): 1629-1656.</span>
+
+<span class="sd">Taylor, J.E. &amp; Worsley, K.J. (2008). &quot;Random fields of multivariate</span>
+<span class="sd">   test statistics, with applications to shape analysis.&quot; arXiv:0803.1708</span>
+<span class="sd">   [math.ST] and Annals of Statistics 36( 2008): 1-27</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">pinv</span>
+
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">stats</span>
+<span class="kn">from</span> <span class="nn">scipy.misc</span> <span class="k">import</span> <span class="n">factorial</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">gammaln</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">hermitenorm</span>
+
+<span class="c1"># Legacy repr printing from numpy.</span>
+<span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">legacy_printing</span> <span class="k">as</span> <span class="n">setup_module</span>  <span class="c1"># noqa</span>
+
+
+<div class="viewcode-block" id="binomial"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.binomial">[docs]</a><span class="k">def</span> <span class="nf">binomial</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Binomial coefficient</span>
+
+<span class="sd">               n!</span>
+<span class="sd">    c =    ---------</span>
+<span class="sd">           (n-k)! k!</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : float</span>
+<span class="sd">       n of (n, k)</span>
+<span class="sd">    k : float</span>
+<span class="sd">       k of (n, k)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    c : float</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    First 3 values of 4 th row of Pascal triangle</span>
+
+<span class="sd">    &gt;&gt;&gt; [binomial(4, k) for k in range(3)]</span>
+<span class="sd">    [1.0, 4.0, 6.0]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="n">k</span> <span class="ow">or</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.</span>
+    <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.</span>
+    <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">beta</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Q"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.Q">[docs]</a><span class="k">def</span> <span class="nf">Q</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Q polynomial</span>
+
+<span class="sd">    If `dfd` == inf (the default), then Q(dim) is the (dim-1)-st Hermite</span>
+<span class="sd">    polynomial:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        H_j(x) = (-1)^j * e^{x^2/2} * (d^j/dx^j e^{-x^2/2})</span>
+
+<span class="sd">    If `dfd` != inf, then it is the polynomial Q defined in [Worsley1994]_</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dim : int</span>
+<span class="sd">        dimension of polynomial</span>
+<span class="sd">    dfd : scalar</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    q_poly : np.poly1d instance</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [Worsley1994] Worsley, K.J. (1994). &#39;Local maxima and the expected Euler</span>
+<span class="sd">       characteristic of excursion sets of \chi^2, F and t fields.&#39; Advances in</span>
+<span class="sd">       Applied Probability, 26:13-42.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">dfd</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="n">dim</span>
+    <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Q defined only for dim &gt; 0&#39;</span><span class="p">)</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">hermitenorm</span><span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">c</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gammaln</span><span class="p">((</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span>
+                       <span class="o">-</span> <span class="n">gammaln</span><span class="p">((</span><span class="n">m</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span>
+                       <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">L</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">m</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)))</span>
+            <span class="n">coeffs</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">L</span><span class="p">]</span> <span class="o">*=</span> <span class="n">f</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ECquasi"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECquasi">[docs]</a><span class="k">class</span> <span class="nc">ECquasi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Polynomials with premultiplier</span>
+
+<span class="sd">    A subclass of poly1d consisting of polynomials with a premultiplier of the</span>
+<span class="sd">    form:</span>
+
+<span class="sd">    (1 + x^2/m)^-exponent</span>
+
+<span class="sd">    where m is a non-negative float (possibly infinity, in which case the</span>
+<span class="sd">    function is a polynomial) and exponent is a non-negative multiple of 1/2.</span>
+
+<span class="sd">    These arise often in the EC densities.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.algorithms.statistics.rft import ECquasi</span>
+<span class="sd">    &gt;&gt;&gt; x = numpy.linspace(0,1,101)</span>
+
+<span class="sd">    &gt;&gt;&gt; a = ECquasi([3,4,5])</span>
+<span class="sd">    &gt;&gt;&gt; a</span>
+<span class="sd">    ECquasi(array([3, 4, 5]), m=inf, exponent=0.000000)</span>
+<span class="sd">    &gt;&gt;&gt; a(3) == 3*3**2 + 4*3 + 5</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &gt;&gt;&gt; b = ECquasi(a.coeffs, m=30, exponent=4)</span>
+<span class="sd">    &gt;&gt;&gt; numpy.allclose(b(x), a(x) * numpy.power(1+x**2/30, -4))</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ECquasi.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECquasi.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_or_r</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_or_r</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">exponent</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;exponent&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;exponent&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">=</span> <span class="n">exponent</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">m</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">=</span> <span class="mf">0.</span></div>
+
+<div class="viewcode-block" id="ECquasi.denom_poly"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECquasi.denom_poly">[docs]</a>    <span class="k">def</span> <span class="nf">denom_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Base of the premultiplier: (1+x^2/m).</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import numpy</span>
+<span class="sd">        &gt;&gt;&gt; b = ECquasi([3,4,20], m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; d = b.denom_poly()</span>
+<span class="sd">        &gt;&gt;&gt; d</span>
+<span class="sd">        poly1d([ 0.03333333,  0.        ,  1.        ])</span>
+<span class="sd">        &gt;&gt;&gt; numpy.allclose(d.c, [1./b.m,0,1])</span>
+<span class="sd">        True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="p">([</span><span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="ECquasi.change_exponent"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECquasi.change_exponent">[docs]</a>    <span class="k">def</span> <span class="nf">change_exponent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_pow</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Change exponent</span>
+
+<span class="sd">        Multiply top and bottom by an integer multiple of the</span>
+<span class="sd">        self.denom_poly.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import numpy</span>
+<span class="sd">        &gt;&gt;&gt; b = ECquasi([3,4,20], m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; x = numpy.linspace(0,1,101)</span>
+<span class="sd">        &gt;&gt;&gt; c = b.change_exponent(3)</span>
+<span class="sd">        &gt;&gt;&gt; c</span>
+<span class="sd">        ECquasi(array([  1.11111111e-04,   1.48148148e-04,   1.07407407e-02,</span>
+<span class="sd">                 1.33333333e-02,   3.66666667e-01,   4.00000000e-01,</span>
+<span class="sd">                 5.00000000e+00,   4.00000000e+00,   2.00000000e+01]), m=30.000000, exponent=7.000000)</span>
+<span class="sd">        &gt;&gt;&gt; numpy.allclose(c(x), b(x))</span>
+<span class="sd">        True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">):</span>
+            <span class="n">_denom_poly</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">denom_poly</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">_pow</span><span class="p">)</span> <span class="o">!=</span> <span class="n">_pow</span> <span class="ow">or</span> <span class="n">_pow</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting a non-negative integer&#39;</span><span class="p">)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">_denom_poly</span><span class="o">**</span><span class="nb">int</span><span class="p">(</span><span class="n">_pow</span><span class="p">)</span>
+            <span class="n">exponent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">+</span> <span class="n">_pow</span>
+            <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polymul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">coeffs</span>
+            <span class="k">return</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="n">exponent</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ECquasi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;exponent&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="mi">2</span><span class="o">*</span><span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting multiple of a half, got </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;m&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">val</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting positive float or inf&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ECquasi.compatible"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECquasi.compatible">[docs]</a>    <span class="k">def</span> <span class="nf">compatible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Check compatibility of degrees of freedom</span>
+
+<span class="sd">        Check whether the degrees of freedom of two instances are equal</span>
+<span class="sd">        so that they can be multiplied together.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import numpy</span>
+<span class="sd">        &gt;&gt;&gt; b = ECquasi([3,4,20], m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; x = numpy.linspace(0,1,101)</span>
+<span class="sd">        &gt;&gt;&gt; c = b.change_exponent(3)</span>
+<span class="sd">        &gt;&gt;&gt; b.compatible(c)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; d = ECquasi([3,4,20])</span>
+<span class="sd">        &gt;&gt;&gt; b.compatible(d)</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">m</span><span class="p">:</span>
+            <span class="c1">#raise ValueError, &#39;quasi polynomials are not compatible, m disagrees&#39;</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Add two compatible ECquasi instances together.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; b = ECquasi([3,4,20], m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; c = ECquasi([1], m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; b+c #doctest: +IGNORE_DTYPE</span>
+<span class="sd">        ECquasi(array([ 3,  4, 21]), m=30.000000, exponent=4.000000)</span>
+
+<span class="sd">        &gt;&gt;&gt; d = ECquasi([1], m=30, exponent=3)</span>
+<span class="sd">        &gt;&gt;&gt; b+d</span>
+<span class="sd">        ECquasi(array([  3.03333333,   4.        ,  21.        ]), m=30.000000, exponent=4.000000)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compatible</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">):</span>
+                <span class="n">M</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+                <span class="n">q1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">change_exponent</span><span class="p">(</span><span class="n">M</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+                <span class="n">q2</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">change_exponent</span><span class="p">(</span><span class="n">M</span><span class="o">-</span><span class="n">other</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="n">q1</span><span class="p">,</span> <span class="n">q2</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span>
+                               <span class="n">exponent</span><span class="o">=</span><span class="n">M</span><span class="p">,</span>
+                               <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span>
+                               <span class="n">exponent</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                               <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Multiply two compatible ECquasi instances together.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; b=ECquasi([3,4,20], m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; c=ECquasi([1,2], m=30, exponent=4.5)</span>
+<span class="sd">        &gt;&gt;&gt; b*c</span>
+<span class="sd">        ECquasi(array([ 3, 10, 28, 40]), m=30.000000, exponent=8.500000)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">ECquasi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span> <span class="o">*</span> <span class="n">other</span><span class="p">,</span>
+                           <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
+                           <span class="n">exponent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">compatible</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">coeffs</span><span class="p">,</span>
+                           <span class="n">exponent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="o">+</span><span class="n">other</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span>
+                           <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluate the ECquasi instance.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import numpy</span>
+<span class="sd">        &gt;&gt;&gt; x = numpy.linspace(0,1,101)</span>
+<span class="sd">        &gt;&gt;&gt; a = ECquasi([3,4,5])</span>
+<span class="sd">        &gt;&gt;&gt; a</span>
+<span class="sd">        ECquasi(array([3, 4, 5]), m=inf, exponent=0.000000)</span>
+<span class="sd">        &gt;&gt;&gt; a(3) == 3*3**2 + 4*3 + 5</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; b = ECquasi(a.coeffs, m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; numpy.allclose(b(x), a(x) * numpy.power(1+x**2/30, -4))</span>
+<span class="sd">        True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+        <span class="n">_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">denom_poly</span><span class="p">()(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">n</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">_p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">m</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_pow</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Power of a ECquasi instance.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; b = ECquasi([3,4,5],m=10, exponent=3)</span>
+<span class="sd">        &gt;&gt;&gt; b**2</span>
+<span class="sd">        ECquasi(array([ 9, 24, 46, 40, 25]), m=10.000000, exponent=6.000000)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">_pow</span><span class="p">))</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="n">_pow</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">q</span>
+
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Subtract `other` from `self`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : ECquasi instance</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        subbed : ECquasi</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; b = ECquasi([3,4,20], m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; c = ECquasi([1,2], m=30, exponent=4)</span>
+<span class="sd">        &gt;&gt;&gt; print(b-c)  #doctest: +IGNORE_DTYPE</span>
+<span class="sd">        ECquasi(array([ 3,  3, 18]), m=30.000000, exponent=4.000000)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">+</span> <span class="p">(</span><span class="n">other</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span>
+        <span class="k">return</span> <span class="s2">&quot;ECquasi(</span><span class="si">%s</span><span class="s2">, m=</span><span class="si">%s</span><span class="s2">, exponent=</span><span class="si">%f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">),</span> <span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+
+    <span class="fm">__str__</span> <span class="o">=</span> <span class="fm">__repr__</span>
+    <span class="fm">__rsub__</span> <span class="o">=</span> <span class="fm">__sub__</span>
+    <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
+    <span class="n">__rdiv__</span> <span class="o">=</span> <span class="n">__div__</span>
+
+<div class="viewcode-block" id="ECquasi.deriv"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECquasi.deriv">[docs]</a>    <span class="k">def</span> <span class="nf">deriv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Evaluate derivative of ECquasi</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        m : int, optional</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; a = ECquasi([3,4,5])</span>
+<span class="sd">        &gt;&gt;&gt; a.deriv(m=2) #doctest: +IGNORE_DTYPE</span>
+<span class="sd">        ECquasi(array([6]), m=inf, exponent=0.000000)</span>
+
+<span class="sd">        &gt;&gt;&gt; b = ECquasi([3,4,5], m=10, exponent=3)</span>
+<span class="sd">        &gt;&gt;&gt; b.deriv()</span>
+<span class="sd">        ECquasi(array([-1.2, -2. ,  3. ,  4. ]), m=10.000000, exponent=4.000000)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">):</span>
+                <span class="n">q1</span> <span class="o">=</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="n">deriv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                             <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
+                             <span class="n">exponent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+                <span class="n">q2</span> <span class="o">=</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">denom_poly</span><span class="p">()</span><span class="o">.</span><span class="n">deriv</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span>
+                             <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
+                             <span class="n">exponent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">q1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">*</span> <span class="n">q2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="o">.</span><span class="n">deriv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                               <span class="n">m</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+                               <span class="n">exponent</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deriv</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">deriv</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="fnsum"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.fnsum">[docs]</a><span class="k">class</span> <span class="nc">fnsum</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="fnsum.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.fnsum.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">items</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">+=</span> <span class="n">q</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span></div>
+
+
+<div class="viewcode-block" id="IntrinsicVolumes"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.IntrinsicVolumes">[docs]</a><span class="k">class</span> <span class="nc">IntrinsicVolumes</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute intrinsic volumes of products of sets</span>
+
+<span class="sd">    A simple class that exists only to compute the intrinsic volumes of</span>
+<span class="sd">    products of sets (that themselves have intrinsic volumes, of course).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="IntrinsicVolumes.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.IntrinsicVolumes.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">IntrinsicVolumes</span><span class="p">):</span>
+            <span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span><span class="o">.</span><span class="n">mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">IntrinsicVolumes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting an IntrinsicVolumes instance&#39;</span><span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">order</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">other</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">j</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ECcone"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECcone">[docs]</a><span class="k">class</span> <span class="nc">ECcone</span><span class="p">(</span><span class="n">IntrinsicVolumes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; EC approximation to supremum distribution of var==1 Gaussian process</span>
+
+<span class="sd">    A class that takes the intrinsic volumes of a set and gives the EC</span>
+<span class="sd">    approximation to the supremum distribution of a unit variance Gaussian</span>
+<span class="sd">    process with these intrinsic volumes. This is the basic building block of</span>
+<span class="sd">    all of the EC densities.</span>
+
+<span class="sd">    If product is not None, then this product (an instance of IntrinsicVolumes)</span>
+<span class="sd">    will effectively be prepended to the search region in any call, but it will</span>
+<span class="sd">    also affect the (quasi-)polynomial part of the EC density. For instance,</span>
+<span class="sd">    Hotelling&#39;s T^2 random field has a sphere as product, as does Roy&#39;s maximum</span>
+<span class="sd">    root.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ECcone.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECcone.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dfd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">product</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dfd</span> <span class="o">=</span> <span class="n">dfd</span>
+        <span class="n">IntrinsicVolumes</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product</span> <span class="o">=</span> <span class="n">IntrinsicVolumes</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search</span> <span class="o">=</span> <span class="n">IntrinsicVolumes</span><span class="p">(</span><span class="n">search</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get expected EC for a search region</span>
+
+<span class="sd">        Default is self.search which itself defaults to [1] giving the</span>
+<span class="sd">        survival function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">search</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">search</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">search</span> <span class="o">=</span> <span class="n">IntrinsicVolumes</span><span class="p">(</span><span class="n">search</span><span class="p">)</span>
+
+        <span class="n">search</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">):</span>
+            <span class="n">q_even</span> <span class="o">=</span> <span class="n">ECquasi</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">q_odd</span> <span class="o">=</span> <span class="n">ECquasi</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q_even</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">q_odd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">search</span><span class="o">.</span><span class="n">mu</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quasi</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">search</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">):</span>
+                <span class="n">q_even</span> <span class="o">+=</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span>
+                <span class="n">q_odd</span> <span class="o">+=</span> <span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">q_even</span> <span class="o">+=</span> <span class="n">q</span> <span class="o">*</span> <span class="n">c</span>
+
+        <span class="n">_rho</span> <span class="o">=</span> <span class="n">q_even</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">q_odd</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">):</span>
+            <span class="n">_rho</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_rho</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">search</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="c1"># tail probability is not &quot;quasi-polynomial&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">):</span>
+                <span class="n">P</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">P</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">)</span>
+            <span class="n">_rho</span> <span class="o">+=</span> <span class="n">P</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">search</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">_rho</span>
+
+<div class="viewcode-block" id="ECcone.pvalue"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECcone.pvalue">[docs]</a>    <span class="k">def</span> <span class="nf">pvalue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ECcone.integ"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECcone.integ">[docs]</a>    <span class="k">def</span> <span class="nf">integ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span> <span class="c1"># this could be done with stats.t,</span></div>
+                                  <span class="c1"># at least m=1</span>
+    
+<div class="viewcode-block" id="ECcone.density"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECcone.density">[docs]</a>    <span class="k">def</span> <span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The EC density in dimension `dim`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">dim</span><span class="o">+</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+
+    <span class="k">def</span> <span class="nf">_quasi_polynomials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; list of quasi-polynomials for EC density calculation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="o">+</span><span class="mf">1.</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+
+        <span class="n">quasi_polynomials</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">+</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">_q</span> <span class="o">=</span> <span class="n">ECquasi</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="n">dim</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">),</span>
+                             <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">,</span>
+                             <span class="n">exponent</span><span class="o">=</span><span class="n">k</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+                <span class="n">_q</span> <span class="o">*=</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                <span class="n">quasi_polynomials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_q</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">quasi_polynomials</span>
+
+<div class="viewcode-block" id="ECcone.quasi"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ECcone.quasi">[docs]</a>    <span class="k">def</span> <span class="nf">quasi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; (Quasi-)polynomial parts of EC density in dimension `dim`</span>
+
+<span class="sd">        - ignoring a factor of (2\pi)^{-(dim+1)/2} in front.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">q_even</span> <span class="o">=</span> <span class="n">ECquasi</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">q_odd</span> <span class="o">=</span> <span class="n">ECquasi</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="n">quasi_polynomials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quasi_polynomials</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">quasi_polynomials</span><span class="p">)):</span>
+            <span class="n">_q</span> <span class="o">=</span> <span class="n">quasi_polynomials</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">_q</span><span class="o">.</span><span class="n">exponent</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">q_even</span> <span class="o">+=</span> <span class="n">_q</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">q_odd</span> <span class="o">+=</span> <span class="n">_q</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfd</span><span class="p">):</span>
+            <span class="n">q_even</span> <span class="o">+=</span> <span class="n">q_odd</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="p">(</span><span class="n">q_even</span><span class="o">.</span><span class="n">coeffs</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">q_even</span><span class="p">,</span> <span class="n">q_odd</span><span class="p">)</span></div></div>
+
+<span class="n">Gaussian</span> <span class="o">=</span> <span class="n">ECcone</span>
+
+
+<div class="viewcode-block" id="mu_sphere"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.mu_sphere">[docs]</a><span class="k">def</span> <span class="nf">mu_sphere</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; `j`th curvature for `n` dimensional sphere radius `r`</span>
+
+<span class="sd">    Return mu_j(S_r(R^n)), the j-th Lipschitz Killing</span>
+<span class="sd">    curvature of the sphere of radius r in R^n.</span>
+
+<span class="sd">    From Chapter 6 of</span>
+
+<span class="sd">    Adler &amp; Taylor, &#39;Random Fields and Geometry&#39;. 2006.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">gamma</span><span class="p">(</span><span class="n">n</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span> 
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="n">j</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_sphere</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu_sphere</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="n">n</span><span class="o">-</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="mu_ball"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.mu_ball">[docs]</a><span class="k">def</span> <span class="nf">mu_ball</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; `j`th curvature of `n`-dimensional ball radius `r`</span>
+
+<span class="sd">    Return mu_j(B_n(r)), the j-th Lipschitz Killing curvature of the</span>
+<span class="sd">    ball of radius r in R^n.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="n">gamma</span><span class="p">(</span><span class="n">n</span><span class="o">/</span><span class="mf">2.</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_ball</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu_ball</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="n">n</span><span class="o">-</span><span class="n">j</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="spherical_search"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.spherical_search">[docs]</a><span class="k">def</span> <span class="nf">spherical_search</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A spherical search region of radius r.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">IntrinsicVolumes</span><span class="p">([</span><span class="n">mu_sphere</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)])</span></div>
+
+
+<div class="viewcode-block" id="ball_search"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ball_search">[docs]</a><span class="k">def</span> <span class="nf">ball_search</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A ball-shaped search region of radius r.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">IntrinsicVolumes</span><span class="p">([</span><span class="n">mu_ball</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)])</span></div>
+
+
+<div class="viewcode-block" id="volume2ball"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.volume2ball">[docs]</a><span class="k">def</span> <span class="nf">volume2ball</span><span class="p">(</span><span class="n">vol</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Approximate volume with ball</span>
+
+<span class="sd">    Approximate intrinsic volumes of a set with a given volume by those of a</span>
+<span class="sd">    ball with a given dimension and equal volume.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">d</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">vol</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">mu_ball</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">d</span><span class="p">),</span> <span class="mf">1.</span><span class="o">/</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ball_search</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">IntrinsicVolumes</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ChiSquared"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ChiSquared">[docs]</a><span class="k">class</span> <span class="nc">ChiSquared</span><span class="p">(</span><span class="n">ECcone</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;  EC densities for a Chi-Squared(n) random field.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ChiSquared.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ChiSquared.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dfn</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span> <span class="o">=</span> <span class="n">dfn</span>
+        <span class="n">ECcone</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">spherical_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">dfd</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ECcone</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TStat"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.TStat">[docs]</a><span class="k">class</span> <span class="nc">TStat</span><span class="p">(</span><span class="n">ECcone</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;  EC densities for a t random field.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TStat.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.TStat.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">ECcone</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dfd</span><span class="o">=</span><span class="n">dfd</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="FStat"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.FStat">[docs]</a><span class="k">class</span> <span class="nc">FStat</span><span class="p">(</span><span class="n">ECcone</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; EC densities for a F random field.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="FStat.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.FStat.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dfn</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span> <span class="o">=</span> <span class="n">dfn</span>
+        <span class="n">ECcone</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">spherical_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">dfd</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ECcone</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Roy"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.Roy">[docs]</a><span class="k">class</span> <span class="nc">Roy</span><span class="p">(</span><span class="n">ECcone</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Roy&#39;s maximum root</span>
+
+<span class="sd">    Maximize an F_{dfd,dfn} statistic over a sphere of dimension k.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Roy.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.Roy.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dfn</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">product</span> <span class="o">=</span> <span class="n">spherical_search</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span> <span class="o">=</span> <span class="n">dfn</span>
+        <span class="n">ECcone</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">spherical_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">),</span>
+                        <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">dfd</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ECcone</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultilinearForm"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.MultilinearForm">[docs]</a><span class="k">class</span> <span class="nc">MultilinearForm</span><span class="p">(</span><span class="n">ECcone</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Maximize a multivariate Gaussian form</span>
+
+<span class="sd">    Maximized over spheres of dimension dims. See:</span>
+
+<span class="sd">    Kuri, S. &amp; Takemura, A. (2001).</span>
+<span class="sd">    &#39;Tail probabilities of the maxima of multilinear forms and</span>
+<span class="sd">    their applications.&#39; Ann. Statist. 29(2): 328-371.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MultilinearForm.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.MultilinearForm.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">dims</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">):</span>
+        <span class="n">product</span> <span class="o">=</span> <span class="n">IntrinsicVolumes</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">search</span> <span class="o">=</span> <span class="n">keywords</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">:</span>
+            <span class="n">product</span> <span class="o">*=</span> <span class="n">spherical_search</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">product</span><span class="o">.</span><span class="n">mu</span> <span class="o">/=</span> <span class="mf">2.</span><span class="o">**</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">ECcone</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Hotelling"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.Hotelling">[docs]</a><span class="k">class</span> <span class="nc">Hotelling</span><span class="p">(</span><span class="n">ECcone</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Hotelling&#39;s T^2</span>
+
+<span class="sd">    Maximize an F_{1,dfd}=T_dfd^2 statistic over a sphere of dimension</span>
+<span class="sd">    `k`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Hotelling.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.Hotelling.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">product</span> <span class="o">=</span> <span class="n">spherical_search</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="n">ECcone</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">dfd</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ECcone</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OneSidedF"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.OneSidedF">[docs]</a><span class="k">class</span> <span class="nc">OneSidedF</span><span class="p">(</span><span class="n">ECcone</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; EC densities for one-sided F statistic</span>
+
+<span class="sd">    See:</span>
+
+<span class="sd">    Worsley, K.J. &amp; Taylor, J.E. (2005). &#39;Detecting fMRI activation</span>
+<span class="sd">    allowing for unknown latency of the hemodynamic response.&#39;</span>
+<span class="sd">    Neuroimage, 29,649-654.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="OneSidedF.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.OneSidedF.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dfn</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span> <span class="o">=</span> <span class="n">dfn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regions</span> <span class="o">=</span> <span class="p">[</span><span class="n">spherical_search</span><span class="p">(</span><span class="n">dfn</span><span class="p">),</span> <span class="n">spherical_search</span><span class="p">(</span><span class="n">dfn</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">ECcone</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">spherical_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">,</span> <span class="n">dfd</span><span class="o">=</span><span class="n">dfd</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">IntrinsicVolumes</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">d1</span> <span class="o">=</span> <span class="n">ECcone</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+        <span class="n">IntrinsicVolumes</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">d2</span> <span class="o">=</span> <span class="n">ECcone</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mu</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">d1</span> <span class="o">-</span> <span class="n">d2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span></div>
+
+
+<div class="viewcode-block" id="ChiBarSquared"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ChiBarSquared">[docs]</a><span class="k">class</span> <span class="nc">ChiBarSquared</span><span class="p">(</span><span class="n">ChiSquared</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_getmu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">sf</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">Gaussian</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">sf</span> <span class="o">+=</span> <span class="n">binomial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mf">2.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">)</span> 
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">g</span><span class="o">.</span><span class="n">density</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">)])</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">pinv</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="n">sf</span><span class="p">)</span>
+        <span class="n">sf</span> <span class="o">+=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dfn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">IntrinsicVolumes</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ChiBarSquared.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.ChiBarSquared.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dfn</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">ChiSquared</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dfn</span><span class="o">=</span><span class="n">dfn</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_getmu</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">search</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">search</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">search</span> <span class="o">=</span> <span class="n">IntrinsicVolumes</span><span class="p">(</span><span class="n">search</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span>
+        <span class="k">return</span> <span class="n">FStat</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="scale_space"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.rft.html#nipy.algorithms.statistics.rft.scale_space">[docs]</a><span class="k">def</span> <span class="nf">scale_space</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; scale space intrinsic volumes of region x interval</span>
+
+<span class="sd">    See:</span>
+
+<span class="sd">    Siegmund, D.O and Worsley, K.J. (1995). &#39;Testing for a signal</span>
+<span class="sd">    with unknown location and scale in a stationary Gaussian random</span>
+<span class="sd">    field.&#39;  Annals of Statistics, 23:608-639.</span>
+
+<span class="sd">    and</span>
+
+<span class="sd">    Taylor, J.E. &amp; Worsley, K.J. (2005). &#39;Random fields of multivariate</span>
+<span class="sd">    test statistics, with applications to shape analysis and fMRI.&#39;</span>
+
+<span class="sd">    (available on http://www.math.mcgill.ca/keith</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">w1</span><span class="p">,</span> <span class="n">w2</span> <span class="o">=</span> <span class="n">interval</span>
+    <span class="n">region</span> <span class="o">=</span> <span class="n">IntrinsicVolumes</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
+
+    <span class="n">D</span> <span class="o">=</span> <span class="n">region</span><span class="o">.</span><span class="n">order</span>
+ 
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">D</span><span class="o">+</span><span class="mi">2</span><span class="p">,))</span>
+
+    <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">region</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">D</span><span class="o">+</span><span class="mi">2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">D</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">w1</span> <span class="o">+</span> <span class="mf">1.</span><span class="o">/</span><span class="n">w2</span><span class="p">)</span> <span class="o">*</span> <span class="n">region</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">D</span><span class="o">-</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)):</span>
+            <span class="n">denom</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">j</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span>
+            <span class="c1"># w^-i/i when i=0 </span>
+            <span class="c1"># according to Keith Worsley the 2005 paper has a typo</span>
+            <span class="k">if</span> <span class="n">denom</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">w2</span><span class="o">/</span><span class="n">w1</span><span class="p">)</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">w1</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">w2</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="n">denom</span>
+            <span class="n">f</span> <span class="o">*=</span> <span class="n">kappa</span><span class="o">**</span><span class="p">((</span><span class="mi">1</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">j</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="n">j</span> <span class="o">*</span> <span class="n">factorial</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">denom</span><span class="p">))</span>
+            <span class="n">f</span> <span class="o">/=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="n">j</span> <span class="o">*</span> <span class="n">factorial</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">factorial</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">region</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">denom</span><span class="p">)]</span> <span class="o">*</span> <span class="n">f</span>
+    <span class="k">return</span> <span class="n">IntrinsicVolumes</span><span class="p">(</span><span class="n">out</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

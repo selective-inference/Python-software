@@ -1,0 +1,76 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+algorithms.sqrt_lasso
+=====================
+
+Module: :mod:`algorithms.sqrt_lasso`
+------------------------------------
+Inheritance diagram for ``selection.algorithms.sqrt_lasso``:
+
+.. inheritance-diagram:: selection.algorithms.sqrt_lasso 
+   :parts: 3
+
+.. automodule:: selection.algorithms.sqrt_lasso
+
+.. currentmodule:: selection.algorithms.sqrt_lasso
+
+Classes
+-------
+
+:class:`l2norm_saturated`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: l2norm_saturated
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`sqlasso_objective`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: sqlasso_objective
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`sqlasso_objective_skinny`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: sqlasso_objective_skinny
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Functions
+---------
+
+
+.. autofunction:: selection.algorithms.sqrt_lasso.choose_lambda
+
+
+.. autofunction:: selection.algorithms.sqrt_lasso.estimate_sigma
+
+
+.. autofunction:: selection.algorithms.sqrt_lasso.goodness_of_fit
+
+
+.. autofunction:: selection.algorithms.sqrt_lasso.l2norm_glm
+
+
+.. autofunction:: selection.algorithms.sqrt_lasso.solve_sqrt_lasso
+
+
+.. autofunction:: selection.algorithms.sqrt_lasso.solve_sqrt_lasso_fat
+
+
+.. autofunction:: selection.algorithms.sqrt_lasso.solve_sqrt_lasso_skinny
+

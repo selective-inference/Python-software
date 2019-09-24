@@ -1,0 +1,417 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.statistics.utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-statistics-utils">
+<h1>algorithms.statistics.utils<a class="headerlink" href="#algorithms-statistics-utils" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.algorithms.statistics.utils">
+<span id="module-algorithms-statistics-utils"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.statistics.utils</span></code><a class="headerlink" href="#module-nipy.algorithms.statistics.utils" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.check_cast_bin8">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">check_cast_bin8</code><span class="sig-paren">(</span><em class="sig-param">arr</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#check_cast_bin8"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.check_cast_bin8" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return binary array <cite>arr</cite> as uint8 type, or raise if not binary.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>arr</strong> : array-like</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bin8_arr</strong> : uint8 array</p>
+<blockquote>
+<div><p><cite>bin8_arr</cite> has same shape as <cite>arr</cite>, is of dtype <code class="docutils literal notranslate"><span class="pre">np.uint8</span></code>, with
+values 0 and 1 only.</p>
+</div></blockquote>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong></p>
+<blockquote>
+<div><p>When the array is not binary.  Speficically, raise if, for any element
+<code class="docutils literal notranslate"><span class="pre">e</span></code>, <code class="docutils literal notranslate"><span class="pre">e</span> <span class="pre">!=</span> <span class="pre">(e</span> <span class="pre">!=</span> <span class="pre">0)</span></code>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.complex">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">complex</code><span class="sig-paren">(</span><em class="sig-param">maximal=[(0, 3, 2, 7), (0, 6, 2, 7), (0, 7, 5, 4), (0, 7, 5, 1), (0, 7, 4, 6), (0, 3, 1, 7)]</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#complex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.complex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Faces from simplices</p>
+<p>Take a list of maximal simplices (by default a triangulation of a
+cube into 6 tetrahedra) and computes all faces</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>maximal</strong> : sequence of sequences, optional</p>
+<blockquote>
+<div><p>Default is triangulation of cube into tetrahedra</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>faces</strong> : dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.cube_with_strides_center">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">cube_with_strides_center</code><span class="sig-paren">(</span><em class="sig-param">center=[0, 0, 0], strides=[4, 2, 1]</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#cube_with_strides_center"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.cube_with_strides_center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cube in an array of voxels with a given center and strides.</p>
+<p>This triangulates a cube with vertices [center[i] + 1].</p>
+<p>The dimension of the cube is determined by len(center)
+which should agree with len(center).</p>
+<p>The allowable dimensions are [1,2,3].</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>center</strong> : (d,) sequence of int, optional</p>
+<blockquote>
+<div><p>Default is [0, 0, 0]</p>
+</div></blockquote>
+<p><strong>strides</strong> : (d,) sequence of int, optional</p>
+<blockquote>
+<div><p>Default is [4, 2, 1].  These are the strides given by
+<code class="docutils literal notranslate"><span class="pre">np.ones((2,2,2),</span> <span class="pre">np.bool).strides</span></code></p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>complex</strong> : dict</p>
+<blockquote>
+<div><p>A dictionary with integer keys representing a simplicial
+complex. The vertices of the simplicial complex are the indices
+of the corners of the cube in a ‘flattened’ array with specified
+strides.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.decompose2d">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">decompose2d</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">dim=3</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#decompose2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.decompose2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all (dim-1)-dimensional simplices in a triangulation
+of a square of a given shape. The vertices in the triangulation
+are indices in a ‘flattened’ array of the specified shape.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.decompose3d">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">decompose3d</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">dim=4</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#decompose3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.decompose3d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all (dim-1)-dimensional simplices in a triangulation
+of a cube of a given shape. The vertices in the triangulation
+are indices in a ‘flattened’ array of the specified shape.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.join_complexes">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">join_complexes</code><span class="sig-paren">(</span><em class="sig-param">*complexes</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#join_complexes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.join_complexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Join a sequence of simplicial complexes.</p>
+<p>Returns the union of all the particular faces.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.multiple_fast_inv">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">multiple_fast_inv</code><span class="sig-paren">(</span><em class="sig-param">a</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#multiple_fast_inv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.multiple_fast_inv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the inverse of a set of arrays in-place</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>a: array_like of shape (n_samples, M, M)</strong></p>
+<blockquote>
+<div><p>Set of square matrices to be inverted. <cite>a</cite> is changed in place.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a: ndarray shape (n_samples, M, M)</p>
+<blockquote>
+<div><p>The input array <cite>a</cite>, overwritten with the inverses of the original 2D
+arrays in <code class="docutils literal notranslate"><span class="pre">a[0],</span> <span class="pre">a[1],</span> <span class="pre">...</span></code>.  Thus <code class="docutils literal notranslate"><span class="pre">a[0]</span></code> replaced with
+<code class="docutils literal notranslate"><span class="pre">inv(a[0])</span></code> etc.</p>
+</div></blockquote>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>LinAlgError :</strong></p>
+<blockquote>
+<div><p>If <cite>a</cite> is singular.</p>
+</div></blockquote>
+<p><strong>ValueError :</strong></p>
+<blockquote>
+<div><p>If <cite>a</cite> is not square, or not 2-dimensional.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function is copied from scipy.linalg.inv, but with some customizations
+for speed-up from operating on multiple arrays.  It also has some
+conditionals to work with different scipy versions.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.multiple_mahalanobis">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">multiple_mahalanobis</code><span class="sig-paren">(</span><em class="sig-param">effect</em>, <em class="sig-param">covariance</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#multiple_mahalanobis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.multiple_mahalanobis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the squared Mahalanobis distance for a given set of samples</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>effect: array of shape (n_features, n_samples),</strong></p>
+<blockquote>
+<div><p>Each column represents a vector to be evaluated</p>
+</div></blockquote>
+<p><strong>covariance: array of shape (n_features, n_features, n_samples),</strong></p>
+<blockquote>
+<div><p>Corresponding covariance models stacked along the last axis</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>sqd: array of shape (n_samples,)</p>
+<blockquote>
+<div><p>the squared distances (one per sample)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.test_EC2">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">test_EC2</code><span class="sig-paren">(</span><em class="sig-param">shape</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#test_EC2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.test_EC2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.test_EC3">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">test_EC3</code><span class="sig-paren">(</span><em class="sig-param">shape</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#test_EC3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.test_EC3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.utils.z_score">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.utils.</code><code class="sig-name descname">z_score</code><span class="sig-paren">(</span><em class="sig-param">pvalue</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/utils.html#z_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.utils.z_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the z-score corresponding to a given p-value.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,410 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.modalities.fmri.hrf.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="modalities-fmri-hrf">
+<h1>modalities.fmri.hrf<a class="headerlink" href="#modalities-fmri-hrf" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.modalities.fmri.hrf">
+<span id="module-modalities-fmri-hrf"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">modalities.fmri.hrf</span></code><a class="headerlink" href="#module-nipy.modalities.fmri.hrf" title="Permalink to this headline">¶</a></h2>
+<p>This module provides definitions of various hemodynamic response
+functions (hrf).</p>
+<p>In particular, it provides Gary Glover’s canonical HRF, AFNI’s default
+HRF, and a spectral HRF.</p>
+<p>The Glover HRF is based on:</p>
+<dl class="simple">
+<dt>&#64;article{glover1999deconvolution,</dt><dd><p>title={{Deconvolution of impulse response in event-related BOLD fMRI}},
+author={Glover, G.H.},
+journal={NeuroImage},
+volume={9},
+number={4},
+pages={416–429},
+year={1999},
+publisher={Orlando, FL: Academic Press, c1992-}</p>
+</dd>
+</dl>
+<p>}</p>
+<p>This parametrization is from fmristat:</p>
+<p><a class="reference external" href="http://www.math.mcgill.ca/keith/fmristat/">http://www.math.mcgill.ca/keith/fmristat/</a></p>
+<p>fmristat models the HRF as the difference of two gamma functions, <code class="docutils literal notranslate"><span class="pre">g1</span></code>
+and <code class="docutils literal notranslate"><span class="pre">g2</span></code>, each defined by the timing of the gamma function peaks
+(<code class="docutils literal notranslate"><span class="pre">pk1,</span> <span class="pre">pk2</span></code>) and the FWHMs (<code class="docutils literal notranslate"><span class="pre">width1,</span> <span class="pre">width2</span></code>):</p>
+<blockquote>
+<div><p>raw_hrf = g1(pk1, width1) - a2 * g2(pk2, width2)</p>
+</div></blockquote>
+<p>where <code class="docutils literal notranslate"><span class="pre">a2</span></code> is the scale factor for the <code class="docutils literal notranslate"><span class="pre">g2</span></code> gamma function.  The
+actual hrf is the raw hrf set to have an integral of 1.</p>
+<p>fmristat used <code class="docutils literal notranslate"><span class="pre">pk1,</span> <span class="pre">width1,</span> <span class="pre">pk2,</span> <span class="pre">width2,</span> <span class="pre">a2</span> <span class="pre">=</span> <span class="pre">(5.4</span> <span class="pre">5.2</span> <span class="pre">10.8</span> <span class="pre">7.35</span>
+<span class="pre">0.35)</span></code>.  These are parameters to match Glover’s 1 second duration
+auditory stimulus curves.  Glover wrote these as:</p>
+<blockquote>
+<div><p>y(t) = c1 * t**n1 * exp(t/t1) - a2 * c2 * t**n2 * exp(t/t2)</p>
+</div></blockquote>
+<p>with <code class="docutils literal notranslate"><span class="pre">n1,</span> <span class="pre">t1,</span> <span class="pre">n2,</span> <span class="pre">t2,</span> <span class="pre">a2</span> <span class="pre">=</span> <span class="pre">(6.0,</span> <span class="pre">0.9,</span> <span class="pre">12,</span> <span class="pre">0.9,</span> <span class="pre">0.35)</span></code>,  and <code class="docutils literal notranslate"><span class="pre">c1,</span> <span class="pre">c2</span></code> being
+<code class="docutils literal notranslate"><span class="pre">1/max(t**n1</span> <span class="pre">*</span> <span class="pre">exp(t/t1)),</span> <span class="pre">1/max(t**n2</span> <span class="pre">*</span> <span class="pre">exp(t/t2)</span></code>.  The difference between
+Glover’s expression and ours is because we (and fmristat) use the peak location
+and width to characterize the function rather than <code class="docutils literal notranslate"><span class="pre">n1,</span> <span class="pre">t1</span></code>.  The values we
+use are equivalent.  Specifically, in our formulation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">n1</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">c1</span> <span class="o">=</span> <span class="n">gamma_params</span><span class="p">(</span><span class="mf">5.4</span><span class="p">,</span> <span class="mf">5.2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">((</span><span class="n">n1</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">t1</span><span class="p">),</span> <span class="p">(</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n2</span><span class="p">,</span> <span class="n">t2</span><span class="p">,</span> <span class="n">c2</span> <span class="o">=</span> <span class="n">gamma_params</span><span class="p">(</span><span class="mf">10.8</span><span class="p">,</span> <span class="mf">7.35</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">((</span><span class="n">n2</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">t2</span><span class="p">),</span> <span class="p">(</span><span class="mf">12.0</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.modalities.fmri.hrf.ddspmt">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hrf.</code><code class="sig-name descname">ddspmt</code><span class="sig-paren">(</span><em class="sig-param">t</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hrf.html#ddspmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hrf.ddspmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>SPM canonical HRF dispersion derivative, values for time values <cite>t</cite></p>
+<p>This is the canonical HRF dispersion derivative function as used in SPM.</p>
+<p>It is the numerical difference between the HRF sampled at time <cite>t</cite>, and
+values at <cite>t</cite> for another HRF shape with a small change in the peak
+dispersion parameter (<code class="docutils literal notranslate"><span class="pre">peak_disp</span></code> in func:<cite>spm_hrf_compat</cite>).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hrf.dspmt">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hrf.</code><code class="sig-name descname">dspmt</code><span class="sig-paren">(</span><em class="sig-param">t</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hrf.html#dspmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hrf.dspmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>SPM canonical HRF derivative, HRF derivative values for time values <cite>t</cite></p>
+<p>This is the canonical HRF derivative function as used in SPM.</p>
+<p>It is the numerical difference of the HRF sampled at time <cite>t</cite> minus the
+values sampled at time <cite>t</cite> -1</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hrf.gamma_expr">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hrf.</code><code class="sig-name descname">gamma_expr</code><span class="sig-paren">(</span><em class="sig-param">peak_location</em>, <em class="sig-param">peak_fwhm</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hrf.html#gamma_expr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hrf.gamma_expr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hrf.gamma_params">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hrf.</code><code class="sig-name descname">gamma_params</code><span class="sig-paren">(</span><em class="sig-param">peak_location</em>, <em class="sig-param">peak_fwhm</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hrf.html#gamma_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hrf.gamma_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters for gamma density given peak and width</p>
+<p>TODO: where does the coef come from again…. check fmristat code</p>
+<p>From a peak location and peak FWHM, determine the parameters (shape,
+scale) of a Gamma density:</p>
+<p>f(x) = coef * x**(shape-1) * exp(-x/scale)</p>
+<p>The coefficient returned ensures that the f has integral 1 over
+[0,np.inf]</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>peak_location</strong> : float</p>
+<blockquote>
+<div><p>Location of the peak of the Gamma density</p>
+</div></blockquote>
+<p><strong>peak_fwhm</strong> : float</p>
+<blockquote>
+<div><p>FWHM at the peak</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>shape</strong> : float</p>
+<blockquote>
+<div><p>Shape parameter in the Gamma density</p>
+</div></blockquote>
+<p><strong>scale</strong> : float</p>
+<blockquote>
+<div><p>Scale parameter in the Gamma density</p>
+</div></blockquote>
+<p><strong>coef</strong> : float</p>
+<blockquote>
+<div><p>Coefficient needed to ensure the density has integral 1.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hrf.spm_hrf_compat">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hrf.</code><code class="sig-name descname">spm_hrf_compat</code><span class="sig-paren">(</span><em class="sig-param">t</em>, <em class="sig-param">peak_delay=6</em>, <em class="sig-param">under_delay=16</em>, <em class="sig-param">peak_disp=1</em>, <em class="sig-param">under_disp=1</em>, <em class="sig-param">p_u_ratio=6</em>, <em class="sig-param">normalize=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hrf.html#spm_hrf_compat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hrf.spm_hrf_compat" title="Permalink to this definition">¶</a></dt>
+<dd><p>SPM HRF function from sum of two gamma PDFs</p>
+<p>This function is designed to be partially compatible with SPMs <cite>spm_hrf.m</cite>
+function.</p>
+<p>The SPN HRF is a <em>peak</em> gamma PDF (with location <cite>peak_delay</cite> and dispersion
+<cite>peak_disp</cite>), minus an <em>undershoot</em> gamma PDF (with location <cite>under_delay</cite>
+and dispersion <cite>under_disp</cite>, and divided by the <cite>p_u_ratio</cite>).</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t</strong> : array-like</p>
+<blockquote>
+<div><p>vector of times at which to sample HRF.</p>
+</div></blockquote>
+<p><strong>peak_delay</strong> : float, optional</p>
+<blockquote>
+<div><p>delay of peak.</p>
+</div></blockquote>
+<p><strong>under_delay</strong> : float, optional</p>
+<blockquote>
+<div><p>delay of undershoot.</p>
+</div></blockquote>
+<p><strong>peak_disp</strong> : float, optional</p>
+<blockquote>
+<div><p>width (dispersion) of peak.</p>
+</div></blockquote>
+<p><strong>under_disp</strong> : float, optional</p>
+<blockquote>
+<div><p>width (dispersion) of undershoot.</p>
+</div></blockquote>
+<p><strong>p_u_ratio</strong> : float, optional</p>
+<blockquote>
+<div><p>peak to undershoot ratio.  Undershoot divided by this value before
+subtracting from peak.</p>
+</div></blockquote>
+<p><strong>normalize</strong> : {True, False}, optional</p>
+<blockquote>
+<div><p>If True, divide HRF values by their sum before returning.  SPM does this
+by default.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>hrf</strong> : array</p>
+<blockquote>
+<div><p>vector length <code class="docutils literal notranslate"><span class="pre">len(t)</span></code> of samples from HRF at times <cite>t</cite>.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">spm_hrf.m</span></code> in the SPM distribution.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hrf.spmt">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hrf.</code><code class="sig-name descname">spmt</code><span class="sig-paren">(</span><em class="sig-param">t</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hrf.html#spmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hrf.spmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>SPM canonical HRF, HRF values for time values <cite>t</cite></p>
+<p>This is the canonical HRF function as used in SPM</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

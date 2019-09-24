@@ -1,0 +1,13 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+testing
+=======
+
+Module: :mod:`testing`
+----------------------
+.. automodule:: nipy.testing
+
+.. currentmodule:: nipy.testing
+
+.. autofunction:: nipy.testing.legacy_printing
+

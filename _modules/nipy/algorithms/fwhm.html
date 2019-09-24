@@ -1,0 +1,415 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.fwhm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides classes and definitions for using full width at half</span>
+<span class="sd">maximum (FWHM) to be used in conjunction with Gaussian Random Field Theory</span>
+<span class="sd">to determine resolution elements (resels).</span>
+
+<span class="sd">A resolution element (resel) is defined as a block of pixels of the same</span>
+<span class="sd">size as the FWHM of the smoothed image.</span>
+
+<span class="sd">There are two methods implemented to estimate (3d, or volumewise) FWHM</span>
+<span class="sd">based on a 4d Image:</span>
+
+<span class="sd">    fastFHWM: used if the entire 4d Image is available</span>
+<span class="sd">    iterFWHM: used when 4d Image is being filled in by slices of residuals</span>
+<span class="sd">    </span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s1">&#39;restructuredtext&#39;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">det</span>
+
+<span class="kn">from</span> <span class="nn">nipy.core.api</span> <span class="k">import</span> <span class="n">Image</span>
+
+<span class="kn">from</span> <span class="nn">.utils.matrices</span> <span class="k">import</span> <span class="n">pos_recipr</span>
+
+<span class="kn">from</span> <span class="nn">..externals.six</span> <span class="k">import</span> <span class="n">Iterator</span>
+
+<div class="viewcode-block" id="Resels"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.fwhm.html#nipy.algorithms.fwhm.Resels">[docs]</a><span class="k">class</span> <span class="nc">Resels</span><span class="p">(</span><span class="n">Iterator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The Resels class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Resels.__init__"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.fwhm.html#nipy.algorithms.fwhm.Resels.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordmap</span><span class="p">,</span> <span class="n">normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">D</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize resels class</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coordmap : ``CoordinateMap``</span>
+<span class="sd">                CoordinateMap over which fwhm and resels are to be estimated.</span>
+<span class="sd">                Used in fwhm/resel conversion.</span>
+<span class="sd">        fwhm : ``Image``</span>
+<span class="sd">            Optional Image of FWHM. Used to convert</span>
+<span class="sd">            FWHM Image to resels if FWHM is not being estimated.</span>
+<span class="sd">        resels : ``Image``</span>
+<span class="sd">            Optional Image of resels. Used to</span>
+<span class="sd">            compute resels within a mask, for instance, if</span>
+<span class="sd">            FWHM has already been estimated.</span>
+<span class="sd">        mask : ``Image``</span>
+<span class="sd">            Mask over which to integrate resels.</span>
+<span class="sd">        clobber : ``bool``</span>
+<span class="sd">            Clobber output FWHM and resel images?</span>
+<span class="sd">        D : ``int``</span>
+<span class="sd">            Can be 2 or 3, the dimension of the final volume.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span> <span class="o">=</span> <span class="n">fwhm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resels</span> <span class="o">=</span> <span class="n">resels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clobber</span> <span class="o">=</span> <span class="n">clobber</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span> <span class="o">=</span> <span class="n">coordmap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">=</span> <span class="n">D</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalized</span> <span class="o">=</span> <span class="n">normalized</span>
+        <span class="n">_transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">affine</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wedge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">det</span><span class="p">(</span><span class="n">_transform</span><span class="p">)),</span> <span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Resels.integrate"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.fwhm.html#nipy.algorithms.fwhm.Resels.integrate">[docs]</a>    <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Integrate resels within `mask` (or use self.mask)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mask : ``Image``</span>
+<span class="sd">                Optional mask over which to integrate (add) resels.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        total_resels :</span>
+<span class="sd">            the resels contained in the mask</span>
+<span class="sd">        FWHM : float</span>
+<span class="sd">            an estimate of FWHM based on the average resel per voxel</span>
+<span class="sd">        nvoxel: int</span>
+<span class="sd">            the number of voxels in the mask</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_resels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resels</span><span class="p">[:]</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_mask</span> <span class="o">=</span> <span class="n">mask</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span>
+        <span class="k">if</span> <span class="n">_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_mask</span> <span class="o">=</span> <span class="n">_mask</span><span class="p">[:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">nvoxel</span> <span class="o">=</span> <span class="n">_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_mask</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="n">nvoxel</span> <span class="o">=</span> <span class="n">_resels</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">_resels</span> <span class="o">=</span> <span class="p">(</span><span class="n">_resels</span> <span class="o">*</span> <span class="n">_mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">_fwhm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resel2fwhm</span><span class="p">(</span><span class="n">_resels</span> <span class="o">/</span> <span class="n">nvoxel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_resels</span><span class="p">,</span> <span class="n">_fwhm</span><span class="p">,</span> <span class="n">nvoxel</span></div>
+
+<div class="viewcode-block" id="Resels.resel2fwhm"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.fwhm.html#nipy.algorithms.fwhm.Resels.resel2fwhm">[docs]</a>    <span class="k">def</span> <span class="nf">resel2fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resels</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convert resels as `resels` to isotropic FWHM</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        resels : float</span>
+<span class="sd">            Convert a resel value to an equivalent isotropic FWHM based on</span>
+<span class="sd">            step sizes in self.coordmap.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        fwhm : float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wedge</span> <span class="o">*</span> <span class="n">pos_recipr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">resels</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Resels.fwhm2resel"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.fwhm.html#nipy.algorithms.fwhm.Resels.fwhm2resel">[docs]</a>    <span class="k">def</span> <span class="nf">fwhm2resel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Convert FWHM `fwhm` to equivalent reseels per voxel</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fwhm : float</span>
+<span class="sd">            Convert an FWHM value to an equivalent resels per voxel based on</span>
+<span class="sd">            step sizes in self.coordmap.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        resels : float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pos_recipr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">fwhm</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wedge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return iterator</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        itor : iterator</span>
+<span class="sd">            self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">:</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resid</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">coordmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">im</span> <span class="o">=</span> \
+              <span class="n">Image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clobber</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">coordmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span> <span class="o">=</span> <span class="n">im</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resels</span><span class="p">:</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resid</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">coordmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">im</span> <span class="o">=</span> \
+              <span class="n">Image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resels</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clobber</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">coordmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resels</span> <span class="o">=</span> <span class="n">im</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="ReselImage"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.fwhm.html#nipy.algorithms.fwhm.ReselImage">[docs]</a><span class="k">class</span> <span class="nc">ReselImage</span><span class="p">(</span><span class="n">Resels</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ReselImage.__init__"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.fwhm.html#nipy.algorithms.fwhm.ReselImage.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize resel image</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        resels : `core.api.Image`</span>
+<span class="sd">            Image of resel per voxel values.</span>
+<span class="sd">        fwhm : `core.api.Image`</span>
+<span class="sd">            Image of FWHM values.</span>
+<span class="sd">        keywords : ``dict``</span>
+<span class="sd">            Passed as keywords arguments to `core.api.Image`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">resels</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">fwhm</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;need either a resels image or an FWHM image&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fwhm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fwhm</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">fwhm</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">)</span>
+            <span class="n">Resels</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">,</span> <span class="n">resels</span><span class="o">=</span><span class="n">resels</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="n">fwhm</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">resels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">resels</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">resels</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">)</span>
+            <span class="n">Resels</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resels</span><span class="p">,</span> <span class="n">resels</span><span class="o">=</span><span class="n">resels</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="n">fwhm</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resel2fwhm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resels</span><span class="p">[:]),</span>
+                              <span class="n">coordmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resels</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resels</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fwhm2resel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">[:]),</span>
+                                <span class="n">coordmap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return iterator</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        itor : iterator</span>
+<span class="sd">            ``self``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<span class="k">def</span> <span class="nf">_calc_detlam</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">zz</span><span class="p">,</span> <span class="n">yx</span><span class="p">,</span> <span class="n">zx</span><span class="p">,</span> <span class="n">zy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate determinant of symmetric 3x3 matrix</span>
+
+<span class="sd">    [[xx,yx,xz],</span>
+<span class="sd">     [yx,yy,zy],</span>
+<span class="sd">     [zx,zy,zz]]</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+    
+    <span class="k">return</span> <span class="n">zz</span> <span class="o">*</span> <span class="p">(</span><span class="n">yy</span><span class="o">*</span><span class="n">xx</span> <span class="o">-</span> <span class="n">yx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> \
+           <span class="n">zy</span> <span class="o">*</span> <span class="p">(</span><span class="n">zy</span><span class="o">*</span><span class="n">xx</span> <span class="o">-</span> <span class="n">zx</span><span class="o">*</span><span class="n">yx</span><span class="p">)</span> <span class="o">+</span> \
+           <span class="n">zx</span> <span class="o">*</span> <span class="p">(</span><span class="n">zy</span><span class="o">*</span><span class="n">yx</span> <span class="o">-</span> <span class="n">zx</span><span class="o">*</span><span class="n">yy</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,527 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.truncated.base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module implements the class `truncated_gaussian` which </span>
+<span class="sd">performs (conditional) UMPU tests for Gaussians</span>
+<span class="sd">restricted to a set of intervals.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">chi</span>
+<span class="kn">from</span> <span class="nn">mpmath</span> <span class="k">import</span> <span class="n">fsum</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
+
+<div class="viewcode-block" id="truncated"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.base.html#selectinf.truncated.F.truncated">[docs]</a><span class="k">class</span> <span class="nc">truncated</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A distribution, truncated to a union of intervals</span>
+
+<span class="sd">    HOW TO MAKE A SUBCLASS : </span>
+<span class="sd">    You have to implement : </span>
+
+<span class="sd">    __init__(self, args*) : It has to call the method from the base class</span>
+<span class="sd">        Since the method is abstract, you can&#39;t have an instance of the</span>
+<span class="sd">        subclass if the method __init__ is not implemented</span>
+<span class="sd">    </span>
+<span class="sd">    _cdf_notTruncated(self, a, b, dps) :</span>
+<span class="sd">    </span>
+<span class="sd">    With these two methods, you can use : </span>
+<span class="sd">        -&gt; cdf</span>
+<span class="sd">        -&gt; sf</span>
+
+<span class="sd">    You should implement : </span>
+
+<span class="sd">    _pdf_notTruncated(self, z, dps) : it allows you to use : </span>
+<span class="sd">        -&gt; pdf</span>
+<span class="sd">        -&gt; plt_pdf (if you also have _quantile_notTruncated)</span>
+
+<span class="sd">    _quantile_notTruncated(self, q, tol) : it allows  you to use : </span>
+<span class="sd">        -&gt; quantile</span>
+<span class="sd">        -&gt; rvs </span>
+<span class="sd">        -&gt; plt_cdf</span>
+<span class="sd">        -&gt; plt_pdf (if you also have  _pdf_notTruncated)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ABCMeta</span>
+
+<div class="viewcode-block" id="truncated.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.base.html#selectinf.truncated.F.truncated.__init__">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intervals</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new truncated distribution object</span>
+<span class="sd">        This method is abstract : it has to be overriden</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        </span>
+<span class="sd">        intervals : [(float, float)]</span>
+<span class="sd">            The intervals the distribution is truncated to</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span> <span class="o">=</span> <span class="n">intervals</span>
+
+        <span class="n">dps</span> <span class="o">=</span> <span class="mi">15</span>
+        <span class="n">not_precise</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">while</span> <span class="n">not_precise</span><span class="p">:</span>
+            <span class="n">Q</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_cdf_notTruncated</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">dps</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">intervals</span><span class="p">]</span>
+            <span class="n">dps</span> <span class="o">*=</span> <span class="mi">2</span>
+            <span class="n">not_precise</span> <span class="o">=</span> <span class="p">(</span><span class="n">fsum</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sumQ</span> <span class="o">=</span> <span class="n">fsum</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dps</span> <span class="o">=</span> <span class="n">dps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Q</span> <span class="o">=</span> <span class="n">Q</span></div>
+
+               
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_cdf_notTruncated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">dps</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the probability of being in the interval (a, b)</span>
+<span class="sd">        for a variable with this distribution (not truncated)</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        a, b : float</span>
+<span class="sd">            Bounds of the interval. Can be infinite.</span>
+
+<span class="sd">        dps : int</span>
+<span class="sd">            Decimal precision (decimal places). Used in mpmath</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            The probability of being in the intervals (a, b)</span>
+<span class="sd">            P( a &lt; X &lt; b)</span>
+<span class="sd">            for a non truncated variable</span>
+
+<span class="sd">        WARNING : This is the fundamental method of the truncated class</span>
+<span class="sd">        It has to be overriden for each distribution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+
+
+    <span class="k">def</span> <span class="nf">_quantile_notTruncated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dps</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-6</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the quantile for the non truncated distribution</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        q : float</span>
+<span class="sd">            quantile you want to compute. Between 0 and 1</span>
+
+<span class="sd">        tol : float</span>
+<span class="sd">            precision for the output</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        x : float</span>
+<span class="sd">            x such that P(X &lt; x) = q</span>
+
+<span class="sd">        WARNING : This method is deprecated if not overriden. It can be</span>
+<span class="sd">        very slow</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;Deprecated to use the general quantile_notTruncated </span>
+<span class="s2">        method : it should be overrriden&quot;&quot;&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dps</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">cdf_notTruncated</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dps</span><span class="p">)</span>
+
+        <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.e8</span><span class="p">,</span> <span class="mf">1.e8</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">find_root</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x</span>
+
+
+
+<div class="viewcode-block" id="truncated.rvs"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.base.html#selectinf.truncated.F.truncated.rvs">[docs]</a>    <span class="k">def</span> <span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sample a random variable from the truncated disribution</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        size : int</span>
+<span class="sd">           Number of samples. Default : 1</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X : np.array</span>
+<span class="sd">            array of sample</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_quantile_notTruncated&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span> \
+                <span class="sd">&quot;&quot;&quot;The &#39;quantile_notTruncated&#39; method </span>
+<span class="sd">                should be implemented in order to use the truncated </span>
+<span class="sd">                rvs method&quot;&quot;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">U</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">X</span></div>
+
+
+<div class="viewcode-block" id="truncated.sf"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.base.html#selectinf.truncated.F.truncated.sf">[docs]</a>    <span class="k">def</span> <span class="nf">sf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the survival function of the truncated distribution</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z : float</span>
+<span class="sd">            Minimum bound of the interval</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sf : float</span>
+<span class="sd">            The survival function of the truncated distribution</span>
+<span class="sd">            sf(z) = P( X &gt; z | X is in intervals )</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">intervals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span>
+        <span class="n">Q</span><span class="p">,</span> <span class="n">sumQ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Q</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sumQ</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+        <span class="n">dps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dps</span>
+
+        <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>  <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span> <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="n">z</span><span class="p">)</span>
+
+        <span class="n">sf</span> <span class="o">=</span> <span class="n">fsum</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cdf_notTruncated</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="n">b</span><span class="p">,</span> <span class="n">dps</span><span class="p">)</span>
+        <span class="n">sf</span> <span class="o">/=</span> <span class="n">sumQ</span>
+            
+        <span class="k">return</span> <span class="n">sf</span></div>
+
+
+<div class="viewcode-block" id="truncated.cdf"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.base.html#selectinf.truncated.F.truncated.cdf">[docs]</a>    <span class="k">def</span> <span class="nf">cdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the survival function of the truncated distribution</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z : float</span>
+<span class="sd">            Minimum bound of the interval</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cdf : float</span>
+<span class="sd">            function  The cumulative distribution function of the </span>
+<span class="sd">            truncated distribution</span>
+<span class="sd">            cdf(z) = P( X &lt; z | X is in intervals )</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        WARNING : This method only use the sf method : it is never going to be </span>
+<span class="sd">        more precise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cdf</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cdf</span></div>
+
+
+<div class="viewcode-block" id="truncated.pdf"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.base.html#selectinf.truncated.F.truncated.pdf">[docs]</a>    <span class="k">def</span> <span class="nf">pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the probability distribution funtion of the</span>
+<span class="sd">        truncated distribution</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z : float</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            p(z) such that E[f(X)] = \int f(z)p(z)dz</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_pdf_notTruncated&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span> \
+                <span class="sd">&quot;&quot;&quot;The &#39;pdf_notTruncated&#39; </span>
+<span class="sd">                should be implemented in order to use the truncated </span>
+<span class="sd">                pdf method&quot;&quot;&quot;</span>
+            <span class="p">)</span>
+       
+        <span class="n">intervals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span>
+        <span class="n">dps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dps</span>
+
+        <span class="k">if</span> <span class="n">intervals</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pdf_notTruncated</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">dps</span><span class="p">)</span>
+            <span class="n">p</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sumQ</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">p</span></div>
+
+<div class="viewcode-block" id="truncated.quantile"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.base.html#selectinf.truncated.F.truncated.quantile">[docs]</a>    <span class="k">def</span> <span class="nf">quantile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-6</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_quantile_notTruncated&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span> \
+                <span class="sd">&quot;&quot;&quot;The &#39;quantile_notTruncated&#39; method </span>
+<span class="sd">                should be implemented in order to use the truncated </span>
+<span class="sd">                quantile method&quot;&quot;&quot;</span>
+            <span class="p">)</span>
+
+
+        <span class="n">Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Q</span>
+        <span class="n">sumQ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sumQ</span>
+        <span class="n">intervals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intervals</span>
+        <span class="n">dps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dps</span>
+        
+        <span class="n">cum_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span> <span class="n">Q</span> <span class="p">)</span>
+
+
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cum_sum</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="n">q</span><span class="o">*</span><span class="n">sumQ</span> <span class="p">)</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        
+        <span class="n">q_notTruncated</span> <span class="o">=</span> <span class="n">q</span><span class="o">*</span><span class="n">sumQ</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cdf_notTruncated</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">dps</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">q_notTruncated</span> <span class="o">-=</span> <span class="n">cum_sum</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">q_notTruncated</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q_notTruncated</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quantile_notTruncated</span><span class="p">(</span><span class="n">q_notTruncated</span><span class="p">,</span> <span class="n">tol</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">z</span></div></div>
+
+<div class="viewcode-block" id="find_root"><a class="viewcode-back" href="../../../api/generated/selectinf.truncated.base.html#selectinf.truncated.F.find_root">[docs]</a><span class="k">def</span> <span class="nf">find_root</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    searches for solution to f(x) = y in (lb, ub), where </span>
+<span class="sd">    f is a monotone decreasing function</span>
+<span class="sd">    &quot;&quot;&quot;</span>       
+    
+    <span class="c1"># make sure solution is in range</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span>   <span class="o">=</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span>
+    <span class="n">fa</span><span class="p">,</span> <span class="n">fb</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    
+    <span class="c1"># assume a &lt; b</span>
+    <span class="k">if</span> <span class="n">fa</span> <span class="o">&gt;</span> <span class="n">y</span> <span class="ow">and</span> <span class="n">fb</span> <span class="o">&gt;</span> <span class="n">y</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">fb</span> <span class="o">&gt;</span> <span class="n">y</span> <span class="p">:</span> 
+            <span class="n">b</span><span class="p">,</span> <span class="n">fb</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">fa</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="ow">and</span> <span class="n">fb</span> <span class="o">&lt;</span> <span class="n">y</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">fa</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="p">:</span> 
+            <span class="n">a</span><span class="p">,</span> <span class="n">fa</span> <span class="o">=</span> <span class="n">a</span> <span class="o">-</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">),</span> <span class="n">f</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">))</span>
+    
+    
+    <span class="c1"># determine the necessary number of iterations</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">max_iter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tol</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OverflowError</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;root finding failed, returning np.nan&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        
+
+    <span class="c1"># bisect (slow but sure) until solution is obtained</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">c</span><span class="p">,</span> <span class="n">fc</span>  <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">f</span><span class="p">((</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fc</span> <span class="o">&gt;</span> <span class="n">y</span><span class="p">:</span> <span class="n">a</span> <span class="o">=</span> <span class="n">c</span>
+            <span class="k">elif</span> <span class="n">fc</span> <span class="o">&lt;</span> <span class="n">y</span><span class="p">:</span> <span class="n">b</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="k">except</span> <span class="ne">OverflowError</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;root finding failed, returning np.nan&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="k">return</span> <span class="n">c</span></div>
+        
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

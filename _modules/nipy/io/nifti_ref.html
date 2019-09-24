@@ -1,0 +1,824 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.io.nifti_ref</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">An implementation of some of the NIFTI conventions as desribed in:</span>
+
+<span class="sd">http://nifti.nimh.nih.gov/pub/dist/src/niftilib/nifti1.h</span>
+
+<span class="sd">A version of the same file is in the nibabel repisitory at</span>
+<span class="sd">``doc/source/external/nifti1.h``.</span>
+
+<span class="sd">Background</span>
+<span class="sd">==========</span>
+
+<span class="sd">We (nipystas) make an explicit distinction between:</span>
+
+<span class="sd">* an input coordinate system of an image (the array == voxel coordinates)</span>
+<span class="sd">* output coordinate system (usually millimeters in some world for space, seconds</span>
+<span class="sd">  for time)</span>
+<span class="sd">* the mapping between the two.</span>
+
+<span class="sd">The collection of these three is the ``coordmap`` attribute of a NIPY image.</span>
+
+<span class="sd">There is no constraint that the number of input and output coordinates should be</span>
+<span class="sd">the same.</span>
+
+<span class="sd">We don&#39;t specify the units of our output coordinate system, but assume spatial</span>
+<span class="sd">units are millimeters and time units are seconds.</span>
+
+<span class="sd">NIFTI is mostly less explicit, but more constrained.</span>
+
+<span class="sd">NIFTI input coordinate system</span>
+<span class="sd">-----------------------------</span>
+
+<span class="sd">NIFTI files can have up to seven voxel dimensions (7 axes in the input</span>
+<span class="sd">coordinate system).</span>
+
+<span class="sd">The first 3 voxel dimensions of a NIFTI file must be spatial but can be in any</span>
+<span class="sd">order in relationship to directions in mm space (the output coordinate system)</span>
+
+<span class="sd">The 4th voxel dimension is assumed to be time.  In particular, if you have some</span>
+<span class="sd">other meaning for a non-spatial dimension, the NIFTI standard suggests you set</span>
+<span class="sd">the length of the 4th dimension to be 1, and use the 5th dimension of the image</span>
+<span class="sd">instead, and set the NIFTI &quot;intent&quot; fields to state the meaning. If the</span>
+<span class="sd">``intent`` field is set correctly then it should be possible to set meaningful</span>
+<span class="sd">input coordinate axis names for dimensions &gt; (0, 1, 2).</span>
+
+<span class="sd">There&#39;s a wrinkle to the 4th axis is time story; the ``xyxt_units`` field in the</span>
+<span class="sd">NIFTI header can specify the 4th dimension units as Hz (frequency), PPM</span>
+<span class="sd">(concentration) or Radians / second.</span>
+
+<span class="sd">NIFTI also has a &#39;dim_info&#39; header attribute that optionally specifies that 0 or</span>
+<span class="sd">more of the first three voxel axes are &#39;frequency&#39;, &#39;phase&#39; or &#39;slice&#39;.  These</span>
+<span class="sd">terms refer to 2D MRI acquisition encoding, where &#39;slice&#39;s are collected</span>
+<span class="sd">sequentially, and the two remaining dimensions arose from frequency and phase</span>
+<span class="sd">encoding.  The ``dim_info`` fields are often not set.  3D acquisitions don&#39;t have</span>
+<span class="sd">a &#39;slice&#39; dimension.</span>
+
+<span class="sd">NIFTI output coordinate system</span>
+<span class="sd">------------------------------</span>
+
+<span class="sd">In the NIFTI specification, the order of the output coordinates (at least the</span>
+<span class="sd">first 3) are fixed to be what might be called RAS+, that is (&#39;x=L-&gt;R&#39;, &#39;y=P-&gt;A&#39;,</span>
+<span class="sd">&#39;z=I-&gt;S&#39;). This RAS+ output order is not allowed to change and there is no way of</span>
+<span class="sd">specifying such a change in the NIFTI header.</span>
+
+<span class="sd">The world in which these RAS+ X, Y, Z axes exist can be one of the recognized</span>
+<span class="sd">spaces, which are: scanner, aligned (to another file&#39;s world space), Talairach,</span>
+<span class="sd">MNI 152 (aligned to the MNI 152 atlas).</span>
+
+<span class="sd">By implication, the 4th output dimension is likely to be seconds (given the 4th</span>
+<span class="sd">input dimension is likely time), but there&#39;s a field ``xyzt_units`` (see above)</span>
+<span class="sd">that can be used to imply the 4th output dimension is actually frequency,</span>
+<span class="sd">concentration or angular velocity.</span>
+
+<span class="sd">NIFTI input / output mapping</span>
+<span class="sd">----------------------------</span>
+
+<span class="sd">NIFTI stores the relationship between the first 3 (spatial) voxel axes and the</span>
+<span class="sd">RAS+ coordinates in an *XYZ affine*.  This is a homogenous coordinate affine,</span>
+<span class="sd">hence 4 by 4 for 3 (spatial) dimensions.</span>
+
+<span class="sd">NIFTI also stores &quot;pixel dimensions&quot; in a ``pixdim`` field. This can give you</span>
+<span class="sd">scaling for individual axes.  We ignore the values of ``pixdim`` for the first 3</span>
+<span class="sd">axes if we have a full (&quot;sform&quot;) affine stored in the header, otherwise they</span>
+<span class="sd">form part of the affine above.  ``pixdim``[3:] provide voxel to output scalings</span>
+<span class="sd">for later axes.  The units for the 4th dimension can come from ``xyzt_units`` as</span>
+<span class="sd">above.</span>
+
+<span class="sd">We take the convention that the output coordinate names are (&#39;x=L-&gt;R&#39;, &#39;y=P-&gt;A&#39;,</span>
+<span class="sd">&#39;z=I-&gt;S&#39;,&#39;t&#39;,&#39;u&#39;,&#39;v&#39;,&#39;w&#39;) unless there is no time axis (see below) in which case</span>
+<span class="sd">we just omit &#39;t&#39;.  The first 3 axes are also named after the output space</span>
+<span class="sd">(&#39;scanner-x=L-&gt;R&#39;, &#39;mni-x=L-R&#39; etc).</span>
+
+<span class="sd">The input axes are &#39;ijktuvw&#39; unless there is no time axis (see below), in which</span>
+<span class="sd">case they are &#39;ijkuvw&#39; (remember, NIFTI only allows 7 dimensions, and one is</span>
+<span class="sd">used up by the time length 1 axis).</span>
+
+<span class="sd">Time-like axes</span>
+<span class="sd">--------------</span>
+
+<span class="sd">A time-like axis is an axis that is any of time, Hz, PPM or radians / second.</span>
+
+<span class="sd">We recognize time in a NIPY coordinate map by an input or an output axis named</span>
+<span class="sd">&#39;t&#39; or &#39;time&#39;.  If it&#39;s an output axis we work out the corresponding input axis.</span>
+
+<span class="sd">A Hz axis can be called &#39;hz&#39; or &#39;frequency-hz&#39;.</span>
+
+<span class="sd">A PPM axis can be called &#39;ppm&#39; or &#39;concentration-ppm&#39;.</span>
+
+<span class="sd">A radians / second axis can be called &#39;rads&#39; or &#39;radians/s&#39;.</span>
+
+<span class="sd">Does this NIFTI image have a time-like axis?</span>
+<span class="sd">--------------------------------------------</span>
+
+<span class="sd">We take there to be no time axis if there are only three NIFTI dimensions, or</span>
+<span class="sd">if:</span>
+
+<span class="sd">* the length of the fourth NIFTI dimension is 1 AND</span>
+<span class="sd">* There are more than four dimensions AND</span>
+<span class="sd">* The ``xyzt_units`` field does not indicate time or time-like units.</span>
+
+<span class="sd">What we do about all this</span>
+<span class="sd">=========================</span>
+
+<span class="sd">For saving a NIPY image to NIFTI, see the docstring for :func:`nipy2nifti`.</span>
+<span class="sd">For loading a NIFTI image to NIPY, see the docstring for :func:`nifti2nipy`.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">nibabel</span> <span class="k">as</span> <span class="nn">nib</span>
+<span class="kn">from</span> <span class="nn">nibabel.affines</span> <span class="k">import</span> <span class="n">to_matvec</span><span class="p">,</span> <span class="n">from_matvec</span>
+
+<span class="kn">from</span> <span class="nn">..core.reference.coordinate_system</span> <span class="k">import</span> <span class="n">CoordinateSystem</span> <span class="k">as</span> <span class="n">CS</span>
+<span class="kn">from</span> <span class="nn">..core.reference.coordinate_map</span> <span class="k">import</span> <span class="p">(</span><span class="n">AffineTransform</span> <span class="k">as</span> <span class="n">AT</span><span class="p">,</span>
+                                             <span class="n">axmap</span><span class="p">,</span>
+                                             <span class="n">product</span> <span class="k">as</span> <span class="n">cm_product</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..core.reference</span> <span class="k">import</span> <span class="n">spaces</span> <span class="k">as</span> <span class="n">ncrs</span>
+<span class="kn">from</span> <span class="nn">..core.image.image</span> <span class="k">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">..core.image.image_spaces</span> <span class="k">import</span> <span class="n">as_xyz_image</span>
+
+<span class="kn">from</span> <span class="nn">.nibcompat</span> <span class="k">import</span> <span class="n">get_header</span><span class="p">,</span> <span class="n">get_affine</span>
+
+
+<span class="n">XFORM2SPACE</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;scanner&#39;</span><span class="p">:</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">scanner_space</span><span class="p">,</span>
+               <span class="s1">&#39;aligned&#39;</span><span class="p">:</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">aligned_space</span><span class="p">,</span>
+               <span class="s1">&#39;talairach&#39;</span><span class="p">:</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">talairach_space</span><span class="p">,</span>
+               <span class="s1">&#39;mni&#39;</span><span class="p">:</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">mni_space</span><span class="p">}</span>
+
+<span class="n">TIME_LIKE_AXES</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">aliases</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">,),</span>
+             <span class="n">units</span><span class="o">=</span><span class="s1">&#39;sec&#39;</span><span class="p">),</span>
+    <span class="n">hz</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">aliases</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;frequency-hz&#39;</span><span class="p">,),</span>
+              <span class="n">units</span><span class="o">=</span><span class="s1">&#39;hz&#39;</span><span class="p">),</span>
+    <span class="n">ppm</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">aliases</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;concentration-ppm&#39;</span><span class="p">,),</span>
+               <span class="n">units</span><span class="o">=</span><span class="s1">&#39;ppm&#39;</span><span class="p">),</span>
+    <span class="n">rads</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">aliases</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;radians/s&#39;</span><span class="p">,),</span>
+                <span class="n">units</span><span class="o">=</span><span class="s1">&#39;rads&#39;</span><span class="p">))</span>
+
+<span class="n">TIME_LIKE_MAP</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">_name</span><span class="p">,</span> <span class="n">_info</span> <span class="ow">in</span> <span class="n">TIME_LIKE_AXES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">_alias</span> <span class="ow">in</span> <span class="p">(</span><span class="n">_name</span><span class="p">,)</span> <span class="o">+</span> <span class="n">_info</span><span class="p">[</span><span class="s1">&#39;aliases&#39;</span><span class="p">]:</span>
+        <span class="n">TIME_LIKE_MAP</span><span class="p">[</span><span class="n">_alias</span><span class="p">]</span> <span class="o">=</span> <span class="n">_name</span>
+
+<span class="n">TIME_LIKE_ORDERED</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;hz&#39;</span><span class="p">,</span> <span class="s1">&#39;ppm&#39;</span><span class="p">,</span> <span class="s1">&#39;rads&#39;</span><span class="p">)</span>
+
+<span class="c1"># Threshold for near-zero affine values</span>
+<span class="n">TINY</span> <span class="o">=</span> <span class="mf">1e-5</span>
+
+
+<div class="viewcode-block" id="NiftiError"><a class="viewcode-back" href="../../../api/generated/nipy.io.nifti_ref.html#nipy.io.nifti_ref.NiftiError">[docs]</a><span class="k">class</span> <span class="nc">NiftiError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="nipy2nifti"><a class="viewcode-back" href="../../../api/generated/nipy.io.nifti_ref.html#nipy.io.nifti_ref.nipy2nifti">[docs]</a><span class="k">def</span> <span class="nf">nipy2nifti</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">data_dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fix0</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return NIFTI image from nipy image `img`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : object</span>
+<span class="sd">         An object, usually a NIPY ``Image``,  having attributes `coordmap` and</span>
+<span class="sd">         `shape`</span>
+<span class="sd">    data_dtype : None or dtype specifier</span>
+<span class="sd">        None means try and use header dtype, otherwise try and use data dtype,</span>
+<span class="sd">        otherwise use np.float32.  A dtype specifier means set the header output</span>
+<span class="sd">        data dtype using ``np.dtype(data_dtype)``.</span>
+<span class="sd">    strict : bool, optional</span>
+<span class="sd">        Whether to use strict checking of input image for creating NIFTI</span>
+<span class="sd">    fix0: bool, optional</span>
+<span class="sd">        Whether to fix potential 0 column / row in affine. This option only used</span>
+<span class="sd">        when trying to find time etc axes in the coordmap output names.  In</span>
+<span class="sd">        order to find matching input names, we need to use the corresponding</span>
+<span class="sd">        rows and columns in the affine.  Sometimes time, in particular, has 0</span>
+<span class="sd">        scaling, and thus all 0 in the corresponding row / column.  In that case</span>
+<span class="sd">        it&#39;s hard to work out which input corresponds. If `fix0` is True, and</span>
+<span class="sd">        there is only one all zero (matrix part of the) affine row, and only one</span>
+<span class="sd">        all zero (matrix part of the) affine column, fix scaling for that</span>
+<span class="sd">        combination to zero, assuming this a zero scaling for time.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ni_img : ``nibabel.Nifti1Image``</span>
+<span class="sd">        NIFTI image</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NiftiError: if space axes not orthogonal to non-space axes</span>
+<span class="sd">    NiftiError: if non-space axes not orthogonal to each other</span>
+<span class="sd">    NiftiError: if `img` output space does not match named spaces in NIFTI</span>
+<span class="sd">    NiftiError: if input image has more than 7 dimensions</span>
+<span class="sd">    NiftiError: if input image has 7 dimensions, but no time dimension, because</span>
+<span class="sd">        we need to add an extra 1 length axis at position 3</span>
+<span class="sd">    NiftiError: if we find a time-like input axis but the matching output axis</span>
+<span class="sd">        is a different time-like.</span>
+<span class="sd">    NiftiError: if we find a time-like output axis but the matching input axis</span>
+<span class="sd">        is a different time-like.</span>
+<span class="sd">    NiftiError: if we find a time output axis and there are non-zero non-spatial</span>
+<span class="sd">        offsets in the affine, but we can&#39;t find a corresponding input axis.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    First, we need to create a valid XYZ Affine.  We check if this can be done</span>
+<span class="sd">    by checking if there are recognizable X, Y, Z output axes and corresponding</span>
+<span class="sd">    input (voxel) axes.  This requires the input image to be at least 3D. If we</span>
+<span class="sd">    find these requirements, we reorder the image axes to have XYZ output axes</span>
+<span class="sd">    and 3 spatial input axes first, and get the corresponding XYZ affine.</span>
+
+<span class="sd">    If the spatial dimensions are not orthogonal to the non-spatial dimensions,</span>
+<span class="sd">    raise a NiftiError.</span>
+
+<span class="sd">    If the non-spatial dimensions are not orthogonal to each other, raise a</span>
+<span class="sd">    NiftiError.</span>
+
+<span class="sd">    We check if the XYZ output fits with the NIFTI named spaces of scanner,</span>
+<span class="sd">    aligned, Talairach, MNI.  If so, set the NIFTI code and qform, sform</span>
+<span class="sd">    accordingly.  If the space corresponds to &#39;unknown&#39; then we must set the</span>
+<span class="sd">    NIFTI transform codes to 0, and the affine must match the affine we will get</span>
+<span class="sd">    from loading the NIFTI with no qform, sform.  If not, we&#39;re going to lose</span>
+<span class="sd">    information in the affine, and raise an error.</span>
+
+<span class="sd">    If any of the first three input axes are named (&#39;slice&#39;, &#39;freq&#39;, &#39;phase&#39;)</span>
+<span class="sd">    set the ``dim_info`` field accordingly.</span>
+
+<span class="sd">    Set the ``xyzt_units`` field to indicate millimeters and seconds, if there</span>
+<span class="sd">    is a &#39;t&#39; axis, otherwise millimeters and 0 (unknown).</span>
+
+<span class="sd">    We look to see if we have a time-like axis in the inputs or the outputs. A</span>
+<span class="sd">    time-like axis has labels &#39;t&#39;, &#39;hz&#39;, &#39;ppm&#39;, &#39;rads&#39;.  If we have an axis &#39;t&#39;</span>
+<span class="sd">    in the inputs *and* the outputs, check they either correspond, or both</span>
+<span class="sd">    inputs and output correspond with no other axis, otherwise raise NiftiError.</span>
+<span class="sd">    Do the same check for &#39;hz&#39;, then &#39;ppm&#39;, then &#39;rads&#39;.</span>
+
+<span class="sd">    If we do have a time-like axis, roll that axis to be the 4th axis.  If this</span>
+<span class="sd">    axis is actually time, take the ``affine[3, -1]`` and put into the</span>
+<span class="sd">    ``toffset`` field.  If there&#39;s no time-like axis, but there are other</span>
+<span class="sd">    non-spatial axes, make a length 1 4th array axis to indicate this.</span>
+
+<span class="sd">    If the resulting NIFTI image has more than 7 dimensions, raise a NiftiError.</span>
+
+<span class="sd">    Set ``pixdim`` for axes &gt;= 3 using vector length of corresponding affine</span>
+<span class="sd">    columns.</span>
+
+<span class="sd">    We don&#39;t set the intent-related fields for now.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">strict_none</span> <span class="o">=</span> <span class="n">strict</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">strict_none</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Default `strict` currently False; this will change to &#39;</span>
+                      <span class="s1">&#39;True in a future version of nipy&#39;</span><span class="p">,</span>
+                      <span class="ne">FutureWarning</span><span class="p">,</span>
+                      <span class="n">stacklevel</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">strict</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">known_names</span> <span class="o">=</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">known_names</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">strict</span><span class="p">:</span> <span class="c1"># add simple &#39;xyz&#39; to acceptable spatial names</span>
+        <span class="n">known_names</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">known_names</span><span class="p">)</span> <span class="c1"># copy module global dict</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="s1">&#39;xyz&#39;</span><span class="p">:</span>
+            <span class="n">known_names</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">as_xyz_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">known_names</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">ncrs</span><span class="o">.</span><span class="n">AxesError</span><span class="p">,</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">AffineError</span><span class="p">):</span>
+        <span class="c1"># Python 2.5 / 3 compatibility</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s1">&#39;Image cannot be reordered to XYZ because: &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                         <span class="o">%</span> <span class="n">e</span><span class="p">)</span>
+    <span class="n">coordmap</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">coordmap</span>
+    <span class="c1"># Get useful information from old header</span>
+    <span class="n">in_hdr</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;header&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">hdr</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">Nifti1Header</span><span class="o">.</span><span class="n">from_header</span><span class="p">(</span><span class="n">in_hdr</span><span class="p">)</span>
+    <span class="c1"># Default behavior is to take datatype from old header, unless there was no</span>
+    <span class="c1"># header, in which case we try to use the data dtype.</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">data_dtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">in_hdr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+            <span class="n">data_dtype</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data_dtype</span> <span class="o">=</span> <span class="n">in_hdr</span><span class="o">.</span><span class="n">get_data_dtype</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">data_dtype</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set_data_dtype</span><span class="p">(</span><span class="n">data_dtype</span><span class="p">)</span>
+    <span class="c1"># Remaining axes orthogonal?</span>
+    <span class="n">rzs</span><span class="p">,</span> <span class="n">trans</span> <span class="o">=</span> <span class="n">to_matvec</span><span class="p">(</span><span class="n">coordmap</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">rzs</span><span class="p">[</span><span class="mi">3</span><span class="p">:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span>
+        <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">rzs</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">:],</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s1">&#39;Non space axes not orthogonal to space&#39;</span><span class="p">)</span>
+    <span class="c1"># And to each other?</span>
+    <span class="n">nsp_affine</span> <span class="o">=</span> <span class="n">rzs</span><span class="p">[</span><span class="mi">3</span><span class="p">:,</span><span class="mi">3</span><span class="p">:]</span>
+    <span class="n">nsp_nzs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">nsp_affine</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">TINY</span>
+    <span class="n">n_in_col</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nsp_nzs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">n_in_row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nsp_nzs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">n_in_col</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">n_in_row</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s1">&#39;Non space axes not orthogonal to each other&#39;</span><span class="p">)</span>
+    <span class="c1"># Affine seems OK, check for space</span>
+    <span class="n">xyz_affine</span> <span class="o">=</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">xyz_affine</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">known_names</span><span class="p">)</span>
+    <span class="n">spatial_output_names</span> <span class="o">=</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">function_range</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">out_space</span> <span class="o">=</span> <span class="n">CS</span><span class="p">(</span><span class="n">spatial_output_names</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">space</span> <span class="ow">in</span> <span class="n">XFORM2SPACE</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">out_space</span> <span class="ow">in</span> <span class="n">space</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">xyz_affine</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_qform</span><span class="p">(</span><span class="n">xyz_affine</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">break</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">strict</span> <span class="ow">and</span> <span class="n">spatial_output_names</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Default `strict` currently False; &#39;</span>
+                          <span class="s1">&#39;this will change to True in a future version of &#39;</span>
+                          <span class="s1">&#39;nipy; output names of &quot;x&quot;, &quot;y&quot;, &quot;z&quot; will raise &#39;</span>
+                          <span class="s1">&#39;an error.  Please use canonical output names from &#39;</span>
+                          <span class="s1">&#39;nipy.core.reference.spaces&#39;</span><span class="p">,</span>
+                          <span class="ne">FutureWarning</span><span class="p">,</span>
+                          <span class="n">stacklevel</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">xyz_affine</span><span class="p">,</span> <span class="s1">&#39;scanner&#39;</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_qform</span><span class="p">(</span><span class="n">xyz_affine</span><span class="p">,</span> <span class="s1">&#39;scanner&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">out_space</span> <span class="ow">in</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">unknown_space</span><span class="p">:</span> <span class="c1"># no space we recognize</span>
+            <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s1">&#39;Image world not a NIFTI world&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># unknown space requires affine that matches</span>
+            <span class="c1"># Set guessed shape to set zooms correctly</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_data_shape</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="c1"># Use qform set to set the zooms, but with &#39;unknown&#39; code</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_qform</span><span class="p">(</span><span class="n">xyz_affine</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">xyz_affine</span><span class="p">,</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_base_affine</span><span class="p">()):</span>
+                <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s2">&quot;Image world is &#39;unknown&#39; but affine not &quot;</span>
+                                 <span class="s2">&quot;compatible; please reset image world or &quot;</span>
+                                 <span class="s2">&quot;affine&quot;</span><span class="p">)</span>
+    <span class="c1"># Use list() to get .index method for python &lt; 2.6</span>
+    <span class="n">input_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">)</span>
+    <span class="n">spatial_names</span> <span class="o">=</span> <span class="n">input_names</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">dim_infos</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fps</span> <span class="ow">in</span> <span class="s1">&#39;freq&#39;</span><span class="p">,</span> <span class="s1">&#39;phase&#39;</span><span class="p">,</span> <span class="s1">&#39;slice&#39;</span><span class="p">:</span>
+        <span class="n">dim_infos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">spatial_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">fps</span><span class="p">)</span> <span class="k">if</span> <span class="n">fps</span> <span class="ow">in</span> <span class="n">spatial_names</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set_dim_info</span><span class="p">(</span><span class="o">*</span><span class="n">dim_infos</span><span class="p">)</span>
+    <span class="c1"># Set units without knowing time</span>
+    <span class="n">hdr</span><span class="o">.</span><span class="n">set_xyzt_units</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="s1">&#39;mm&#39;</span><span class="p">)</span>
+    <span class="c1"># Done if we only have 3 input dimensions</span>
+    <span class="n">n_ns</span> <span class="o">=</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">3</span>
+    <span class="k">if</span> <span class="n">n_ns</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># No non-spatial dimensions</span>
+        <span class="k">return</span> <span class="n">nib</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">xyz_affine</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n_ns</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s2">&quot;Too many dimensions to convert&quot;</span><span class="p">)</span>
+    <span class="c1"># Go now to data, pixdims</span>
+    <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="n">rzs</span><span class="p">,</span> <span class="n">trans</span> <span class="o">=</span> <span class="n">to_matvec</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+    <span class="n">ns_pixdims</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rzs</span><span class="p">[</span><span class="mi">3</span><span class="p">:,</span> <span class="mi">3</span><span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span>
+    <span class="n">in_ax</span><span class="p">,</span> <span class="n">out_ax</span><span class="p">,</span> <span class="n">tl_name</span> <span class="o">=</span> <span class="n">_find_time_like</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">fix0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">in_ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># No time-like axes</span>
+        <span class="c1"># add new 1-length axis</span>
+        <span class="k">if</span> <span class="n">n_ns</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s2">&quot;Too many dimensions to convert&quot;</span><span class="p">)</span>
+        <span class="n">n_ns</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+        <span class="c1"># xyzt_units</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">set_xyzt_units</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="s1">&#39;mm&#39;</span><span class="p">)</span>
+        <span class="c1"># shift pixdims</span>
+        <span class="n">ns_pixdims</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># Time-like</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">set_xyzt_units</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="s1">&#39;mm&#39;</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">TIME_LIKE_AXES</span><span class="p">[</span><span class="n">tl_name</span><span class="p">][</span><span class="s1">&#39;units&#39;</span><span class="p">])</span>
+        <span class="c1"># If this is really time, set toffset</span>
+        <span class="k">if</span> <span class="n">tl_name</span> <span class="o">==</span> <span class="s1">&#39;t&#39;</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">trans</span><span class="p">[</span><span class="mi">3</span><span class="p">:]):</span>
+            <span class="c1"># Which output axis corresponds to time?</span>
+            <span class="k">if</span> <span class="n">out_ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s1">&#39;Time input and output do not match&#39;</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="p">[</span><span class="s1">&#39;toffset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trans</span><span class="p">[</span><span class="n">out_ax</span><span class="p">]</span>
+        <span class="c1"># Make sure this time-like axis is first non-space axis</span>
+        <span class="k">if</span> <span class="n">in_ax</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">in_ax</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_ns</span><span class="p">))</span>
+            <span class="n">order</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">in_ax</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">order</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">in_ax</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">ns_pixdims</span> <span class="o">=</span> <span class="p">[</span><span class="n">ns_pixdims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+    <span class="n">hdr</span><span class="p">[</span><span class="s1">&#39;pixdim&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">:(</span><span class="mi">4</span> <span class="o">+</span> <span class="n">n_ns</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ns_pixdims</span>
+    <span class="k">return</span> <span class="n">nib</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xyz_affine</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_find_time_like</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">fix0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return input axis corresponding to best time-like axis</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coordmap : AffineTransform</span>
+<span class="sd">    fix0 : bool</span>
+<span class="sd">        True if we use zero column, zero row heuristic to match time input and</span>
+<span class="sd">        output axes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    in_ax : int or None</span>
+<span class="sd">        None if there was no time-like axis that could be mapped to an input,</span>
+<span class="sd">        otherwise the input axis index.</span>
+<span class="sd">    out_ax : int or None</span>
+<span class="sd">        None if there was no time-like axis that could be mapped to an input,</span>
+<span class="sd">        otherwise the input axis index.</span>
+<span class="sd">    tl_name: str or None:</span>
+<span class="sd">        None if there was no time-like axis that could be mapped to an input,</span>
+<span class="sd">        otherwise the canonical name of this time-like.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">non_space_inames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+    <span class="n">non_space_onames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_range</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+    <span class="c1"># Make time-like names canonical, set to None elsewhere</span>
+    <span class="k">for</span> <span class="n">ax_names</span> <span class="ow">in</span> <span class="p">[</span><span class="n">non_space_inames</span><span class="p">,</span> <span class="n">non_space_onames</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">ax_no</span><span class="p">,</span> <span class="n">ax_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ax_names</span><span class="p">):</span>
+            <span class="n">ax_names</span><span class="p">[</span><span class="n">ax_no</span><span class="p">]</span> <span class="o">=</span> <span class="n">TIME_LIKE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ax_name</span><span class="p">)</span>
+    <span class="c1"># Find best time in axis, check correspondence</span>
+    <span class="n">in2out</span><span class="p">,</span> <span class="n">out2in</span> <span class="o">=</span> <span class="n">axmap</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">fix0</span><span class="p">)</span>
+    <span class="n">in_ax</span><span class="p">,</span> <span class="n">out_ax</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">TIME_LIKE_ORDERED</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">non_space_inames</span><span class="p">:</span>
+            <span class="n">in_ax</span> <span class="o">=</span> <span class="n">non_space_inames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span>
+            <span class="n">corr_out</span> <span class="o">=</span> <span class="n">in2out</span><span class="p">[</span><span class="n">in_ax</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">non_space_onames</span><span class="p">:</span> <span class="c1"># in both - matching?</span>
+                <span class="n">same_time_out</span> <span class="o">=</span> <span class="n">non_space_onames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span>
+                <span class="n">corr_in</span> <span class="o">=</span> <span class="n">out2in</span><span class="p">[</span><span class="n">same_time_out</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">corr_out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">corr_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s2">&quot;Axis type &#39;</span><span class="si">%s</span><span class="s2">&#39; found in input and &quot;</span>
+                                         <span class="s2">&quot;output but they do not appear to &quot;</span>
+                                         <span class="s2">&quot;match&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="n">in_ax</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">corr_out</span> <span class="o">!=</span> <span class="n">same_time_out</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s2">&quot;Axis type &#39;</span><span class="si">%s</span><span class="s2">&#39; found in input and &quot;</span>
+                                     <span class="s2">&quot;output but they do not appear to &quot;</span>
+                                     <span class="s2">&quot;match&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">in_ax</span><span class="p">,</span> <span class="n">corr_out</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="c1"># Name not in output, but is there another time-like name at this</span>
+            <span class="c1"># output position?</span>
+            <span class="n">matching</span> <span class="o">=</span> <span class="n">non_space_onames</span><span class="p">[</span><span class="n">corr_out</span> <span class="o">-</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">matching</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">in_ax</span><span class="p">,</span> <span class="n">corr_out</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s2">&quot;Axis type &#39;</span><span class="si">%s</span><span class="s2">&#39; in input matches axis type &#39;</span><span class="si">%s</span><span class="s2">&#39; &quot;</span>
+                             <span class="s2">&quot;in output&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">matching</span><span class="p">))</span>
+        <span class="c1"># Now check in output names</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">non_space_onames</span><span class="p">:</span>
+            <span class="c1"># Found name in output axes, corresponding input?</span>
+            <span class="n">out_ax</span> <span class="o">=</span> <span class="n">non_space_onames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span>
+            <span class="n">in_ax</span> <span class="o">=</span> <span class="n">out2in</span><span class="p">[</span><span class="n">out_ax</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">in_ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># no corresponding axis</span>
+                <span class="k">continue</span>
+            <span class="n">matching</span> <span class="o">=</span> <span class="n">non_space_inames</span><span class="p">[</span><span class="n">in_ax</span> <span class="o">-</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">matching</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">in_ax</span><span class="p">,</span> <span class="n">out_ax</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s2">&quot;Axis type &#39;</span><span class="si">%s</span><span class="s2">&#39; in output matches axis type &quot;</span>
+                             <span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2">&#39; in input&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">matching</span><span class="p">))</span>
+    <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<span class="n">TIME_LIKE_UNITS</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">sec</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">scaling</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">msec</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">scaling</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">),</span>
+    <span class="n">usec</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">scaling</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">1000000.</span><span class="p">),</span>
+    <span class="n">hz</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hz&#39;</span><span class="p">,</span> <span class="n">scaling</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">ppm</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ppm&#39;</span><span class="p">,</span> <span class="n">scaling</span> <span class="o">=</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">rads</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;rads&#39;</span><span class="p">,</span> <span class="n">scaling</span> <span class="o">=</span> <span class="mi">1</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="nifti2nipy"><a class="viewcode-back" href="../../../api/generated/nipy.io.nifti_ref.html#nipy.io.nifti_ref.nifti2nipy">[docs]</a><span class="k">def</span> <span class="nf">nifti2nipy</span><span class="p">(</span><span class="n">ni_img</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return NIPY image from NIFTI image `ni_image`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ni_img : nibabel.Nifti1Image</span>
+<span class="sd">        NIFTI image</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    img : :class:`Image`</span>
+<span class="sd">        nipy image</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    NiftiError : if image is &lt; 3D</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Lacking any other information, we take the input coordinate names for</span>
+<span class="sd">    axes 0:7 to be  (&#39;i&#39;, &#39;j&#39;, &#39;k&#39;, &#39;t&#39;, &#39;u&#39;, &#39;v&#39;, &#39;w&#39;).</span>
+
+<span class="sd">    If the image is 1D or 2D then we have a problem.  If there&#39;s a defined</span>
+<span class="sd">    (sform, qform) affine, this has 3 input dimensions, and we have to guess</span>
+<span class="sd">    what the extra input dimensions are.  If we don&#39;t have a defined affine, we</span>
+<span class="sd">    don&#39;t know what the output dimensions are.  For example, if the image is 2D,</span>
+<span class="sd">    and we don&#39;t have an affine, are these X and Y or X and Z or Y and Z?</span>
+<span class="sd">    In the presence of ambiguity, resist the temptation to guess - raise a</span>
+<span class="sd">    NiftiError.</span>
+
+<span class="sd">    If there is a time-like axis, name the input and corresponding output axis</span>
+<span class="sd">    for the type of axis (&#39;t&#39;, &#39;hz&#39;, &#39;ppm&#39;, &#39;rads&#39;).</span>
+
+<span class="sd">    Otherwise remove the &#39;t&#39; axis from both input and output names, and squeeze</span>
+<span class="sd">    the length 1 dimension from the input data.</span>
+
+<span class="sd">    If there&#39;s a &#39;t&#39; axis get ``toffset`` and put into affine at position [3,</span>
+<span class="sd">    -1].</span>
+
+<span class="sd">    If ``dim_info`` is set coherently, set input axis names to &#39;slice&#39;, &#39;freq&#39;,</span>
+<span class="sd">    &#39;phase&#39; from ``dim_info``.</span>
+
+<span class="sd">    Get the output spatial coordinate names from the &#39;scanner&#39;, &#39;aligned&#39;,</span>
+<span class="sd">    &#39;talairach&#39;, &#39;mni&#39; XYZ spaces (see :mod:`nipy.core.reference.spaces`).</span>
+
+<span class="sd">    We construct the N-D affine by taking the XYZ affine and adding scaling</span>
+<span class="sd">    diagonal elements from ``pixdim``.</span>
+
+<span class="sd">    If the space units in NIFTI ``xyzt_units`` are &#39;microns&#39; or &#39;meters&#39; we</span>
+<span class="sd">    adjust the affine to mm units, but warn because this might be a mistake.</span>
+
+<span class="sd">    If the time units in NIFTI `xyzt_units` are &#39;msec&#39; or &#39;usec&#39;, scale the time</span>
+<span class="sd">    axis ``pixdim`` values accordingly.</span>
+
+<span class="sd">    Ignore the intent-related fields for now, but warn that we are doing so if</span>
+<span class="sd">    there appears to be specific information in there.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hdr</span> <span class="o">=</span> <span class="n">get_header</span><span class="p">(</span><span class="n">ni_img</span><span class="p">)</span>
+    <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">ni_img</span><span class="p">)</span>
+    <span class="c1"># Affine will not be None from a loaded image, but just in case</span>
+    <span class="k">if</span> <span class="n">affine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_best_affine</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">affine</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">ni_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ni_img</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NiftiError</span><span class="p">(</span><span class="s2">&quot;With less than 3 dimensions we cannot be sure &quot;</span>
+                         <span class="s2">&quot;which input and output dimensions you intend for &quot;</span>
+                         <span class="s2">&quot;the coordinate map.  Please fix this image with &quot;</span>
+                         <span class="s2">&quot;nibabel or some other tool&quot;</span><span class="p">)</span>
+    <span class="c1"># For now we only warn if intent is set to an unexpected value</span>
+    <span class="n">intent</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_intent</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">intent</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Ignoring intent field meaning &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">intent</span><span class="p">,</span>
+                        <span class="ne">UserWarning</span><span class="p">)</span>
+    <span class="c1"># Which space?</span>
+    <span class="n">world_label</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_value_label</span><span class="p">(</span><span class="s1">&#39;sform_code&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">world_label</span> <span class="o">==</span> <span class="s1">&#39;unknown&#39;</span><span class="p">:</span>
+        <span class="n">world_label</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_value_label</span><span class="p">(</span><span class="s1">&#39;qform_code&#39;</span><span class="p">)</span>
+    <span class="n">world_space</span> <span class="o">=</span> <span class="n">XFORM2SPACE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">world_label</span><span class="p">,</span> <span class="n">ncrs</span><span class="o">.</span><span class="n">unknown_space</span><span class="p">)</span>
+    <span class="c1"># Get information from dim_info</span>
+    <span class="n">input_names3</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="s1">&#39;ijk&#39;</span><span class="p">)</span>
+    <span class="n">freq</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="nb">slice</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_dim_info</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">freq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">input_names3</span><span class="p">[</span><span class="n">freq</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;freq&#39;</span>
+    <span class="k">if</span> <span class="n">phase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">input_names3</span><span class="p">[</span><span class="n">phase</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;phase&#39;</span>
+    <span class="k">if</span> <span class="nb">slice</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">input_names3</span><span class="p">[</span><span class="nb">slice</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;slice&#39;</span>
+    <span class="c1"># Add to mm scaling, with warning</span>
+    <span class="n">space_units</span><span class="p">,</span> <span class="n">time_like_units</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_xyzt_units</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">space_units</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;micron&#39;</span><span class="p">,</span> <span class="s1">&#39;meter&#39;</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot; space scaling in NIFTI ``xyt_units field; &#39;</span>
+                      <span class="s1">&#39;applying scaling to affine, but this may not be what &#39;</span>
+                      <span class="s1">&#39;you want&#39;</span> <span class="o">%</span> <span class="n">space_units</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">space_units</span> <span class="o">==</span> <span class="s1">&#39;micron&#39;</span><span class="p">:</span>
+            <span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">/=</span> <span class="mf">1000.</span>
+        <span class="k">elif</span> <span class="n">space_units</span> <span class="o">==</span> <span class="s1">&#39;meter&#39;</span><span class="p">:</span>
+            <span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">1000.</span>
+    <span class="n">input_cs3</span> <span class="o">=</span> <span class="n">CS</span><span class="p">(</span><span class="n">input_names3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;voxels&#39;</span><span class="p">)</span>
+    <span class="n">output_cs3</span> <span class="o">=</span> <span class="n">world_space</span><span class="o">.</span><span class="n">to_coordsys_maker</span><span class="p">()(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">cmap3</span> <span class="o">=</span> <span class="n">AT</span><span class="p">(</span><span class="n">input_cs3</span><span class="p">,</span> <span class="n">output_cs3</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">cmap3</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="n">hdr</span><span class="p">})</span>
+    <span class="n">space_units</span><span class="p">,</span> <span class="n">time_like_units</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_xyzt_units</span><span class="p">()</span>
+    <span class="n">units_info</span> <span class="o">=</span> <span class="n">TIME_LIKE_UNITS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">time_like_units</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">n_ns</span> <span class="o">=</span> <span class="n">ndim</span> <span class="o">-</span> <span class="mi">3</span>
+    <span class="n">ns_zooms</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">get_zooms</span><span class="p">()[</span><span class="mi">3</span><span class="p">:])</span>
+    <span class="n">ns_trans</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_ns</span>
+    <span class="n">ns_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="s1">&#39;uvw&#39;</span><span class="p">)</span>
+    <span class="c1"># Have we got a time axis?</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">4</span> <span class="ow">and</span> <span class="n">units_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Squeeze length 1 no-time axis</span>
+        <span class="n">shape</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">ns_zooms</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">ns_trans</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">n_ns</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># have time-like</span>
+        <span class="k">if</span> <span class="n">units_info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">units_info</span> <span class="o">=</span> <span class="n">TIME_LIKE_UNITS</span><span class="p">[</span><span class="s1">&#39;sec&#39;</span><span class="p">]</span>
+        <span class="n">time_name</span> <span class="o">=</span> <span class="n">units_info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">units_info</span><span class="p">[</span><span class="s1">&#39;scaling&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ns_zooms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="n">units_info</span><span class="p">[</span><span class="s1">&#39;scaling&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">time_name</span> <span class="o">==</span> <span class="s1">&#39;t&#39;</span><span class="p">:</span>
+            <span class="c1"># Get time offset</span>
+            <span class="n">ns_trans</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdr</span><span class="p">[</span><span class="s1">&#39;toffset&#39;</span><span class="p">]</span>
+        <span class="n">ns_names</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_name</span><span class="p">,)</span> <span class="o">+</span> <span class="n">ns_names</span>
+    <span class="n">output_cs</span> <span class="o">=</span> <span class="n">CS</span><span class="p">(</span><span class="n">ns_names</span><span class="p">[:</span><span class="n">n_ns</span><span class="p">])</span>
+    <span class="n">input_cs</span> <span class="o">=</span> <span class="n">CS</span><span class="p">(</span><span class="n">ns_names</span><span class="p">[:</span><span class="n">n_ns</span><span class="p">])</span>
+    <span class="n">aff</span> <span class="o">=</span> <span class="n">from_matvec</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">ns_zooms</span><span class="p">),</span> <span class="n">ns_trans</span><span class="p">)</span>
+    <span class="n">ns_cmap</span> <span class="o">=</span> <span class="n">AT</span><span class="p">(</span><span class="n">input_cs</span><span class="p">,</span> <span class="n">output_cs</span><span class="p">,</span> <span class="n">aff</span><span class="p">)</span>
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">cm_product</span><span class="p">(</span><span class="n">cmap3</span><span class="p">,</span> <span class="n">ns_cmap</span><span class="p">,</span>
+                      <span class="n">input_name</span><span class="o">=</span><span class="n">cmap3</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                      <span class="n">output_name</span><span class="o">=</span><span class="n">cmap3</span><span class="o">.</span><span class="n">function_range</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">cmap</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="n">hdr</span><span class="p">})</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

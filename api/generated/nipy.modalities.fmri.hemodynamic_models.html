@@ -1,0 +1,392 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.modalities.fmri.hemodynamic_models.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="modalities-fmri-hemodynamic-models">
+<h1>modalities.fmri.hemodynamic_models<a class="headerlink" href="#modalities-fmri-hemodynamic-models" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.modalities.fmri.hemodynamic_models">
+<span id="module-modalities-fmri-hemodynamic-models"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">modalities.fmri.hemodynamic_models</span></code><a class="headerlink" href="#module-nipy.modalities.fmri.hemodynamic_models" title="Permalink to this headline">¶</a></h2>
+<p>This module is for canonical hrf specification.
+Here we provide for SPM, Glover hrfs and finite timpulse response (FIR) models.
+This module closely follows SPM implementation</p>
+<p>Author: Bertrand Thirion, 2011–2013</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.modalities.fmri.hemodynamic_models.compute_regressor">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hemodynamic_models.</code><code class="sig-name descname">compute_regressor</code><span class="sig-paren">(</span><em class="sig-param">exp_condition</em>, <em class="sig-param">hrf_model</em>, <em class="sig-param">frametimes</em>, <em class="sig-param">con_id='cond'</em>, <em class="sig-param">oversampling=16</em>, <em class="sig-param">fir_delays=None</em>, <em class="sig-param">min_onset=-24</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hemodynamic_models.html#compute_regressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hemodynamic_models.compute_regressor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main function to convolve regressors with hrf model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>exp_condition: descriptor of an experimental condition</strong></p>
+<p><strong>hrf_model: string, the hrf model to be used. Can be chosen among:</strong></p>
+<blockquote>
+<div><p>‘spm’, ‘spm_time’, ‘spm_time_dispersion’, ‘canonical’,
+‘canonical_derivative’, ‘fir’</p>
+</div></blockquote>
+<p><strong>frametimes: array of shape (n):the sought</strong></p>
+<p><strong>con_id: string, optional identifier of the condition</strong></p>
+<p><strong>oversampling: int, optional, oversampling factor to perform the convolution</strong></p>
+<p><strong>fir_delays: array-like of int, onsets corresponding to the fir basis</strong></p>
+<p><strong>min_onset: float, optional</strong></p>
+<blockquote>
+<div><p>minimal onset relative to frametimes[0] (in seconds)
+events that start before frametimes[0] + min_onset are not considered</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>creg: array of shape(n_scans, n_reg): computed regressors sampled</p>
+<blockquote>
+<div><p>at frametimes</p>
+</div></blockquote>
+<p>reg_names: list of strings, corresponding regressor names</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The different hemodynamic models can be understood as follows:
+‘spm’: this is the hrf model used in spm
+‘spm_time’: this is the spm model plus its time derivative (2 regressors)
+‘spm_time_dispersion’: idem, plus dispersion derivative (3 regressors)
+‘canonical’: this one corresponds to the Glover hrf
+‘canonical_derivative’: the Glover hrf + time derivative (2 regressors)
+‘fir’: finite impulse response basis, a set of delayed dirac models</p>
+<blockquote>
+<div><p>with arbitrary length. This one currently assumes regularly spaced
+frametimes (i.e. fixed time of repetition).</p>
+</div></blockquote>
+<p>It is expected that spm standard and Glover model would not yield
+large differences in most cases.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hemodynamic_models.glover_hrf">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hemodynamic_models.</code><code class="sig-name descname">glover_hrf</code><span class="sig-paren">(</span><em class="sig-param">tr</em>, <em class="sig-param">oversampling=16</em>, <em class="sig-param">time_length=32.0</em>, <em class="sig-param">onset=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hemodynamic_models.html#glover_hrf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hemodynamic_models.glover_hrf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the Glover hrf model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tr: float, scan repeat time, in seconds</strong></p>
+<p><strong>oversampling: int, temporal oversampling factor, optional</strong></p>
+<p><strong>time_length: float, hrf kernel length, in seconds</strong></p>
+<p><strong>onset: float, onset of the response</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hrf: array of shape(length / tr * oversampling, float),</p>
+<blockquote>
+<div><p>hrf sampling on the oversampled time grid</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hemodynamic_models.glover_time_derivative">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hemodynamic_models.</code><code class="sig-name descname">glover_time_derivative</code><span class="sig-paren">(</span><em class="sig-param">tr</em>, <em class="sig-param">oversampling=16</em>, <em class="sig-param">time_length=32.0</em>, <em class="sig-param">onset=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hemodynamic_models.html#glover_time_derivative"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hemodynamic_models.glover_time_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the flover time derivative hrf (dhrf) model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tr: float, scan repeat time, in seconds</strong></p>
+<p><strong>oversampling: int, temporal oversampling factor, optional</strong></p>
+<p><strong>time_length: float, hrf kernel length, in seconds</strong></p>
+<p><strong>onset: float, onset of the response</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dhrf: array of shape(length / tr, float),</p>
+<blockquote>
+<div><p>dhrf sampling on the provided grid</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hemodynamic_models.spm_dispersion_derivative">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hemodynamic_models.</code><code class="sig-name descname">spm_dispersion_derivative</code><span class="sig-paren">(</span><em class="sig-param">tr</em>, <em class="sig-param">oversampling=16</em>, <em class="sig-param">time_length=32.0</em>, <em class="sig-param">onset=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hemodynamic_models.html#spm_dispersion_derivative"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hemodynamic_models.spm_dispersion_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the SPM dispersion derivative hrf model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tr: float, scan repeat time, in seconds</strong></p>
+<p><strong>oversampling: int, temporal oversampling factor, optional</strong></p>
+<p><strong>time_length: float, hrf kernel length, in seconds</strong></p>
+<p><strong>onset: float, onset of the response</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dhrf: array of shape(length / tr * oversampling, float),</p>
+<blockquote>
+<div><p>dhrf sampling on the oversampled time grid</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hemodynamic_models.spm_hrf">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hemodynamic_models.</code><code class="sig-name descname">spm_hrf</code><span class="sig-paren">(</span><em class="sig-param">tr</em>, <em class="sig-param">oversampling=16</em>, <em class="sig-param">time_length=32.0</em>, <em class="sig-param">onset=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hemodynamic_models.html#spm_hrf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hemodynamic_models.spm_hrf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the SPM hrf model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tr: float, scan repeat time, in seconds</strong></p>
+<p><strong>oversampling: int, temporal oversampling factor, optional</strong></p>
+<p><strong>time_length: float, hrf kernel length, in seconds</strong></p>
+<p><strong>onset: float, onset of the response</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hrf: array of shape(length / tr * oversampling, float),</p>
+<blockquote>
+<div><p>hrf sampling on the oversampled time grid</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.hemodynamic_models.spm_time_derivative">
+<code class="sig-prename descclassname">nipy.modalities.fmri.hemodynamic_models.</code><code class="sig-name descname">spm_time_derivative</code><span class="sig-paren">(</span><em class="sig-param">tr</em>, <em class="sig-param">oversampling=16</em>, <em class="sig-param">time_length=32.0</em>, <em class="sig-param">onset=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/hemodynamic_models.html#spm_time_derivative"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.hemodynamic_models.spm_time_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the SPM time derivative hrf (dhrf) model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tr: float, scan repeat time, in seconds</strong></p>
+<p><strong>oversampling: int, temporal oversampling factor, optional</strong></p>
+<p><strong>time_length: float, hrf kernel length, in seconds</strong></p>
+<p><strong>onset: float, onset of the response</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dhrf: array of shape(length / tr, float),</p>
+<blockquote>
+<div><p>dhrf sampling on the provided grid</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

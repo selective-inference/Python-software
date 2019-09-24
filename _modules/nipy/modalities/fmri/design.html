@@ -1,0 +1,730 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.modalities.fmri.design</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Convenience functions for specifying a design in the GLM</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nipy.algorithms.statistics.utils</span> <span class="k">import</span> <span class="n">combinations</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.statistics.formula</span> <span class="k">import</span> <span class="n">formulae</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.statistics.formula.formulae</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">Formula</span><span class="p">,</span> <span class="n">Factor</span><span class="p">,</span> <span class="n">Term</span><span class="p">,</span> <span class="n">make_recarray</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="p">(</span><span class="n">events</span><span class="p">,</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">fourier_basis</span> <span class="k">as</span> <span class="n">fourier_basis_sym</span><span class="p">,</span>
+                    <span class="n">convolve_functions</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.hrf</span> <span class="k">import</span> <span class="n">glover</span>
+
+<div class="viewcode-block" id="fourier_basis"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.fourier_basis">[docs]</a><span class="k">def</span> <span class="nf">fourier_basis</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">freq</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a design matrix with columns given by the Fourier</span>
+<span class="sd">    basis with a given set of frequencies.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : np.ndarray</span>
+<span class="sd">        An array of np.float values at which to evaluate</span>
+<span class="sd">        the design. Common examples would be the acquisition</span>
+<span class="sd">        times of an fMRI image.</span>
+<span class="sd">    freq : sequence of float</span>
+<span class="sd">        Frequencies for the terms in the Fourier basis.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    X : np.ndarray</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; t = np.linspace(0,50,101)</span>
+<span class="sd">    &gt;&gt;&gt; drift = fourier_basis(t, np.array([4,6,8]))</span>
+<span class="sd">    &gt;&gt;&gt; drift.shape</span>
+<span class="sd">    (101, 6)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tval</span> <span class="o">=</span> <span class="n">make_recarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">])</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">fourier_basis_sym</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">tval</span><span class="p">,</span> <span class="n">return_float</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="natural_spline"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.natural_spline">[docs]</a><span class="k">def</span> <span class="nf">natural_spline</span><span class="p">(</span><span class="n">tvals</span><span class="p">,</span> <span class="n">knots</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">intercept</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Design matrix with columns given by a natural spline order `order`</span>
+
+<span class="sd">    Return design matrix with natural splines with knots `knots`, order</span>
+<span class="sd">    `order`.  If `intercept` == True (the default), add constant column.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tvals : np.array</span>
+<span class="sd">        Time values</span>
+<span class="sd">    knots : None or sequence, optional</span>
+<span class="sd">       Sequence of float.  Default None (same as empty list)</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">       Order of the spline. Defaults to a cubic (==3)</span>
+<span class="sd">    intercept : bool, optional</span>
+<span class="sd">       If True, include a constant function in the natural</span>
+<span class="sd">       spline. Default is False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    X : np.ndarray</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; tvals = np.linspace(0,50,101)</span>
+<span class="sd">    &gt;&gt;&gt; drift = natural_spline(tvals, knots=[10,20,30,40])</span>
+<span class="sd">    &gt;&gt;&gt; drift.shape</span>
+<span class="sd">    (101, 8)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tvals</span> <span class="o">=</span> <span class="n">make_recarray</span><span class="p">(</span><span class="n">tvals</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">])</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">Term</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">formulae</span><span class="o">.</span><span class="n">natural_spline</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">knots</span><span class="o">=</span><span class="n">knots</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">intercept</span><span class="o">=</span><span class="n">intercept</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">tvals</span><span class="p">,</span> <span class="n">return_float</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_build_formula_contrasts</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Build formula and contrast in event / block space</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spec : stuctured array</span>
+<span class="sd">        Structured array containing at least fields listed in `fields`.</span>
+<span class="sd">    fields : sequence of str</span>
+<span class="sd">        Sequence of field names containing names of factors.</span>
+<span class="sd">    order : int</span>
+<span class="sd">        Maximum order of interactions between main effects.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    e_factors : :class:`Formula` instance</span>
+<span class="sd">        Formula for factors given by `fields`</span>
+<span class="sd">    e_contrasts : dict</span>
+<span class="sd">        Dictionary containing contrasts of main effects and interactions</span>
+<span class="sd">        between factors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">e_factors</span> <span class="o">=</span> <span class="p">[</span><span class="n">Factor</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="n">n</span><span class="p">]))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">]</span>
+    <span class="n">e_formula</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">e_factors</span><span class="p">)</span>
+    <span class="n">e_contrasts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Add contrasts for factors and factor interactions</span>
+    <span class="n">max_order</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">e_factors</span><span class="p">),</span> <span class="n">order</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_order</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">comb</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">e_factors</span><span class="p">),</span> <span class="n">i</span><span class="p">):</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comb</span><span class="p">]</span>
+            <span class="c1"># Collect factors where there is more than one level</span>
+            <span class="n">fs</span> <span class="o">=</span> <span class="p">[</span><span class="n">fc</span><span class="o">.</span><span class="n">main_effect</span> <span class="k">for</span> <span class="n">fn</span><span class="p">,</span> <span class="n">fc</span> <span class="ow">in</span> <span class="n">comb</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fc</span><span class="o">.</span><span class="n">levels</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">e_contrast</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+                <span class="n">e_contrasts</span><span class="p">[</span><span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)]</span> <span class="o">=</span> <span class="n">e_contrast</span>
+    <span class="n">e_contrasts</span><span class="p">[</span><span class="s1">&#39;constant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">formulae</span><span class="o">.</span><span class="n">I</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">e_formula</span><span class="p">,</span> <span class="n">e_contrasts</span>
+
+
+<div class="viewcode-block" id="event_design"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.event_design">[docs]</a><span class="k">def</span> <span class="nf">event_design</span><span class="p">(</span><span class="n">event_spec</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">hrfs</span><span class="o">=</span><span class="p">(</span><span class="n">glover</span><span class="p">,),</span>
+                 <span class="n">level_contrasts</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create design matrix at times `t` for event specification `event_spec`</span>
+
+<span class="sd">    Create a design matrix for linear model based on an event specification</span>
+<span class="sd">    `event_spec`, evaluating the design rows at a sequence of time values `t`.</span>
+<span class="sd">    Each column in the design matrix will be convolved with each HRF in `hrfs`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    event_spec : np.recarray</span>
+<span class="sd">       A recarray having at least a field named &#39;time&#39; signifying the event</span>
+<span class="sd">       time, and all other fields will be treated as factors in an ANOVA-type</span>
+<span class="sd">       model.  If there is no field other than time, add a single-level</span>
+<span class="sd">       placeholder event type ``_event_``.</span>
+<span class="sd">    t : np.ndarray</span>
+<span class="sd">       An array of np.float values at which to evaluate the design. Common</span>
+<span class="sd">       examples would be the acquisition times of an fMRI image.</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">       The highest order interaction to be considered in constructing</span>
+<span class="sd">       the contrast matrices.</span>
+<span class="sd">    hrfs : sequence, optional</span>
+<span class="sd">       A sequence of (symbolic) HRFs that will be convolved with each event.</span>
+<span class="sd">       Default is ``(glover,)``.</span>
+<span class="sd">    level_contrasts : bool, optional</span>
+<span class="sd">       If True, generate contrasts for each individual level of each factor.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    X : np.ndarray</span>
+<span class="sd">       The design matrix with ``X.shape[0] == t.shape[0]``. The number of</span>
+<span class="sd">       columns will depend on the other fields of `event_spec`.</span>
+<span class="sd">    contrasts : dict</span>
+<span class="sd">       Dictionary of contrasts that is expected to be of interest from the</span>
+<span class="sd">       event specification. Each interaction / effect up to a given order will</span>
+<span class="sd">       be returned. Also, a contrast is generated for each interaction / effect</span>
+<span class="sd">       for each HRF specified in `hrfs`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">event_spec</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;time&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting a field called &quot;time&quot;&#39;</span><span class="p">)</span>
+    <span class="n">fields</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># No factors specified, make generic event</span>
+        <span class="n">event_spec</span> <span class="o">=</span> <span class="n">make_recarray</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">event_spec</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span>
+                                       <span class="n">itertools</span><span class="o">.</span><span class="n">cycle</span><span class="p">([</span><span class="mi">1</span><span class="p">])),</span>
+                                   <span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;_event_&#39;</span><span class="p">))</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_event_&#39;</span><span class="p">]</span>
+    <span class="n">e_formula</span><span class="p">,</span> <span class="n">e_contrasts</span> <span class="o">=</span> <span class="n">_build_formula_contrasts</span><span class="p">(</span>
+        <span class="n">event_spec</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+    <span class="c1"># Design and contrasts in block space</span>
+    <span class="c1"># TODO: make it so I don&#39;t have to call design twice here</span>
+    <span class="c1"># to get both the contrasts and the e_X matrix as a recarray</span>
+    <span class="n">e_X</span> <span class="o">=</span> <span class="n">e_formula</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">event_spec</span><span class="p">)</span>
+    <span class="n">e_dtype</span> <span class="o">=</span> <span class="n">e_formula</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="c1"># Now construct the design in time space</span>
+    <span class="n">t_terms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">t_contrasts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hrfs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">e_dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">term</span> <span class="o">=</span> <span class="n">events</span><span class="p">(</span><span class="n">event_spec</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">amplitudes</span><span class="o">=</span><span class="n">e_X</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">f</span><span class="o">=</span><span class="n">h</span><span class="p">)</span>
+            <span class="n">t_terms</span>  <span class="o">+=</span> <span class="p">[</span><span class="n">term</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">level_contrasts</span><span class="p">:</span>
+                <span class="n">t_contrasts</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">l</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">([</span><span class="n">term</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">e_contrasts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">t_contrasts</span><span class="p">[</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">l</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">([</span> \
+                 <span class="n">events</span><span class="p">(</span><span class="n">event_spec</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">amplitudes</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="n">nn</span><span class="p">],</span> <span class="n">f</span><span class="o">=</span><span class="n">h</span><span class="p">)</span>
+                 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)])</span>
+    <span class="n">t_formula</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">(</span><span class="n">t_terms</span><span class="p">)</span>
+
+    <span class="n">tval</span> <span class="o">=</span> <span class="n">make_recarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">])</span>
+    <span class="n">X_t</span><span class="p">,</span> <span class="n">c_t</span> <span class="o">=</span> <span class="n">t_formula</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">tval</span><span class="p">,</span> <span class="n">contrasts</span><span class="o">=</span><span class="n">t_contrasts</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">X_t</span><span class="p">,</span> <span class="n">c_t</span></div>
+
+
+<div class="viewcode-block" id="block_design"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.block_design">[docs]</a><span class="k">def</span> <span class="nf">block_design</span><span class="p">(</span><span class="n">block_spec</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">hrfs</span><span class="o">=</span><span class="p">(</span><span class="n">glover</span><span class="p">,),</span>
+                 <span class="n">convolution_padding</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span>
+                 <span class="n">convolution_dt</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+                 <span class="n">hrf_interval</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">30.</span><span class="p">),</span>
+                 <span class="n">level_contrasts</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create design matrix at times `t` for blocks specification `block_spec`</span>
+
+<span class="sd">    Create design matrix for linear model from a block specification</span>
+<span class="sd">    `block_spec`,  evaluating design rows at a sequence of time values `t`.</span>
+<span class="sd">    Each column in the design matrix will be convolved with each HRF in `hrfs`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    block_spec : np.recarray</span>
+<span class="sd">       A recarray having at least a field named &#39;start&#39; and a field named &#39;end&#39;</span>
+<span class="sd">       signifying the block onset and offset times. All other fields will be</span>
+<span class="sd">       treated as factors in an ANOVA-type model.  If there is no field other</span>
+<span class="sd">       than &#39;start&#39; and &#39;end&#39;, add a single-level placeholder block type</span>
+<span class="sd">       ``_block_``.</span>
+<span class="sd">    t : np.ndarray</span>
+<span class="sd">       An array of np.float values at which to evaluate the design. Common</span>
+<span class="sd">       examples would be the acquisition times of an fMRI image.</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">       The highest order interaction to be considered in constructing the</span>
+<span class="sd">       contrast matrices.</span>
+<span class="sd">    hrfs : sequence, optional</span>
+<span class="sd">       A sequence of (symbolic) HRFs that will be convolved with each block.</span>
+<span class="sd">       Default is ``(glover,)``.</span>
+<span class="sd">    convolution_padding : float, optional</span>
+<span class="sd">       A padding for the convolution with the HRF. The intervals</span>
+<span class="sd">       used for the convolution are the smallest &#39;start&#39; minus this</span>
+<span class="sd">       padding to the largest &#39;end&#39; plus this padding.</span>
+<span class="sd">    convolution_dt : float, optional</span>
+<span class="sd">       Time step for high-resolution time course for use in convolving the</span>
+<span class="sd">       blocks with each HRF.</span>
+<span class="sd">    hrf_interval: length 2 sequence of floats, optional</span>
+<span class="sd">       Interval over which the HRF is assumed supported, used in the</span>
+<span class="sd">       convolution.</span>
+<span class="sd">    level_contrasts : bool, optional</span>
+<span class="sd">       If true, generate contrasts for each individual level</span>
+<span class="sd">       of each factor.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    X : np.ndarray</span>
+<span class="sd">       The design matrix with ``X.shape[0] == t.shape[0]``. The number of</span>
+<span class="sd">       columns will depend on the other fields of `block_spec`.</span>
+<span class="sd">    contrasts : dict</span>
+<span class="sd">       Dictionary of contrasts that are expected to be of interest from the</span>
+<span class="sd">       block specification. Each interaction / effect up to a given order will</span>
+<span class="sd">       be returned. Also, a contrast is generated for each interaction / effect</span>
+<span class="sd">       for each HRF specified in `hrfs`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">block_spec</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;start&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span> <span class="ow">or</span> <span class="s1">&#39;end&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting fields called &quot;start&quot; and &quot;end&quot;&#39;</span><span class="p">)</span>
+    <span class="n">fields</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">))</span>
+    <span class="n">fields</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;end&#39;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># No factors specified, make generic block</span>
+        <span class="n">block_spec</span> <span class="o">=</span> <span class="n">make_recarray</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">block_spec</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">],</span>
+                                       <span class="n">block_spec</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">],</span>
+                                       <span class="n">itertools</span><span class="o">.</span><span class="n">cycle</span><span class="p">([</span><span class="mi">1</span><span class="p">])),</span>
+                                   <span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;end&#39;</span><span class="p">,</span> <span class="s1">&#39;_block_&#39;</span><span class="p">))</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_block_&#39;</span><span class="p">]</span>
+    <span class="n">e_formula</span><span class="p">,</span> <span class="n">e_contrasts</span> <span class="o">=</span> <span class="n">_build_formula_contrasts</span><span class="p">(</span>
+        <span class="n">block_spec</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+    <span class="c1"># Design and contrasts in block space</span>
+    <span class="c1"># TODO: make it so I don&#39;t have to call design twice here</span>
+    <span class="c1"># to get both the contrasts and the e_X matrix as a recarray</span>
+    <span class="n">e_X</span> <span class="o">=</span> <span class="n">e_formula</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">block_spec</span><span class="p">)</span>
+    <span class="n">e_dtype</span> <span class="o">=</span> <span class="n">e_formula</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="c1"># Now construct the design in time space</span>
+    <span class="n">block_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">s</span><span class="p">,</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">block_spec</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">],</span> 
+                                                  <span class="n">block_spec</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">])])</span>
+    <span class="n">convolution_interval</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_times</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">-</span> <span class="n">convolution_padding</span><span class="p">,</span> 
+                            <span class="n">block_times</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="n">convolution_padding</span><span class="p">)</span>
+
+    <span class="n">t_terms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">t_contrasts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hrfs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">e_dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">blocks</span><span class="p">(</span><span class="n">block_times</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="n">e_X</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+            <span class="n">term</span> <span class="o">=</span> <span class="n">convolve_functions</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">h</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> 
+                                      <span class="n">convolution_interval</span><span class="p">,</span>
+                                      <span class="n">hrf_interval</span><span class="p">,</span>
+                                      <span class="n">convolution_dt</span><span class="p">)</span>
+            <span class="n">t_terms</span> <span class="o">+=</span> <span class="p">[</span><span class="n">term</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">level_contrasts</span><span class="p">:</span>
+                <span class="n">t_contrasts</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">l</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">([</span><span class="n">term</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">e_contrasts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">):</span>
+                <span class="n">B</span> <span class="o">=</span> <span class="n">blocks</span><span class="p">(</span><span class="n">block_times</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="n">nn</span><span class="p">])</span>
+                <span class="n">F</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">convolve_functions</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">h</span><span class="p">(</span><span class="n">T</span><span class="p">),</span>
+                                            <span class="n">convolution_interval</span><span class="p">,</span>
+                                            <span class="n">hrf_interval</span><span class="p">,</span>
+                                            <span class="n">convolution_dt</span><span class="p">))</span>
+            <span class="n">t_contrasts</span><span class="p">[</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">l</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+    <span class="n">t_formula</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">(</span><span class="n">t_terms</span><span class="p">)</span>
+
+    <span class="n">tval</span> <span class="o">=</span> <span class="n">make_recarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">])</span>
+    <span class="n">X_t</span><span class="p">,</span> <span class="n">c_t</span> <span class="o">=</span> <span class="n">t_formula</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">tval</span><span class="p">,</span> <span class="n">contrasts</span><span class="o">=</span><span class="n">t_contrasts</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">X_t</span><span class="p">,</span> <span class="n">c_t</span></div>
+
+
+<div class="viewcode-block" id="stack2designs"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.stack2designs">[docs]</a><span class="k">def</span> <span class="nf">stack2designs</span><span class="p">(</span><span class="n">old_X</span><span class="p">,</span> <span class="n">new_X</span><span class="p">,</span> <span class="n">old_contrasts</span><span class="o">=</span><span class="p">{},</span> <span class="n">new_contrasts</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add some columns to a design matrix that has contrasts matrices</span>
+<span class="sd">    already specified, adding some possibly new contrasts as well.</span>
+
+<span class="sd">    This basically performs an np.hstack of old_X, new_X</span>
+<span class="sd">    and makes sure the contrast matrices are dealt with accordingly.</span>
+
+<span class="sd">    If two contrasts have the same name, an exception is raised.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    old_X : np.ndarray</span>
+<span class="sd">       A design matrix</span>
+<span class="sd">    new_X : np.ndarray</span>
+<span class="sd">       A second design matrix to be stacked with old_X</span>
+<span class="sd">    old_contrast : dict</span>
+<span class="sd">       Dictionary of contrasts in the old_X column space</span>
+<span class="sd">    new_contrasts : dict</span>
+<span class="sd">       Dictionary of contrasts in the new_X column space</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    X : np.ndarray</span>
+<span class="sd">       A new design matrix:  np.hstack([old_X, new_X])</span>
+<span class="sd">    contrasts : dict</span>
+<span class="sd">       The new contrast matrices reflecting changes to the columns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">contrasts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">old_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">old_X</span><span class="p">)</span>
+    <span class="n">new_X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">new_X</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">old_X</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">new_X</span><span class="p">,</span> <span class="n">new_contrasts</span>
+    <span class="k">if</span> <span class="n">new_X</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">old_X</span><span class="p">,</span> <span class="n">old_contrasts</span>
+
+    <span class="k">if</span> <span class="n">old_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">old_X</span> <span class="o">=</span> <span class="n">old_X</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">new_X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">new_X</span> <span class="o">=</span> <span class="n">new_X</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">old_X</span><span class="p">,</span> <span class="n">new_X</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">old_contrasts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">new_contrasts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">([]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;old and new contrasts must have different names&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">old_contrasts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">cm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">cm</span><span class="p">[:,:</span><span class="n">old_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">cm</span><span class="p">[:</span><span class="n">old_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="n">contrasts</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">cm</span>
+
+    <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_contrasts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">cm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">cm</span><span class="p">[:,</span><span class="n">old_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:]</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">cm</span><span class="p">[</span><span class="n">old_X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:]</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="n">contrasts</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">cm</span>
+
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">contrasts</span></div>
+
+
+<div class="viewcode-block" id="stack_contrasts"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.stack_contrasts">[docs]</a><span class="k">def</span> <span class="nf">stack_contrasts</span><span class="p">(</span><span class="n">contrasts</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a new F-contrast matrix called &#39;name&#39;</span>
+<span class="sd">    based on a sequence of keys. The contrast</span>
+<span class="sd">    is added to contrasts, in-place.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    contrasts : dict</span>
+<span class="sd">       Dictionary of contrast matrices</span>
+<span class="sd">    name : str</span>
+<span class="sd">       Name of new contrast. Should not already be a key of contrasts.</span>
+<span class="sd">    keys : sequence of str</span>
+<span class="sd">       Keys of contrasts that are to be stacked.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">contrasts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;contrast &quot;</span><span class="si">%s</span><span class="s1">&quot; already exists&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="n">contrasts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">contrasts</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="stack_designs"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.stack_designs">[docs]</a><span class="k">def</span> <span class="nf">stack_designs</span><span class="p">(</span><span class="o">*</span><span class="n">pairs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Stack a sequence of design / contrast dictionary pairs</span>
+
+<span class="sd">    Uses multiple calls to :func:`stack2designs`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    \*pairs : sequence</span>
+<span class="sd">        Elements of either (np.ndarray, dict) or (np.ndarray,) or np.ndarray</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    X : np.ndarray</span>
+<span class="sd">       new design matrix:  np.hstack([old_X, new_X])</span>
+<span class="sd">    contrasts : dict</span>
+<span class="sd">       The new contrast matrices reflecting changes to the columns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">contrasts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">new_X</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span> <span class="n">new_con</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># Length one sequence</span>
+            <span class="n">new_X</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="n">new_con</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Length 2 sequence</span>
+            <span class="n">new_X</span><span class="p">,</span> <span class="n">new_con</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">contrasts</span> <span class="o">=</span> <span class="n">stack2designs</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">new_X</span><span class="p">,</span> <span class="n">contrasts</span><span class="p">,</span> <span class="n">new_con</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">contrasts</span></div>
+
+
+<div class="viewcode-block" id="openfmri2nipy"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.openfmri2nipy">[docs]</a><span class="k">def</span> <span class="nf">openfmri2nipy</span><span class="p">(</span><span class="n">ons_dur_amp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Contents of OpenFMRI condition file `ons_dur_map` as nipy recarray</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ons_dur_amp : str or array</span>
+<span class="sd">        Path to OpenFMRI stimulus file or 2D array containing three columns</span>
+<span class="sd">        corresponding to onset, duration, amplitude.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    block_spec : array</span>
+<span class="sd">        Structured array with fields &quot;start&quot; (corresponding to onset time),</span>
+<span class="sd">        &quot;end&quot; (onset time plus duration), &quot;amplitude&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ons_dur_amp</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">ons_dur_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">ons_dur_amp</span><span class="p">)</span>
+    <span class="n">onsets</span><span class="p">,</span> <span class="n">durations</span><span class="p">,</span> <span class="n">amplitudes</span> <span class="o">=</span> <span class="n">ons_dur_amp</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">make_recarray</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">onsets</span><span class="p">,</span> <span class="n">onsets</span> <span class="o">+</span> <span class="n">durations</span><span class="p">,</span> <span class="n">amplitudes</span><span class="p">)),</span>
+        <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;end&#39;</span><span class="p">,</span> <span class="s1">&#39;amplitude&#39;</span><span class="p">],</span>
+        <span class="n">drop_name_dim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="block_amplitudes"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.design.html#nipy.modalities.fmri.design.block_amplitudes">[docs]</a><span class="k">def</span> <span class="nf">block_amplitudes</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">block_spec</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">hrfs</span><span class="o">=</span><span class="p">(</span><span class="n">glover</span><span class="p">,),</span>
+                     <span class="n">convolution_padding</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span>
+                     <span class="n">convolution_dt</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+                     <span class="n">hrf_interval</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">30.</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot; Design matrix at times `t` for blocks specification `block_spec`</span>
+
+<span class="sd">    Create design matrix for linear model from a block specification</span>
+<span class="sd">    `block_spec`,  evaluating design rows at a sequence of time values `t`.</span>
+
+<span class="sd">    `block_spec` may specify amplitude of response for each event, if different</span>
+<span class="sd">    (see description of `block_spec` parameter below).</span>
+
+<span class="sd">    The on-off step function implied by `block_spec` will be convolved with</span>
+<span class="sd">    each HRF in `hrfs` to form a design matrix shape ``(len(t), len(hrfs))``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Name of condition</span>
+<span class="sd">    block_spec : np.recarray or array-like</span>
+<span class="sd">       A recarray having fields ``start, end, amplitude``, or a 2D ndarray /</span>
+<span class="sd">       array-like with three columns corresponding to start, end, amplitude.</span>
+<span class="sd">    t : np.ndarray</span>
+<span class="sd">       An array of np.float values at which to evaluate the design. Common</span>
+<span class="sd">       examples would be the acquisition times of an fMRI image.</span>
+<span class="sd">    hrfs : sequence, optional</span>
+<span class="sd">       A sequence of (symbolic) HRFs that will be convolved with each block.</span>
+<span class="sd">       Default is ``(glover,)``.</span>
+<span class="sd">    convolution_padding : float, optional</span>
+<span class="sd">       A padding for the convolution with the HRF. The intervals</span>
+<span class="sd">       used for the convolution are the smallest &#39;start&#39; minus this</span>
+<span class="sd">       padding to the largest &#39;end&#39; plus this padding.</span>
+<span class="sd">    convolution_dt : float, optional</span>
+<span class="sd">       Time step for high-resolution time course for use in convolving the</span>
+<span class="sd">       blocks with each HRF.</span>
+<span class="sd">    hrf_interval: length 2 sequence of floats, optional</span>
+<span class="sd">       Interval over which the HRF is assumed supported, used in the</span>
+<span class="sd">       convolution.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    X : np.ndarray</span>
+<span class="sd">       The design matrix with ``X.shape[0] == t.shape[0]``. The number of</span>
+<span class="sd">       columns will be ``len(hrfs)``.</span>
+<span class="sd">    contrasts : dict</span>
+<span class="sd">       A contrast is generated for each HRF specified in `hrfs`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">block_spec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">block_spec</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">((</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;end&#39;</span><span class="p">),</span>
+                                          <span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;end&#39;</span><span class="p">,</span> <span class="s1">&#39;amplitude&#39;</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting fields called &quot;start&quot;, &quot;end&quot; and &#39;</span>
+                             <span class="s1">&#39;(optionally) &quot;amplitude&quot;&#39;</span><span class="p">)</span>
+        <span class="n">block_spec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">block_spec</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+    <span class="n">block_times</span> <span class="o">=</span> <span class="n">block_spec</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">amplitudes</span> <span class="o">=</span> <span class="n">block_spec</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="n">block_spec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="c1"># Now construct the design in time space</span>
+    <span class="n">convolution_interval</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_times</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">-</span> <span class="n">convolution_padding</span><span class="p">,</span>
+                            <span class="n">block_times</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="n">convolution_padding</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">blocks</span><span class="p">(</span><span class="n">block_times</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="n">amplitudes</span><span class="p">)</span>
+    <span class="n">t_terms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">c_t</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">n_hrfs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hrfs</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">hrf_no</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_hrfs</span><span class="p">):</span>
+        <span class="n">t_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">convolve_functions</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">hrfs</span><span class="p">[</span><span class="n">hrf_no</span><span class="p">](</span><span class="n">T</span><span class="p">),</span>
+                                          <span class="n">convolution_interval</span><span class="p">,</span>
+                                          <span class="n">hrf_interval</span><span class="p">,</span>
+                                          <span class="n">convolution_dt</span><span class="p">))</span>
+        <span class="n">contrast</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_hrfs</span><span class="p">)</span>
+        <span class="n">contrast</span><span class="p">[</span><span class="n">hrf_no</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">c_t</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">hrf_no</span><span class="p">)]</span> <span class="o">=</span> <span class="n">contrast</span>
+    <span class="n">t_formula</span> <span class="o">=</span> <span class="n">Formula</span><span class="p">(</span><span class="n">t_terms</span><span class="p">)</span>
+    <span class="n">tval</span> <span class="o">=</span> <span class="n">make_recarray</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">])</span>
+    <span class="n">X_t</span> <span class="o">=</span> <span class="n">t_formula</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="n">tval</span><span class="p">,</span> <span class="n">return_float</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">X_t</span><span class="p">,</span> <span class="n">c_t</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

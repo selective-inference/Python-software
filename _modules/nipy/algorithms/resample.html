@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.resample</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; Some simple examples and utility functions for resampling.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..fixes.scipy.ndimage</span> <span class="k">import</span> <span class="n">affine_transform</span>
+
+<span class="kn">from</span> <span class="nn">nibabel.affines</span> <span class="k">import</span> <span class="n">from_matvec</span><span class="p">,</span> <span class="n">to_matvec</span>
+
+<span class="kn">from</span> <span class="nn">.interpolation</span> <span class="k">import</span> <span class="n">ImageInterpolator</span>
+<span class="kn">from</span> <span class="nn">..core.api</span> <span class="k">import</span> <span class="p">(</span><span class="n">Image</span><span class="p">,</span> <span class="n">CoordinateMap</span><span class="p">,</span> <span class="n">AffineTransform</span><span class="p">,</span>
+                        <span class="n">ArrayCoordMap</span><span class="p">,</span> <span class="n">compose</span><span class="p">)</span>
+
+<div class="viewcode-block" id="resample_img2img"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.resample.html#nipy.algorithms.resample.resample_img2img">[docs]</a><span class="k">def</span> <span class="nf">resample_img2img</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="n">cval</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;  Resample `source` image to space of `target` image</span>
+
+<span class="sd">    This wraps the resample function to resample one image onto another.</span>
+<span class="sd">    The output of the function will give an image with shape of the</span>
+<span class="sd">    target and data from the source.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source : ``Image``</span>
+<span class="sd">       Image instance that is to be resampled</span>
+<span class="sd">    target : ``Image``</span>
+<span class="sd">       Image instance to which source is resampled. The output image will</span>
+<span class="sd">       have the same shape as the target, and the same coordmap.</span>
+<span class="sd">    order : ``int``, optional</span>
+<span class="sd">       What order of interpolation to use in ``scipy.ndimage``.</span>
+<span class="sd">    mode : str, optional</span>
+<span class="sd">        Points outside the boundaries of the input are filled according to the</span>
+<span class="sd">        given mode (&#39;constant&#39;, &#39;nearest&#39;, &#39;reflect&#39; or &#39;wrap&#39;). Default is</span>
+<span class="sd">        &#39;constant&#39;.</span>
+<span class="sd">    cval : scalar, optional</span>
+<span class="sd">        Value used for points outside the boundaries of the input if</span>
+<span class="sd">        mode=&#39;constant&#39;. Default is 0.0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : ``Image``</span>
+<span class="sd">       Image with interpolated data and output.coordmap == target.coordmap</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.testing import funcfile, anatfile</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">    &gt;&gt;&gt; aimg_source = load_image(anatfile)</span>
+<span class="sd">    &gt;&gt;&gt; aimg_target = aimg_source</span>
+<span class="sd">    &gt;&gt;&gt; # in this case, we resample aimg to itself</span>
+<span class="sd">    &gt;&gt;&gt; resimg = resample_img2img(aimg_source, aimg_target)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sip</span><span class="p">,</span> <span class="n">sop</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">ndims</span>
+    <span class="n">tip</span><span class="p">,</span> <span class="n">top</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">ndims</span>
+    <span class="c1">#print sip, sop, tip, top</span>
+    <span class="k">if</span> <span class="n">sop</span> <span class="o">!=</span> <span class="n">top</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;source coordmap output dimension not equal &quot;</span>
+                         <span class="s2">&quot;to target coordmap output dimension&quot;</span><span class="p">)</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">sop</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># this would usually be 3+1</span>
+    <span class="n">resimg</span> <span class="o">=</span> <span class="n">resample</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                      <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">cval</span><span class="o">=</span><span class="n">cval</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">resimg</span></div>
+
+
+<div class="viewcode-block" id="resample"><a class="viewcode-back" href="../../../api/generated/nipy.algorithms.resample.html#nipy.algorithms.resample.resample">[docs]</a><span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+             <span class="n">cval</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Resample `image` to `target` CoordinateMap</span>
+
+<span class="sd">    Use a &quot;world-to-world&quot; mapping `mapping` and spline interpolation of a </span>
+<span class="sd">    `order`.</span>
+
+<span class="sd">    Here, &quot;world-to-world&quot; refers to the fact that mapping should be a</span>
+<span class="sd">    callable that takes a physical coordinate in &quot;target&quot; and gives a</span>
+<span class="sd">    physical coordinate in &quot;image&quot;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : Image instance</span>
+<span class="sd">       image that is to be resampled.</span>
+<span class="sd">    target : CoordinateMap</span>
+<span class="sd">       coordinate map for output image.</span>
+<span class="sd">    mapping : callable or tuple or array</span>
+<span class="sd">       transformation from target.function_range to</span>
+<span class="sd">       image.coordmap.function_range, i.e. &#39;world-to-world mapping&#39;. Can</span>
+<span class="sd">       be specified in three ways: a callable, a tuple (A, b)</span>
+<span class="sd">       representing the mapping y=dot(A,x)+b or a representation of this</span>
+<span class="sd">       mapping as an affine array, in homogeneous coordinates.</span>
+<span class="sd">    shape : sequence of int</span>
+<span class="sd">       shape of output array, in target.function_domain.</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">       what order of interpolation to use in ``scipy.ndimage``.</span>
+<span class="sd">    mode : str, optional</span>
+<span class="sd">        Points outside the boundaries of the input are filled according to the</span>
+<span class="sd">        given mode (&#39;constant&#39;, &#39;nearest&#39;, &#39;reflect&#39; or &#39;wrap&#39;). Default is</span>
+<span class="sd">        &#39;constant&#39;.</span>
+<span class="sd">    cval : scalar, optional</span>
+<span class="sd">        Value used for points outside the boundaries of the input if</span>
+<span class="sd">        mode=&#39;constant&#39;. Default is 0.0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : Image instance</span>
+<span class="sd">       Image has interpolated data and output.coordmap == target.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">mapping</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(()):</span>
+            <span class="n">mapping</span> <span class="o">=</span> <span class="n">from_matvec</span><span class="p">(</span><span class="o">*</span><span class="n">mapping</span><span class="p">)</span>
+        <span class="c1"># image world to target world mapping</span>
+        <span class="n">TW2IW</span> <span class="o">=</span> <span class="n">AffineTransform</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">function_range</span><span class="p">,</span>
+                                <span class="n">image</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_range</span><span class="p">,</span>
+                                <span class="n">mapping</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mapping</span><span class="p">,</span> <span class="n">AffineTransform</span><span class="p">):</span>
+            <span class="n">TW2IW</span> <span class="o">=</span> <span class="n">mapping</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">TW2IW</span> <span class="o">=</span> <span class="n">CoordinateMap</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">function_range</span><span class="p">,</span>
+                                  <span class="n">image</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_range</span><span class="p">,</span>
+                                  <span class="n">mapping</span><span class="p">)</span>
+    <span class="c1"># target voxel to image world mapping</span>
+    <span class="n">TV2IW</span> <span class="o">=</span> <span class="n">compose</span><span class="p">(</span><span class="n">TW2IW</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+    <span class="c1"># CoordinateMap describing mapping from target voxel to</span>
+    <span class="c1"># image world coordinates</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">TV2IW</span><span class="p">,</span> <span class="n">AffineTransform</span><span class="p">):</span>
+        <span class="c1"># interpolator evaluates image at values image.coordmap.function_range,</span>
+        <span class="c1"># i.e. physical coordinates rather than voxel coordinates</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">ArrayCoordMap</span><span class="o">.</span><span class="n">from_shape</span><span class="p">(</span><span class="n">TV2IW</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">ImageInterpolator</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">cval</span><span class="o">=</span><span class="n">cval</span><span class="p">)</span>
+        <span class="n">idata</span> <span class="o">=</span> <span class="n">interp</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">transposed_values</span><span class="p">)</span>
+        <span class="k">del</span><span class="p">(</span><span class="n">interp</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># it is an affine transform, but, what if we compose?</span>
+        <span class="n">TV2IV</span> <span class="o">=</span> <span class="n">compose</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">inverse</span><span class="p">(),</span> <span class="n">TV2IW</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">TV2IV</span><span class="p">,</span> <span class="n">AffineTransform</span><span class="p">):</span> <span class="c1"># still affine</span>
+            <span class="n">A</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">to_matvec</span><span class="p">(</span><span class="n">TV2IV</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+            <span class="n">idata</span> <span class="o">=</span> <span class="n">affine_transform</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">A</span><span class="p">,</span>
+                                     <span class="n">offset</span><span class="o">=</span><span class="n">b</span><span class="p">,</span>
+                                     <span class="n">output_shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                                     <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
+                                     <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                                     <span class="n">cval</span><span class="o">=</span><span class="n">cval</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># not affine anymore</span>
+            <span class="n">interp</span> <span class="o">=</span> <span class="n">ImageInterpolator</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">cval</span><span class="o">=</span><span class="n">cval</span><span class="p">)</span>
+            <span class="n">grid</span> <span class="o">=</span> <span class="n">ArrayCoordMap</span><span class="o">.</span><span class="n">from_shape</span><span class="p">(</span><span class="n">TV2IV</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+            <span class="n">idata</span> <span class="o">=</span> <span class="n">interp</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">del</span><span class="p">(</span><span class="n">interp</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Image</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">target</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

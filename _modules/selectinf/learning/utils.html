@@ -1,0 +1,857 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.learning.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">hashlib</span><span class="o">,</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">normal_dbn</span>
+
+<span class="kn">from</span> <span class="nn">..algorithms.lasso</span> <span class="k">import</span> <span class="n">ROSI</span><span class="p">,</span> <span class="n">lasso</span>
+
+<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="p">(</span><span class="n">infer_full_target</span><span class="p">,</span>
+                   <span class="n">infer_general_target</span><span class="p">,</span>
+                   <span class="n">repeat_selection</span><span class="p">,</span>
+                   <span class="n">gbm_fit_sk</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.learners</span> <span class="k">import</span> <span class="n">mixture_learner</span>
+
+<div class="viewcode-block" id="full_model_inference"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.utils.html#selectinf.learning.utils.full_model_inference">[docs]</a><span class="k">def</span> <span class="nf">full_model_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> 
+                         <span class="n">y</span><span class="p">,</span>
+                         <span class="n">truth</span><span class="p">,</span>
+                         <span class="n">selection_algorithm</span><span class="p">,</span>
+                         <span class="n">sampler</span><span class="p">,</span>
+                         <span class="n">success_params</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                         <span class="n">fit_probability</span><span class="o">=</span><span class="n">gbm_fit_sk</span><span class="p">,</span>
+                         <span class="n">fit_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;n_estimators&#39;</span><span class="p">:</span><span class="mi">500</span><span class="p">},</span>
+                         <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                         <span class="n">B</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+                         <span class="n">naive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                         <span class="n">learner_klass</span><span class="o">=</span><span class="n">mixture_learner</span><span class="p">,</span>
+                         <span class="n">features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">how_many</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">XTX</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">XTXi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">XTX</span><span class="p">)</span>
+    <span class="n">resid</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">XTXi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+    <span class="n">dispersion</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">resid</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span>
+                         
+    <span class="n">instance_hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">truth</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_id</span> <span class="o">=</span> <span class="n">instance_hash</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+    <span class="c1"># run selection algorithm</span>
+
+    <span class="n">observed_set</span> <span class="o">=</span> <span class="n">repeat_selection</span><span class="p">(</span><span class="n">selection_algorithm</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="o">*</span><span class="n">success_params</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">observed_set</span> <span class="o">=</span> <span class="n">observed_set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+    <span class="n">observed_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">observed_set</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">how_many</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">how_many</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_list</span><span class="p">)</span>
+        <span class="n">observed_list</span> <span class="o">=</span> <span class="n">observed_list</span><span class="p">[:</span><span class="n">how_many</span><span class="p">]</span>
+
+        <span class="c1"># find the target, based on the observed outcome</span>
+
+        <span class="p">(</span><span class="n">pivots</span><span class="p">,</span> 
+         <span class="n">covered</span><span class="p">,</span> 
+         <span class="n">lengths</span><span class="p">,</span> 
+         <span class="n">pvalues</span><span class="p">,</span>
+         <span class="n">lower</span><span class="p">,</span>
+         <span class="n">upper</span><span class="p">)</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+
+        <span class="n">targets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">true_target</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="n">observed_list</span><span class="p">]</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="n">infer_full_target</span><span class="p">(</span><span class="n">selection_algorithm</span><span class="p">,</span>
+                                    <span class="n">observed_set</span><span class="p">,</span>
+                                    <span class="n">observed_list</span><span class="p">,</span>
+                                    <span class="n">sampler</span><span class="p">,</span>
+                                    <span class="n">dispersion</span><span class="p">,</span>
+                                    <span class="n">hypothesis</span><span class="o">=</span><span class="n">true_target</span><span class="p">,</span>
+                                    <span class="n">fit_probability</span><span class="o">=</span><span class="n">fit_probability</span><span class="p">,</span>
+                                    <span class="n">fit_args</span><span class="o">=</span><span class="n">fit_args</span><span class="p">,</span>
+                                    <span class="n">success_params</span><span class="o">=</span><span class="n">success_params</span><span class="p">,</span>
+                                    <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+                                    <span class="n">B</span><span class="o">=</span><span class="n">B</span><span class="p">,</span>
+                                    <span class="n">learner_klass</span><span class="o">=</span><span class="n">learner_klass</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+
+            <span class="p">(</span><span class="n">pivot</span><span class="p">,</span> 
+             <span class="n">interval</span><span class="p">,</span>
+             <span class="n">pvalue</span><span class="p">,</span>
+             <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">result</span>
+
+            <span class="n">pvalues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pvalue</span><span class="p">)</span>
+            <span class="n">pivots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pivot</span><span class="p">)</span>
+            <span class="n">covered</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">true_target</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">true_target</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="n">lengths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pvalues</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;pivot&#39;</span><span class="p">:</span><span class="n">pivots</span><span class="p">,</span>
+                               <span class="s1">&#39;pvalue&#39;</span><span class="p">:</span><span class="n">pvalues</span><span class="p">,</span>
+                               <span class="s1">&#39;coverage&#39;</span><span class="p">:</span><span class="n">covered</span><span class="p">,</span>
+                               <span class="s1">&#39;length&#39;</span><span class="p">:</span><span class="n">lengths</span><span class="p">,</span>
+                               <span class="s1">&#39;upper&#39;</span><span class="p">:</span><span class="n">upper</span><span class="p">,</span>
+                               <span class="s1">&#39;lower&#39;</span><span class="p">:</span><span class="n">lower</span><span class="p">,</span>
+                               <span class="s1">&#39;id&#39;</span><span class="p">:[</span><span class="n">instance_id</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">pvalues</span><span class="p">),</span>
+                               <span class="s1">&#39;nfeature&#39;</span><span class="p">:</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                               <span class="s1">&#39;alpha&#39;</span><span class="p">:</span><span class="n">alpha</span><span class="p">,</span>
+                               <span class="s1">&#39;nsample&#39;</span><span class="p">:</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                               <span class="s1">&#39;target&#39;</span><span class="p">:</span><span class="n">true_target</span><span class="p">,</span>
+                               <span class="s1">&#39;variable&#39;</span><span class="p">:</span><span class="n">observed_list</span><span class="p">,</span>
+                               <span class="s1">&#39;B&#39;</span><span class="p">:[</span><span class="n">B</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">pvalues</span><span class="p">)})</span>
+            <span class="k">if</span> <span class="n">naive</span><span class="p">:</span>
+                <span class="n">naive_df</span> <span class="o">=</span> <span class="n">naive_full_model_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> 
+                                                      <span class="n">y</span><span class="p">,</span>
+                                                      <span class="n">dispersion</span><span class="p">,</span>
+                                                      <span class="n">truth</span><span class="p">,</span>
+                                                      <span class="n">observed_set</span><span class="p">,</span>
+                                                      <span class="n">alpha</span><span class="p">,</span>
+                                                      <span class="n">how_many</span><span class="o">=</span><span class="n">how_many</span><span class="p">)</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">naive_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;variable&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">df</span></div>
+
+<div class="viewcode-block" id="split_full_model_inference"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.utils.html#selectinf.learning.utils.split_full_model_inference">[docs]</a><span class="k">def</span> <span class="nf">split_full_model_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                               <span class="n">y</span><span class="p">,</span>
+                               <span class="n">idx</span><span class="p">,</span>
+                               <span class="n">dispersion</span><span class="p">,</span>
+                               <span class="n">truth</span><span class="p">,</span>
+                               <span class="n">observed_set</span><span class="p">,</span>
+                               <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                               <span class="n">how_many</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">stage_2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">X2</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">stage_2</span><span class="p">]</span>
+    <span class="n">y2</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">stage_2</span><span class="p">]</span>
+
+    <span class="n">XTXi_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">X2</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X2</span><span class="p">))</span>
+    <span class="n">resid2</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">X2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">XTXi_2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X2</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y2</span><span class="p">)))</span>
+    <span class="n">dispersion_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">resid2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">X2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">X2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">split_df</span> <span class="o">=</span> <span class="n">naive_full_model_inference</span><span class="p">(</span><span class="n">X2</span><span class="p">,</span>
+                                          <span class="n">y2</span><span class="p">,</span>
+                                          <span class="n">dispersion_2</span><span class="p">,</span>
+                                          <span class="n">truth</span><span class="p">,</span>
+                                          <span class="n">observed_set</span><span class="p">,</span>
+                                          <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+
+    <span class="n">split_df</span> <span class="o">=</span> <span class="n">split_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">dict</span><span class="p">([(</span><span class="n">v</span><span class="p">,</span>
+                                              <span class="n">v</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;naive&#39;</span><span class="p">,</span> <span class="s1">&#39;split&#39;</span><span class="p">))</span>
+                                             <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">split_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]))</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">split_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;bonferroni&#39;</span> <span class="ow">in</span> <span class="n">n</span><span class="p">:</span>
+            <span class="n">split_df</span> <span class="o">=</span> <span class="n">split_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">split_df</span></div>
+
+<div class="viewcode-block" id="split_partial_model_inference"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.utils.html#selectinf.learning.utils.split_partial_model_inference">[docs]</a><span class="k">def</span> <span class="nf">split_partial_model_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                                  <span class="n">y</span><span class="p">,</span>
+                                  <span class="n">idx</span><span class="p">,</span>
+                                  <span class="n">dispersion</span><span class="p">,</span>
+                                  <span class="n">truth</span><span class="p">,</span>
+                                  <span class="n">observed_set</span><span class="p">,</span>
+                                  <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                                  <span class="n">how_many</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">stage_2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">X2</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">stage_2</span><span class="p">]</span>
+    <span class="n">y2</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">stage_2</span><span class="p">]</span>
+
+    <span class="n">XTXi_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">X2</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X2</span><span class="p">))</span>
+    <span class="n">resid2</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">X2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">XTXi_2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X2</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y2</span><span class="p">)))</span>
+    <span class="n">dispersion_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">resid2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">X2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">X2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">split_df</span> <span class="o">=</span> <span class="n">naive_partial_model_inference</span><span class="p">(</span><span class="n">X2</span><span class="p">,</span>
+                                             <span class="n">y2</span><span class="p">,</span>
+                                             <span class="n">dispersion_2</span><span class="p">,</span>
+                                             <span class="n">truth</span><span class="p">,</span>
+                                             <span class="n">observed_set</span><span class="p">,</span>
+                                             <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+
+    <span class="n">split_df</span> <span class="o">=</span> <span class="n">split_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">dict</span><span class="p">([(</span><span class="n">v</span><span class="p">,</span>
+                                              <span class="n">v</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;naive&#39;</span><span class="p">,</span> <span class="s1">&#39;split&#39;</span><span class="p">))</span>
+                                             <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">split_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">split_df</span></div>
+
+
+<div class="viewcode-block" id="naive_full_model_inference"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.utils.html#selectinf.learning.utils.naive_full_model_inference">[docs]</a><span class="k">def</span> <span class="nf">naive_full_model_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                               <span class="n">y</span><span class="p">,</span>
+                               <span class="n">dispersion</span><span class="p">,</span>
+                               <span class="n">truth</span><span class="p">,</span>
+                               <span class="n">observed_set</span><span class="p">,</span>
+                               <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                               <span class="n">how_many</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    
+    <span class="n">XTX</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">XTXi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">XTX</span><span class="p">)</span>
+
+    <span class="p">(</span><span class="n">naive_pvalues</span><span class="p">,</span> 
+     <span class="n">naive_pivots</span><span class="p">,</span> 
+     <span class="n">naive_covered</span><span class="p">,</span> 
+     <span class="n">naive_lengths</span><span class="p">,</span> 
+     <span class="n">naive_upper</span><span class="p">,</span> 
+     <span class="n">naive_lower</span><span class="p">)</span> <span class="o">=</span>  <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+
+    <span class="p">(</span><span class="n">bonferroni_pvalues</span><span class="p">,</span> 
+     <span class="n">bonferroni_covered</span><span class="p">,</span> 
+     <span class="n">bonferroni_lengths</span><span class="p">,</span> 
+     <span class="n">bonferroni_upper</span><span class="p">,</span> 
+     <span class="n">bonferroni_lower</span><span class="p">)</span> <span class="o">=</span>  <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+
+    <span class="n">observed_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">observed_set</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">how_many</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">how_many</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_list</span><span class="p">)</span>
+    <span class="n">observed_list</span> <span class="o">=</span> <span class="n">observed_list</span><span class="p">[:</span><span class="n">how_many</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">observed_list</span><span class="p">:</span>
+        <span class="n">true_target</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">target_sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dispersion</span> <span class="o">*</span> <span class="n">XTXi</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">idx</span><span class="p">])</span>
+        <span class="n">observed_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">XTXi</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+
+        <span class="c1"># uncorrected</span>
+
+        <span class="n">quantile</span> <span class="o">=</span> <span class="n">normal_dbn</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="n">naive_interval</span> <span class="o">=</span> <span class="p">(</span><span class="n">observed_target</span> <span class="o">-</span> <span class="n">quantile</span> <span class="o">*</span> <span class="n">target_sd</span><span class="p">,</span> 
+                          <span class="n">observed_target</span> <span class="o">+</span> <span class="n">quantile</span> <span class="o">*</span> <span class="n">target_sd</span><span class="p">)</span>
+        <span class="n">naive_upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">naive_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">naive_lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">naive_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">naive_pivot</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">normal_dbn</span><span class="o">.</span><span class="n">cdf</span><span class="p">((</span><span class="n">observed_target</span> <span class="o">-</span> <span class="n">true_target</span><span class="p">)</span> <span class="o">/</span> <span class="n">target_sd</span><span class="p">))</span>
+        <span class="n">naive_pivot</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">naive_pivot</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">naive_pivot</span><span class="p">)</span>
+        <span class="n">naive_pivots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">naive_pivot</span><span class="p">)</span>
+
+        <span class="n">naive_pvalue</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">normal_dbn</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">observed_target</span> <span class="o">/</span> <span class="n">target_sd</span><span class="p">))</span>
+        <span class="n">naive_pvalue</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">naive_pvalue</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">naive_pvalue</span><span class="p">)</span>
+        <span class="n">naive_pvalues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">naive_pvalue</span><span class="p">)</span>
+
+        <span class="n">naive_covered</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">naive_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">true_target</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">naive_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">true_target</span><span class="p">))</span>
+        <span class="n">naive_lengths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">naive_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">naive_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># Bonferroni</span>
+
+        <span class="n">nfeature</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">quantile</span> <span class="o">=</span> <span class="n">normal_dbn</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">/</span> <span class="n">nfeature</span><span class="p">)</span>
+        <span class="n">bonferroni_interval</span> <span class="o">=</span> <span class="p">(</span><span class="n">observed_target</span> <span class="o">-</span> <span class="n">quantile</span> <span class="o">*</span> <span class="n">target_sd</span><span class="p">,</span> 
+                               <span class="n">observed_target</span> <span class="o">+</span> <span class="n">quantile</span> <span class="o">*</span> <span class="n">target_sd</span><span class="p">)</span>
+        <span class="n">bonferroni_upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bonferroni_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">bonferroni_lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bonferroni_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">bonferroni_pvalue</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nfeature</span> <span class="o">*</span> <span class="n">naive_pvalue</span><span class="p">)</span>
+        <span class="n">bonferroni_pvalues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bonferroni_pvalue</span><span class="p">)</span>
+
+        <span class="n">bonferroni_covered</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">bonferroni_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">true_target</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">bonferroni_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">true_target</span><span class="p">))</span>
+        <span class="n">bonferroni_lengths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bonferroni_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bonferroni_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;naive_pivot&#39;</span><span class="p">:</span><span class="n">naive_pivots</span><span class="p">,</span>
+                         <span class="s1">&#39;naive_pvalue&#39;</span><span class="p">:</span><span class="n">naive_pvalues</span><span class="p">,</span>
+                         <span class="s1">&#39;naive_coverage&#39;</span><span class="p">:</span><span class="n">naive_covered</span><span class="p">,</span>
+                         <span class="s1">&#39;naive_length&#39;</span><span class="p">:</span><span class="n">naive_lengths</span><span class="p">,</span>
+                         <span class="s1">&#39;naive_upper&#39;</span><span class="p">:</span><span class="n">naive_upper</span><span class="p">,</span>
+                         <span class="s1">&#39;naive_lower&#39;</span><span class="p">:</span><span class="n">naive_lower</span><span class="p">,</span>
+                         <span class="s1">&#39;bonferroni_pvalue&#39;</span><span class="p">:</span><span class="n">bonferroni_pvalues</span><span class="p">,</span>
+                         <span class="s1">&#39;bonferroni_coverage&#39;</span><span class="p">:</span><span class="n">bonferroni_covered</span><span class="p">,</span>
+                         <span class="s1">&#39;bonferroni_length&#39;</span><span class="p">:</span><span class="n">bonferroni_lengths</span><span class="p">,</span>
+                         <span class="s1">&#39;bonferroni_upper&#39;</span><span class="p">:</span><span class="n">bonferroni_upper</span><span class="p">,</span>
+                         <span class="s1">&#39;bonferroni_lower&#39;</span><span class="p">:</span><span class="n">bonferroni_lower</span><span class="p">,</span>
+                         <span class="s1">&#39;variable&#39;</span><span class="p">:</span><span class="n">observed_list</span><span class="p">,</span>
+                         <span class="p">})</span></div>
+
+<div class="viewcode-block" id="partial_model_inference"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.utils.html#selectinf.learning.utils.partial_model_inference">[docs]</a><span class="k">def</span> <span class="nf">partial_model_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> 
+                            <span class="n">y</span><span class="p">,</span>
+                            <span class="n">truth</span><span class="p">,</span>
+                            <span class="n">selection_algorithm</span><span class="p">,</span>
+                            <span class="n">sampler</span><span class="p">,</span>
+                            <span class="n">success_params</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="n">fit_probability</span><span class="o">=</span><span class="n">gbm_fit_sk</span><span class="p">,</span>
+                            <span class="n">fit_args</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;n_estimators&#39;</span><span class="p">:</span><span class="mi">500</span><span class="p">},</span>
+                            <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                            <span class="n">B</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+                            <span class="n">naive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">learner_klass</span><span class="o">=</span><span class="n">mixture_learner</span><span class="p">):</span>
+
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">XTX</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">XTXi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">XTX</span><span class="p">)</span>
+    <span class="n">resid</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">XTXi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+    <span class="n">dispersion</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">resid</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span>
+                         
+    <span class="n">instance_hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">truth</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_id</span> <span class="o">=</span> <span class="n">instance_hash</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+    <span class="n">observed_tuple</span> <span class="o">=</span> <span class="n">selection_algorithm</span><span class="p">(</span><span class="n">sampler</span><span class="p">)</span>
+
+    <span class="p">(</span><span class="n">pivots</span><span class="p">,</span> 
+     <span class="n">covered</span><span class="p">,</span> 
+     <span class="n">lengths</span><span class="p">,</span> 
+     <span class="n">pvalues</span><span class="p">,</span>
+     <span class="n">lower</span><span class="p">,</span>
+     <span class="n">upper</span><span class="p">)</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+
+    <span class="n">targets</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_tuple</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="n">Xpi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="nb">list</span><span class="p">(</span><span class="n">observed_tuple</span><span class="p">)])</span>
+        <span class="n">final_target</span> <span class="o">=</span> <span class="n">Xpi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">truth</span><span class="p">))</span>
+        <span class="n">observed_target</span> <span class="o">=</span> <span class="n">Xpi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="n">target_cov</span> <span class="o">=</span> <span class="n">Xpi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Xpi</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">dispersion</span>
+        <span class="n">cross_cov</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Xpi</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">dispersion</span>
+
+        <span class="n">learner</span> <span class="o">=</span> <span class="n">learner_klass</span><span class="p">(</span><span class="n">selection_algorithm</span><span class="p">,</span> 
+                                <span class="n">observed_tuple</span><span class="p">,</span>
+                                <span class="n">sampler</span><span class="p">,</span> 
+                                <span class="n">observed_target</span><span class="p">,</span>
+                                <span class="n">target_cov</span><span class="p">,</span>
+                                <span class="n">cross_cov</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="n">infer_general_target</span><span class="p">(</span><span class="n">observed_tuple</span><span class="p">,</span>
+                                       <span class="n">observed_target</span><span class="p">,</span>
+                                       <span class="n">target_cov</span><span class="p">,</span>
+                                       <span class="n">learner</span><span class="p">,</span>
+                                       <span class="n">hypothesis</span><span class="o">=</span><span class="n">final_target</span><span class="p">,</span>
+                                       <span class="n">fit_probability</span><span class="o">=</span><span class="n">fit_probability</span><span class="p">,</span>
+                                       <span class="n">fit_args</span><span class="o">=</span><span class="n">fit_args</span><span class="p">,</span>
+                                       <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+                                       <span class="n">B</span><span class="o">=</span><span class="n">B</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">result</span><span class="p">,</span> <span class="n">true_target</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">final_target</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">pivot</span><span class="p">,</span> 
+             <span class="n">interval</span><span class="p">,</span>
+             <span class="n">pvalue</span><span class="p">,</span>
+             <span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">result</span>
+            
+            <span class="n">pvalues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pvalue</span><span class="p">)</span>
+            <span class="n">pivots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pivot</span><span class="p">)</span>
+            <span class="n">covered</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">true_target</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">true_target</span><span class="p">))</span>
+            <span class="n">lengths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">lower</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">upper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_tuple</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;pivot&#39;</span><span class="p">:</span><span class="n">pivots</span><span class="p">,</span>
+                           <span class="s1">&#39;pvalue&#39;</span><span class="p">:</span><span class="n">pvalues</span><span class="p">,</span>
+                           <span class="s1">&#39;coverage&#39;</span><span class="p">:</span><span class="n">covered</span><span class="p">,</span>
+                           <span class="s1">&#39;length&#39;</span><span class="p">:</span><span class="n">lengths</span><span class="p">,</span>
+                           <span class="s1">&#39;nfeature&#39;</span><span class="p">:</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                           <span class="s1">&#39;alpha&#39;</span><span class="p">:</span><span class="n">alpha</span><span class="p">,</span>
+                           <span class="s1">&#39;nsample&#39;</span><span class="p">:</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                           <span class="s1">&#39;upper&#39;</span><span class="p">:</span><span class="n">upper</span><span class="p">,</span>
+                           <span class="s1">&#39;lower&#39;</span><span class="p">:</span><span class="n">lower</span><span class="p">,</span>
+                           <span class="s1">&#39;target&#39;</span><span class="p">:</span><span class="n">final_target</span><span class="p">,</span>
+                           <span class="s1">&#39;variable&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="n">observed_tuple</span><span class="p">),</span>
+                           <span class="s1">&#39;id&#39;</span><span class="p">:[</span><span class="n">instance_id</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">pivots</span><span class="p">),</span>
+                           <span class="p">})</span>
+        <span class="k">if</span> <span class="n">naive</span><span class="p">:</span>
+            <span class="n">naive_df</span> <span class="o">=</span> <span class="n">naive_partial_model_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                                                     <span class="n">y</span><span class="p">,</span>
+                                                     <span class="n">dispersion</span><span class="p">,</span>
+                                                     <span class="n">truth</span><span class="p">,</span>
+                                                     <span class="n">observed_tuple</span><span class="p">,</span>
+                                                     <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">naive_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;variable&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">df</span></div>
+
+<div class="viewcode-block" id="naive_partial_model_inference"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.utils.html#selectinf.learning.utils.naive_partial_model_inference">[docs]</a><span class="k">def</span> <span class="nf">naive_partial_model_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                                  <span class="n">y</span><span class="p">,</span>
+                                  <span class="n">dispersion</span><span class="p">,</span>
+                                  <span class="n">truth</span><span class="p">,</span>
+                                  <span class="n">observed_set</span><span class="p">,</span>
+                                  <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="n">observed_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">observed_set</span><span class="p">)</span>
+        <span class="n">Xpi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span><span class="n">observed_list</span><span class="p">])</span>
+        <span class="n">final_target</span> <span class="o">=</span> <span class="n">Xpi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">truth</span><span class="p">))</span>
+
+        <span class="n">observed_target</span> <span class="o">=</span> <span class="n">Xpi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="n">target_cov</span> <span class="o">=</span> <span class="n">Xpi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Xpi</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">dispersion</span>
+        <span class="n">cross_cov</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Xpi</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">dispersion</span>
+
+        <span class="n">target_sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">target_cov</span><span class="p">))</span>
+        <span class="n">quantile</span> <span class="o">=</span> <span class="n">normal_dbn</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="n">naive_interval</span> <span class="o">=</span> <span class="p">(</span><span class="n">observed_target</span> <span class="o">-</span> <span class="n">quantile</span> <span class="o">*</span> <span class="n">target_sd</span><span class="p">,</span> <span class="n">observed_target</span> <span class="o">+</span> <span class="n">quantile</span> <span class="o">*</span> <span class="n">target_sd</span><span class="p">)</span>
+        <span class="n">naive_lower</span><span class="p">,</span> <span class="n">naive_upper</span> <span class="o">=</span> <span class="n">naive_interval</span>
+
+        <span class="n">naive_pivots</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">normal_dbn</span><span class="o">.</span><span class="n">cdf</span><span class="p">((</span><span class="n">observed_target</span> <span class="o">-</span> <span class="n">final_target</span><span class="p">)</span> <span class="o">/</span> <span class="n">target_sd</span><span class="p">))</span>
+        <span class="n">naive_pivots</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">naive_pivots</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">naive_pivots</span><span class="p">)</span>
+
+        <span class="n">naive_pvalues</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">normal_dbn</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">observed_target</span> <span class="o">/</span> <span class="n">target_sd</span><span class="p">))</span>
+        <span class="n">naive_pvalues</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">naive_pvalues</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">naive_pvalues</span><span class="p">)</span>
+
+        <span class="n">naive_covered</span> <span class="o">=</span> <span class="p">(</span><span class="n">naive_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">final_target</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">naive_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">final_target</span><span class="p">)</span>
+        <span class="n">naive_lengths</span> <span class="o">=</span> <span class="n">naive_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">naive_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;naive_pivot&#39;</span><span class="p">:</span><span class="n">naive_pivots</span><span class="p">,</span>
+                             <span class="s1">&#39;naive_coverage&#39;</span><span class="p">:</span><span class="n">naive_covered</span><span class="p">,</span>
+                             <span class="s1">&#39;naive_length&#39;</span><span class="p">:</span><span class="n">naive_lengths</span><span class="p">,</span>
+                             <span class="s1">&#39;nfeature&#39;</span><span class="p">:</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                             <span class="s1">&#39;naive_lower&#39;</span><span class="p">:</span><span class="n">naive_lower</span><span class="p">,</span>
+                             <span class="s1">&#39;target&#39;</span><span class="p">:</span><span class="n">final_target</span><span class="p">,</span>
+                             <span class="s1">&#39;variable&#39;</span><span class="p">:</span><span class="n">observed_list</span>
+                             <span class="p">})</span></div>
+
+<div class="viewcode-block" id="lee_inference"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.utils.html#selectinf.learning.utils.lee_inference">[docs]</a><span class="k">def</span> <span class="nf">lee_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                  <span class="n">y</span><span class="p">,</span>
+                  <span class="n">lam</span><span class="p">,</span>
+                  <span class="n">dispersion</span><span class="p">,</span>
+                  <span class="n">truth</span><span class="p">,</span>
+                  <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="n">lasso</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dispersion</span><span class="p">))</span>
+    <span class="n">L</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+
+    <span class="n">Xpi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span><span class="n">L</span><span class="o">.</span><span class="n">active</span><span class="p">])</span>
+    <span class="n">final_target</span> <span class="o">=</span> <span class="n">Xpi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">truth</span><span class="p">))</span>
+
+    <span class="n">summaryL0</span> <span class="o">=</span> <span class="n">L</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">compute_intervals</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">lee_pvalues</span> <span class="o">=</span> <span class="n">summaryL0</span><span class="p">[</span><span class="s1">&#39;pval&#39;</span><span class="p">]</span>
+    <span class="n">lee_lower</span> <span class="o">=</span> <span class="n">summaryL0</span><span class="p">[</span><span class="s1">&#39;lower_confidence&#39;</span><span class="p">]</span>
+    <span class="n">lee_upper</span> <span class="o">=</span> <span class="n">summaryL0</span><span class="p">[</span><span class="s1">&#39;upper_confidence&#39;</span><span class="p">]</span>
+    <span class="n">lee_lengths</span> <span class="o">=</span> <span class="n">lee_upper</span> <span class="o">-</span> <span class="n">lee_lower</span>
+    <span class="n">lee_pivots</span> <span class="o">=</span> <span class="n">lee_pvalues</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="n">lee_covered</span> <span class="o">=</span> <span class="p">[(</span><span class="n">l</span> <span class="o">&lt;</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">lee_lower</span><span class="p">,</span> <span class="n">lee_upper</span><span class="p">,</span> <span class="n">final_target</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;lee_pivot&#39;</span><span class="p">:</span><span class="n">lee_pivots</span><span class="p">,</span>
+                         <span class="s1">&#39;lee_pvalue&#39;</span><span class="p">:</span><span class="n">lee_pvalues</span><span class="p">,</span>
+                         <span class="s1">&#39;lee_length&#39;</span><span class="p">:</span><span class="n">lee_lengths</span><span class="p">,</span>
+                         <span class="s1">&#39;lee_upper&#39;</span><span class="p">:</span><span class="n">lee_upper</span><span class="p">,</span>
+                         <span class="s1">&#39;lee_lower&#39;</span><span class="p">:</span><span class="n">lee_lower</span><span class="p">,</span>
+                         <span class="s1">&#39;lee_coverage&#39;</span><span class="p">:</span><span class="n">lee_covered</span><span class="p">,</span>
+                         <span class="s1">&#39;variable&#39;</span><span class="p">:</span><span class="n">summaryL0</span><span class="p">[</span><span class="s1">&#39;variable&#39;</span><span class="p">]})</span></div>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+    <span class="k">def</span> <span class="nf">pivot_plot</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> 
+                   <span class="n">outbase</span><span class="p">,</span>
+                   <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">)):</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;selective:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;pivot&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;pivot&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;coverage&#39;</span><span class="p">]))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;naive:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_pivot&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_pivot&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_coverage&#39;</span><span class="p">]))</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;len ratio selective divided by naive:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_length&#39;</span><span class="p">])))</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;pivot&#39;</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Selective&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_pivot&#39;</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Naive&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outbase</span> <span class="o">+</span> <span class="s1">&#39;.pdf&#39;</span><span class="p">)</span>
+        <span class="n">pivot_ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">pivot_ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;P(pivot &lt; t)&#39;</span><span class="p">)</span>
+        <span class="n">pivot_ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;t&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pivot_ax</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;matplotlib not importable, pivot_plot will not be available&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="liu_inference"><a class="viewcode-back" href="../../../api/generated/selectinf.learning.utils.html#selectinf.learning.utils.liu_inference">[docs]</a><span class="k">def</span> <span class="nf">liu_inference</span><span class="p">(</span><span class="n">X</span><span class="p">,</span>
+                  <span class="n">y</span><span class="p">,</span>
+                  <span class="n">lam</span><span class="p">,</span>
+                  <span class="n">dispersion</span><span class="p">,</span>
+                  <span class="n">truth</span><span class="p">,</span>
+                  <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                  <span class="n">approximate_inverse</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="n">R</span> <span class="o">=</span> <span class="n">ROSI</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">approximate_inverse</span><span class="o">=</span><span class="n">approximate_inverse</span><span class="p">)</span>
+    <span class="n">R</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+    <span class="n">summaryR</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">truth</span><span class="o">=</span><span class="n">truth</span><span class="p">[</span><span class="n">R</span><span class="o">.</span><span class="n">active</span><span class="p">],</span> <span class="n">dispersion</span><span class="o">=</span><span class="n">dispersion</span><span class="p">,</span> <span class="n">compute_intervals</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="o">-</span><span class="n">alpha</span><span class="p">)</span>
+    <span class="n">summaryR0</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">dispersion</span><span class="o">=</span><span class="n">dispersion</span><span class="p">,</span> <span class="n">compute_intervals</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">instance_hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">truth</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    <span class="n">instance_id</span> <span class="o">=</span> <span class="n">instance_hash</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">summaryR</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">liu_pivots</span> <span class="o">=</span> <span class="n">summaryR</span><span class="p">[</span><span class="s1">&#39;pval&#39;</span><span class="p">]</span>
+        <span class="n">liu_pvalues</span> <span class="o">=</span> <span class="n">summaryR0</span><span class="p">[</span><span class="s1">&#39;pval&#39;</span><span class="p">]</span>
+        <span class="n">liu_lower</span> <span class="o">=</span> <span class="n">summaryR</span><span class="p">[</span><span class="s1">&#39;lower_confidence&#39;</span><span class="p">]</span>
+        <span class="n">liu_upper</span> <span class="o">=</span> <span class="n">summaryR</span><span class="p">[</span><span class="s1">&#39;upper_confidence&#39;</span><span class="p">]</span>
+        <span class="n">variable</span> <span class="o">=</span> <span class="n">summaryR</span><span class="p">[</span><span class="s1">&#39;variable&#39;</span><span class="p">]</span>
+        <span class="n">liu_lengths</span> <span class="o">=</span> <span class="n">liu_upper</span> <span class="o">-</span> <span class="n">liu_lower</span>
+        <span class="n">liu_covered</span> <span class="o">=</span> <span class="p">[(</span><span class="n">l</span> <span class="o">&lt;</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">liu_lower</span><span class="p">,</span> <span class="n">liu_upper</span><span class="p">,</span> <span class="n">truth</span><span class="p">[</span><span class="n">R</span><span class="o">.</span><span class="n">active</span><span class="p">])]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">variable</span> <span class="o">=</span> <span class="n">liu_pivots</span> <span class="o">=</span> <span class="n">liu_pvalues</span> <span class="o">=</span> <span class="n">liu_lower</span> <span class="o">=</span> <span class="n">liu_upper</span> <span class="o">=</span> <span class="n">liu_lengths</span> <span class="o">=</span> <span class="n">liu_covered</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;liu_pivot&#39;</span><span class="p">:</span><span class="n">liu_pivots</span><span class="p">,</span>
+                         <span class="s1">&#39;liu_pvalue&#39;</span><span class="p">:</span><span class="n">liu_pvalues</span><span class="p">,</span>
+                         <span class="s1">&#39;liu_length&#39;</span><span class="p">:</span><span class="n">liu_lengths</span><span class="p">,</span>
+                         <span class="s1">&#39;liu_upper&#39;</span><span class="p">:</span><span class="n">liu_upper</span><span class="p">,</span>
+                         <span class="s1">&#39;liu_lower&#39;</span><span class="p">:</span><span class="n">liu_lower</span><span class="p">,</span>
+                         <span class="s1">&#39;liu_coverage&#39;</span><span class="p">:</span><span class="n">liu_covered</span><span class="p">,</span>
+                         <span class="s1">&#39;liu_upper&#39;</span><span class="p">:</span><span class="n">liu_upper</span><span class="p">,</span>
+                         <span class="s1">&#39;liu_lower&#39;</span><span class="p">:</span><span class="n">liu_lower</span><span class="p">,</span>
+                         <span class="s1">&#39;target&#39;</span><span class="p">:</span><span class="n">truth</span><span class="p">[</span><span class="n">R</span><span class="o">.</span><span class="n">active</span><span class="p">],</span>
+                         <span class="s1">&#39;id&#39;</span><span class="p">:[</span><span class="n">instance_id</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">liu_pivots</span><span class="p">),</span>
+                         <span class="s1">&#39;variable&#39;</span><span class="p">:</span><span class="n">variable</span><span class="p">})</span></div>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">statsmodels.api</span> <span class="k">as</span> <span class="nn">sm</span>
+
+    <span class="k">def</span> <span class="nf">pvalue_plot</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> 
+                    <span class="n">outbase</span><span class="p">,</span>
+                    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                    <span class="n">naive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">split</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">bonferroni</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;selective:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;pvalue&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;pvalue&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;coverage&#39;</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="n">naive</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;naive:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_coverage&#39;</span><span class="p">]))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;len ratio selective divided by naive:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_length&#39;</span><span class="p">])))</span>
+
+        <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;split:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;split_length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;split_length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;split_coverage&#39;</span><span class="p">]))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;len ratio selective divided by split:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;split_length&#39;</span><span class="p">])))</span>
+
+        <span class="k">if</span> <span class="n">bonferroni</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bonferroni:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;bonferroni_length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;bonferroni_length&#39;</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;bonferroni_coverage&#39;</span><span class="p">]))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;len ratio selective divided by bonferroni:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;bonferroni_length&#39;</span><span class="p">])))</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+        <span class="n">non_null</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="n">null</span> <span class="o">=</span> <span class="o">~</span><span class="n">non_null</span>
+        <span class="k">if</span> <span class="n">non_null</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;pvalue&#39;</span><span class="p">][</span><span class="n">non_null</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Learned&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">null</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;pvalue&#39;</span><span class="p">][</span><span class="n">null</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="s1">&#39;b--&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">naive</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">non_null</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_pvalue&#39;</span><span class="p">][</span><span class="n">non_null</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Naive&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">null</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_pvalue&#39;</span><span class="p">][</span><span class="n">null</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="s1">&#39;r--&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">non_null</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;split_pvalue&#39;</span><span class="p">][</span><span class="n">non_null</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Split&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">null</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;split_pvalue&#39;</span><span class="p">][</span><span class="n">null</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">bonferroni</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">non_null</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;bonferroni_pvalue&#39;</span><span class="p">][</span><span class="n">non_null</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Bonferroni&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">null</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;bonferroni_pvalue&#39;</span><span class="p">][</span><span class="n">null</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="n">pvalue_ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">pvalue_ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;ECDF(pvalue)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">pvalue_ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;pvalue&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outbase</span> <span class="o">+</span> <span class="s1">&#39;_pvalues.pdf&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outbase</span> <span class="o">+</span> <span class="s1">&#39;_pvalues.png&#39;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pvalue_ax</span>
+
+    <span class="k">def</span> <span class="nf">pivot_plot_new</span><span class="p">(</span><span class="n">df</span><span class="p">,</span>
+                       <span class="n">outbase</span><span class="p">,</span>
+                       <span class="n">palette</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Learned&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;Naive&#39;</span><span class="p">:</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;Bonferroni&#39;</span><span class="p">:</span> <span class="s1">&#39;gray&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;Lee&#39;</span><span class="p">:</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;Strawman&#39;</span><span class="p">:</span><span class="s1">&#39;gray&#39;</span><span class="p">},</span>
+                       <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">straw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+        <span class="n">new_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Learned&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;pivot&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;Naive&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_pivot&#39;</span><span class="p">]})</span>
+        <span class="k">if</span> <span class="n">straw</span><span class="p">:</span>
+            <span class="n">new_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Learned&#39;</span><span class="p">:</span> <span class="n">new_df</span><span class="p">[</span><span class="s1">&#39;Learned&#39;</span><span class="p">],</span>
+                                   <span class="s1">&#39;Strawman&#39;</span><span class="p">:</span> <span class="n">new_df</span><span class="p">[</span><span class="s1">&#39;Naive&#39;</span><span class="p">]})</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">new_df</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">sm</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">ECDF</span><span class="p">(</span><span class="n">new_df</span><span class="p">[</span><span class="n">k</span><span class="p">])(</span><span class="n">U</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;pivot&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;ECDF(pivot)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+        <span class="n">pngfile</span> <span class="o">=</span> <span class="n">outbase</span> <span class="o">+</span> <span class="s1">&#39;_pivot.png&#39;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">pngfile</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ax</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">pngfile</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">new_df</span>
+
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;statsmodels not importable, `pvalue_plot` and `pvalue_plot_new` unavaliable&#39;</span><span class="p">)</span>
+
+<span class="c1"># Some plotting functions</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+
+    <span class="k">def</span> <span class="nf">interval_plot</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> 
+                      <span class="n">outbase</span><span class="p">,</span>
+                      <span class="n">palette</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Learned&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;Naive&#39;</span><span class="p">:</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;Bonferroni&#39;</span><span class="p">:</span> <span class="s1">&#39;purple&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;Split&#39;</span><span class="p">:</span><span class="s1">&#39;gray&#39;</span><span class="p">},</span>
+                      <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> 
+                      <span class="n">naive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                      <span class="n">bonferroni</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                      <span class="n">split</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+        <span class="n">new_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Learned&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;Naive&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;naive_length&#39;</span><span class="p">]})</span>
+        <span class="k">if</span> <span class="n">bonferroni</span><span class="p">:</span>
+            <span class="n">new_df</span><span class="p">[</span><span class="s1">&#39;Bonferroni&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;bonferroni_length&#39;</span><span class="p">]</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
+            <span class="n">new_df</span><span class="p">[</span><span class="s1">&#39;Split&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;split_length&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">new_df</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">new_df</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">l</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">l</span><span class="p">)]</span>
+            <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Interval length&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">xlim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xlim</span><span class="p">)</span>
+
+        <span class="n">pngfile</span> <span class="o">=</span> <span class="n">outbase</span> <span class="o">+</span> <span class="s1">&#39;_intervals.png&#39;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">pngfile</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outbase</span> <span class="o">+</span> <span class="s1">&#39;_intervals.pdf&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ax</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">pngfile</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">new_df</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;seaborn not found, `interval_plot` will not be available&#39;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

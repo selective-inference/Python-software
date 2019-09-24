@@ -1,0 +1,1050 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.spatial_models.discrete_domain.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-spatial-models-discrete-domain">
+<h1>labs.spatial_models.discrete_domain<a class="headerlink" href="#labs-spatial-models-discrete-domain" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-labs-spatial-models-discrete-domain">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.spatial_models.discrete_domain</span></code><a class="headerlink" href="#module-labs-spatial-models-discrete-domain" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.labs.spatial_models.discrete_domain</span></code>:</p>
+digraph inheritance307637969f {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;spatial_models.discrete_domain.DiscreteDomain&quot; [URL=&quot;#nipy.labs.spatial_models.discrete_domain.DiscreteDomain&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Descriptor of a certain domain that consists of discrete elements that&quot;];
+  &quot;spatial_models.discrete_domain.MeshDomain&quot; [URL=&quot;#nipy.labs.spatial_models.discrete_domain.MeshDomain&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;temporary class to handle meshes&quot;];
+  &quot;spatial_models.discrete_domain.NDGridDomain&quot; [URL=&quot;#nipy.labs.spatial_models.discrete_domain.NDGridDomain&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Particular instance of StructuredDomain, that receives&quot;];
+  &quot;spatial_models.discrete_domain.StructuredDomain&quot; -&gt; &quot;spatial_models.discrete_domain.NDGridDomain&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;spatial_models.discrete_domain.StructuredDomain&quot; [URL=&quot;#nipy.labs.spatial_models.discrete_domain.StructuredDomain&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Besides DiscreteDomain attributed, StructuredDomain has a topology,&quot;];
+  &quot;spatial_models.discrete_domain.DiscreteDomain&quot; -&gt; &quot;spatial_models.discrete_domain.StructuredDomain&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.labs.spatial_models.discrete_domain"></span><p>This module defines the StructuredDomain class,
+that represents a generic neuroimaging kind of domain
+This is meant to provide a unified API to deal with n-d imaged and meshes.</p>
+<p>Author: Bertrand Thirion, 2010</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="discretedomain">
+<h3><a class="reference internal" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain" title="nipy.labs.spatial_models.discrete_domain.DiscreteDomain"><code class="xref py py-class docutils literal notranslate"><span class="pre">DiscreteDomain</span></code></a><a class="headerlink" href="#discretedomain" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">DiscreteDomain</code><span class="sig-paren">(</span><em class="sig-param">dim</em>, <em class="sig-param">coord</em>, <em class="sig-param">local_volume</em>, <em class="sig-param">id=''</em>, <em class="sig-param">referential=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Descriptor of a certain domain that consists of discrete elements that
+are characterized by a coordinate system and a topology:
+the coordinate system is specified through a coordinate array
+the topology encodes the neighboring system</p>
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">dim</em>, <em class="sig-param">coord</em>, <em class="sig-param">local_volume</em>, <em class="sig-param">id=''</em>, <em class="sig-param">referential=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize discrete domain instance</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dim: int</strong></p>
+<blockquote>
+<div><p>the (physical) dimension of the domain.</p>
+</div></blockquote>
+<p><strong>coord: array of shape(size, em_dim)</strong></p>
+<blockquote>
+<div><p>explicit coordinates of the domain sites.</p>
+</div></blockquote>
+<p><strong>local_volume: array of shape(size)</strong></p>
+<blockquote>
+<div><p>yields the volume associated with each site.</p>
+</div></blockquote>
+<p><strong>id: string, optional</strong></p>
+<blockquote>
+<div><p>domain identifier.</p>
+</div></blockquote>
+<p><strong>referential: string, optional</strong></p>
+<blockquote>
+<div><p>identifier of the referential of the coordinates system.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Caveat: em_dim may be greater than dim e.g. (meshes coordinate in 3D)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a copy of self</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_coord">
+<code class="sig-name descname">get_coord</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.get_coord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns self.coord</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_volume">
+<code class="sig-name descname">get_volume</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.get_volume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_volume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns self.local_volume</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.connected_components">
+<code class="sig-name descname">connected_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.connected_components"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.connected_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a labelling of the domain into connected components</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.mask">
+<code class="sig-name descname">mask</code><span class="sig-paren">(</span><em class="sig-param">bmask</em>, <em class="sig-param">id=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an DiscreteDomain instance that has been further masked</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.set_feature">
+<code class="sig-name descname">set_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em>, <em class="sig-param">data</em>, <em class="sig-param">override=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.set_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.set_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a feature ‘fid’</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string,</strong></p>
+<blockquote>
+<div><p>feature identifier</p>
+</div></blockquote>
+<p><strong>data: array of shape(self.size, p) or self.size</strong></p>
+<blockquote>
+<div><p>the feature data</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_feature">
+<code class="sig-name descname">get_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.get_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.get_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return self.features[fid]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.representative_feature">
+<code class="sig-name descname">representative_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em>, <em class="sig-param">method</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.representative_feature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.representative_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a statistical representative of the within-Foain feature</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string, feature id</strong></p>
+<p><strong>method: string, method used to compute a representative</strong></p>
+<blockquote>
+<div><p>to be chosen among ‘mean’, ‘max’, ‘median’, ‘min’</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.DiscreteDomain.integrate">
+<code class="sig-name descname">integrate</code><span class="sig-paren">(</span><em class="sig-param">fid</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#DiscreteDomain.integrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain.integrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrate  certain feature over the domain and returns the result</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid</strong> : string,  feature identifier,</p>
+<blockquote>
+<div><p>by default, the 1 function is integrataed, yielding domain volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>lsum = array of shape (self.feature[fid].shape[1]),</p>
+<blockquote>
+<div><p>the result</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="meshdomain">
+<h3><a class="reference internal" href="#nipy.labs.spatial_models.discrete_domain.MeshDomain" title="nipy.labs.spatial_models.discrete_domain.MeshDomain"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshDomain</span></code></a><a class="headerlink" href="#meshdomain" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.spatial_models.discrete_domain.MeshDomain">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">MeshDomain</code><span class="sig-paren">(</span><em class="sig-param">coord</em>, <em class="sig-param">triangles</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#MeshDomain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.MeshDomain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>temporary class to handle meshes</p>
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.MeshDomain.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">coord</em>, <em class="sig-param">triangles</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#MeshDomain.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.MeshDomain.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize mesh domain instance</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coord: array of shape (n_vertices, 3),</strong></p>
+<blockquote>
+<div><p>the node coordinates</p>
+</div></blockquote>
+<p><strong>triangles: array of shape(n_triables, 3),</strong></p>
+<blockquote>
+<div><p>indices of the nodes per triangle</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.MeshDomain.area">
+<code class="sig-name descname">area</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#MeshDomain.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.MeshDomain.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return array of areas for each node</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>area: array of shape self.V,</p>
+<blockquote>
+<div><p>area of each node</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.MeshDomain.topology">
+<code class="sig-name descname">topology</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#MeshDomain.topology"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.MeshDomain.topology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a sparse matrix that represents the connectivity in self</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="ndgriddomain">
+<h3><a class="reference internal" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain" title="nipy.labs.spatial_models.discrete_domain.NDGridDomain"><code class="xref py py-class docutils literal notranslate"><span class="pre">NDGridDomain</span></code></a><a class="headerlink" href="#ndgriddomain" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">NDGridDomain</code><span class="sig-paren">(</span><em class="sig-param">dim</em>, <em class="sig-param">ijk</em>, <em class="sig-param">shape</em>, <em class="sig-param">affine</em>, <em class="sig-param">local_volume</em>, <em class="sig-param">topology</em>, <em class="sig-param">referential=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#NDGridDomain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain" title="nipy.labs.spatial_models.discrete_domain.StructuredDomain"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.spatial_models.discrete_domain.StructuredDomain</span></code></a></p>
+<p>Particular instance of StructuredDomain, that receives
+3 additional variables:
+affine: array of shape (dim+1, dim+1),</p>
+<blockquote>
+<div><p>affine transform that maps points to a coordinate system</p>
+</div></blockquote>
+<dl class="simple">
+<dt>shape: dim-tuple,</dt><dd><p>shape of the domain</p>
+</dd>
+<dt>ijk: array of shape(size, dim), int</dt><dd><p>grid coordinates of the points</p>
+</dd>
+</dl>
+<p>This is to allow easy conversion to images when dim==3,
+and for compatibility with previous classes</p>
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">dim</em>, <em class="sig-param">ijk</em>, <em class="sig-param">shape</em>, <em class="sig-param">affine</em>, <em class="sig-param">local_volume</em>, <em class="sig-param">topology</em>, <em class="sig-param">referential=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#NDGridDomain.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize ndgrid domain instance</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dim: int,</strong></p>
+<blockquote>
+<div><p>the (physical) dimension of the domain</p>
+</div></blockquote>
+<p><strong>ijk: array of shape(size, dim), int</strong></p>
+<blockquote>
+<div><p>grid coordinates of the points</p>
+</div></blockquote>
+<p><strong>shape: dim-tuple,</strong></p>
+<blockquote>
+<div><p>shape of the domain</p>
+</div></blockquote>
+<p><strong>affine: array of shape (dim+1, dim+1),</strong></p>
+<blockquote>
+<div><p>affine transform that maps points to a coordinate system</p>
+</div></blockquote>
+<p><strong>local_volume: array of shape(size),</strong></p>
+<blockquote>
+<div><p>yields the volume associated with each site</p>
+</div></blockquote>
+<p><strong>topology: sparse binary coo_matrix of shape (size, size),</strong></p>
+<blockquote>
+<div><p>that yields the neighboring locations in the domain</p>
+</div></blockquote>
+<p><strong>referential: string, optional,</strong></p>
+<blockquote>
+<div><p>identifier of the referential of the coordinates system</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>FIXME: local_volume might be computed on-the-fly as <a href="#id1"><span class="problematic" id="id2">|det(affine)|</span></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.mask">
+<code class="sig-name descname">mask</code><span class="sig-paren">(</span><em class="sig-param">bmask</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#NDGridDomain.mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an instance of self that has been further masked</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.to_image">
+<code class="sig-name descname">to_image</code><span class="sig-paren">(</span><em class="sig-param">path=None</em>, <em class="sig-param">data=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#NDGridDomain.to_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.to_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write itself as a binary image, and returns it</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path: string, path of the output image, if any</strong></p>
+<p><strong>data: array of shape self.size,</strong></p>
+<blockquote>
+<div><p>data to put in the nonzer-region of the image</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.connected_components">
+<code class="sig-name descname">connected_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.connected_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a labelling of the domain into connected components</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a copy of self</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.get_coord">
+<code class="sig-name descname">get_coord</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.get_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns self.coord</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.get_feature">
+<code class="sig-name descname">get_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.get_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return self.features[fid]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.get_volume">
+<code class="sig-name descname">get_volume</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.get_volume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns self.local_volume</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.integrate">
+<code class="sig-name descname">integrate</code><span class="sig-paren">(</span><em class="sig-param">fid</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.integrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrate  certain feature over the domain and returns the result</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid</strong> : string,  feature identifier,</p>
+<blockquote>
+<div><p>by default, the 1 function is integrataed, yielding domain volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>lsum = array of shape (self.feature[fid].shape[1]),</p>
+<blockquote>
+<div><p>the result</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.make_feature_from_image">
+<code class="sig-name descname">make_feature_from_image</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">fid=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#NDGridDomain.make_feature_from_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.make_feature_from_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract the information from an image to make it a domain a feature</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path: string or Nifti1Image instance,</strong></p>
+<blockquote>
+<div><p>the image from which one wished to extract data</p>
+</div></blockquote>
+<p><strong>fid: string, optional</strong></p>
+<blockquote>
+<div><p>identifier of the resulting feature.
+if ‘’, the feature is not stored</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the correponding set of values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.representative_feature">
+<code class="sig-name descname">representative_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em>, <em class="sig-param">method</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.representative_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a statistical representative of the within-Foain feature</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string, feature id</strong></p>
+<p><strong>method: string, method used to compute a representative</strong></p>
+<blockquote>
+<div><p>to be chosen among ‘mean’, ‘max’, ‘median’, ‘min’</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.NDGridDomain.set_feature">
+<code class="sig-name descname">set_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em>, <em class="sig-param">data</em>, <em class="sig-param">override=True</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.NDGridDomain.set_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a feature ‘fid’</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string,</strong></p>
+<blockquote>
+<div><p>feature identifier</p>
+</div></blockquote>
+<p><strong>data: array of shape(self.size, p) or self.size</strong></p>
+<blockquote>
+<div><p>the feature data</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="structureddomain">
+<h3><a class="reference internal" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain" title="nipy.labs.spatial_models.discrete_domain.StructuredDomain"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuredDomain</span></code></a><a class="headerlink" href="#structureddomain" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">StructuredDomain</code><span class="sig-paren">(</span><em class="sig-param">dim</em>, <em class="sig-param">coord</em>, <em class="sig-param">local_volume</em>, <em class="sig-param">topology</em>, <em class="sig-param">did=''</em>, <em class="sig-param">referential=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#StructuredDomain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.spatial_models.discrete_domain.DiscreteDomain" title="nipy.labs.spatial_models.discrete_domain.DiscreteDomain"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.spatial_models.discrete_domain.DiscreteDomain</span></code></a></p>
+<p>Besides DiscreteDomain attributed, StructuredDomain has a topology,
+which allows many operations (morphology etc.)</p>
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">dim</em>, <em class="sig-param">coord</em>, <em class="sig-param">local_volume</em>, <em class="sig-param">topology</em>, <em class="sig-param">did=''</em>, <em class="sig-param">referential=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#StructuredDomain.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize structured domain instance</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dim: int,</strong></p>
+<blockquote>
+<div><p>the (physical) dimension of the domain</p>
+</div></blockquote>
+<p><strong>coord: array of shape(size, em_dim),</strong></p>
+<blockquote>
+<div><p>explicit coordinates of the domain sites</p>
+</div></blockquote>
+<p><strong>local_volume: array of shape(size),</strong></p>
+<blockquote>
+<div><p>yields the volume associated with each site</p>
+</div></blockquote>
+<p><strong>topology: sparse binary coo_matrix of shape (size, size),</strong></p>
+<blockquote>
+<div><p>that yields the neighboring locations in the domain</p>
+</div></blockquote>
+<p><strong>did: string, optional,</strong></p>
+<blockquote>
+<div><p>domain identifier</p>
+</div></blockquote>
+<p><strong>referential: string, optional,</strong></p>
+<blockquote>
+<div><p>identifier of the referential of the coordinates system</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.mask">
+<code class="sig-name descname">mask</code><span class="sig-paren">(</span><em class="sig-param">bmask</em>, <em class="sig-param">did=''</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#StructuredDomain.mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a StructuredDomain instance that has been further masked</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.connected_components">
+<code class="sig-name descname">connected_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.connected_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a labelling of the domain into connected components</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a copy of self</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.get_coord">
+<code class="sig-name descname">get_coord</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.get_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns self.coord</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.get_feature">
+<code class="sig-name descname">get_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.get_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return self.features[fid]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.get_volume">
+<code class="sig-name descname">get_volume</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.get_volume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns self.local_volume</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.integrate">
+<code class="sig-name descname">integrate</code><span class="sig-paren">(</span><em class="sig-param">fid</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.integrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrate  certain feature over the domain and returns the result</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid</strong> : string,  feature identifier,</p>
+<blockquote>
+<div><p>by default, the 1 function is integrataed, yielding domain volume</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>lsum = array of shape (self.feature[fid].shape[1]),</p>
+<blockquote>
+<div><p>the result</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.representative_feature">
+<code class="sig-name descname">representative_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em>, <em class="sig-param">method</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.representative_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a statistical representative of the within-Foain feature</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string, feature id</strong></p>
+<p><strong>method: string, method used to compute a representative</strong></p>
+<blockquote>
+<div><p>to be chosen among ‘mean’, ‘max’, ‘median’, ‘min’</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.discrete_domain.StructuredDomain.set_feature">
+<code class="sig-name descname">set_feature</code><span class="sig-paren">(</span><em class="sig-param">fid</em>, <em class="sig-param">data</em>, <em class="sig-param">override=True</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.StructuredDomain.set_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a feature ‘fid’</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fid: string,</strong></p>
+<blockquote>
+<div><p>feature identifier</p>
+</div></blockquote>
+<p><strong>data: array of shape(self.size, p) or self.size</strong></p>
+<blockquote>
+<div><p>the feature data</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.array_affine_coord">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">array_affine_coord</code><span class="sig-paren">(</span><em class="sig-param">mask</em>, <em class="sig-param">affine</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#array_affine_coord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.array_affine_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute coordinates from a boolean array and an affine transform</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask: nd array,</strong></p>
+<blockquote>
+<div><p>input array, interpreted as a mask</p>
+</div></blockquote>
+<p><strong>affine: (n+1, n+1) matrix,</strong></p>
+<blockquote>
+<div><p>affine transform that maps the mask points to some embedding space</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>coords: array of shape(sum(mask&gt;0), n),</p>
+<blockquote>
+<div><p>the computed coordinates</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.domain_from_binary_array">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">domain_from_binary_array</code><span class="sig-paren">(</span><em class="sig-param">mask</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">nn=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#domain_from_binary_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.domain_from_binary_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a StructuredDomain from an n-d array</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask: np.array instance</strong></p>
+<blockquote>
+<div><p>a supposedly boolean array that repesents the domain</p>
+</div></blockquote>
+<p><strong>affine: np.array, optional</strong></p>
+<blockquote>
+<div><p>affine transform that maps the array coordinates
+to some embedding space
+by default, this is np.eye(dim+1, dim+1)</p>
+</div></blockquote>
+<p><strong>nn: neighboring system considered</strong></p>
+<blockquote>
+<div><p>unsued at the moment</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.domain_from_image">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">domain_from_image</code><span class="sig-paren">(</span><em class="sig-param">mim</em>, <em class="sig-param">nn=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#domain_from_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.domain_from_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a StructuredDomain instance from the input mask image</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mim: NiftiIImage instance, or string path toward such an image</strong></p>
+<blockquote>
+<div><p>supposedly a mask (where is used to crate the DD)</p>
+</div></blockquote>
+<p><strong>nn: int, optional</strong></p>
+<blockquote>
+<div><p>neighboring system considered from the image
+can be 6, 18 or 26</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The corresponding StructuredDomain instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.domain_from_mesh">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">domain_from_mesh</code><span class="sig-paren">(</span><em class="sig-param">mesh</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#domain_from_mesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.domain_from_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiate a StructuredDomain from a gifti mesh</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mesh: nibabel gifti mesh instance, or path to such a mesh</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.grid_domain_from_binary_array">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">grid_domain_from_binary_array</code><span class="sig-paren">(</span><em class="sig-param">mask</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">nn=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#grid_domain_from_binary_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.grid_domain_from_binary_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a NDGridDomain from an n-d array</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask: np.array instance</strong></p>
+<blockquote>
+<div><p>a supposedly boolean array that repesents the domain</p>
+</div></blockquote>
+<p><strong>affine: np.array, optional</strong></p>
+<blockquote>
+<div><p>affine transform that maps the array coordinates
+to some embedding space
+by default, this is np.eye(dim+1, dim+1)</p>
+</div></blockquote>
+<p><strong>nn: neighboring system considered</strong></p>
+<blockquote>
+<div><p>unsued at the moment</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.grid_domain_from_image">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">grid_domain_from_image</code><span class="sig-paren">(</span><em class="sig-param">mim</em>, <em class="sig-param">nn=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#grid_domain_from_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.grid_domain_from_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a NDGridDomain instance from the input mask image</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mim: NiftiIImage instance, or string path toward such an image</strong></p>
+<blockquote>
+<div><p>supposedly a mask (where is used to crate the DD)</p>
+</div></blockquote>
+<p><strong>nn: int, optional</strong></p>
+<blockquote>
+<div><p>neighboring system considered from the image
+can be 6, 18 or 26</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The corresponding NDGridDomain instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.grid_domain_from_shape">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">grid_domain_from_shape</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">affine=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#grid_domain_from_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.grid_domain_from_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a NDGridDomain from an n-d array</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape: tuple</strong></p>
+<blockquote>
+<div><p>the shape of a rectangular domain.</p>
+</div></blockquote>
+<p><strong>affine: np.array, optional</strong></p>
+<blockquote>
+<div><p>affine transform that maps the array coordinates
+to some embedding space.
+By default, this is np.eye(dim+1, dim+1)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.idx_affine_coord">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">idx_affine_coord</code><span class="sig-paren">(</span><em class="sig-param">idx</em>, <em class="sig-param">affine</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#idx_affine_coord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.idx_affine_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute coordinates from a set of indexes and an affine transform</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>idx:array of shape (n_samples, dim), type int</strong></p>
+<blockquote>
+<div><p>indexes of certain positions in a nd space</p>
+</div></blockquote>
+<p><strong>affine: (n+1, n+1) matrix,</strong></p>
+<blockquote>
+<div><p>affine transform that maps the mask points to some embedding space</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>coords: array of shape(sum(mask&gt;0), n),</p>
+<blockquote>
+<div><p>the computed coordinates</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.reduce_coo_matrix">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">reduce_coo_matrix</code><span class="sig-paren">(</span><em class="sig-param">mat</em>, <em class="sig-param">mask</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#reduce_coo_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.reduce_coo_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduce a supposedly coo_matrix to the vertices in the mask</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mat: sparse coo_matrix,</strong></p>
+<blockquote>
+<div><p>input matrix</p>
+</div></blockquote>
+<p><strong>mask: boolean array of shape mat.shape[0],</strong></p>
+<blockquote>
+<div><p>desired elements</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.smatrix_from_3d_array">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">smatrix_from_3d_array</code><span class="sig-paren">(</span><em class="sig-param">mask</em>, <em class="sig-param">nn=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#smatrix_from_3d_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.smatrix_from_3d_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a sparse adjacency matrix from an array</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask</strong> : 3d array,</p>
+<blockquote>
+<div><p>input array, interpreted as a mask</p>
+</div></blockquote>
+<p><strong>nn: int, optional</strong></p>
+<blockquote>
+<div><p>3d neighboring system to be chosen within {6, 18, 26}</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>coo_mat: a sparse coo matrix,</p>
+<blockquote>
+<div><p>adjacency of the neighboring system</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.smatrix_from_3d_idx">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">smatrix_from_3d_idx</code><span class="sig-paren">(</span><em class="sig-param">ijk</em>, <em class="sig-param">nn=18</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#smatrix_from_3d_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.smatrix_from_3d_idx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a sparse adjacency matrix from 3d index system</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>idx:array of shape (n_samples, 3), type int</strong></p>
+<blockquote>
+<div><p>indexes of certain positions in a 3d space</p>
+</div></blockquote>
+<p><strong>nn: int, optional</strong></p>
+<blockquote>
+<div><p>3d neighboring system to be chosen within {6, 18, 26}</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>coo_mat: a sparse coo matrix,</p>
+<blockquote>
+<div><p>adjacency of the neighboring system</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.smatrix_from_nd_array">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">smatrix_from_nd_array</code><span class="sig-paren">(</span><em class="sig-param">mask</em>, <em class="sig-param">nn=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#smatrix_from_nd_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.smatrix_from_nd_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a sparse adjacency matrix from an arbitrary nd array</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mask</strong> : nd array,</p>
+<blockquote>
+<div><p>input array, interpreted as a mask</p>
+</div></blockquote>
+<p><strong>nn: int, optional</strong></p>
+<blockquote>
+<div><p>nd neighboring system, unsused at the moment</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>coo_mat: a sparse coo matrix,</p>
+<blockquote>
+<div><p>adjacency of the neighboring system</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.discrete_domain.smatrix_from_nd_idx">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.discrete_domain.</code><code class="sig-name descname">smatrix_from_nd_idx</code><span class="sig-paren">(</span><em class="sig-param">idx</em>, <em class="sig-param">nn=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/discrete_domain.html#smatrix_from_nd_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.discrete_domain.smatrix_from_nd_idx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a sparse adjacency matrix from nd index system</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>idx:array of shape (n_samples, dim), type int</strong></p>
+<blockquote>
+<div><p>indexes of certain positions in a nd space</p>
+</div></blockquote>
+<p><strong>nn: int, optional</strong></p>
+<blockquote>
+<div><p>nd neighboring system, unused at the moment</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>coo_mat: a sparse coo matrix,</p>
+<blockquote>
+<div><p>adjacency of the neighboring system</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

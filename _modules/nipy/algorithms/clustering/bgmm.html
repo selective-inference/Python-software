@@ -1,0 +1,1343 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.clustering.bgmm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Bayesian Gaussian Mixture Model Classes:</span>
+<span class="sd">contains the basic fields and methods of Bayesian GMMs</span>
+<span class="sd">the high level functions are/should be binded in C</span>
+
+<span class="sd">The base class BGMM relies on an implementation that perfoms Gibbs sampling</span>
+
+<span class="sd">A derived class VBGMM uses Variational Bayes inference instead</span>
+
+<span class="sd">A third class is introduces to take advnatge of the old C-bindings,</span>
+<span class="sd">but it is limited to diagonal covariance models</span>
+
+<span class="sd">Author : Bertrand Thirion, 2008-2011</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.random</span> <span class="k">as</span> <span class="nn">nr</span>
+<span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="k">import</span> <span class="n">inv</span><span class="p">,</span> <span class="n">cholesky</span><span class="p">,</span> <span class="n">eigvalsh</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">gammaln</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">kmeans</span>
+<span class="kn">from</span> <span class="nn">.gmm</span> <span class="k">import</span> <span class="n">GMM</span>
+
+<span class="c1">##################################################################</span>
+<span class="c1"># ancillary functions ############################################</span>
+<span class="c1">##################################################################</span>
+
+
+<div class="viewcode-block" id="detsh"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.detsh">[docs]</a><span class="k">def</span> <span class="nf">detsh</span><span class="p">(</span><span class="n">H</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Routine for the computation of determinants of symmetric positive</span>
+<span class="sd">    matrices</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    H array of shape(n,n)</span>
+<span class="sd">      the input matrix, assumed symmmetric and positive</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dh: float, the determinant</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">H</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="dirichlet_eval"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.dirichlet_eval">[docs]</a><span class="k">def</span> <span class="nf">dirichlet_eval</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluate the probability of a certain discrete draw w</span>
+<span class="sd">    from the Dirichlet density with parameters alpha</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    w: array of shape (n)</span>
+<span class="sd">    alpha: array of shape (n)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">alpha</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incompatible dimensions&quot;</span><span class="p">)</span>
+    <span class="n">loge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">alpha</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+    <span class="n">logb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gammaln</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span> <span class="o">-</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">alpha</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">loge</span> <span class="o">-=</span> <span class="n">logb</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">loge</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_normals"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.generate_normals">[docs]</a><span class="k">def</span> <span class="nf">generate_normals</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">P</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Generate a Gaussian sample with mean m and precision P</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m array of shape n: the mean vector</span>
+<span class="sd">    P array of shape (n,n): the precision matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ng : array of shape(n): a draw from the gaussian density</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">icp</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">cholesky</span><span class="p">(</span><span class="n">P</span><span class="p">))</span>
+    <span class="n">ng</span> <span class="o">=</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">ng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ng</span><span class="p">,</span> <span class="n">icp</span><span class="p">)</span>
+    <span class="n">ng</span> <span class="o">+=</span> <span class="n">m</span>
+    <span class="k">return</span> <span class="n">ng</span></div>
+
+
+<div class="viewcode-block" id="generate_Wishart"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.generate_Wishart">[docs]</a><span class="k">def</span> <span class="nf">generate_Wishart</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">V</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a sample from Wishart density</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n: float,</span>
+<span class="sd">        the number of degrees of freedom of the Wishart density</span>
+<span class="sd">    V: array of shape (n,n)</span>
+<span class="sd">       the scale matrix of the Wishart density</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    W: array of shape (n,n)</span>
+<span class="sd">       the draw from Wishart density</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">icv</span> <span class="o">=</span> <span class="n">cholesky</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">nr</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+        <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">nr</span><span class="o">.</span><span class="n">chisquare</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">i</span><span class="p">))</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">icv</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">R</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">W</span></div>
+
+
+<div class="viewcode-block" id="wishart_eval"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.wishart_eval">[docs]</a><span class="k">def</span> <span class="nf">wishart_eval</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">dV</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dW</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">piV</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Evaluation of the  probability of W under Wishart(n,V)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n: float,</span>
+<span class="sd">        the number of degrees of freedom (dofs)</span>
+<span class="sd">    V: array of shape (n,n)</span>
+<span class="sd">        the scale matrix of the Wishart density</span>
+<span class="sd">    W: array of shape (n,n)</span>
+<span class="sd">        the sample to be evaluated</span>
+<span class="sd">    dV: float, optional,</span>
+<span class="sd">        determinant of V</span>
+<span class="sd">    dW: float, optional,</span>
+<span class="sd">        determinant of W</span>
+<span class="sd">    piV: array of shape (n,n), optional</span>
+<span class="sd">         inverse of V</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (float) the density</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check that shape(V)==shape(W)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">dV</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dV</span> <span class="o">=</span> <span class="n">detsh</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dW</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dW</span> <span class="o">=</span> <span class="n">detsh</span><span class="p">(</span><span class="n">W</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">piV</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">piV</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+    <span class="n">ldW</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dW</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">ltr</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">piV</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">la</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dV</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">lg</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span>
+    <span class="n">lg</span> <span class="o">+=</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">lt</span> <span class="o">=</span> <span class="n">ldW</span> <span class="o">+</span> <span class="n">ltr</span> <span class="o">-</span> <span class="n">la</span> <span class="o">-</span> <span class="n">lg</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lt</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="normal_eval"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.normal_eval">[docs]</a><span class="k">def</span> <span class="nf">normal_eval</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dP</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Probability of x under normal(mu, inv(P))</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mu: array of shape (n),</span>
+<span class="sd">        the mean parameter</span>
+<span class="sd">    P: array of shape (n, n),</span>
+<span class="sd">       the precision matrix</span>
+<span class="sd">    x: array of shape (n),</span>
+<span class="sd">       the data to be evaluated</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (float) the density</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">dP</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dP</span> <span class="o">=</span> <span class="n">detsh</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+
+    <span class="n">w0</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dP</span><span class="p">)</span> <span class="o">-</span> <span class="n">dim</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">w0</span> <span class="o">/=</span> <span class="mi">2</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">x</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">dx</span><span class="p">),</span> <span class="n">dx</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">w0</span> <span class="o">-</span> <span class="n">q</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">like</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">like</span></div>
+
+
+<div class="viewcode-block" id="generate_perm"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.generate_perm">[docs]</a><span class="k">def</span> <span class="nf">generate_perm</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">nperm</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns an array of shape(nbperm, k) representing</span>
+<span class="sd">    the permutations of k elements</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k, int the number of elements to be permuted</span>
+<span class="sd">    nperm=100 the maximal number of permutations</span>
+<span class="sd">    if gamma(k+1)&gt;nperm: only nperm random draws are generated</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    p: array of shape(nperm,k): each row is permutation of k</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">gamma</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">gamma</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">nperm</span><span class="p">:</span>
+        <span class="c1"># exhaustive permutations</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">generate_perm</span><span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">aux</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="n">k</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+            <span class="n">perm</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n</span><span class="p">:(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="p">:</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[:,</span> <span class="p">:</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">perm</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n</span><span class="p">:(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">perm</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n</span><span class="p">:(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[:,</span> <span class="n">i</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">numpy.random</span> <span class="k">import</span> <span class="n">rand</span>
+        <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nperm</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nperm</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">rand</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+            <span class="n">perm</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+    <span class="k">return</span> <span class="n">perm</span></div>
+
+
+<div class="viewcode-block" id="multinomial"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.multinomial">[docs]</a><span class="k">def</span> <span class="nf">multinomial</span><span class="p">(</span><span class="n">probabilities</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate samples form a miltivariate distribution</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    probabilities: array of shape (nelements, nclasses):</span>
+<span class="sd">                likelihood of each element belongin to each class</span>
+<span class="sd">                each row is assumedt to sum to 1</span>
+<span class="sd">                One sample is draw from each row, resulting in</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    z array of shape (nelements): the draws,</span>
+<span class="sd">      that take values in [0..nclasses-1]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nvox</span> <span class="o">=</span> <span class="n">probabilities</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">nclasses</span> <span class="o">=</span> <span class="n">probabilities</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">cuml</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nvox</span><span class="p">,</span> <span class="n">nclasses</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">cuml</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">probabilities</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">nvox</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">aux</span> <span class="o">&lt;</span> <span class="n">cuml</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+    <span class="k">return</span> <span class="n">z</span></div>
+
+
+<div class="viewcode-block" id="dkl_gaussian"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.dkl_gaussian">[docs]</a><span class="k">def</span> <span class="nf">dkl_gaussian</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">P1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">P2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the KL divergence between gausians densities</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1: array of shape (n),</span>
+<span class="sd">        the mean parameter of the first density</span>
+<span class="sd">    P1: array of shape(n,n),</span>
+<span class="sd">        the precision parameters of the first density</span>
+<span class="sd">    m2: array of shape (n),</span>
+<span class="sd">        the mean parameter of the second density</span>
+<span class="sd">    P2: array of shape(n,n),</span>
+<span class="sd">        the precision parameters of the second density</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tiny</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">m2</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incompatible dimensions for m1 and m2&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">P1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">P2</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incompatible dimensions for P1 and P2&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">P1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">dim</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incompatible dimensions for m1 and P1&quot;</span><span class="p">)</span>
+
+    <span class="n">d1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">detsh</span><span class="p">(</span><span class="n">P1</span><span class="p">),</span> <span class="n">tiny</span><span class="p">)</span>
+    <span class="n">d2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">detsh</span><span class="p">(</span><span class="n">P2</span><span class="p">),</span> <span class="n">tiny</span><span class="p">)</span>
+    <span class="n">dkl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">d1</span> <span class="o">/</span> <span class="n">d2</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">P2</span><span class="p">,</span> <span class="n">inv</span><span class="p">(</span><span class="n">P1</span><span class="p">)))</span> <span class="o">-</span> <span class="n">dim</span>
+    <span class="n">dkl</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">((</span><span class="n">m1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">P2</span><span class="p">),</span> <span class="p">(</span><span class="n">m1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">))</span>
+    <span class="n">dkl</span> <span class="o">/=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">dkl</span></div>
+
+
+<div class="viewcode-block" id="dkl_wishart"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.dkl_wishart">[docs]</a><span class="k">def</span> <span class="nf">dkl_wishart</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">B1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">B2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns the KL divergence bteween two Wishart distribution of</span>
+<span class="sd">    parameters (a1,B1) and (a2,B2),</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a1: Float,</span>
+<span class="sd">        degrees of freedom of the first density</span>
+<span class="sd">    B1: array of shape(n,n),</span>
+<span class="sd">        scale matrix of the  first density</span>
+<span class="sd">    a2: Float,</span>
+<span class="sd">        degrees of freedom of the second density</span>
+<span class="sd">    B2: array of shape(n,n),</span>
+<span class="sd">        scale matrix of the second density</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dkl: float, the Kullback-Leibler divergence</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">psi</span><span class="p">,</span> <span class="n">gammaln</span>
+    <span class="n">tiny</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+    <span class="k">if</span> <span class="n">B1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">B2</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incompatible dimensions for B1 and B2&quot;</span><span class="p">)</span>
+
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">B1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">d1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">detsh</span><span class="p">(</span><span class="n">B1</span><span class="p">),</span> <span class="n">tiny</span><span class="p">)</span>
+    <span class="n">d2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">detsh</span><span class="p">(</span><span class="n">B2</span><span class="p">),</span> <span class="n">tiny</span><span class="p">)</span>
+    <span class="n">lgc</span> <span class="o">=</span> <span class="n">dim</span> <span class="o">*</span> <span class="p">(</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span>
+    <span class="n">lg1</span> <span class="o">=</span> <span class="n">lgc</span>
+    <span class="n">lg2</span> <span class="o">=</span> <span class="n">lgc</span>
+    <span class="n">lw1</span> <span class="o">=</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span> <span class="o">+</span> <span class="n">dim</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">lw2</span> <span class="o">=</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span> <span class="o">+</span> <span class="n">dim</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dim</span><span class="p">):</span>
+        <span class="n">lg1</span> <span class="o">+=</span> <span class="n">gammaln</span><span class="p">((</span><span class="n">a1</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">lg2</span> <span class="o">+=</span> <span class="n">gammaln</span><span class="p">((</span><span class="n">a2</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">lw1</span> <span class="o">+=</span> <span class="n">psi</span><span class="p">((</span><span class="n">a1</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">lw2</span> <span class="o">+=</span> <span class="n">psi</span><span class="p">((</span><span class="n">a2</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">lz1</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">dim</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span> <span class="o">+</span> <span class="n">lg1</span>
+    <span class="n">lz2</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">dim</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span> <span class="o">+</span> <span class="n">lg2</span>
+    <span class="n">dkl</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span> <span class="o">-</span> <span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">lw1</span> <span class="o">-</span> <span class="p">(</span><span class="n">a2</span> <span class="o">-</span> <span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">lw2</span> <span class="o">-</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">dim</span>
+    <span class="n">dkl</span> <span class="o">+=</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">B2</span><span class="p">,</span> <span class="n">inv</span><span class="p">(</span><span class="n">B1</span><span class="p">)))</span>
+    <span class="n">dkl</span> <span class="o">/=</span> <span class="mi">2</span>
+    <span class="n">dkl</span> <span class="o">+=</span> <span class="p">(</span><span class="n">lz2</span> <span class="o">-</span> <span class="n">lz1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dkl</span></div>
+
+
+<div class="viewcode-block" id="dkl_dirichlet"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.dkl_dirichlet">[docs]</a><span class="k">def</span> <span class="nf">dkl_dirichlet</span><span class="p">(</span><span class="n">w1</span><span class="p">,</span> <span class="n">w2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns the KL divergence between two dirichlet distribution</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    w1: array of shape(n),</span>
+<span class="sd">        the parameters of the first dirichlet density</span>
+<span class="sd">    w2: array of shape(n),</span>
+<span class="sd">        the parameters of the second dirichlet density</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">w1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">w2</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incompatible dimensions for w1 and w2&quot;</span><span class="p">)</span>
+
+    <span class="n">dkl</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">gammaln</span><span class="p">,</span> <span class="n">psi</span>
+    <span class="n">dkl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gammaln</span><span class="p">(</span><span class="n">w2</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gammaln</span><span class="p">(</span><span class="n">w1</span><span class="p">))</span>
+    <span class="n">dkl</span> <span class="o">+=</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w1</span><span class="p">))</span> <span class="o">-</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w2</span><span class="p">))</span>
+    <span class="n">dkl</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">w1</span> <span class="o">-</span> <span class="n">w2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">psi</span><span class="p">(</span><span class="n">w1</span><span class="p">)</span> <span class="o">-</span> <span class="n">psi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w1</span><span class="p">))))</span>
+    <span class="k">return</span> <span class="n">dkl</span></div>
+
+
+<span class="c1">#######################################################################</span>
+<span class="c1">#  main GMM class #####################################################</span>
+<span class="c1">#######################################################################</span>
+
+
+<div class="viewcode-block" id="BGMM"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM">[docs]</a><span class="k">class</span> <span class="nc">BGMM</span><span class="p">(</span><span class="n">GMM</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class implements Bayesian GMMs</span>
+
+<span class="sd">    this class contains the follwing fields</span>
+<span class="sd">    k: int,</span>
+<span class="sd">       the number of components in the mixture</span>
+<span class="sd">    dim: int,</span>
+<span class="sd">         the dimension of the data</span>
+<span class="sd">    means: array of shape (k, dim)</span>
+<span class="sd">           all the means of the components</span>
+<span class="sd">    precisions: array of shape (k, dim, dim)</span>
+<span class="sd">                the precisions of the componenets</span>
+<span class="sd">    weights: array of shape (k):</span>
+<span class="sd">             weights of the mixture</span>
+<span class="sd">    shrinkage: array of shape (k):</span>
+<span class="sd">               scaling factor of the posterior precisions on the mean</span>
+<span class="sd">    dof: array of shape (k)</span>
+<span class="sd">         the degrees of freedom of the components</span>
+<span class="sd">    prior_means: array of shape (k, dim):</span>
+<span class="sd">                 the prior on the components means</span>
+<span class="sd">    prior_scale: array of shape (k, dim):</span>
+<span class="sd">                 the prior on the components precisions</span>
+<span class="sd">    prior_dof: array of shape (k):</span>
+<span class="sd">                the prior on the dof (should be at least equal to dim)</span>
+<span class="sd">    prior_shrinkage: array of shape (k):</span>
+<span class="sd">                     scaling factor of the prior precisions on the mean</span>
+<span class="sd">    prior_weights: array of shape (k)</span>
+<span class="sd">                   the prior on the components weights</span>
+<span class="sd">    shrinkage: array of shape (k):</span>
+<span class="sd">               scaling factor of the posterior precisions on the mean</span>
+<span class="sd">    dof : array of shape (k): the posterior dofs</span>
+
+<span class="sd">    fixme</span>
+<span class="sd">    -----</span>
+<span class="sd">    only &#39;full&#39; precision is supported</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BGMM.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">means</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">precisions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shrinkage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dof</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the structure with the dimensions of the problem</span>
+<span class="sd">        Eventually provide different terms</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">GMM</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">means</span><span class="p">,</span> <span class="n">precisions</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span> <span class="o">=</span> <span class="n">shrinkage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">dof</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_detp</span> <span class="o">=</span> <span class="p">[</span><span class="n">detsh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="BGMM.check"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.check">[docs]</a>    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checking the shape of sifferent matrices involved in the model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">GMM</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect dimension for self.prior_means&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect dimension for self.prior_means&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect dimension for self.prior_scale&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect dimension for self.prior_scale&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_dof</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect dimension for self.prior_dof&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect dimension for self.prior_weights&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BGMM.set_priors"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.set_priors">[docs]</a>    <span class="k">def</span> <span class="nf">set_priors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prior_means</span><span class="p">,</span> <span class="n">prior_weights</span><span class="p">,</span> <span class="n">prior_scale</span><span class="p">,</span> <span class="n">prior_dof</span><span class="p">,</span>
+                   <span class="n">prior_shrinkage</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the prior of the BGMM</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        prior_means: array of shape (self.k,self.dim)</span>
+<span class="sd">        prior_weights: array of shape (self.k)</span>
+<span class="sd">        prior_scale: array of shape (self.k,self.dim,self.dim)</span>
+<span class="sd">        prior_dof: array of shape (self.k)</span>
+<span class="sd">        prior_shrinkage: array of shape (self.k)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span> <span class="o">=</span> <span class="n">prior_means</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_weights</span> <span class="o">=</span> <span class="n">prior_weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span> <span class="o">=</span> <span class="n">prior_scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_dof</span> <span class="o">=</span> <span class="n">prior_dof</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span> <span class="o">=</span> <span class="n">prior_shrinkage</span>
+
+        <span class="c1"># cache some pre-computations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dets</span> <span class="o">=</span> <span class="p">[</span><span class="n">detsh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inv_prior_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">inv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                                          <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BGMM.guess_priors"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.guess_priors">[docs]</a>    <span class="k">def</span> <span class="nf">guess_priors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">nocheck</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the priors in order of having them weakly uninformative</span>
+<span class="sd">        this is from  Fraley and raftery;</span>
+<span class="sd">        Journal of Classification 24:155-181 (2007)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x, array of shape (nb_samples,self.dim)</span>
+<span class="sd">           the data used in the estimation process</span>
+<span class="sd">        nocheck: boolean, optional,</span>
+<span class="sd">                 if nocheck==True, check is skipped</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># a few parameters</span>
+        <span class="n">small</span> <span class="o">=</span> <span class="mf">0.01</span>
+        <span class="n">elshape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">mx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mx</span>
+        <span class="n">vx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dx</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dx</span><span class="p">)</span> <span class="o">/</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">px</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">vx</span><span class="p">)),</span> <span class="n">elshape</span><span class="p">)</span>
+        <span class="n">px</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">))</span>
+
+        <span class="c1"># set the priors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">px</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_dof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="n">small</span>
+
+        <span class="c1"># cache some pre-computations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="n">detsh</span><span class="p">(</span><span class="n">px</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inv_prior_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">inv</span><span class="p">(</span><span class="n">px</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">elshape</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># check that everything is OK</span>
+        <span class="k">if</span> <span class="n">nocheck</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BGMM.initialize"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        initialize z using a k-means algorithm, then upate the parameters</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape (nb_samples,self.dim)</span>
+<span class="sd">           the data used in the estimation process</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">cent</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">J</span> <span class="o">=</span> <span class="n">kmeans</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BGMM.pop"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.pop">[docs]</a>    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        compute the population, i.e. the statistics of allocation</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z array of shape (nb_samples), type = np.int</span>
+<span class="sd">          the allocation variable</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        hist : array shape (self.k) count variable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">hist</span></div>
+
+<div class="viewcode-block" id="BGMM.update_weights"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.update_weights">[docs]</a>    <span class="k">def</span> <span class="nf">update_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given the allocation vector z, resample the weights parameter</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z array of shape (nb_samples), type = np.int</span>
+<span class="sd">          the allocation variable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">pop</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">dirichlet</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BGMM.update_means"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.update_means">[docs]</a>    <span class="k">def</span> <span class="nf">update_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given the allocation vector z,</span>
+<span class="sd">        and the corresponding data x,</span>
+<span class="sd">        resample the mean</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape (nb_samples,self.dim)</span>
+<span class="sd">          the data used in the estimation process</span>
+<span class="sd">        z: array of shape (nb_samples), type = np.int</span>
+<span class="sd">          the corresponding classification</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span> <span class="o">+</span> <span class="n">pop</span>
+        <span class="n">empmeans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">))</span>
+        <span class="n">prior_shrinkage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">shrinkage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="n">empmeans</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">means</span> <span class="o">=</span> <span class="n">empmeans</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span> <span class="o">*</span> <span class="n">prior_shrinkage</span>
+        <span class="n">means</span> <span class="o">/=</span> <span class="n">shrinkage</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_normals</span><span class="p">(</span>\
+                <span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="BGMM.update_precisions"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.update_precisions">[docs]</a>    <span class="k">def</span> <span class="nf">update_precisions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given the allocation vector z,</span>
+<span class="sd">        and the corresponding data x,</span>
+<span class="sd">        resample the precisions</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x array of shape (nb_samples,self.dim)</span>
+<span class="sd">          the data used in the estimation process</span>
+<span class="sd">        z array of shape (nb_samples), type = np.int</span>
+<span class="sd">          the corresponding classification</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_dof</span> <span class="o">+</span> <span class="n">pop</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">rpop</span> <span class="o">=</span> <span class="n">pop</span> <span class="o">+</span> <span class="p">(</span><span class="n">pop</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="c1"># empirical means</span>
+            <span class="n">empmeans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">rpop</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">dm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">empmeans</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+
+            <span class="c1"># scatter</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">empmeans</span><span class="p">,</span> <span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+            <span class="n">scatter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dx</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dx</span><span class="p">)</span>
+
+            <span class="c1"># bias</span>
+            <span class="n">addcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dm</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dm</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+            <span class="c1"># covariance = prior term + scatter + bias</span>
+            <span class="n">covariance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inv_prior_scale</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">scatter</span> <span class="o">+</span> <span class="n">addcov</span>
+
+            <span class="c1">#precision</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_Wishart</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">scale</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_detp</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">detsh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">[</span><span class="n">k</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="BGMM.update"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        update function (draw a sample of the GMM parameters)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x array of shape (nb_samples,self.dim)</span>
+<span class="sd">          the data used in the estimation process</span>
+<span class="sd">        z array of shape (nb_samples), type = np.int</span>
+<span class="sd">          the corresponding classification</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_weights</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_precisions</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_means</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BGMM.sample_indicator"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.sample_indicator">[docs]</a>    <span class="k">def</span> <span class="nf">sample_indicator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">like</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sample the indicator from the likelihood</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        like: array of shape (nb_samples,self.k)</span>
+<span class="sd">           component-wise likelihood</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        z: array of shape(nb_samples): a draw of the membership variable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tiny</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mf">1.e-15</span>
+        <span class="n">like</span> <span class="o">=</span> <span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">like</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">like</span> <span class="o">/=</span> <span class="n">tiny</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">multinomial</span><span class="p">(</span><span class="n">like</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">z</span></div>
+
+<div class="viewcode-block" id="BGMM.sample"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sample the indicator and parameters</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x array of shape (nb_samples,self.dim)</span>
+<span class="sd">          the data used in the estimation process</span>
+<span class="sd">        niter=1 : the number of iterations to perform</span>
+<span class="sd">        mem=0: if mem, the best values of the parameters are computed</span>
+<span class="sd">        verbose=0: verbosity mode</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        best_weights: array of shape (self.k)</span>
+<span class="sd">        best_means: array of shape (self.k, self.dim)</span>
+<span class="sd">        best_precisions: array of shape (self.k, self.dim, self.dim)</span>
+<span class="sd">        possibleZ: array of shape (nb_samples, niter)</span>
+<span class="sd">                   the z that give the highest posterior</span>
+<span class="sd">                   to the data is returned first</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mem</span><span class="p">:</span>
+            <span class="n">possibleZ</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">niter</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">bpz</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">niter</span><span class="p">):</span>
+            <span class="n">like</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">sll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">like</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+            <span class="n">sll</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">probability_under_prior</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">sll</span> <span class="o">&gt;</span> <span class="n">score</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="n">sll</span>
+                <span class="n">best_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">best_means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">best_precisions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_indicator</span><span class="p">(</span><span class="n">like</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mem</span><span class="p">:</span>
+                <span class="n">possibleZ</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span>
+            <span class="n">puz</span> <span class="o">=</span> <span class="n">sll</span> <span class="c1"># to save time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">puz</span> <span class="o">&gt;</span> <span class="n">bpz</span><span class="p">:</span>
+                <span class="n">ibz</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">bpz</span> <span class="o">=</span> <span class="n">puz</span>
+
+        <span class="k">if</span> <span class="n">mem</span><span class="p">:</span>
+            <span class="n">aux</span> <span class="o">=</span> <span class="n">possibleZ</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">possibleZ</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">possibleZ</span><span class="p">[:,</span> <span class="n">ibz</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">possibleZ</span><span class="p">[:,</span> <span class="n">ibz</span><span class="p">]</span> <span class="o">=</span> <span class="n">aux</span>
+            <span class="k">return</span> <span class="n">best_weights</span><span class="p">,</span> <span class="n">best_means</span><span class="p">,</span> <span class="n">best_precisions</span><span class="p">,</span> <span class="n">possibleZ</span></div>
+
+<div class="viewcode-block" id="BGMM.sample_and_average"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.sample_and_average">[docs]</a>    <span class="k">def</span> <span class="nf">sample_and_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sample the indicator and parameters</span>
+<span class="sd">        the average values for weights,means, precisions are returned</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x = array of shape (nb_samples,dim)</span>
+<span class="sd">          the data from which bic is computed</span>
+<span class="sd">        niter=1: number of iterations</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        weights: array of shape (self.k)</span>
+<span class="sd">        means: array of shape (self.k,self.dim)</span>
+<span class="sd">        precisions:  array of shape (self.k,self.dim,self.dim)</span>
+<span class="sd">                     or (self.k, self.dim)</span>
+<span class="sd">                     these are the average parameters across samplings</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        All this makes sense only if no label switching as occurred so this is</span>
+<span class="sd">        wrong in general (asymptotically).</span>
+
+<span class="sd">        fix: implement a permutation procedure for components identification</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">aprec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">))</span>
+        <span class="n">aweights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">))</span>
+        <span class="n">ameans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">niter</span><span class="p">):</span>
+            <span class="n">like</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_indicator</span><span class="p">(</span><span class="n">like</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+            <span class="n">aprec</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span>
+            <span class="n">aweights</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span>
+            <span class="n">ameans</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span>
+        <span class="n">aprec</span> <span class="o">/=</span> <span class="n">niter</span>
+        <span class="n">ameans</span> <span class="o">/=</span> <span class="n">niter</span>
+        <span class="n">aweights</span> <span class="o">/=</span> <span class="n">niter</span>
+        <span class="k">return</span> <span class="n">aweights</span><span class="p">,</span> <span class="n">ameans</span><span class="p">,</span> <span class="n">aprec</span></div>
+
+<div class="viewcode-block" id="BGMM.probability_under_prior"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.probability_under_prior">[docs]</a>    <span class="k">def</span> <span class="nf">probability_under_prior</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the probability of the current parameters of self</span>
+<span class="sd">        given the priors</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">dirichlet_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_weights</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="n">mp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+            <span class="n">p0</span> <span class="o">*=</span> <span class="n">normal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">mp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="n">p0</span> <span class="o">*=</span> <span class="n">wishart_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_dof</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">dV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dets</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                               <span class="n">dW</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_detp</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">piV</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_inv_prior_scale</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">p0</span></div>
+
+<div class="viewcode-block" id="BGMM.conditional_posterior_proba"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.conditional_posterior_proba">[docs]</a>    <span class="k">def</span> <span class="nf">conditional_posterior_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">perm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the probability of the current parameters of self</span>
+<span class="sd">        given x and z</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape (nb_samples, dim),</span>
+<span class="sd">           the data from which bic is computed</span>
+<span class="sd">        z: array of shape (nb_samples), type = np.int,</span>
+<span class="sd">           the corresponding classification</span>
+<span class="sd">        perm: array ok shape(nperm, self.k),typ=np.int, optional</span>
+<span class="sd">              all permutation of z under which things will be recomputed</span>
+<span class="sd">              By default, no permutation is performed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">rpop</span> <span class="o">=</span> <span class="p">(</span><span class="n">pop</span> <span class="o">+</span> <span class="p">(</span><span class="n">pop</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_dof</span> <span class="o">+</span> <span class="n">pop</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">shrinkage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span> <span class="o">+</span> <span class="n">pop</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">pop</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_weights</span>
+
+        <span class="c1"># initialize the porsterior proba</span>
+        <span class="k">if</span> <span class="n">perm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pp</span> <span class="o">=</span> <span class="n">dirichlet_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">dirichlet_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">pj</span><span class="p">],</span> <span class="n">weights</span><span class="p">)</span>
+                           <span class="k">for</span> <span class="n">pj</span> <span class="ow">in</span> <span class="n">perm</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="n">m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="c1">#0. Compute the empirical means</span>
+            <span class="n">empmeans</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">/</span> <span class="n">rpop</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+            <span class="c1">#1. the precisions</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">z</span> <span class="o">==</span> <span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">empmeans</span><span class="p">,</span> <span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+            <span class="n">dm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">empmeans</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+            <span class="n">addcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dm</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dm</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+            <span class="n">covariance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inv_prior_scale</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dx</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">dx</span><span class="p">)</span> <span class="o">+</span> <span class="n">addcov</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span>
+            <span class="n">_dets</span> <span class="o">=</span> <span class="n">detsh</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+
+            <span class="c1">#2. the means</span>
+            <span class="n">means</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">means</span> <span class="o">/=</span> <span class="n">shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+            <span class="c1">#4. update the posteriors</span>
+            <span class="k">if</span> <span class="n">perm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">pp</span> <span class="o">*=</span> <span class="n">wishart_eval</span><span class="p">(</span>
+                    <span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                    <span class="n">dV</span><span class="o">=</span><span class="n">_dets</span><span class="p">,</span> <span class="n">dW</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_detp</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">piV</span><span class="o">=</span><span class="n">covariance</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">pj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">perm</span><span class="p">):</span>
+                    <span class="n">pp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="n">wishart_eval</span><span class="p">(</span>
+                        <span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="p">[</span><span class="n">pj</span><span class="p">[</span><span class="n">k</span><span class="p">]],</span> <span class="n">dV</span><span class="o">=</span><span class="n">_dets</span><span class="p">,</span>
+                        <span class="n">dW</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_detp</span><span class="p">[</span><span class="n">pj</span><span class="p">[</span><span class="n">k</span><span class="p">]],</span> <span class="n">piV</span><span class="o">=</span><span class="n">covariance</span><span class="p">)</span>
+
+            <span class="n">mp</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">_dP</span> <span class="o">=</span> <span class="n">_dets</span> <span class="o">*</span> <span class="n">shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+            <span class="k">if</span> <span class="n">perm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">pp</span> <span class="o">*=</span> <span class="n">normal_eval</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">dP</span><span class="o">=</span><span class="n">_dP</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">pj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">perm</span><span class="p">):</span>
+                    <span class="n">pp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="n">normal_eval</span><span class="p">(</span>
+                        <span class="n">means</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">pj</span><span class="p">[</span><span class="n">k</span><span class="p">]],</span> <span class="n">dP</span><span class="o">=</span><span class="n">_dP</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pp</span></div>
+
+<div class="viewcode-block" id="BGMM.evidence"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.evidence">[docs]</a>    <span class="k">def</span> <span class="nf">evidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">nperm</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        See bayes_factor(self, x, z, nperm=0, verbose=0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bayes_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">nperm</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BGMM.bayes_factor"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.BGMM.bayes_factor">[docs]</a>    <span class="k">def</span> <span class="nf">bayes_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">nperm</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the Bayes Factor of the current model using Chib&#39;s method</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape (nb_samples,dim)</span>
+<span class="sd">           the data from which bic is computed</span>
+<span class="sd">        z: array of shape (nb_samples), type = np.int</span>
+<span class="sd">           the corresponding classification</span>
+<span class="sd">        nperm=0: int</span>
+<span class="sd">            the number of permutations to sample</span>
+<span class="sd">            to model the label switching issue</span>
+<span class="sd">            in the computation of the Bayes Factor</span>
+<span class="sd">            By default, exhaustive permutations are used</span>
+<span class="sd">        verbose=0: verbosity mode</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bf (float) the computed evidence (Bayes factor)</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        See: Marginal Likelihood from the Gibbs Output</span>
+<span class="sd">        Journal article by Siddhartha Chib;</span>
+<span class="sd">        Journal of the American Statistical Association, Vol. 90, 1995</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">niter</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">perm</span> <span class="o">=</span> <span class="n">generate_perm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nperm</span> <span class="o">&gt;</span> <span class="n">perm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">nperm</span> <span class="o">=</span> <span class="n">perm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">niter</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">nperm</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditional_posterior_proba</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">perm</span><span class="p">)</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">drand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">perm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))[:</span><span class="n">nperm</span><span class="p">]</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditional_posterior_proba</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span>
+                                                        <span class="n">perm</span><span class="p">[</span><span class="n">drand</span><span class="p">])</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">mp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">probability_under_prior</span><span class="p">()</span>
+        <span class="n">like</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">bf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">like</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">mp</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">like</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">mp</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">bf</span></div></div>
+
+
+<span class="c1"># ---------------------------------------------------------</span>
+<span class="c1"># --- Variational Bayes inference -------------------------</span>
+<span class="c1"># ---------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="VBGMM"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.VBGMM">[docs]</a><span class="k">class</span> <span class="nc">VBGMM</span><span class="p">(</span><span class="n">BGMM</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Subclass of Bayesian GMMs (BGMM)</span>
+<span class="sd">    that implements Variational Bayes estimation of the parameters</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="VBGMM.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.VBGMM.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">means</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">precisions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shrinkage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dof</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">BGMM</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">means</span><span class="p">,</span> <span class="n">precisions</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">shrinkage</span><span class="p">,</span> <span class="n">dof</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precisions</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_Estep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;VB-E step</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x array of shape (nb_samples,dim)</span>
+<span class="sd">          the data used in the estimation process</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        like: array of shape(nb_samples,self.k),</span>
+<span class="sd">              component-wise likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">like</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">))</span>
+        <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">psi</span>
+
+        <span class="n">spsi</span> <span class="o">=</span> <span class="n">psi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="c1"># compute the data-independent factor first</span>
+            <span class="n">w0</span> <span class="o">=</span> <span class="n">psi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">-</span> <span class="n">spsi</span>
+            <span class="n">w0</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">detsh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="n">w0</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">w0</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">):</span>
+                <span class="n">w0</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">psi</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">x</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">w0</span> <span class="o">-</span> <span class="n">q</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">w</span> <span class="o">-=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+            <span class="n">like</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">like</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Likelihood cannot be negative&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">like</span>
+
+<div class="viewcode-block" id="VBGMM.evidence"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.VBGMM.evidence">[docs]</a>    <span class="k">def</span> <span class="nf">evidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;computation of evidence bound aka free energy</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x array of shape (nb_samples,dim)</span>
+<span class="sd">          the data from which evidence is computed</span>
+<span class="sd">        like=None: array of shape (nb_samples, self.k), optional</span>
+<span class="sd">                   component-wise likelihood</span>
+<span class="sd">                   If None, it is recomputed</span>
+<span class="sd">        verbose=0: verbosity model</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ev (float) the computed evidence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">psi</span>
+        <span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">inv</span>
+        <span class="n">tiny</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+        <span class="k">if</span> <span class="n">like</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">like</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Estep</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">like</span> <span class="o">=</span> <span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">tiny</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="n">pop</span> <span class="o">=</span> <span class="n">like</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)[:</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">spsi</span> <span class="o">=</span> <span class="n">psi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">))</span>
+        <span class="n">empmeans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">T</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">tiny</span><span class="p">)</span>
+
+        <span class="n">F</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># start with the average likelihood term</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="c1"># compute the data-independent factor first</span>
+            <span class="n">Lav</span> <span class="o">=</span> <span class="n">psi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">-</span> <span class="n">spsi</span>
+            <span class="n">Lav</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">like</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">like</span><span class="p">[:,</span> <span class="n">k</span><span class="p">],</span> <span class="n">tiny</span><span class="p">)))</span> \
+                   <span class="o">/</span> <span class="n">pop</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">Lav</span> <span class="o">-=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+            <span class="n">Lav</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">detsh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="n">Lav</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">):</span>
+                <span class="n">Lav</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">psi</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">Lav</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">Lav</span> <span class="o">*=</span> <span class="n">pop</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">empcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">empmeans</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">empcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dx</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">like</span><span class="p">[:,</span> <span class="n">k</span><span class="p">:</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+            <span class="n">Lav</span> <span class="o">-=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">empcov</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="n">F</span> <span class="o">+=</span> <span class="n">Lav</span>
+
+        <span class="c1">#then the KL divergences</span>
+        <span class="n">prior_covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inv_prior_scale</span><span class="p">)</span>
+        <span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">inv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
+        <span class="n">Dklw</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Dklg</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Dkld</span> <span class="o">=</span> <span class="n">dkl_dirichlet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_weights</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="n">Dklw</span> <span class="o">+=</span> <span class="n">dkl_wishart</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">covariance</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">prior_dof</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">prior_covariance</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="n">nc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="n">nc0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="n">Dklg</span> <span class="o">+=</span> <span class="n">dkl_gaussian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">nc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">nc0</span><span class="p">)</span>
+        <span class="n">Dkl</span> <span class="o">=</span> <span class="n">Dkld</span> <span class="o">+</span> <span class="n">Dklg</span> <span class="o">+</span> <span class="n">Dklw</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Lav&#39;</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="s1">&#39;Dkl&#39;</span><span class="p">,</span> <span class="n">Dkld</span><span class="p">,</span> <span class="n">Dklg</span><span class="p">,</span> <span class="n">Dklw</span><span class="p">)</span>
+        <span class="n">F</span> <span class="o">-=</span> <span class="n">Dkl</span>
+        <span class="k">return</span> <span class="n">F</span></div>
+
+    <span class="k">def</span> <span class="nf">_Mstep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">like</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;VB-M step</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape(nb_samples, self.dim)</span>
+<span class="sd">           the data from which the model is estimated</span>
+<span class="sd">        like: array of shape(nb_samples, self.k)</span>
+<span class="sd">           the likelihood of the data under each class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">inv</span>
+        <span class="n">tiny</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="n">like</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># shrinkage, weights,dof</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_weights</span> <span class="o">+</span> <span class="n">pop</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="n">pop</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">like</span> <span class="o">=</span> <span class="n">like</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span> <span class="o">+</span> <span class="n">pop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_dof</span> <span class="o">+</span> <span class="n">pop</span>
+
+        <span class="c1">#reshape</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">prior_shrinkage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_shrinkage</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">shrinkage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shrinkage</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># means</span>
+        <span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span> <span class="o">*</span> <span class="n">prior_shrinkage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">means</span> <span class="o">/</span> <span class="n">shrinkage</span>
+
+        <span class="c1">#precisions</span>
+        <span class="n">empmeans</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">tiny</span><span class="p">)</span>
+        <span class="n">empcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">):</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">empmeans</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">empcov</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dx</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">like</span><span class="p">[:,</span> <span class="n">k</span><span class="p">:</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+            <span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inv_prior_scale</span><span class="p">)</span> <span class="o">+</span> <span class="n">empcov</span>
+
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">empmeans</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_means</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">addcov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dx</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">dx</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
+        <span class="n">apms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">prior_shrinkage</span> <span class="o">*</span> <span class="n">pop</span> <span class="o">/</span> <span class="n">shrinkage</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">covariance</span> <span class="o">+=</span> <span class="n">addcov</span> <span class="o">*</span> <span class="n">apms</span>
+        <span class="c1"># update scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">inv</span><span class="p">(</span><span class="n">covariance</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
+
+<div class="viewcode-block" id="VBGMM.initialize"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.VBGMM.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        initialize z using a k-means algorithm, then upate the parameters</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape (nb_samples,self.dim)</span>
+<span class="sd">           the data used in the estimation process</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">cent</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">J</span> <span class="o">=</span> <span class="n">kmeans</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">))</span>
+        <span class="n">l</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Mstep</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VBGMM.map_label"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.VBGMM.map_label">[docs]</a>    <span class="k">def</span> <span class="nf">map_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the MAP labelling of x</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x array of shape (nb_samples,dim)</span>
+<span class="sd">          the data under study</span>
+<span class="sd">        like=None array of shape(nb_samples,self.k)</span>
+<span class="sd">               component-wise likelihood</span>
+<span class="sd">               if like==None, it is recomputed</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        z: array of shape(nb_samples): the resulting MAP labelling</span>
+<span class="sd">           of the rows of x</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">like</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">like</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">like</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">z</span></div>
+
+<div class="viewcode-block" id="VBGMM.estimate"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.VBGMM.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">1.e-4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;estimation of self given x</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x array of shape (nb_samples,dim)</span>
+<span class="sd">          the data from which the model is estimated</span>
+<span class="sd">        z = None: array of shape (nb_samples)</span>
+<span class="sd">          a prior labelling of the data to initialize the computation</span>
+<span class="sd">        niter=100: maximal number of iterations in the estimation process</span>
+<span class="sd">        delta = 1.e-4: increment of data likelihood at which</span>
+<span class="sd">              convergence is declared</span>
+<span class="sd">        verbose=0:</span>
+<span class="sd">                verbosity mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># alternation of E/M step until convergence</span>
+        <span class="n">tiny</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+        <span class="n">av_ll_old</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">niter</span><span class="p">):</span>
+            <span class="n">like</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Estep</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">av_ll</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">like</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">tiny</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">av_ll</span> <span class="o">&lt;</span> <span class="n">av_ll_old</span> <span class="o">+</span> <span class="n">delta</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;iteration:&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="s1">&#39;log-likelihood:&#39;</span><span class="p">,</span> <span class="n">av_ll</span><span class="p">,</span>
+                          <span class="s1">&#39;old value:&#39;</span><span class="p">,</span> <span class="n">av_ll_old</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">av_ll_old</span> <span class="o">=</span> <span class="n">av_ll</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">av_ll</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bic</span><span class="p">(</span><span class="n">like</span><span class="p">))</span>
+            <span class="n">like</span> <span class="o">=</span> <span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">tiny</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_Mstep</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">like</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VBGMM.likelihood"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.VBGMM.likelihood">[docs]</a>    <span class="k">def</span> <span class="nf">likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the likelihood of the model for the data x</span>
+<span class="sd">        the values are weighted by the components weights</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: array of shape (nb_samples, self.dim)</span>
+<span class="sd">           the data used in the estimation process</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        like: array of shape(nb_samples, self.k)</span>
+<span class="sd">              component-wise likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Estep</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VBGMM.pop"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.bgmm.html#nipy.algorithms.clustering.bgmm.VBGMM.pop">[docs]</a>    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">like</span><span class="p">,</span> <span class="n">tiny</span><span class="o">=</span><span class="mf">1.e-15</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        compute the population, i.e. the statistics of allocation</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        like array of shape (nb_samples, self.k):</span>
+<span class="sd">          the likelihood of each item being in each class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slike</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">tiny</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">like</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">nlike</span> <span class="o">=</span> <span class="p">(</span><span class="n">like</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">slike</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nlike</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

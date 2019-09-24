@@ -1,0 +1,467 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.core.utils.generators</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines a few common generators for slicing over arrays.</span>
+
+<span class="sd">They are defined on ndarray, so they do not depend on Image.</span>
+
+<span class="sd">* data_generator: return (item, data[item]) tuples from an iterable object</span>
+<span class="sd">* slice_generator: return slices through an ndarray, possibly over many</span>
+<span class="sd">  indices</span>
+<span class="sd">* f_generator: return a generator that applies a function to the</span>
+<span class="sd">  output of another generator</span>
+
+<span class="sd">The above three generators return 2-tuples.</span>
+
+<span class="sd">* write_data: write the output of a generator to an ndarray</span>
+<span class="sd">* parcels: return binary array of the unique components of data</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nipy.utils</span> <span class="k">import</span> <span class="n">seq_prod</span>
+
+<span class="c1"># Legacy repr printing from numpy.</span>
+<span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">legacy_printing</span> <span class="k">as</span> <span class="n">setup_module</span>  <span class="c1"># noqa</span>
+
+
+<div class="viewcode-block" id="parcels"><a class="viewcode-back" href="../../../../api/generated/nipy.core.utils.generators.html#nipy.core.utils.generators.parcels">[docs]</a><span class="k">def</span> <span class="nf">parcels</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="p">()):</span>
+    <span class="sd">&quot;&quot;&quot; Return a generator for ``[data == label for label in labels]``</span>
+
+<span class="sd">    If labels is None, labels = numpy.unique(data).  Each label in labels can be</span>
+<span class="sd">    a sequence, in which case the value returned for that label union::</span>
+
+<span class="sd">        [numpy.equal(data, l) for l in label]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : image or array-like</span>
+<span class="sd">        Either an image (with ``get_data`` method returning ndarray) or an</span>
+<span class="sd">        array-like</span>
+<span class="sd">    labels : iterable, optional</span>
+<span class="sd">        A sequence of labels for which to return indices within `data`. The</span>
+<span class="sd">        elements in `labels` can themselves be lists, tuples, in which case the</span>
+<span class="sd">        indices returned are for all values in `data` matching any of the items</span>
+<span class="sd">        in the list, tuple.</span>
+<span class="sd">    exclude : iterable, optional</span>
+<span class="sd">        Values in `labels` for which you do not want to return a parcel.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    gen : generator</span>
+<span class="sd">        generator yielding a array of boolean indices into `data` for which ``data</span>
+<span class="sd">        == label``, for each element in `label`.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; for p in parcels([[1,1],[2,1]]):</span>
+<span class="sd">    ...     print(p)</span>
+<span class="sd">    ...</span>
+<span class="sd">    [[ True  True]</span>
+<span class="sd">     [False  True]]</span>
+<span class="sd">    [[False False]</span>
+<span class="sd">     [ True False]]</span>
+<span class="sd">    &gt;&gt;&gt; for p in parcels([[1,1],[2,3]], labels=[2,3]):</span>
+<span class="sd">    ...     print(p)</span>
+<span class="sd">    ...</span>
+<span class="sd">    [[False False]</span>
+<span class="sd">     [ True False]]</span>
+<span class="sd">    [[False False]</span>
+<span class="sd">     [False  True]]</span>
+<span class="sd">    &gt;&gt;&gt; for p in parcels([[1,1],[2,3]], labels=[(2,3),2]):</span>
+<span class="sd">    ...     print(p)</span>
+<span class="sd">    ...</span>
+<span class="sd">    [[False False]</span>
+<span class="sd">     [ True  True]]</span>
+<span class="sd">    [[False False]</span>
+<span class="sd">     [ True False]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get image data or make array from array-like</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">exclude</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">type</span><span class="p">(()),</span> <span class="nb">type</span><span class="p">([])]:</span>
+            <span class="k">yield</span> <span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">label</span><span class="p">:</span>
+                <span class="n">v</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">v</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="data_generator"><a class="viewcode-back" href="../../../../api/generated/nipy.core.utils.generators.html#nipy.core.utils.generators.data_generator">[docs]</a><span class="k">def</span> <span class="nf">data_generator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">iterable</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return generator for ``[(i, data[i]) for i in iterable]``</span>
+
+<span class="sd">    If iterable is None, it defaults to range(data.shape[0])</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; a = np.asarray([[True,False],[False,True]])</span>
+<span class="sd">    &gt;&gt;&gt; b = np.asarray([[False,False],[True,False]])</span>
+
+<span class="sd">    &gt;&gt;&gt; for i, d in data_generator(np.asarray([[1,2],[3,4]]), [a,b]):</span>
+<span class="sd">    ...     print(d)</span>
+<span class="sd">    ...</span>
+<span class="sd">    [1 4]</span>
+<span class="sd">    [3]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">iterable</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">iterable</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">index</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="write_data"><a class="viewcode-back" href="../../../../api/generated/nipy.core.utils.generators.html#nipy.core.utils.generators.write_data">[docs]</a><span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Write (index, data) iterable to `output`</span>
+
+<span class="sd">    Write some data to `output`. Iterable should return 2-tuples of the form</span>
+<span class="sd">    index, data such that::</span>
+
+<span class="sd">        output[index] = data</span>
+
+<span class="sd">    makes sense.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; a=np.zeros((2,2))</span>
+<span class="sd">    &gt;&gt;&gt; write_data(a, data_generator(np.asarray([[1,2],[3,4]])))</span>
+<span class="sd">    &gt;&gt;&gt; a</span>
+<span class="sd">    array([[ 1.,  2.],</span>
+<span class="sd">           [ 3.,  4.]])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+        <span class="n">output</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="slice_generator"><a class="viewcode-back" href="../../../../api/generated/nipy.core.utils.generators.html#nipy.core.utils.generators.slice_generator">[docs]</a><span class="k">def</span> <span class="nf">slice_generator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return generator for yielding slices along `axis`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : array-like</span>
+<span class="sd">    axis : int or list or tuple</span>
+<span class="sd">        If int, gives the axis.  If list or tuple, gives the combination of</span>
+<span class="sd">        axes over which to iterate.  First axis is fastest changing in output.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; for i,d in slice_generator([[1,2],[3,4]]):</span>
+<span class="sd">    ...     print(i, d)</span>
+<span class="sd">    ...</span>
+<span class="sd">    (0,) [1 2]</span>
+<span class="sd">    (1,) [3 4]</span>
+<span class="sd">    &gt;&gt;&gt; for i,d in slice_generator([[1,2],[3,4]], axis=1):</span>
+<span class="sd">    ...     print(i, d)</span>
+<span class="sd">    ...</span>
+<span class="sd">    (slice(None, None, None), 0) [1 3]</span>
+<span class="sd">    (slice(None, None, None), 1) [2 4]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]):</span>
+            <span class="n">ij</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">),)</span><span class="o">*</span><span class="n">axis</span> <span class="o">+</span> <span class="p">(</span><span class="n">j</span><span class="p">,)</span>
+            <span class="k">yield</span> <span class="n">ij</span><span class="p">,</span> <span class="n">data</span><span class="p">[(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">),)</span><span class="o">*</span><span class="n">axis</span> <span class="o">+</span> <span class="p">(</span><span class="n">j</span><span class="p">,)]</span>
+        <span class="k">return</span>
+
+    <span class="c1"># the total number of iterations to be made</span>
+    <span class="n">axis_lens</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">axis</span><span class="p">]</span>
+    <span class="n">nmax</span> <span class="o">=</span> <span class="n">seq_prod</span><span class="p">(</span><span class="n">axis_lens</span><span class="p">)</span>
+
+    <span class="c1"># calculate the &#39;divmod&#39; parameter which is used to work out</span>
+    <span class="c1"># which index to use to use for each axis during iteration</span>
+    <span class="n">mods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="n">axis_lens</span><span class="p">)</span>
+    <span class="n">divs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">mods</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># set up a full set of slices for the image, to be modified</span>
+    <span class="c1"># at each iteration</span>
+    <span class="n">slice_template</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmax</span><span class="p">):</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="n">slice_template</span><span class="p">[:]</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">div</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">divs</span><span class="p">,</span> <span class="n">mods</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="n">div</span> <span class="o">%</span> <span class="n">mod</span><span class="p">)</span>
+            <span class="n">slices</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">yield</span> <span class="n">slices</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">slices</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="f_generator"><a class="viewcode-back" href="../../../../api/generated/nipy.core.utils.generators.html#nipy.core.utils.generators.f_generator">[docs]</a><span class="k">def</span> <span class="nf">f_generator</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a generator for ``[(i, f(x)) for i, x in iterable]``</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; for i, d in f_generator(lambda x: x**2, data_generator([[1,2],[3,4]])):</span>
+<span class="sd">    ...     print(i, d)</span>
+<span class="sd">    ...</span>
+<span class="sd">    0 [1 4]</span>
+<span class="sd">    1 [ 9 16]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">i</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="slice_parcels"><a class="viewcode-back" href="../../../../api/generated/nipy.core.utils.generators.html#nipy.core.utils.generators.slice_parcels">[docs]</a><span class="k">def</span> <span class="nf">slice_parcels</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A generator for slicing through parcels and slices of data...</span>
+
+<span class="sd">    hmmm... a better description is needed</span>
+
+<span class="sd">    &gt;&gt;&gt; x=np.array([[0,0,0,1],[0,1,0,1],[2,2,0,1]])</span>
+<span class="sd">    &gt;&gt;&gt; for a in slice_parcels(x):</span>
+<span class="sd">    ...     print(a, x[a])</span>
+<span class="sd">    ...</span>
+<span class="sd">    ((0,), array([ True,  True,  True, False], dtype=bool)) [0 0 0]</span>
+<span class="sd">    ((0,), array([False, False, False,  True], dtype=bool)) [1]</span>
+<span class="sd">    ((1,), array([ True, False,  True, False], dtype=bool)) [0 0]</span>
+<span class="sd">    ((1,), array([False,  True, False,  True], dtype=bool)) [1 1]</span>
+<span class="sd">    ((2,), array([False, False,  True, False], dtype=bool)) [0]</span>
+<span class="sd">    ((2,), array([False, False, False,  True], dtype=bool)) [1]</span>
+<span class="sd">    ((2,), array([ True,  True, False, False], dtype=bool)) [2 2]</span>
+<span class="sd">    &gt;&gt;&gt; for a in slice_parcels(x, axis=1):</span>
+<span class="sd">    ...     b, c = a</span>
+<span class="sd">    ...     print(a, x[b][c])</span>
+<span class="sd">    ...</span>
+<span class="sd">    ((slice(None, None, None), 0), array([ True,  True, False], dtype=bool)) [0 0]</span>
+<span class="sd">    ((slice(None, None, None), 0), array([False, False,  True], dtype=bool)) [2]</span>
+<span class="sd">    ((slice(None, None, None), 1), array([ True, False, False], dtype=bool)) [0]</span>
+<span class="sd">    ((slice(None, None, None), 1), array([False,  True, False], dtype=bool)) [1]</span>
+<span class="sd">    ((slice(None, None, None), 1), array([False, False,  True], dtype=bool)) [2]</span>
+<span class="sd">    ((slice(None, None, None), 2), array([ True,  True,  True], dtype=bool)) [0 0 0]</span>
+<span class="sd">    ((slice(None, None, None), 3), array([ True,  True,  True], dtype=bool)) [1 1 1]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">slice_generator</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parcels</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="matrix_generator"><a class="viewcode-back" href="../../../../api/generated/nipy.core.utils.generators.html#nipy.core.utils.generators.matrix_generator">[docs]</a><span class="k">def</span> <span class="nf">matrix_generator</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    From a generator of items (i, r), return</span>
+<span class="sd">    (i, rp) where rp is a 2d array with rp.shape = (r.shape[0], prod(r.shape[1:]))</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">img</span><span class="p">:</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+        <span class="k">yield</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span></div>
+
+
+<div class="viewcode-block" id="shape_generator"><a class="viewcode-back" href="../../../../api/generated/nipy.core.utils.generators.html#nipy.core.utils.generators.shape_generator">[docs]</a><span class="k">def</span> <span class="nf">shape_generator</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    From a generator of items (i, r), return</span>
+<span class="sd">    (i, r.reshape(shape))</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">img</span><span class="p">:</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+        <span class="k">yield</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,1018 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.group.permutation_test</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;One and two sample permutation tests.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">absolute_import</span>
+
+<span class="c1"># Third-party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.misc</span> <span class="k">as</span> <span class="nn">sm</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="c1"># Our own imports</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.graph</span> <span class="k">import</span> <span class="n">wgraph_from_3d_grid</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.graph.field</span> <span class="k">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">field_from_graph_and_data</span>
+
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">zscore</span>
+<span class="kn">from</span> <span class="nn">.onesample</span> <span class="k">import</span> <span class="n">stat</span> <span class="k">as</span> <span class="n">os_stat</span><span class="p">,</span> <span class="n">stat_mfx</span> <span class="k">as</span> <span class="n">os_stat_mfx</span>
+<span class="kn">from</span> <span class="nn">.twosample</span> <span class="k">import</span> <span class="n">stat</span> <span class="k">as</span> <span class="n">ts_stat</span><span class="p">,</span> <span class="n">stat_mfx</span> <span class="k">as</span> <span class="n">ts_stat_mfx</span>
+
+
+<span class="c1"># Default parameters</span>
+<span class="n">DEF_NDRAWS</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e5</span><span class="p">)</span>
+<span class="n">DEF_NPERMS</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="n">DEF_NITER</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">DEF_STAT_ONESAMPLE</span> <span class="o">=</span> <span class="s1">&#39;student&#39;</span>
+<span class="n">DEF_STAT_TWOSAMPLE</span> <span class="o">=</span> <span class="s1">&#39;student&#39;</span>
+
+
+<span class="c1">#===========================================</span>
+<span class="c1">#===========================================</span>
+<span class="c1"># Cluster extraction functions</span>
+<span class="c1">#===========================================</span>
+<span class="c1">#===========================================</span>
+
+
+<div class="viewcode-block" id="extract_clusters_from_thresh"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.extract_clusters_from_thresh">[docs]</a><span class="k">def</span> <span class="nf">extract_clusters_from_thresh</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="n">XYZ</span><span class="p">,</span><span class="n">th</span><span class="p">,</span><span class="n">k</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract clusters from statistical map</span>
+<span class="sd">    above specified threshold</span>
+<span class="sd">    In:  T      (p)     statistical map</span>
+<span class="sd">         XYZ    (3,p)   voxels coordinates</span>
+<span class="sd">         th     &lt;float&gt; threshold</span>
+<span class="sd">         k      &lt;int&gt;   the number of neighbours considered. (6,18 or 26)</span>
+<span class="sd">    Out: labels (p)     cluster labels</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">T</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">SupraThreshXYZ</span> <span class="o">=</span> <span class="n">XYZ</span><span class="p">[:,</span> <span class="n">I</span><span class="p">]</span>
+        <span class="n">CC_label</span> <span class="o">=</span> <span class="n">wgraph_from_3d_grid</span><span class="p">(</span><span class="n">SupraThreshXYZ</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span>
+        <span class="n">labels</span><span class="p">[</span><span class="n">I</span><span class="p">]</span> <span class="o">=</span> <span class="n">CC_label</span>
+    <span class="k">return</span> <span class="n">labels</span></div>
+
+
+
+<div class="viewcode-block" id="max_dist"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.max_dist">[docs]</a><span class="k">def</span> <span class="nf">max_dist</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">I</span><span class="p">,</span><span class="n">J</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Maximum distance between two set of points</span>
+<span class="sd">    In:  XYZ (3,p) voxels coordinates</span>
+<span class="sd">         I   (q)   index of points</span>
+<span class="sd">         J   (r)   index of points</span>
+<span class="sd">    Out: d &lt;float&gt;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">I</span><span class="p">)),</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">J</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Square distance matrix</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">XYZ</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">I</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">XYZ</span><span class="p">[:,</span> <span class="n">J</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">J</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">D</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="extract_clusters_from_diam"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.extract_clusters_from_diam">[docs]</a><span class="k">def</span> <span class="nf">extract_clusters_from_diam</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">XYZ</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">diam</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract clusters from a statistical map</span>
+<span class="sd">    under diameter constraint</span>
+<span class="sd">    and above given threshold</span>
+<span class="sd">    In:  T      (p)     statistical map</span>
+<span class="sd">         XYZ    (3,p)   voxels coordinates</span>
+<span class="sd">         th     &lt;float&gt; minimum threshold</span>
+<span class="sd">         diam   &lt;int&gt;   maximal diameter (in voxels)</span>
+<span class="sd">         k      &lt;int&gt;   the number of neighbours considered. (6,18 or 26)</span>
+<span class="sd">    Out: labels (p)     cluster labels</span>
+
+<span class="sd">    Comment by alexis-roche, September 15th 2012: this function was</span>
+<span class="sd">    originally developed by Merlin Keller in an attempt to generalize</span>
+<span class="sd">    classical cluster-level analysis by subdividing clusters in blobs</span>
+<span class="sd">    with limited diameter (at least, this is my understanding). This</span>
+<span class="sd">    piece of code seems to have remained very experimental and its</span>
+<span class="sd">    usefulness in real-world neuroimaging image studies is still to be</span>
+<span class="sd">    demonstrated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">CClabels</span> <span class="o">=</span> <span class="n">extract_clusters_from_thresh</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="n">XYZ</span><span class="p">,</span><span class="n">th</span><span class="p">,</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">nCC</span> <span class="o">=</span> <span class="n">CClabels</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">CClabels</span><span class="p">),</span><span class="nb">int</span><span class="p">)</span>
+    <span class="c1"># Calls _extract_clusters_from_diam, a recursive function, and</span>
+    <span class="c1"># catches an exception if maximum recursion depth is reached</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">_extract_clusters_from_diam</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">XYZ</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">diam</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span>
+                                             <span class="n">nCC</span><span class="p">,</span> <span class="n">CClabels</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;_extract_clusters_from_diam did not converge&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">labels</span></div>
+
+
+<span class="k">def</span> <span class="nf">_extract_clusters_from_diam</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">XYZ</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">diam</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span>
+                                <span class="n">nCC</span><span class="p">,</span> <span class="n">CClabels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This recursive function modifies the `labels` input array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clust_label</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nCC</span><span class="p">):</span>
+        <span class="c1">#print &quot;Searching connected component &quot;, i, &quot; out of &quot;, nCC</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">CClabels</span><span class="o">==</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">extCC</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">extCC</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">diam</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">:</span>
+            <span class="n">diamCC</span> <span class="o">=</span> <span class="n">max_dist</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">I</span><span class="p">,</span><span class="n">I</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">diamCC</span> <span class="o">=</span> <span class="n">diam</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="n">diamCC</span> <span class="o">&lt;=</span> <span class="n">diam</span><span class="p">:</span>
+            <span class="n">labels</span><span class="p">[</span><span class="n">I</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">extCC</span><span class="p">,</span><span class="nb">int</span><span class="p">)</span> <span class="o">+</span> <span class="n">clust_label</span>
+            <span class="c1">#print &quot;cluster &quot;, clust_label, &quot;, diam = &quot;, diamCC</span>
+            <span class="c1">#print &quot;ext = &quot;, len(I), &quot;, diam = &quot;, max_dist(XYZ,I,I)</span>
+            <span class="n">clust_label</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># build the field</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">I</span><span class="p">])</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">field_from_graph_and_data</span><span class="p">(</span>
+                <span class="n">wgraph_from_3d_grid</span><span class="p">(</span><span class="n">XYZ</span><span class="p">[:,</span> <span class="n">I</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">I</span><span class="p">],(</span><span class="n">p</span><span class="p">,</span><span class="mi">1</span><span class="p">)))</span>
+            <span class="c1"># compute the blobs</span>
+            <span class="n">idx</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span><span class="n">label</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">threshold_bifurcations</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">th</span><span class="p">)</span>
+            <span class="n">nidx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">label</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">))</span>
+                               <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nidx</span><span class="p">)])</span>
+            <span class="c1">#root = nidx-1</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nidx</span><span class="p">)</span><span class="o">==</span><span class="n">parent</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># Can constraint be met within current region?</span>
+            <span class="n">Imin</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">T</span><span class="p">[</span><span class="n">I</span><span class="p">]</span><span class="o">&gt;=</span><span class="n">height</span><span class="p">[</span><span class="n">root</span><span class="p">]]</span>
+            <span class="n">extmin</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Imin</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">extmin</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">diam</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">:</span>
+                <span class="n">dmin</span> <span class="o">=</span> <span class="n">max_dist</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">Imin</span><span class="p">,</span><span class="n">Imin</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dmin</span> <span class="o">=</span> <span class="n">diam</span><span class="o">+</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">dmin</span> <span class="o">&lt;=</span> <span class="n">diam</span><span class="p">:</span><span class="c1"># If so, search for the largest cluster meeting the constraint</span>
+                <span class="n">Iclust</span> <span class="o">=</span> <span class="n">Imin</span> <span class="c1"># Smallest cluster</span>
+                <span class="n">J</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">T</span><span class="p">[</span><span class="n">I</span><span class="p">]</span><span class="o">&lt;</span><span class="n">height</span><span class="p">[</span><span class="n">root</span><span class="p">]]</span> <span class="c1"># Remaining voxels</span>
+                <span class="n">argsortTJ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">J</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># Sorted by decreasing T values</span>
+                <span class="n">l</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">argsortTJ</span><span class="p">[</span><span class="n">l</span><span class="p">]]],</span><span class="nb">int</span><span class="p">)</span>
+                <span class="n">diameter</span> <span class="o">=</span> <span class="n">dmin</span>
+                <span class="n">new_diameter</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dmin</span><span class="p">,</span><span class="n">max_dist</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">Iclust</span><span class="p">,</span><span class="n">L</span><span class="p">))</span>
+                <span class="k">while</span> <span class="n">new_diameter</span> <span class="o">&lt;=</span> <span class="n">diam</span><span class="p">:</span>
+                    <span class="c1">#print &quot;diameter = &quot; + str(new_diameter)</span>
+                    <span class="c1">#sys.stdout.flush()</span>
+                    <span class="n">Iclust</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Iclust</span><span class="p">,</span><span class="n">L</span><span class="p">))</span>
+                    <span class="n">diameter</span> <span class="o">=</span> <span class="n">new_diameter</span>
+                    <span class="c1">#print &quot;diameter = &quot;, diameter</span>
+                    <span class="n">l</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">J</span><span class="p">[</span><span class="n">argsortTJ</span><span class="p">[</span><span class="n">l</span><span class="p">]]],</span><span class="nb">int</span><span class="p">)</span>
+                    <span class="n">new_diameter</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">diameter</span><span class="p">,</span><span class="n">max_dist</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">Iclust</span><span class="p">,</span><span class="n">L</span><span class="p">))</span>
+                <span class="n">labels</span><span class="p">[</span><span class="n">Iclust</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Iclust</span><span class="p">),</span><span class="nb">int</span><span class="p">)</span> <span class="o">+</span> <span class="n">clust_label</span>
+                <span class="c1">#print &quot;cluster &quot;, clust_label, &quot;, diam = &quot;, diameter</span>
+                <span class="c1">#print &quot;ext = &quot;, len(Iclust), &quot;, diam = &quot;, max_dist(XYZ,Iclust,Iclust)</span>
+                <span class="n">clust_label</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span><span class="c1"># If not, search inside sub-regions</span>
+                <span class="c1">#print &quot;Searching inside sub-regions &quot;</span>
+                <span class="n">Irest</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">T</span><span class="p">[</span><span class="n">I</span><span class="p">]</span><span class="o">&gt;</span><span class="n">height</span><span class="p">[</span><span class="n">root</span><span class="p">]]</span>
+                <span class="n">rest_labels</span> <span class="o">=</span> <span class="n">extract_clusters_from_diam</span><span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">Irest</span><span class="p">],</span><span class="n">XYZ</span><span class="p">[:,</span><span class="n">Irest</span><span class="p">],</span><span class="n">th</span><span class="p">,</span><span class="n">diam</span><span class="p">,</span><span class="n">k</span><span class="p">)</span>
+                <span class="n">rest_labels</span><span class="p">[</span><span class="n">rest_labels</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">clust_label</span>
+                <span class="n">clust_label</span> <span class="o">=</span> <span class="n">rest_labels</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">labels</span><span class="p">[</span><span class="n">Irest</span><span class="p">]</span> <span class="o">=</span> <span class="n">rest_labels</span>
+    <span class="k">return</span> <span class="n">labels</span>
+
+
+<div class="viewcode-block" id="extract_clusters_from_graph"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.extract_clusters_from_graph">[docs]</a><span class="k">def</span> <span class="nf">extract_clusters_from_graph</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">th</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This returns a label vector of same size as T,</span>
+<span class="sd">    defining connected components for subgraph of</span>
+<span class="sd">    weighted graph G containing vertices s.t. T &gt;= th</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">T</span> <span class="o">&gt;=</span> <span class="n">th</span>
+    <span class="n">nlabels</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">nlabels</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">labels</span><span class="p">[</span><span class="n">I</span><span class="p">]</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">labels</span></div>
+
+
+<span class="c1">#======================================</span>
+<span class="c1">#======================================</span>
+<span class="c1"># Useful functions</span>
+<span class="c1">#======================================</span>
+<span class="c1">#======================================</span>
+
+
+
+<div class="viewcode-block" id="sorted_values"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.sorted_values">[docs]</a><span class="k">def</span> <span class="nf">sorted_values</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract list of distinct sortedvalues from an array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="p">]</span>
+        <span class="n">L</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span> <span class="n">sorted_values</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">a</span><span class="o">&gt;</span><span class="n">m</span><span class="p">])</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">L</span></div>
+
+
+
+<div class="viewcode-block" id="onesample_stat"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.onesample_stat">[docs]</a><span class="k">def</span> <span class="nf">onesample_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">Magics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">DEF_NITER</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for os_stat and os_stat_mfx</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">stat_id</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;_mfx&#39;</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">os_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">Magics</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">os_stat_mfx</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">Magics</span><span class="p">,</span> <span class="n">niter</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="twosample_stat"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.twosample_stat">[docs]</a><span class="k">def</span> <span class="nf">twosample_stat</span><span class="p">(</span><span class="n">Y1</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">Y2</span><span class="p">,</span> <span class="n">V2</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">Magics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">DEF_NITER</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for ts_stat and ts_stat_mfx</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">stat_id</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;_mfx&#39;</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ts_stat</span><span class="p">(</span><span class="n">Y1</span><span class="p">,</span> <span class="n">Y2</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">Magics</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ts_stat_mfx</span><span class="p">(</span><span class="n">Y1</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">Y2</span><span class="p">,</span> <span class="n">V2</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">Magics</span><span class="p">,</span> <span class="n">niter</span><span class="p">)</span></div>
+
+<span class="c1">#=================================================</span>
+<span class="c1">#=================================================</span>
+<span class="c1"># Compute cluster and region summary statistics</span>
+<span class="c1">#=================================================</span>
+<span class="c1">#=================================================</span>
+
+
+
+<div class="viewcode-block" id="compute_cluster_stats"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.compute_cluster_stats">[docs]</a><span class="k">def</span> <span class="nf">compute_cluster_stats</span><span class="p">(</span><span class="n">Tvalues</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">random_Tvalues</span><span class="p">,</span>
+                          <span class="n">cluster_stats</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">,</span><span class="s2">&quot;Fisher&quot;</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    size_values, Fisher_values = compute_cluster_stats(Tvalues, labels, random_Tvalues, cluster_stats=[&quot;size&quot;,&quot;Fisher&quot;])</span>
+<span class="sd">    Compute summary statistics in each cluster</span>
+<span class="sd">    In:  see permutation_test_onesample class docstring</span>
+<span class="sd">    Out: size_values   Array of size nclust, or None if &quot;size&quot; not in cluster_stats</span>
+<span class="sd">         Fisher_values Array of size nclust, or None if &quot;Fisher&quot; not in cluster_stats</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nclust</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">nclust</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;size&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+            <span class="n">size_values</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">size_values</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+            <span class="n">Fisher_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Fisher_values</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;size&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+            <span class="n">size_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nclust</span><span class="p">,</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">size_values</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+            <span class="n">Fisher_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nclust</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">ndraws</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">random_Tvalues</span><span class="p">)</span>
+            <span class="n">pseudo_p_values</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">random_Tvalues</span><span class="p">,</span><span class="n">Tvalues</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">ndraws</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Fisher_values</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nclust</span><span class="p">):</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">labels</span><span class="o">==</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;size&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+            <span class="n">size_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+            <span class="n">Fisher_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pseudo_p_values</span><span class="p">[</span><span class="n">I</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">size_values</span><span class="p">,</span> <span class="n">Fisher_values</span></div>
+
+
+
+<div class="viewcode-block" id="compute_region_stat"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.compute_region_stat">[docs]</a><span class="k">def</span> <span class="nf">compute_region_stat</span><span class="p">(</span><span class="n">Tvalues</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">label_values</span><span class="p">,</span> <span class="n">random_Tvalues</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fisher_values = compute_region_stat(Tvalues, labels, label_values, random_Tvalues)</span>
+<span class="sd">    Compute summary statistics in each cluster</span>
+<span class="sd">    In:  see permutation_test_onesample class docstring</span>
+<span class="sd">    Out: Fisher_values Array of size nregions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Fisher_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">label_values</span><span class="p">),</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">pseudo_p_values</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">random_Tvalues</span><span class="p">,</span><span class="n">Tvalues</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">random_Tvalues</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">label_values</span><span class="p">)):</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">labels</span><span class="o">==</span><span class="n">label_values</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Fisher_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pseudo_p_values</span><span class="p">[</span><span class="n">I</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">Fisher_values</span></div>
+
+<div class="viewcode-block" id="peak_XYZ"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.peak_XYZ">[docs]</a><span class="k">def</span> <span class="nf">peak_XYZ</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span> <span class="n">Tvalues</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">label_values</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns (3, n_labels) array of maximum T values coordinates for each label value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">label_values</span><span class="p">)),</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">label_values</span><span class="p">)):</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">labels</span> <span class="o">==</span> <span class="n">label_values</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">C</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">XYZ</span><span class="p">[:,</span> <span class="n">I</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">Tvalues</span><span class="p">[</span><span class="n">I</span><span class="p">])]]</span>
+    <span class="k">return</span> <span class="n">C</span></div>
+
+<span class="c1">#======================================</span>
+<span class="c1">#======================================</span>
+<span class="c1"># Generic permutation test class</span>
+<span class="c1">#======================================</span>
+<span class="c1">#======================================</span>
+
+<div class="viewcode-block" id="permutation_test"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test">[docs]</a><span class="k">class</span> <span class="nc">permutation_test</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This generic permutation test class contains the calibration method</span>
+<span class="sd">    which is common to the derived classes permutation_test_onesample and</span>
+<span class="sd">    permutation_test_twosample (as well as other common methods)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#=======================================================</span>
+    <span class="c1"># Permutation test calibration of summary statistics</span>
+    <span class="c1">#=======================================================</span>
+<div class="viewcode-block" id="permutation_test.calibrate"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test.calibrate">[docs]</a>    <span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nperms</span><span class="o">=</span><span class="n">DEF_NPERMS</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">cluster_stats</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">,</span><span class="s2">&quot;Fisher&quot;</span><span class="p">],</span> <span class="n">regions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">region_stats</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Fisher&quot;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calibrate cluster and region summary statistics using permutation test</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nperms : int, optional</span>
+<span class="sd">            Number of random permutations generated.</span>
+<span class="sd">            Exhaustive permutations are used only if nperms=None,</span>
+<span class="sd">            or exceeds total number of possible permutations</span>
+
+<span class="sd">        clusters : list [(thresh1,diam1),(thresh2,diam2),...], optional</span>
+<span class="sd">            List of cluster extraction pairs: (thresh,diam).  *thresh* provides</span>
+<span class="sd">            T values threshold, *diam* is the maximum cluster diameter, in</span>
+<span class="sd">            voxels.  Using *diam*==None yields classical suprathreshold</span>
+<span class="sd">            clusters.</span>
+
+<span class="sd">        cluster_stats : list [stat1,...], optional</span>
+<span class="sd">            List of cluster summary statistics id (either &#39;size&#39; or &#39;Fisher&#39;)</span>
+
+<span class="sd">        regions : list [Labels1,Labels2,...]</span>
+<span class="sd">            List of region labels arrays, of size (p,) where p is the number</span>
+<span class="sd">            of voxels</span>
+
+<span class="sd">        region_stats : list [stat1,...], optional</span>
+<span class="sd">            List of cluster summary statistics id (only &#39;Fisher&#39; supported</span>
+<span class="sd">            for now)</span>
+
+<span class="sd">        verbose : boolean, optional</span>
+<span class="sd">            &quot;Chatterbox&quot; mode switch</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        voxel_results : dict</span>
+<span class="sd">            A dictionary containing the following keys: ``p_values`` (p,)</span>
+<span class="sd">            Uncorrected p-values.``Corr_p_values`` (p,) Corrected p-values,</span>
+<span class="sd">            computed by the Tmax procedure.  ``perm_maxT_values`` (nperms)</span>
+<span class="sd">            values of the maximum statistic under permutation.</span>
+<span class="sd">        cluster_results : list [results1,results2,...]</span>
+<span class="sd">            List of permutation test results for each cluster extraction pair.</span>
+<span class="sd">            These are dictionaries with the following keys &quot;thresh&quot;, &quot;diam&quot;,</span>
+<span class="sd">            &quot;labels&quot;, &quot;expected_voxels_per_cluster&quot;,</span>
+<span class="sd">            &quot;expected_number_of_clusters&quot;, and &quot;peak_XYZ&quot; if XYZ field is</span>
+<span class="sd">            nonempty and for each summary statistic id &quot;S&quot;: &quot;size_values&quot;,</span>
+<span class="sd">            &quot;size_p_values&quot;, &quot;S_Corr_p_values&quot;, &quot;perm_size_values&quot;,</span>
+<span class="sd">            &quot;perm_maxsize_values&quot;</span>
+<span class="sd">        region_results :list [results1,results2,...]</span>
+<span class="sd">            List of permutation test results for each region labels arrays.</span>
+<span class="sd">            These are dictionaries with the following keys: &quot;label_values&quot;,</span>
+<span class="sd">            &quot;peak_XYZ&quot; (if XYZ field nonempty) and for each summary statistic</span>
+<span class="sd">            id &quot;S&quot;: &quot;size_values&quot;, &quot;size_p_values&quot;, &quot;perm_size_values&quot;,</span>
+<span class="sd">            &quot;perm_maxsize_values&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Permutation indices</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">]</span>
+            <span class="n">max_nperms</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">n</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">n1</span><span class="p">,</span><span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">data1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">]</span>
+            <span class="n">n2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">]</span>
+            <span class="n">max_nperms</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">comb</span><span class="p">(</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">,</span><span class="n">n1</span><span class="p">,</span><span class="n">exact</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">data1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">data2</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vardata1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">vardata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">vardata1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">vardata2</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nperms</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">nperms</span> <span class="o">&gt;=</span> <span class="n">max_nperms</span><span class="p">:</span>
+            <span class="n">magic_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">max_nperms</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#magic_numbers = np.random.randint(max_nperms,size=nperms)</span>
+            <span class="c1"># np.random.randint does not handle longint!</span>
+            <span class="c1"># So we use the following hack instead:</span>
+            <span class="n">magic_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">max_nperms</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">nperms</span><span class="p">)</span>
+        <span class="c1"># Initialize cluster_results</span>
+        <span class="n">cluster_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">clusters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">thresh</span><span class="p">,</span><span class="n">diam</span><span class="p">)</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">diam</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">labels</span> <span class="o">=</span> <span class="n">extract_clusters_from_graph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span><span class="n">thresh</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">labels</span> <span class="o">=</span> <span class="n">extract_clusters_from_thresh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span><span class="p">,</span><span class="n">thresh</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">labels</span> <span class="o">=</span> <span class="n">extract_clusters_from_diam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span><span class="p">,</span><span class="n">thresh</span><span class="p">,</span><span class="n">diam</span><span class="p">)</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;thresh&quot;</span> <span class="p">:</span> <span class="n">thresh</span><span class="p">,</span> <span class="s2">&quot;diam&quot;</span> <span class="p">:</span> <span class="n">diam</span><span class="p">,</span> <span class="s2">&quot;labels&quot;</span> <span class="p">:</span> <span class="n">labels</span><span class="p">}</span>
+                <span class="n">size_values</span><span class="p">,</span> <span class="n">Fisher_values</span> <span class="o">=</span> <span class="n">compute_cluster_stats</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span><span class="p">,</span> <span class="n">cluster_stats</span><span class="p">)</span>
+                <span class="n">nclust</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">results</span><span class="p">[</span><span class="s2">&quot;expected_voxels_per_thresh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">results</span><span class="p">[</span><span class="s2">&quot;expected_number_of_clusters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;peak_XYZ&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak_XYZ</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nclust</span><span class="p">))</span>
+                <span class="k">if</span> <span class="s2">&quot;size&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;size_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">size_values</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;perm_size_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;perm_maxsize_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">magic_numbers</span><span class="p">),</span><span class="nb">int</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;Fisher_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fisher_values</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;perm_maxFisher_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">magic_numbers</span><span class="p">),</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">cluster_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">results</span> <span class="p">)</span>
+        <span class="c1"># Initialize region_results</span>
+        <span class="n">region_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">regions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+                <span class="n">label_values</span> <span class="o">=</span> <span class="n">sorted_values</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+                <span class="n">nregions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">label_values</span><span class="p">)</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;label_values&quot;</span> <span class="p">:</span> <span class="n">label_values</span> <span class="p">}</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;peak_XYZ&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak_XYZ</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">label_values</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">region_stats</span><span class="p">:</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;Fisher_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_region_stat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">label_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span><span class="p">)</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nregions</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">magic_numbers</span><span class="p">)),</span><span class="nb">float</span><span class="p">)</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;Fisher_p_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nregions</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+                    <span class="n">results</span><span class="p">[</span><span class="s2">&quot;Fisher_Corr_p_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nregions</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">region_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">results</span> <span class="p">)</span>
+        <span class="c1"># Permutation test</span>
+        <span class="n">p_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">Corr_p_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">nmagic</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">magic_numbers</span><span class="p">)</span>
+        <span class="n">perm_maxT_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nmagic</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmagic</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">magic_numbers</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Permutation&quot;</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;out of&quot;</span><span class="p">,</span> <span class="n">nmagic</span><span class="p">)</span>
+            <span class="c1"># T values under permutation</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">rand_sign</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span>\
+                    <span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">rand_data</span> <span class="o">=</span> <span class="n">rand_sign</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vardata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">rand_vardata</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rand_vardata</span> <span class="o">=</span> <span class="n">rand_sign</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">vardata</span>
+
+                <span class="n">perm_Tvalues</span> <span class="o">=</span> <span class="n">onesample_stat</span><span class="p">(</span>
+                    <span class="n">rand_data</span><span class="p">,</span> <span class="n">rand_vardata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">niter</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">rand_perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n1</span> <span class="o">+</span> <span class="n">n2</span><span class="p">))</span>
+                <span class="n">rand_data1</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">rand_perm</span><span class="p">[:</span><span class="n">n1</span><span class="p">]]</span>
+                <span class="n">rand_data2</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">rand_perm</span><span class="p">[</span><span class="n">n1</span><span class="p">:]]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vardata1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">rand_vardata1</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="n">rand_vardata2</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rand_vardata1</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[</span><span class="n">rand_perm</span><span class="p">[:</span><span class="n">n1</span><span class="p">]]</span>
+                    <span class="n">rand_vardata2</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[</span><span class="n">rand_perm</span><span class="p">[</span><span class="n">n1</span><span class="p">:]]</span>
+
+                <span class="n">perm_Tvalues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">twosample_stat</span><span class="p">(</span>
+                        <span class="n">rand_data1</span><span class="p">,</span> <span class="n">rand_vardata1</span><span class="p">,</span> <span class="n">rand_data2</span><span class="p">,</span> <span class="n">rand_vardata2</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">stat_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">niter</span><span class="p">))</span>
+
+            <span class="c1"># update p values</span>
+            <span class="n">p_values</span> <span class="o">+=</span> <span class="n">perm_Tvalues</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span>
+            <span class="n">Corr_p_values</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">perm_Tvalues</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span>
+            <span class="n">perm_maxT_values</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">perm_Tvalues</span><span class="p">)</span>
+            <span class="c1"># Update cluster_results</span>
+            <span class="k">if</span> <span class="n">clusters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">clusters</span><span class="p">)):</span>
+                    <span class="n">thresh</span><span class="p">,</span> <span class="n">diam</span> <span class="o">=</span> <span class="n">clusters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">diam</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">perm_labels</span> <span class="o">=</span> <span class="n">extract_clusters_from_graph</span><span class="p">(</span><span class="n">perm_Tvalues</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span><span class="n">thresh</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">perm_labels</span> <span class="o">=</span> <span class="n">extract_clusters_from_thresh</span><span class="p">(</span><span class="n">perm_Tvalues</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span><span class="p">,</span><span class="n">thresh</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">perm_labels</span> <span class="o">=</span> <span class="n">extract_clusters_from_diam</span><span class="p">(</span><span class="n">perm_Tvalues</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span><span class="p">,</span><span class="n">thresh</span><span class="p">,</span><span class="n">diam</span><span class="p">)</span>
+                    <span class="n">perm_size_values</span><span class="p">,</span> <span class="n">perm_Fisher_values</span> <span class="o">=</span> <span class="n">compute_cluster_stats</span><span class="p">(</span><span class="n">perm_Tvalues</span><span class="p">,</span> <span class="n">perm_labels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span><span class="p">,</span> <span class="n">cluster_stats</span><span class="p">)</span>
+                    <span class="n">perm_nclust</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_voxels_per_thresh&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">perm_size_values</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nclust</span><span class="p">)</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_number_of_clusters&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">nclust</span>
+                    <span class="k">if</span> <span class="s2">&quot;size&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+                        <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_size_values&quot;</span><span class="p">][:</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">perm_size_values</span>
+                        <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_maxsize_values&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">perm_size_values</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+                        <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">][:</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">perm_Fisher_values</span>
+                        <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_maxFisher_values&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">perm_Fisher_values</span><span class="p">)</span>
+            <span class="c1"># Update region_results</span>
+            <span class="k">if</span> <span class="n">regions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">regions</span><span class="p">)):</span>
+                    <span class="n">labels</span> <span class="o">=</span> <span class="n">regions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">label_values</span> <span class="o">=</span> <span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;label_values&quot;</span><span class="p">]</span>
+                    <span class="n">nregions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">label_values</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">region_stats</span><span class="p">:</span>
+                        <span class="n">perm_Fisher_values</span> <span class="o">=</span> <span class="n">compute_region_stat</span><span class="p">(</span><span class="n">perm_Tvalues</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">label_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span><span class="p">)</span>
+                        <span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">][:,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">perm_Fisher_values</span>
+        <span class="c1"># Compute p-values for clusters summary statistics</span>
+        <span class="k">if</span> <span class="n">clusters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">clusters</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="s2">&quot;size&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_size_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_size_values&quot;</span><span class="p">])</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_size_values&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_maxsize_values&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;size_p_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_size_values&quot;</span><span class="p">],</span> <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;size_values&quot;</span><span class="p">])</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_number_of_clusters&quot;</span><span class="p">])</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;size_Corr_p_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_maxsize_values&quot;</span><span class="p">],</span> <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;size_values&quot;</span><span class="p">])</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">cluster_stats</span><span class="p">:</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">])</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_maxFisher_values&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;Fisher_p_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">],</span> <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;Fisher_values&quot;</span><span class="p">])</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_number_of_clusters&quot;</span><span class="p">])</span>
+                    <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;Fisher_Corr_p_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_maxFisher_values&quot;</span><span class="p">],</span> <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;Fisher_values&quot;</span><span class="p">])</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">)</span>
+                <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_voxels_per_thresh&quot;</span><span class="p">]</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">)</span>
+                <span class="n">cluster_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_number_of_clusters&quot;</span><span class="p">]</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">)</span>
+        <span class="c1"># Compute p-values for regions summary statistics</span>
+        <span class="k">if</span> <span class="n">regions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">regions</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="s2">&quot;Fisher&quot;</span> <span class="ow">in</span> <span class="n">region_stats</span><span class="p">:</span>
+                    <span class="n">sorted_perm_Fisher_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">label_values</span> <span class="o">=</span> <span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;label_values&quot;</span><span class="p">]</span>
+                    <span class="n">nregions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">label_values</span><span class="p">)</span>
+                    <span class="c1"># Compute uncorrected p-values</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nregions</span><span class="p">):</span>
+                        <span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;Fisher_p_values&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">sorted_perm_Fisher_values</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;Fisher_values&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">])</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">)</span>
+                    <span class="c1">#Compute corrected p-values</span>
+                    <span class="n">perm_Fisher_p_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nregions</span><span class="p">,</span><span class="n">nmagic</span><span class="p">),</span><span class="nb">float</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nregions</span><span class="p">):</span>
+                        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;perm_Fisher_values&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+                        <span class="n">perm_Fisher_p_values</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">I</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">nmagic</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">)</span>
+                    <span class="n">perm_min_Fisher_p_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">perm_Fisher_p_values</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+                    <span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;Fisher_Corr_p_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="o">-</span><span class="n">perm_min_Fisher_p_values</span><span class="p">,</span><span class="o">-</span><span class="n">region_results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;Fisher_p_values&quot;</span><span class="p">])</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">)</span>
+        <span class="n">voxel_results</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;p_values&#39;</span><span class="p">:</span><span class="n">p_values</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">),</span>
+                         <span class="s1">&#39;Corr_p_values&#39;</span><span class="p">:</span><span class="n">Corr_p_values</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nmagic</span><span class="p">),</span>
+                         <span class="s1">&#39;perm_maxT_values&#39;</span><span class="p">:</span><span class="n">perm_maxT_values</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">voxel_results</span><span class="p">,</span> <span class="n">cluster_results</span><span class="p">,</span> <span class="n">region_results</span></div>
+
+
+
+<div class="viewcode-block" id="permutation_test.height_threshold"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test.height_threshold">[docs]</a>    <span class="k">def</span> <span class="nf">height_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the uniform height threshold matching a given</span>
+<span class="sd">        permutation-based P-value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tvals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span>
+        <span class="n">ndraws</span> <span class="o">=</span> <span class="n">tvals</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">ndraws</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pval</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="n">ndraws</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">candidate</span> <span class="o">=</span> <span class="n">tvals</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">tvals</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span> <span class="o">&lt;</span> <span class="n">candidate</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">candidate</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">tvals</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="n">ndraws</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">return</span> <span class="n">tvals</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="permutation_test.pvalue"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test.pvalue">[docs]</a>    <span class="k">def</span> <span class="nf">pvalue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Tvalues</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return uncorrected voxel-level pseudo p-values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">Tvalues</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Tvalues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span><span class="p">,</span> <span class="n">Tvalues</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndraws</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="permutation_test.zscore"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test.zscore">[docs]</a>    <span class="k">def</span> <span class="nf">zscore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Tvalues</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return z score corresponding to the uncorrected</span>
+<span class="sd">        voxel-level pseudo p-value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">Tvalues</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Tvalues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span>
+        <span class="k">return</span> <span class="n">zscore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pvalue</span><span class="p">(</span><span class="n">Tvalues</span><span class="p">))</span></div></div>
+
+
+<span class="c1">#======================================</span>
+<span class="c1">#======================================</span>
+<span class="c1"># One sample permutation test class</span>
+<span class="c1">#======================================</span>
+<span class="c1">#======================================</span>
+
+
+<div class="viewcode-block" id="permutation_test_onesample"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test_onesample">[docs]</a><span class="k">class</span> <span class="nc">permutation_test_onesample</span><span class="p">(</span><span class="n">permutation_test</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class derived from the generic permutation_test class.</span>
+<span class="sd">    Inherits the calibrate method</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="permutation_test_onesample.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test_onesample.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">XYZ</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vardata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">stat_id</span><span class="o">=</span><span class="n">DEF_STAT_ONESAMPLE</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">DEF_NITER</span><span class="p">,</span>
+                 <span class="n">ndraws</span><span class="o">=</span><span class="n">DEF_NDRAWS</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize permutation_test_onesample instance,</span>
+<span class="sd">        compute statistic values in each voxel and under permutation</span>
+<span class="sd">        In:  data                data array</span>
+<span class="sd">             XYZ                 voxels coordinates</span>
+<span class="sd">                 axis    &lt;int&gt;       Subject axis in data</span>
+<span class="sd">             vardata             variance (same shape as data)</span>
+<span class="sd">                         optional (if None, mfx statistics cannot be used)</span>
+<span class="sd">             stat_id &lt;char&gt;      choice of test statistic</span>
+<span class="sd">                                 (see onesample.stats for a list of possible stats)</span>
+<span class="sd">             base    &lt;float&gt;     mean signal under H0</span>
+<span class="sd">             niter   &lt;int&gt;       number of iterations of EM algorithm</span>
+<span class="sd">             ndraws  &lt;int&gt;       Number of generated random t values</span>
+<span class="sd">        Out:</span>
+<span class="sd">             self.Tvalues        voxelwise test statistic values</span>
+<span class="sd">             self.random_Tvalues sorted statistic values in random voxels and under random</span>
+<span class="sd">                                 sign permutation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create data fields</span>
+        <span class="n">n</span><span class="p">,</span><span class="n">p</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="o">-</span><span class="n">axis</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stat_id</span> <span class="o">=</span> <span class="n">stat_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span> <span class="o">=</span> <span class="n">XYZ</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="n">axis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vardata</span> <span class="o">=</span> <span class="n">vardata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">niter</span> <span class="o">=</span> <span class="n">niter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">=</span> <span class="n">base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndraws</span> <span class="o">=</span> <span class="n">ndraws</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span> <span class="o">=</span> <span class="n">onesample_stat</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">Magics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">niter</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Compute statistic values in random voxels and under random permutations</span>
+        <span class="c1"># Use a self.verbose flag for this output?</span>
+        <span class="c1">#print &quot;Computing average null distribution of test statistic...&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ndraws</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+        <span class="c1"># Random voxel selection</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">ndraws</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">rand_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">vardata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">rand_vardata</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rand_vardata</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rand_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">vardata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">rand_vardata</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rand_vardata</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+        <span class="c1"># Random sign permutation</span>
+        <span class="n">rand_sign</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="n">size</span> <span class="o">=</span> <span class="n">n</span><span class="o">*</span><span class="n">ndraws</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">ndraws</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rand_sign</span> <span class="o">=</span> <span class="n">rand_sign</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">rand_data</span> <span class="o">*=</span> <span class="n">rand_sign</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span> <span class="o">=</span> <span class="n">onesample_stat</span><span class="p">(</span><span class="n">rand_data</span><span class="p">,</span> <span class="n">rand_vardata</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span></div></div>
+
+
+
+<span class="c1">#==================================================================</span>
+<span class="c1">#==================================================================</span>
+<span class="c1"># One sample permutation test class with arbitrary graph structure</span>
+<span class="c1">#==================================================================</span>
+<span class="c1">#==================================================================</span>
+
+
+<div class="viewcode-block" id="permutation_test_onesample_graph"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test_onesample_graph">[docs]</a><span class="k">class</span> <span class="nc">permutation_test_onesample_graph</span><span class="p">(</span><span class="n">permutation_test</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class derived from the generic permutation_test class.</span>
+<span class="sd">    Inherits the calibrate method</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="permutation_test_onesample_graph.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test_onesample_graph.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">G</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">vardata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">stat_id</span><span class="o">=</span><span class="n">DEF_STAT_ONESAMPLE</span><span class="p">,</span><span class="n">base</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">niter</span><span class="o">=</span><span class="n">DEF_NITER</span><span class="p">,</span><span class="n">ndraws</span><span class="o">=</span><span class="n">DEF_NDRAWS</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize permutation_test_onesample instance,</span>
+<span class="sd">        compute statistic values in each voxel and under permutation</span>
+<span class="sd">        In:  data                data array</span>
+<span class="sd">             G                   weighted graph (each vertex corresponds to a voxel)</span>
+<span class="sd">             axis    &lt;int&gt;       Subject axis in data</span>
+<span class="sd">             vardata             variance (same shape as data)</span>
+<span class="sd">                         optional (if None, mfx statistics cannot be used)</span>
+<span class="sd">             stat_id &lt;char&gt;      choice of test statistic</span>
+<span class="sd">                                 (see onesample.stats for a list of possible stats)</span>
+<span class="sd">             base    &lt;float&gt;     mean signal under H0</span>
+<span class="sd">             niter   &lt;int&gt;       number of iterations of EM algorithm</span>
+<span class="sd">             ndraws  &lt;int&gt;       Number of generated random t values</span>
+<span class="sd">        Out:</span>
+<span class="sd">             self.Tvalues        voxelwise test statistic values</span>
+<span class="sd">             self.random_Tvalues sorted statistic values in random voxels and under random</span>
+<span class="sd">                                 sign permutation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create data fields</span>
+        <span class="n">n</span><span class="p">,</span><span class="n">p</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="o">-</span><span class="n">axis</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stat_id</span> <span class="o">=</span> <span class="n">stat_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="n">G</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="n">axis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vardata</span> <span class="o">=</span> <span class="n">vardata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">niter</span> <span class="o">=</span> <span class="n">niter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">=</span> <span class="n">base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndraws</span> <span class="o">=</span> <span class="n">ndraws</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span> <span class="o">=</span> <span class="n">onesample_stat</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">vardata</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">Magics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">niter</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Compute statistic values in random voxels and under random permutations</span>
+        <span class="c1"># Use a self.verbose flag for this output?</span>
+        <span class="c1">#print &quot;Computing average null distribution of test statistic...&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ndraws</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+        <span class="c1"># Random voxel selection</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">ndraws</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">rand_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">vardata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">rand_vardata</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rand_vardata</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rand_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">vardata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">rand_vardata</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rand_vardata</span> <span class="o">=</span> <span class="n">vardata</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+        <span class="c1"># Random sign permutation</span>
+        <span class="n">rand_sign</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="n">size</span> <span class="o">=</span> <span class="n">n</span><span class="o">*</span><span class="n">ndraws</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">ndraws</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rand_sign</span> <span class="o">=</span> <span class="n">rand_sign</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">rand_data</span> <span class="o">*=</span> <span class="n">rand_sign</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span> <span class="o">=</span> <span class="n">onesample_stat</span><span class="p">(</span><span class="n">rand_data</span><span class="p">,</span> <span class="n">rand_vardata</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span></div></div>
+
+
+<span class="c1">#======================================</span>
+<span class="c1">#======================================</span>
+<span class="c1"># Two sample permutation test class</span>
+<span class="c1">#======================================</span>
+<span class="c1">#======================================</span>
+
+
+<div class="viewcode-block" id="permutation_test_twosample"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test_twosample">[docs]</a><span class="k">class</span> <span class="nc">permutation_test_twosample</span><span class="p">(</span><span class="n">permutation_test</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class derived from the generic permutation_test class.</span>
+<span class="sd">    Inherits the calibrate method</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="permutation_test_twosample.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.group.permutation_test.html#nipy.labs.group.permutation_test.permutation_test_twosample.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data1</span><span class="p">,</span> <span class="n">data2</span><span class="p">,</span> <span class="n">XYZ</span><span class="p">,</span>
+                 <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vardata1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vardata2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stat_id</span><span class="o">=</span><span class="n">DEF_STAT_TWOSAMPLE</span><span class="p">,</span>
+                 <span class="n">niter</span><span class="o">=</span><span class="n">DEF_NITER</span><span class="p">,</span> <span class="n">ndraws</span><span class="o">=</span><span class="n">DEF_NDRAWS</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize permutation_test_twosample instance,</span>
+<span class="sd">        compute statistic values in each voxel and under permutation</span>
+<span class="sd">        In:  data1, data2        data arrays</span>
+<span class="sd">             XYZ                 voxels coordinates</span>
+<span class="sd">                 axis    &lt;int&gt;       Subject axis in data</span>
+<span class="sd">             vardata1, vardata2  variance (same shape as data)</span>
+<span class="sd">                         optional (if None, mfx statistics cannot be used)</span>
+<span class="sd">             stat_id &lt;char&gt;      choice of test statistic</span>
+<span class="sd">                                 (see onesample.stats for a list of possible stats)</span>
+<span class="sd">             niter   &lt;int&gt;       number of iterations of EM algorithm</span>
+<span class="sd">             ndraws  &lt;int&gt;       Number of generated random t values</span>
+<span class="sd">        Out:</span>
+<span class="sd">             self.Tvalues        voxelwise test statistic values</span>
+<span class="sd">             self.random_Tvalues sorted statistic values in random voxels and under random</span>
+<span class="sd">                                 sign permutation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create data fields</span>
+        <span class="n">n1</span><span class="p">,</span><span class="n">p</span> <span class="o">=</span> <span class="n">data1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">data1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="o">-</span><span class="n">axis</span><span class="p">]</span>
+        <span class="n">n2</span> <span class="o">=</span> <span class="n">data2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data1</span> <span class="o">=</span> <span class="n">data1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data2</span> <span class="o">=</span> <span class="n">data2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stat_id</span> <span class="o">=</span> <span class="n">stat_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">XYZ</span> <span class="o">=</span> <span class="n">XYZ</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="n">axis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vardata1</span> <span class="o">=</span> <span class="n">vardata1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vardata2</span> <span class="o">=</span> <span class="n">vardata2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">niter</span> <span class="o">=</span> <span class="n">niter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndraws</span> <span class="o">=</span> <span class="n">ndraws</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tvalues</span> <span class="o">=</span> <span class="n">twosample_stat</span><span class="p">(</span><span class="n">data1</span><span class="p">,</span> <span class="n">vardata1</span><span class="p">,</span> <span class="n">data2</span><span class="p">,</span> <span class="n">vardata2</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">Magics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">niter</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="c1"># Compute statistic values in random voxels and under random permutations</span>
+        <span class="c1"># Use a self.verbose flag for this output?</span>
+        <span class="c1">#print &quot;Computing average null distribution of test statistic...&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ndraws</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span>
+        <span class="c1"># Random voxel selection</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">ndraws</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">perm_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">,</span><span class="n">ndraws</span><span class="p">),</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">perm_data</span><span class="p">[:</span><span class="n">n1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data1</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span>
+            <span class="n">perm_data</span><span class="p">[</span><span class="n">n1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">data2</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">vardata1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">perm_vardata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">,</span><span class="n">ndraws</span><span class="p">),</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">perm_vardata</span><span class="p">[:</span><span class="n">n1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vardata1</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span>
+                <span class="n">perm_vardata</span><span class="p">[</span><span class="n">n1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">vardata2</span><span class="p">[:,</span><span class="n">I</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">perm_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ndraws</span><span class="p">,</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">),</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">perm_data</span><span class="p">[:,:</span><span class="n">n1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data1</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+            <span class="n">perm_data</span><span class="p">[:,</span><span class="n">n1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">data2</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">vardata1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">perm_vardata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ndraws</span><span class="p">,</span> <span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">),</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">perm_vardata</span><span class="p">[:,:</span><span class="n">n1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vardata1</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+                <span class="n">perm_vardata</span><span class="p">[:,</span><span class="n">n1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">vardata2</span><span class="p">[</span><span class="n">I</span><span class="p">]</span>
+        <span class="n">rand_perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndraws</span><span class="p">)])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">ravel_rand_perm</span> <span class="o">=</span> <span class="n">rand_perm</span><span class="o">*</span><span class="n">ndraws</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ndraws</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">ndraws</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">perm_data</span> <span class="o">=</span> <span class="n">perm_data</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="n">ravel_rand_perm</span><span class="o">.</span><span class="n">ravel</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">,</span><span class="n">ndraws</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">vardata1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">perm_vardata</span> <span class="o">=</span> <span class="n">perm_vardata</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="n">ravel_rand_perm</span><span class="o">.</span><span class="n">ravel</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">,</span><span class="n">ndraws</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">perm_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">perm_data</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="n">ravel_rand_perm</span><span class="o">.</span><span class="n">ravel</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">,</span><span class="n">ndraws</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">vardata1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">perm_vardata</span> <span class="o">=</span> <span class="p">(</span><span class="n">perm_vardata</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="n">ravel_rand_perm</span><span class="o">.</span><span class="n">ravel</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n1</span><span class="o">+</span><span class="n">n2</span><span class="p">,</span><span class="n">ndraws</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">perm_data1</span> <span class="o">=</span> <span class="n">perm_data</span><span class="p">[:</span><span class="n">n1</span><span class="p">]</span>
+        <span class="n">perm_data2</span> <span class="o">=</span> <span class="n">perm_data</span><span class="p">[</span><span class="n">n1</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">vardata1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">perm_vardata1</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">perm_vardata2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">perm_vardata1</span> <span class="o">=</span> <span class="n">perm_vardata</span><span class="p">[:</span><span class="n">n1</span><span class="p">]</span>
+            <span class="n">perm_vardata2</span> <span class="o">=</span> <span class="n">perm_vardata</span><span class="p">[</span><span class="n">n1</span><span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span> <span class="o">=</span> <span class="n">twosample_stat</span><span class="p">(</span><span class="n">perm_data1</span><span class="p">,</span> <span class="n">perm_vardata1</span><span class="p">,</span> <span class="n">perm_data2</span><span class="p">,</span> <span class="n">perm_vardata2</span><span class="p">,</span> <span class="n">stat_id</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_Tvalues</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

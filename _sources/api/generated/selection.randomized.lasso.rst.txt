@@ -1,0 +1,56 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+randomized.lasso
+================
+
+Module: :mod:`randomized.lasso`
+-------------------------------
+Inheritance diagram for ``selection.randomized.lasso``:
+
+.. inheritance-diagram:: selection.randomized.lasso 
+   :parts: 3
+
+.. automodule:: selection.randomized.lasso
+
+.. currentmodule:: selection.randomized.lasso
+
+Classes
+-------
+
+:class:`lasso`
+~~~~~~~~~~~~~~
+
+
+.. autoclass:: lasso
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`split_lasso`
+~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: split_lasso
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Functions
+---------
+
+
+.. autofunction:: selection.randomized.lasso.debiased_targets
+
+
+.. autofunction:: selection.randomized.lasso.form_targets
+
+
+.. autofunction:: selection.randomized.lasso.full_targets
+
+
+.. autofunction:: selection.randomized.lasso.selected_targets
+

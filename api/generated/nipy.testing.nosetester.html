@@ -1,0 +1,456 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.testing.nosetester.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="testing-nosetester">
+<h1>testing.nosetester<a class="headerlink" href="#testing-nosetester" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-testing-nosetester">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">testing.nosetester</span></code><a class="headerlink" href="#module-testing-nosetester" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.testing.nosetester</span></code>:</p>
+digraph inheritancec9e4adb685 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;testing.nosetester.NipyNoseTester&quot; [URL=&quot;#nipy.testing.nosetester.NipyNoseTester&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Numpy-like testing class&quot;];
+  &quot;testing.nosetester.NoseTester&quot; -&gt; &quot;testing.nosetester.NipyNoseTester&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;testing.nosetester.NoseTester&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;Nose test runner.&quot;];
+}
+<span class="target" id="module-nipy.testing.nosetester"></span><p>Nipy nosetester</p>
+<p>Sets doctests to run by default</p>
+<p>Use our own doctest plugin (based on that of numpy)</p>
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="nipynosetester">
+<h2><a class="reference internal" href="#nipy.testing.nosetester.NipyNoseTester" title="nipy.testing.nosetester.NipyNoseTester"><code class="xref py py-class docutils literal notranslate"><span class="pre">NipyNoseTester</span></code></a><a class="headerlink" href="#nipynosetester" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.testing.nosetester.NipyNoseTester">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.testing.nosetester.</code><code class="sig-name descname">NipyNoseTester</code><span class="sig-paren">(</span><em class="sig-param">package=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/nosetester.html#NipyNoseTester"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.nosetester.NipyNoseTester" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.fixes.numpy.testing.nosetester.NoseTester</span></code></p>
+<p>Numpy-like testing class</p>
+<ul class="simple">
+<li><p>Removes some numpy-specific excludes;</p></li>
+<li><p>Disables numpy’s fierce clearout of module import context for doctests;</p></li>
+<li><p>Run doctests by default.</p></li>
+</ul>
+<dl class="method">
+<dt id="nipy.testing.nosetester.NipyNoseTester.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">package=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.nosetester.NipyNoseTester.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test class init</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>package</strong> : string or module</p>
+<blockquote>
+<div><p>If string, gives full path to package
+If None, extract calling module path
+Default is None</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.nosetester.NipyNoseTester.excludes">
+<code class="sig-name descname">excludes</code><em class="property"> = []</em><a class="headerlink" href="#nipy.testing.nosetester.NipyNoseTester.excludes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.nosetester.NipyNoseTester.test">
+<code class="sig-name descname">test</code><span class="sig-paren">(</span><em class="sig-param">label='fast'</em>, <em class="sig-param">verbose=1</em>, <em class="sig-param">extra_argv=None</em>, <em class="sig-param">doctests=True</em>, <em class="sig-param">coverage=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/nosetester.html#NipyNoseTester.test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.nosetester.NipyNoseTester.test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run tests for module using nose.</p>
+<p>As for numpy tester, except enable tests by default.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>label</strong> : {‘fast’, ‘full’, ‘’, attribute identifier}, optional</p>
+<blockquote>
+<div><p>Identifies the tests to run. This can be a string to pass to
+directly the nosetests executable with the ‘-A’ option (an
+attribute identifier), or one of several special values.  Special
+values are:</p>
+<ul class="simple">
+<li><p>‘fast’ - the default - which corresponds to the <code class="docutils literal notranslate"><span class="pre">nosetests</span> <span class="pre">-A</span></code>
+option of ‘not slow’;</p></li>
+<li><p>‘full’ - fast (as above) and slow tests as in the
+‘no -A’ option to nosetests - this is the same as ‘’;</p></li>
+<li><p>None or ‘’ - run all tests.</p></li>
+</ul>
+</div></blockquote>
+<p><strong>verbose</strong> : int, optional</p>
+<blockquote>
+<div><p>Verbosity value for test outputs, in the range 1-10. Default is 1.</p>
+</div></blockquote>
+<p><strong>extra_argv</strong> : list, optional</p>
+<blockquote>
+<div><p>List with any extra arguments to pass to nosetests.</p>
+</div></blockquote>
+<p><strong>doctests</strong> : bool, optional</p>
+<blockquote>
+<div><p>If True, run doctests in module. Default is True.</p>
+</div></blockquote>
+<p><strong>coverage</strong> : bool, optional</p>
+<blockquote>
+<div><p>If True, report coverage of nipy code. Default is False.
+(This requires the <a href="#id1"><span class="problematic" id="id2">`</span></a>coverage module:</p>
+<blockquote>
+<div><p>&lt;<a class="reference external" href="http://nedbatchelder.com/code/modules/coverage.html">http://nedbatchelder.com/code/modules/coverage.html</a>&gt;`_).</p>
+</div></blockquote>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>result</strong> : object</p>
+<blockquote>
+<div><p>Returns the result of running the tests as a
+<code class="docutils literal notranslate"><span class="pre">nose.result.TextTestResult</span></code> object.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Each nipy module should expose <cite>test</cite> in its namespace to run all tests
+for it.  For example, to run all tests for nipy.algorithms:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">nipy.algorithms</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nipy</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">test</span><span class="p">()</span> 
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.nosetester.NipyNoseTester.bench">
+<code class="sig-name descname">bench</code><span class="sig-paren">(</span><em class="sig-param">label='fast'</em>, <em class="sig-param">verbose=1</em>, <em class="sig-param">extra_argv=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.nosetester.NipyNoseTester.bench" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run benchmarks for module using nose.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>label</strong> : {‘fast’, ‘full’, ‘’, attribute identifier}, optional</p>
+<blockquote>
+<div><p>Identifies the benchmarks to run. This can be a string to pass to
+the nosetests executable with the ‘-A’ option, or one of several
+special values.  Special values are:
+* ‘fast’ - the default - which corresponds to the <code class="docutils literal notranslate"><span class="pre">nosetests</span> <span class="pre">-A</span></code></p>
+<blockquote>
+<div><p>option of ‘not slow’.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>‘full’ - fast (as above) and slow benchmarks as in the
+‘no -A’ option to nosetests - this is the same as ‘’.</p></li>
+<li><p>None or ‘’ - run all tests.</p></li>
+</ul>
+<p>attribute_identifier - string passed directly to nosetests as ‘-A’.</p>
+</div></blockquote>
+<p><strong>verbose</strong> : int, optional</p>
+<blockquote>
+<div><p>Verbosity value for benchmark outputs, in the range 1-10. Default is 1.</p>
+</div></blockquote>
+<p><strong>extra_argv</strong> : list, optional</p>
+<blockquote>
+<div><p>List with any extra arguments to pass to nosetests.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>success</strong> : bool</p>
+<blockquote>
+<div><p>Returns True if running the benchmarks works, False if an error
+occurred.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Benchmarks are like tests, but have names starting with “bench” instead
+of “test”, and can be found under the “benchmarks” sub-directory of the
+module.</p>
+<p>Each NumPy module exposes <cite>bench</cite> in its namespace to run all benchmarks
+for it.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">success</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">bench</span><span class="p">()</span> 
+<span class="go">Running benchmarks for numpy.lib</span>
+<span class="gp">...</span>
+<span class="go">using 562341 items:</span>
+<span class="go">unique:</span>
+<span class="go">0.11</span>
+<span class="go">unique1d:</span>
+<span class="go">0.11</span>
+<span class="go">ratio: 1.0</span>
+<span class="go">nUnique: 56230 == 56230</span>
+<span class="gp">...</span>
+<span class="go">OK</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">success</span> 
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.nosetester.NipyNoseTester.prepare_test_args">
+<code class="sig-name descname">prepare_test_args</code><span class="sig-paren">(</span><em class="sig-param">label='fast'</em>, <em class="sig-param">verbose=1</em>, <em class="sig-param">extra_argv=None</em>, <em class="sig-param">doctests=False</em>, <em class="sig-param">coverage=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.nosetester.NipyNoseTester.prepare_test_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run tests for module using nose.</p>
+<p>This method does the heavy lifting for the <cite>test</cite> method. It takes all
+the same arguments, for details see <cite>test</cite>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#nipy.testing.nosetester.NipyNoseTester.test" title="nipy.testing.nosetester.NipyNoseTester.test"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test</span></code></a></p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.testing.nosetester.fpw_opt_str">
+<code class="sig-prename descclassname">nipy.testing.nosetester.</code><code class="sig-name descname">fpw_opt_str</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/nosetester.html#fpw_opt_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.nosetester.fpw_opt_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return first-package-wins option string for this version of nose</p>
+<p>Versions of nose prior to 1.1.0 needed <code class="docutils literal notranslate"><span class="pre">=True</span></code> for
+<code class="docutils literal notranslate"><span class="pre">first-package-wins</span></code>, versions after won’t accept it.</p>
+<p>changeset:   816:c344a4552d76
+<a class="reference external" href="http://code.google.com/p/python-nose/issues/detail?id=293">http://code.google.com/p/python-nose/issues/detail?id=293</a></p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>fpw_str</strong> : str</p>
+<blockquote>
+<div><p>Either ‘–first-package-wins’ or ‘–first-package-wins=True’ depending
+on the nose version we are running.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.nosetester.prepare_imports">
+<code class="sig-prename descclassname">nipy.testing.nosetester.</code><code class="sig-name descname">prepare_imports</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/nosetester.html#prepare_imports"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.nosetester.prepare_imports" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare any imports for testing run</p>
+<p>At the moment, we prepare matplotlib by trying to make it use a backend
+that does not need a display.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

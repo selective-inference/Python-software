@@ -1,0 +1,1226 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.clustering.hierarchical_clustering</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">These routines perform some hierrachical agglomerative clustering</span>
+<span class="sd">of some input data. The following alternatives are proposed:</span>
+<span class="sd">- Distance based average-link</span>
+<span class="sd">- Similarity-based average-link</span>
+<span class="sd">- Distance based maximum-link</span>
+<span class="sd">- Ward&#39;s algorithm under graph constraints</span>
+<span class="sd">- Ward&#39;s algorithm without graph constraints</span>
+
+<span class="sd">In this latest version, the results are returned in a &#39;WeightedForest&#39;</span>
+<span class="sd">structure, which gives access to the clustering hierarchy, facilitates</span>
+<span class="sd">the plot of the result etc.</span>
+
+<span class="sd">For back-compatibility, *_segment versions of the algorithms have been</span>
+<span class="sd">appended, with the old API (except the qmax parameter, which now</span>
+<span class="sd">represents the number of wanted clusters)</span>
+
+<span class="sd">Author : Bertrand Thirion,Pamela Guevara, 2006-2009</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+
+<span class="c1">#---------------------------------------------------------------------------</span>
+<span class="c1"># ------ Routines for Agglomerative Hierarchical Clustering ----------------</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+
+<span class="kn">from</span> <span class="nn">..graph.graph</span> <span class="k">import</span> <span class="n">WeightedGraph</span>
+<span class="kn">from</span> <span class="nn">..graph.forest</span> <span class="k">import</span> <span class="n">Forest</span>
+
+
+<div class="viewcode-block" id="WeightedForest"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest">[docs]</a><span class="k">class</span> <span class="nc">WeightedForest</span><span class="p">(</span><span class="n">Forest</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a weighted Forest structure, i.e. a tree</span>
+<span class="sd">    - each node has one parent and children</span>
+<span class="sd">    (hierarchical structure)</span>
+<span class="sd">    - some of the nodes can be viewed as leaves, other as roots</span>
+<span class="sd">    - the edges within a tree are associated with a weight:</span>
+<span class="sd">    +1 from child to parent</span>
+<span class="sd">    -1 from parent to child</span>
+<span class="sd">    - additionally, the nodes have a value, which is called &#39;height&#39;,</span>
+<span class="sd">    especially useful from dendrograms</span>
+
+<span class="sd">    members</span>
+<span class="sd">    -------</span>
+<span class="sd">    V : (int, &gt;0) the number of vertices</span>
+<span class="sd">    E : (int) the number of edges</span>
+<span class="sd">    parents: array of shape (self.V) the parent array</span>
+<span class="sd">    edges: array of shape (self.E,2) reprensenting pairwise neighbors</span>
+<span class="sd">    weights, array of shape (self.E), +1/-1 for scending/descending links</span>
+<span class="sd">    children: list of arrays that represents the childs of any node</span>
+<span class="sd">    height: array of shape(self.V)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WeightedForest.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        V: the number of edges of the graph</span>
+<span class="sd">        parents=None: array of shape (V)</span>
+<span class="sd">                the parents of the graph</span>
+<span class="sd">                by default, the parents are set to range(V), i.e. each</span>
+<span class="sd">                node is its own parent, and each node is a tree</span>
+<span class="sd">        height=None: array of shape(V)</span>
+<span class="sd">                     the height of the nodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">V</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot create graphs with no vertex&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">V</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+
+        <span class="c1"># define the parents</span>
+        <span class="k">if</span> <span class="n">parents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">!=</span> <span class="n">V</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Incorrect size for parents&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parents</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Incorrect value for parents&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">parents</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">define_graph_attributes</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The proposed structure is not a forest&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">height</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">!=</span> <span class="n">V</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Incorrect size for height&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WeightedForest.set_height"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.set_height">[docs]</a>    <span class="k">def</span> <span class="nf">set_height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the height array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">height</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Incorrect size for height&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WeightedForest.get_height"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.get_height">[docs]</a>    <span class="k">def</span> <span class="nf">get_height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the height array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span></div>
+
+<div class="viewcode-block" id="WeightedForest.check_compatible_height"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.check_compatible_height">[docs]</a>    <span class="k">def</span> <span class="nf">check_compatible_height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check that height[parents[i]]&gt;=height[i] for all nodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">OK</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">OK</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">OK</span></div>
+
+<div class="viewcode-block" id="WeightedForest.plot"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot the dendrogram associated with self</span>
+<span class="sd">        the rank of the data in the dendogram is returned</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ax: axis handle, optional</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ax, the axis handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="nn">mp</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_compatible_height</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot plot myself in my current state&#39;</span><span class="p">)</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">isleaf</span><span class="p">())</span>
+
+        <span class="c1"># 1. find a permutation of the leaves that makes it nice</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">_label</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+        <span class="n">rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+        <span class="n">temp</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">aux</span><span class="p">[:</span><span class="n">n</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">rank</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="n">i</span><span class="p">])]</span> <span class="o">=</span> <span class="n">i</span>
+
+        <span class="c1"># 2. derive the abscissa in the dendrogram</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">rank</span><span class="p">[:</span><span class="n">n</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">idx</span><span class="p">[</span><span class="n">temp</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">==</span> <span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">idx</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="c1"># 3. plot</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mp</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">):</span>
+            <span class="n">h1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">h2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            <span class="n">mp</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="p">[</span><span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">],</span> <span class="s1">&#39;k&#39;</span><span class="p">)</span>
+
+        <span class="n">ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ch</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">lidx</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="n">ch</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">lidx</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="n">M</span> <span class="o">=</span> <span class="n">lidx</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">mp</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">m</span><span class="p">,</span> <span class="n">M</span><span class="p">],</span> <span class="p">[</span><span class="n">h</span><span class="p">,</span> <span class="n">h</span><span class="p">],</span> <span class="s1">&#39;k&#39;</span><span class="p">)</span>
+
+        <span class="n">cM</span> <span class="o">=</span> <span class="mf">1.05</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">cm</span> <span class="o">=</span> <span class="mf">1.05</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">-</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">axis</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">idx</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">cm</span><span class="p">,</span> <span class="n">cM</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">ax</span></div>
+
+<div class="viewcode-block" id="WeightedForest.partition"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.partition">[docs]</a>    <span class="k">def</span> <span class="nf">partition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Partition the tree according to a cut criterion</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subforest</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">u</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">isleaf</span><span class="p">()]</span></div>
+
+<div class="viewcode-block" id="WeightedForest.split"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.split">[docs]</a>    <span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        idem as partition, but a number of components are supplied instead</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span>
+        <span class="n">nbcc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="n">nbcc</span><span class="p">:</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">u</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">isleaf</span><span class="p">()]</span>
+
+        <span class="n">sh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="n">th</span> <span class="o">=</span> <span class="n">sh</span><span class="p">[</span><span class="n">nbcc</span> <span class="o">-</span> <span class="n">k</span><span class="p">]</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">th</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">u</span></div>
+
+<div class="viewcode-block" id="WeightedForest.plot_height"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.plot_height">[docs]</a>    <span class="k">def</span> <span class="nf">plot_height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot the height of the non-leaves nodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="nn">mp</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">sh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">isleaf</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">])</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">isleaf</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">sh</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WeightedForest.list_of_subtrees"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.WeightedForest.list_of_subtrees">[docs]</a>    <span class="k">def</span> <span class="nf">list_of_subtrees</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        returns the list of all non-trivial subtrees in the graph</span>
+<span class="sd">        Caveat: theis function assumes that the vertices are sorted in a</span>
+<span class="sd">        way such that parent[i]&gt;i forall i</span>
+<span class="sd">        Only the leaves are listeed, not the subtrees themselves</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lst</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">isleaf</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">):</span>
+            <span class="n">lst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">lst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">lst</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">lst</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">lst</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">lst</span><span class="p">[</span><span class="n">n</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">]</span></div></div>
+
+
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#------------- Average link clustering on a graph -------------------------</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="fusion"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.fusion">[docs]</a><span class="k">def</span> <span class="nf">fusion</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Modifies the graph K to merge nodes i and  j into nodes k</span>
+
+<span class="sd">    The similarity values are weighted averaged, where pop[i] and pop[j]</span>
+<span class="sd">    yield the relative weights.</span>
+<span class="sd">    this is used in average_link_slow (deprecated)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#</span>
+    <span class="n">fi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+    <span class="n">fj</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">fi</span>
+    <span class="c1">#</span>
+    <span class="c1"># replace i ny k</span>
+    <span class="c1">#</span>
+    <span class="n">idxi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxi</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxi</span><span class="p">]</span> <span class="o">*</span> <span class="n">fi</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxi</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+    <span class="n">idxi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxi</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxi</span><span class="p">]</span> <span class="o">*</span> <span class="n">fi</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxi</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+    <span class="c1">#</span>
+    <span class="c1"># replace j by k</span>
+    <span class="c1">#</span>
+    <span class="n">idxj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">j</span><span class="p">)</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxj</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxj</span><span class="p">]</span> <span class="o">*</span> <span class="n">fj</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxj</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+    <span class="n">idxj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">j</span><span class="p">)</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxj</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxj</span><span class="p">]</span> <span class="o">*</span> <span class="n">fj</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxj</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+    <span class="c1">#</span>
+    <span class="c1">#sum/remove double edges</span>
+    <span class="c1">#</span>
+    <span class="c1">#left side</span>
+    <span class="n">idxk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">corr</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxk</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">scorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+    <span class="n">acorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">scorr</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">scorr</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">==</span> <span class="n">scorr</span><span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">i1</span> <span class="o">=</span> <span class="n">idxk</span><span class="p">[</span><span class="n">acorr</span><span class="p">[</span><span class="n">a</span><span class="p">]]</span>
+            <span class="n">i2</span> <span class="o">=</span> <span class="n">idxk</span><span class="p">[</span><span class="n">acorr</span><span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">+</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="c1">#right side</span>
+    <span class="n">idxk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">corr</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxk</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">scorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+    <span class="n">acorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">scorr</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">scorr</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">==</span> <span class="n">scorr</span><span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">i1</span> <span class="o">=</span> <span class="n">idxk</span><span class="p">[</span><span class="n">acorr</span><span class="p">[</span><span class="n">a</span><span class="p">]]</span>
+            <span class="n">i2</span> <span class="o">=</span> <span class="n">idxk</span><span class="p">[</span><span class="n">acorr</span><span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">+</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="average_link_graph"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.average_link_graph">[docs]</a><span class="k">def</span> <span class="nf">average_link_graph</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Agglomerative function based on a (hopefully sparse) similarity graph</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G the input graph</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t a weightForest structure that represents the dendrogram of the data</span>
+
+<span class="sd">    CAVEAT</span>
+<span class="sd">    ------</span>
+<span class="sd">    In that case, the homogeneity is associated with high similarity</span>
+<span class="sd">    (as opposed to low cost as in most clustering procedures,</span>
+<span class="sd">    e.g. distance-based procedures).  Thus the tree is created with</span>
+<span class="sd">    negated affinity values, in roder to respect the traditional</span>
+<span class="sd">    ordering of cluster potentials. individual points have the</span>
+<span class="sd">    potential (-np.inf).</span>
+<span class="sd">    This problem is handled transparently inthe associated segment functionp.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Function average_link_graph deprecated, will be removed&#39;</span><span class="p">,</span>
+         <span class="ne">FutureWarning</span><span class="p">,</span>
+         <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># prepare a graph with twice the number of vertices</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span>
+    <span class="n">nbcc</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">WeightedGraph</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">E</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">pop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">)</span>
+
+    <span class="c1"># iteratively merge clusters</span>
+    <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">):</span>
+
+        <span class="c1"># 1. find the heaviest edge</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">q</span> <span class="o">+</span> <span class="n">n</span>
+        <span class="n">height</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">cost</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># 2. remove the current edge</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">((</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="c1"># 3. merge the edges with third part edges</span>
+        <span class="n">parent</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="n">parent</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="n">pop</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">pop</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">fusion</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+
+    <span class="n">height</span><span class="p">[</span><span class="n">height</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">height</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">height</span><span class="p">)]</span> <span class="o">=</span> <span class="n">height</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">WeightedForest</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="o">-</span> <span class="n">height</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t</span></div>
+
+
+<div class="viewcode-block" id="average_link_graph_segment"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.average_link_graph_segment">[docs]</a><span class="k">def</span> <span class="nf">average_link_graph_segment</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">qmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Agglomerative function based on a (hopefully sparse) similarity graph</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G the input graph</span>
+<span class="sd">    stop: float</span>
+<span class="sd">        the stopping criterion</span>
+<span class="sd">    qmax: int, optional</span>
+<span class="sd">        the number of desired clusters (in the limit of the stopping criterion)</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        If True, print diagnostic information</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    u: array of shape (G.V)</span>
+<span class="sd">       a labelling of the graph vertices according to the criterion</span>
+<span class="sd">    cost: array of shape (G.V (?))</span>
+<span class="sd">          the cost of each merge step during the clustering procedure</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Function average_link_graph_segment deprecated, will be removed&#39;</span><span class="p">,</span>
+         <span class="ne">FutureWarning</span><span class="p">,</span>
+         <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># prepare a graph with twice the number of vertices</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span>
+    <span class="k">if</span> <span class="n">qmax</span> <span class="o">==</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">qmax</span> <span class="o">=</span> <span class="n">n</span>
+    <span class="n">qmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">qmax</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">average_link_graph</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+    <span class="n">u1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">u2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">u1</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span> <span class="o">-</span> <span class="n">stop</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">qmax</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">u2</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">qmax</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">u1</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">u2</span><span class="o">.</span><span class="n">max</span><span class="p">():</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u1</span>
+
+    <span class="n">cost</span> <span class="o">=</span> <span class="o">-</span> <span class="n">t</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">cost</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">isleaf</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">cost</span></div>
+
+
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#------------- Ward&#39;s algorithm with graph constraints --------------------</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span> <span class="nf">_inertia_</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">Features</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the variance of the set which is</span>
+<span class="sd">    the concatenation of Feature[i] and Features[j]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Features</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Features</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">Features</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Features</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Features</span><span class="p">[</span><span class="n">j</span><span class="p">]),</span> <span class="n">Features</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Features</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Features</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Features</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Features</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+    <span class="n">localset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">Features</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">Features</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">localset</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_inertia</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">Features</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the variance of the set which is</span>
+<span class="sd">    the concatenation of Feature[i] and Features[j]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">Features</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">Features</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">Features</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">Features</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">Features</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">Features</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">q</span> <span class="o">-</span> <span class="p">(</span><span class="n">s</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">n</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_initial_inertia</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">Features</span><span class="p">,</span> <span class="n">seeds</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute the variance associated with each</span>
+<span class="sd">    edge-related pair of vertices</span>
+<span class="sd">    Thre sult is written in K;weights</span>
+<span class="sd">    if seeds if provided (seeds!=None)</span>
+<span class="sd">    this is done only for vertices adjacent to the seeds</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">seeds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">E</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">e</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">e</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">ESS</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">Features</span><span class="p">)</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">ESS</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">V</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
+        <span class="n">aux</span><span class="p">[</span><span class="n">seeds</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">E</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">e</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">e</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">aux</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">or</span> <span class="n">aux</span><span class="p">[</span><span class="n">j</span><span class="p">]):</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">Features</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+
+<span class="k">def</span> <span class="nf">_auxiliary_graph</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">Features</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    prepare a graph with twice the number of vertices</span>
+<span class="sd">    this graph will contain the connectivity information</span>
+<span class="sd">    along the merges.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">WeightedGraph</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">E</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">E</span><span class="p">)</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">symmeterize</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">K</span><span class="o">.</span><span class="n">E</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>    
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span>
+    <span class="c1">#</span>
+    <span class="n">K</span><span class="o">.</span><span class="n">remove_trivial_edges</span><span class="p">()</span>
+    <span class="n">_initial_inertia</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">K</span>
+
+
+<span class="k">def</span> <span class="nf">_remap</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">Features</span><span class="p">,</span> <span class="n">linc</span><span class="p">,</span> <span class="n">rinc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Modifies the graph K to merge nodes i and  j into nodes k</span>
+<span class="sd">    the graph weights are modified accordingly</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    K graph instance:</span>
+<span class="sd">      the existing graphical model</span>
+<span class="sd">    i,j,k: int</span>
+<span class="sd">           indexes of the nodes to be merged and of the parent respectively</span>
+<span class="sd">    Features: list of node-per-node features</span>
+<span class="sd">    linc: array of shape(K.V)</span>
+<span class="sd">          left incidence matrix</span>
+<span class="sd">    rinc: array of shape(K.V)</span>
+<span class="sd">          right incidencematrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># -------</span>
+    <span class="c1"># replace i by k</span>
+    <span class="c1"># --------</span>
+    <span class="n">idxi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">linc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxi</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">idxi</span><span class="p">:</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxi</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxi</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxi</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxi</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxi</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+
+    <span class="n">idxi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rinc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxi</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">idxi</span><span class="p">:</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">k</span><span class="p">,</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxi</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxi</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxi</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">k</span><span class="p">,</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxi</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxi</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+
+    <span class="c1">#------</span>
+    <span class="c1"># replace j by k</span>
+    <span class="c1">#-------</span>
+    <span class="n">idxj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">linc</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxj</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">idxj</span><span class="p">:</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxj</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxj</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxj</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxj</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxj</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+
+    <span class="n">idxj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rinc</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxj</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">idxj</span><span class="p">:</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxj</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">idxj</span><span class="p">]</span> <span class="o">=</span> <span class="n">_inertia</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxj</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxj</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxj</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+
+    <span class="c1">#------</span>
+    <span class="c1"># update linc, rinc</span>
+    <span class="c1">#------</span>
+    <span class="n">lidxk</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">linc</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">linc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="n">lidxk</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">L</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">lidxk</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+
+    <span class="n">linc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">lidxk</span>
+    <span class="n">linc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">linc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ridxk</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rinc</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">rinc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="n">ridxk</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">L</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ridxk</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+
+    <span class="n">rinc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">ridxk</span>
+    <span class="n">rinc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">rinc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1">#------</span>
+    <span class="c1">#remove double edges</span>
+    <span class="c1">#------</span>
+    <span class="c1">#left side</span>
+    <span class="n">idxk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">linc</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxk</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxk</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">scorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+        <span class="n">acorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">scorr</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">scorr</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">==</span> <span class="n">scorr</span><span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="n">i2</span> <span class="o">=</span> <span class="n">idxk</span><span class="p">[</span><span class="n">acorr</span><span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+                <span class="n">rinc</span><span class="p">[</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">i2</span><span class="p">)</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="n">linc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">i2</span><span class="p">)</span>
+
+    <span class="c1">#right side</span>
+    <span class="n">idxk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rinc</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">idxk</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idxk</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">scorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+        <span class="n">acorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">scorr</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">scorr</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">==</span> <span class="n">scorr</span><span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="n">i2</span> <span class="o">=</span> <span class="n">idxk</span><span class="p">[</span><span class="n">acorr</span><span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+                <span class="n">linc</span><span class="p">[</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">i2</span><span class="p">)</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="n">rinc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">i2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">linc</span><span class="p">,</span> <span class="n">rinc</span>
+
+
+<div class="viewcode-block" id="ward_quick"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.ward_quick">[docs]</a><span class="k">def</span> <span class="nf">ward_quick</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Agglomerative function based on a topology-defining graph</span>
+<span class="sd">    and a feature matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : graph instance</span>
+<span class="sd">        topology-defining graph</span>
+<span class="sd">    feature: array of shape (G.V,dim_feature)</span>
+<span class="sd">        some vectorial information related to the graph vertices</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">         If True, print diagnostic information</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t: weightForest instance,</span>
+<span class="sd">       that represents the dendrogram of the data</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    ----</span>
+<span class="sd">    Hopefully a quicker version</span>
+
+<span class="sd">    A euclidean distance is used in the feature space</span>
+
+<span class="sd">    Caveat : only approximate</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Function ward_quick from &#39;</span> <span class="o">+</span> 
+         <span class="s1">&#39;nipy.algorithms.clustering.hierrachical_clustering &#39;</span> <span class="o">+</span> 
+         <span class="s1">&#39;deprecated, will be removed&#39;</span><span class="p">,</span>
+         <span class="ne">FutureWarning</span><span class="p">,</span>
+         <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># basic check</span>
+    <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Incompatible dimension for the feature matrix and the graph&quot;</span><span class="p">)</span>
+
+    <span class="n">Features</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))]</span>
+    <span class="n">Features</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span>
+    <span class="n">Features</span><span class="p">[</span><span class="mi">2</span><span class="p">][:</span><span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span>
+    <span class="n">nbcc</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># prepare a graph with twice the number of vertices</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">_auxiliary_graph</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">Features</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">)</span>
+    <span class="n">linc</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">left_incidence</span><span class="p">()</span>
+    <span class="n">rinc</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">right_incidence</span><span class="p">()</span>
+
+    <span class="c1"># iteratively merge clusters</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">q</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">):</span>
+        <span class="c1"># 1. find the lightest edges</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">ape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">weights</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">ape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ape</span><span class="p">))</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">ape</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span> <span class="o">-</span> <span class="n">q</span><span class="p">):</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ape</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="n">e</span><span class="p">]],</span> <span class="mi">0</span><span class="p">],</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ape</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="n">e</span><span class="p">]],</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">aux</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">aux</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="n">aux</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">aux</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">emax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">emax</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">ape</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="n">e</span><span class="p">]]</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">q</span> <span class="o">+</span> <span class="n">n</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">height</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">cost</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">cost</span><span class="p">)</span>
+
+            <span class="c1"># 2. remove the current edge</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="n">linc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">rinc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+            <span class="n">ml</span> <span class="o">=</span> <span class="n">linc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ml</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">ml</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ml</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">))]</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+                <span class="n">linc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                <span class="n">rinc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+            <span class="c1"># 3. merge the edges with third part edges</span>
+            <span class="n">parent</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+            <span class="n">parent</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">Features</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">Features</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">Features</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+
+            <span class="n">linc</span><span class="p">,</span> <span class="n">rinc</span> <span class="o">=</span> <span class="n">_remap</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">Features</span><span class="p">,</span> <span class="n">linc</span><span class="p">,</span> <span class="n">rinc</span><span class="p">)</span>
+            <span class="n">q</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># build a tree to encode the results</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">WeightedForest</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t</span></div>
+
+
+<div class="viewcode-block" id="ward_field_segment"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.ward_field_segment">[docs]</a><span class="k">def</span> <span class="nf">ward_field_segment</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">stop</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">qmax</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Agglomerative function based on a field structure</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    F the input field (graph+feature)</span>
+<span class="sd">    stop: float, optional</span>
+<span class="sd">        the stopping crterion.  if stop==-1, then no stopping criterion is used</span>
+<span class="sd">    qmax: int, optional</span>
+<span class="sd">        the maximum number of desired clusters (in the limit of the stopping</span>
+<span class="sd">        criterion)</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        If True, print diagnostic information</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    u: array of shape (F.V)</span>
+<span class="sd">       labelling of the graph vertices according to the criterion</span>
+<span class="sd">    cost array of shape (F.V - 1)</span>
+<span class="sd">         the cost of each merge step during the clustering procedure</span>
+
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    See ward_quick_segment for more information</span>
+
+<span class="sd">    Caveat : only approximate</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">u</span><span class="p">,</span> <span class="n">cost</span> <span class="o">=</span> <span class="n">ward_quick_segment</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">qmax</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">cost</span></div>
+
+
+<div class="viewcode-block" id="ward_quick_segment"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.ward_quick_segment">[docs]</a><span class="k">def</span> <span class="nf">ward_quick_segment</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">stop</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">qmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Agglomerative function based on a topology-defining graph</span>
+<span class="sd">    and a feature matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G: labs.graph.WeightedGraph instance</span>
+<span class="sd">       the input graph (a topological graph essentially)</span>
+<span class="sd">    feature array of shape (G.V,dim_feature)</span>
+<span class="sd">        vectorial information related to the graph vertices</span>
+<span class="sd">    stop1 : int or float, optional</span>
+<span class="sd">        the stopping crterion if stop==-1, then no stopping criterion is used</span>
+<span class="sd">    qmax : int, optional</span>
+<span class="sd">        the maximum number of desired clusters (in the limit of the stopping</span>
+<span class="sd">        criterion)</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        If True, print diagnostic information</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    u: array of shape (G.V)</span>
+<span class="sd">       labelling of the graph vertices according to the criterion</span>
+<span class="sd">    cost: array of shape (G.V - 1)</span>
+<span class="sd">          the cost of each merge step during the clustering procedure</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Hopefully a quicker version</span>
+
+<span class="sd">    A euclidean distance is used in the feature space</span>
+
+<span class="sd">    Caveat : only approximate</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># basic check</span>
+    <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Incompatible dimension for the feature matrix and the graph&quot;</span><span class="p">)</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">==</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">qmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">qmax</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">ward_quick</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+    <span class="n">u1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">u2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">u1</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">qmax</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">u2</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">qmax</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">u1</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">u2</span><span class="o">.</span><span class="n">max</span><span class="p">():</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u1</span>
+
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">cost</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">isleaf</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">cost</span></div>
+
+
+<div class="viewcode-block" id="ward_segment"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.ward_segment">[docs]</a><span class="k">def</span> <span class="nf">ward_segment</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">stop</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">qmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Agglomerative function based on a topology-defining graph</span>
+<span class="sd">    and a feature matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : graph object</span>
+<span class="sd">        the input graph (a topological graph essentially)</span>
+<span class="sd">    feature : array of shape (G.V,dim_feature)</span>
+<span class="sd">        some vectorial information related to the graph vertices</span>
+<span class="sd">    stop : int or float, optional</span>
+<span class="sd">        the stopping crterion.  if stop==-1, then no stopping criterion is used</span>
+<span class="sd">    qmax : int, optional</span>
+<span class="sd">        the maximum number of desired clusters (in the limit of the stopping</span>
+<span class="sd">        criterion)</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        If True, print diagnostic information</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    u: array of shape (G.V):</span>
+<span class="sd">       a labelling of the graph vertices according to the criterion</span>
+<span class="sd">    cost: array of shape (G.V - 1)</span>
+<span class="sd">          the cost of each merge step during the clustering procedure</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    A euclidean distance is used in the feature space</span>
+
+<span class="sd">    Caveat : when the number of cc in G (nbcc) is greter than qmax, u contains</span>
+<span class="sd">    nbcc values, not qmax !</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># basic check</span>
+    <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Incompatible dimension for the feature matrix and the graph&quot;</span><span class="p">)</span>
+
+    <span class="c1"># prepare a graph with twice the number of vertices</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span>
+    <span class="k">if</span> <span class="n">qmax</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">qmax</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">qmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">qmax</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">ward</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+    <span class="n">u1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">u2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">u1</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">qmax</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">u2</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">qmax</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">u1</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">u2</span><span class="o">.</span><span class="n">max</span><span class="p">():</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u1</span>
+
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">cost</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">isleaf</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">cost</span></div>
+
+
+<div class="viewcode-block" id="ward"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.clustering.hierarchical_clustering.html#nipy.algorithms.clustering.hierarchical_clustering.ward">[docs]</a><span class="k">def</span> <span class="nf">ward</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Agglomerative function based on a topology-defining graph</span>
+<span class="sd">    and a feature matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : graph</span>
+<span class="sd">        the input graph (a topological graph essentially)</span>
+<span class="sd">    feature : array of shape (G.V,dim_feature)</span>
+<span class="sd">        vectorial information related to the graph vertices</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        If True, print diagnostic information</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    t : ``WeightedForest`` instance</span>
+<span class="sd">        structure that represents the dendrogram</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    When G has more than 1 connected component, t is no longer a tree.  This</span>
+<span class="sd">    case is handled cleanly now</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Function ward from &#39;</span> <span class="o">+</span> 
+         <span class="s1">&#39;nipy.algorithms.clustering.hierrachical_clustering &#39;</span> <span class="o">+</span> 
+         <span class="s1">&#39;deprecated, will be removed&#39;</span><span class="p">,</span>
+         <span class="ne">FutureWarning</span><span class="p">,</span>
+         <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># basic check</span>
+    <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Incompatible dimension for the feature matrix and the graph&quot;</span><span class="p">)</span>
+
+    <span class="n">Features</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))]</span>
+    <span class="n">Features</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span>
+    <span class="n">Features</span><span class="p">[</span><span class="mi">2</span><span class="p">][:</span><span class="n">G</span><span class="o">.</span><span class="n">V</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="c1"># prepare a graph with twice the number of vertices</span>
+    <span class="c1"># this graph will contain the connectivity information</span>
+    <span class="c1"># along the merges.</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">V</span>
+    <span class="n">nbcc</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">_auxiliary_graph</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">Features</span><span class="p">)</span>
+
+    <span class="c1"># prepare some variables that are useful tp speed up the algorithm</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">)</span>
+    <span class="n">linc</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">left_incidence</span><span class="p">()</span>
+    <span class="n">rinc</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">right_incidence</span><span class="p">()</span>
+
+    <span class="c1"># iteratively merge clusters</span>
+    <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">):</span>
+        <span class="c1"># 1. find the lightest edge</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">q</span> <span class="o">+</span> <span class="n">n</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">height</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">cost</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">cost</span><span class="p">)</span>
+
+        <span class="c1"># 2. remove the current edge</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">linc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">rinc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="n">ml</span> <span class="o">=</span> <span class="n">linc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ml</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">ml</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ml</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">))]</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="n">linc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">rinc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="c1"># 3. merge the edges with third part edges</span>
+        <span class="n">parent</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="n">parent</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">Features</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">Features</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">Features</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+
+        <span class="n">linc</span><span class="p">,</span> <span class="n">rinc</span> <span class="o">=</span> <span class="n">_remap</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">Features</span><span class="p">,</span> <span class="n">linc</span><span class="p">,</span> <span class="n">rinc</span><span class="p">)</span>
+
+    <span class="c1"># build a tree to encode the results</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">WeightedForest</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">-</span> <span class="n">nbcc</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t</span></div>
+
+
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#----------------------- Visualization ------------------------------------</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span> <span class="nf">_label_</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">labelled</span><span class="p">):</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">parent</span> <span class="o">==</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">left</span><span class="p">[</span><span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">left</span><span class="p">[</span><span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)]</span>
+        <span class="n">labelled</span> <span class="o">=</span> <span class="n">_label_</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">labelled</span><span class="p">)</span>
+        <span class="n">labelled</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">labelled</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">labelled</span> <span class="o">=</span> <span class="n">_label_</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">labelled</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">labelled</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">labelled</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">labelled</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">labelled</span>
+
+
+<span class="k">def</span> <span class="nf">_label</span><span class="p">(</span><span class="n">parent</span><span class="p">):</span>
+    <span class="c1"># find the root</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">parent</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">parent</span><span class="p">)))[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># define left</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">parent</span><span class="p">)):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">parent</span> <span class="o">==</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">left</span><span class="p">[</span><span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">left</span><span class="p">[</span><span class="n">root</span><span class="p">]</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span>
+
+    <span class="c1"># define labelled</span>
+    <span class="n">labelled</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">parent</span><span class="p">))</span>
+
+    <span class="c1"># compute labelled</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">root</span><span class="p">)):</span>
+        <span class="n">labelled</span> <span class="o">=</span> <span class="n">_label_</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">parent</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">labelled</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">labelled</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

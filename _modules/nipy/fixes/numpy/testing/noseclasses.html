@@ -1,0 +1,558 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../../" src="../../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.fixes.numpy.testing.noseclasses</h1><div class="highlight"><pre>
+<span></span><span class="c1"># These classes implement a doctest runner plugin for nose, a &quot;known failure&quot;</span>
+<span class="c1"># error class, and a customized TestProgram for NumPy.</span>
+
+<span class="c1"># Because this module imports nose directly, it should not</span>
+<span class="c1"># be used except by nosetester.py to avoid a general NumPy</span>
+<span class="c1"># dependency on nose.</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">doctest</span>
+
+<span class="kn">import</span> <span class="nn">nose</span>
+<span class="kn">from</span> <span class="nn">nose.plugins</span> <span class="k">import</span> <span class="n">doctests</span> <span class="k">as</span> <span class="n">npd</span>
+<span class="kn">from</span> <span class="nn">nose.plugins.errorclass</span> <span class="k">import</span> <span class="n">ErrorClass</span><span class="p">,</span> <span class="n">ErrorClassPlugin</span>
+<span class="kn">from</span> <span class="nn">nose.plugins.base</span> <span class="k">import</span> <span class="n">Plugin</span>
+<span class="kn">from</span> <span class="nn">nose.util</span> <span class="k">import</span> <span class="n">src</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">.nosetester</span> <span class="k">import</span> <span class="n">get_package_name</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+
+<span class="c1"># Some of the classes in this module begin with &#39;Numpy&#39; to clearly distinguish</span>
+<span class="c1"># them from the plethora of very similar names from nose/unittest/doctest</span>
+
+<span class="c1">#-----------------------------------------------------------------------------</span>
+<span class="c1"># Modified version of the one in the stdlib, that fixes a python bug (doctests</span>
+<span class="c1"># not found in extension modules, http://bugs.python.org/issue3158)</span>
+<span class="k">class</span> <span class="nc">NumpyDocTestFinder</span><span class="p">(</span><span class="n">doctest</span><span class="o">.</span><span class="n">DocTestFinder</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_from_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="nb">object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return true if the given object is defined in the given</span>
+<span class="sd">        module.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1">#print &#39;_fm C1&#39;  # dbg</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+            <span class="c1">#print &#39;_fm C2&#39;  # dbg</span>
+            <span class="k">return</span> <span class="n">module</span><span class="o">.</span><span class="vm">__dict__</span> <span class="ow">is</span> <span class="nb">object</span><span class="o">.</span><span class="vm">__globals__</span>
+        <span class="k">elif</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isbuiltin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+            <span class="c1">#print &#39;_fm C2-1&#39;  # dbg</span>
+            <span class="k">return</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="nb">object</span><span class="o">.</span><span class="vm">__module__</span>
+        <span class="k">elif</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+            <span class="c1">#print &#39;_fm C3&#39;  # dbg</span>
+            <span class="k">return</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="nb">object</span><span class="o">.</span><span class="vm">__module__</span>
+        <span class="k">elif</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+            <span class="c1"># This one may be a bug in cython that fails to correctly set the</span>
+            <span class="c1"># __module__ attribute of methods, but since the same error is easy</span>
+            <span class="c1"># to make by extension code writers, having this safety in place</span>
+            <span class="c1"># isn&#39;t such a bad idea</span>
+            <span class="c1">#print &#39;_fm C3-1&#39;  # dbg</span>
+            <span class="k">return</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="nb">object</span><span class="o">.</span><span class="vm">__self__</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span>
+        <span class="k">elif</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1">#print &#39;_fm C4&#39;  # dbg</span>
+            <span class="c1">#print &#39;C4 mod&#39;,module,&#39;obj&#39;,object # dbg</span>
+            <span class="k">return</span> <span class="n">module</span> <span class="ow">is</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="s1">&#39;__module__&#39;</span><span class="p">):</span>
+            <span class="c1">#print &#39;_fm C5&#39;  # dbg</span>
+            <span class="k">return</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="nb">object</span><span class="o">.</span><span class="vm">__module__</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">property</span><span class="p">):</span>
+            <span class="c1">#print &#39;_fm C6&#39;  # dbg</span>
+            <span class="k">return</span> <span class="kc">True</span> <span class="c1"># [XX] no way not be sure.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;object must be a class or function&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tests</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">source_lines</span><span class="p">,</span> <span class="n">globs</span><span class="p">,</span> <span class="n">seen</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find tests for the given object and any contained objects, and</span>
+<span class="sd">        add them to `tests`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">doctest</span><span class="o">.</span><span class="n">DocTestFinder</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tests</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span>
+                                    <span class="n">source_lines</span><span class="p">,</span> <span class="n">globs</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span>
+
+        <span class="c1"># Below we re-run pieces of the above method with manual modifications,</span>
+        <span class="c1"># because the original code is buggy and fails to correctly identify</span>
+        <span class="c1"># doctests in extension modules.</span>
+
+        <span class="c1"># Local shorthands</span>
+        <span class="kn">from</span> <span class="nn">inspect</span> <span class="k">import</span> <span class="n">isroutine</span><span class="p">,</span> <span class="n">isclass</span><span class="p">,</span> <span class="n">ismodule</span><span class="p">,</span> <span class="n">isfunction</span><span class="p">,</span> \
+                            <span class="n">ismethod</span>
+
+        <span class="c1"># Look for tests in a module&#39;s contained objects.</span>
+        <span class="k">if</span> <span class="n">ismodule</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recurse</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">valname</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">valname1</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">valname</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">isroutine</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">or</span> <span class="n">isclass</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+                     <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_module</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="p">):</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">tests</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">valname1</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">source_lines</span><span class="p">,</span>
+                               <span class="n">globs</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span>
+
+
+        <span class="c1"># Look for tests in a class&#39;s contained objects.</span>
+        <span class="k">if</span> <span class="n">isclass</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recurse</span><span class="p">:</span>
+            <span class="c1">#print &#39;RECURSE into class:&#39;,obj  # dbg</span>
+            <span class="k">for</span> <span class="n">valname</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1">#valname1 = &#39;%s.%s&#39; % (name, valname)  # dbg</span>
+                <span class="c1">#print &#39;N&#39;,name,&#39;VN:&#39;,valname,&#39;val:&#39;,str(val)[:77] # dbg</span>
+                <span class="c1"># Special handling for staticmethod/classmethod.</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">staticmethod</span><span class="p">):</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">valname</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">classmethod</span><span class="p">):</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">valname</span><span class="p">)</span><span class="o">.</span><span class="vm">__func__</span>
+
+                <span class="c1"># Recurse to methods, properties, and nested classes.</span>
+                <span class="k">if</span> <span class="p">((</span><span class="n">isfunction</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">or</span> <span class="n">isclass</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">or</span>
+                     <span class="n">ismethod</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">property</span><span class="p">))</span> <span class="ow">and</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">_from_module</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">val</span><span class="p">)):</span>
+                    <span class="n">valname</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">valname</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">tests</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">valname</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">source_lines</span><span class="p">,</span>
+                               <span class="n">globs</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span>
+
+
+<span class="c1"># second-chance checker; if the default comparison doesn&#39;t</span>
+<span class="c1"># pass, then see if the expected output string contains flags that</span>
+<span class="c1"># tell us to ignore the output</span>
+<span class="k">class</span> <span class="nc">NumpyOutputChecker</span><span class="p">(</span><span class="n">doctest</span><span class="o">.</span><span class="n">OutputChecker</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">check_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">want</span><span class="p">,</span> <span class="n">got</span><span class="p">,</span> <span class="n">optionflags</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">OutputChecker</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">want</span><span class="p">,</span> <span class="n">got</span><span class="p">,</span>
+                                                 <span class="n">optionflags</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;#random&quot;</span> <span class="ow">in</span> <span class="n">want</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="c1"># it would be useful to normalize endianness so that</span>
+            <span class="c1"># bigendian machines don&#39;t fail all the tests (and there are</span>
+            <span class="c1"># actually some bigendian examples in the doctests). Let&#39;s try</span>
+            <span class="c1"># making them all little endian</span>
+            <span class="n">got</span> <span class="o">=</span> <span class="n">got</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&lt;&quot;</span><span class="p">)</span>
+            <span class="n">want</span><span class="o">=</span> <span class="n">want</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&lt;&quot;</span><span class="p">)</span>
+
+            <span class="c1"># try to normalize out 32 and 64 bit default int sizes</span>
+            <span class="k">for</span> <span class="n">sz</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">]:</span>
+                <span class="n">got</span> <span class="o">=</span> <span class="n">got</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&lt;i</span><span class="si">%d</span><span class="s2">&#39;&quot;</span><span class="o">%</span><span class="n">sz</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">)</span>
+                <span class="n">want</span><span class="o">=</span> <span class="n">want</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&lt;i</span><span class="si">%d</span><span class="s2">&#39;&quot;</span><span class="o">%</span><span class="n">sz</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">)</span>
+
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">OutputChecker</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">want</span><span class="p">,</span>
+                    <span class="n">got</span><span class="p">,</span> <span class="n">optionflags</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ret</span>
+
+
+<span class="c1"># Subclass nose.plugins.doctests.DocTestCase to work around a bug in</span>
+<span class="c1"># its constructor that blocks non-default arguments from being passed</span>
+<span class="c1"># down into doctest.DocTestCase</span>
+<span class="k">class</span> <span class="nc">NumpyDocTestCase</span><span class="p">(</span><span class="n">npd</span><span class="o">.</span><span class="n">DocTestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">setUp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tearDown</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">checker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">result_var</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_result_var</span> <span class="o">=</span> <span class="n">result_var</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nose_obj</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="n">doctest</span><span class="o">.</span><span class="n">DocTestCase</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span>
+                                     <span class="n">optionflags</span><span class="o">=</span><span class="n">optionflags</span><span class="p">,</span>
+                                     <span class="n">setUp</span><span class="o">=</span><span class="n">setUp</span><span class="p">,</span> <span class="n">tearDown</span><span class="o">=</span><span class="n">tearDown</span><span class="p">,</span>
+                                     <span class="n">checker</span><span class="o">=</span><span class="n">checker</span><span class="p">)</span>
+
+
+<span class="n">print_state</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">get_printoptions</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">NumpyDoctest</span><span class="p">(</span><span class="n">npd</span><span class="o">.</span><span class="n">Doctest</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;numpydoctest&#39;</span>   <span class="c1"># call nosetests with --with-numpydoctest</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="mi">1000</span> <span class="c1"># load late, after doctest builtin</span>
+
+    <span class="c1"># always use whitespace and ellipsis options for doctests</span>
+    <span class="n">doctest_optflags</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span> <span class="o">|</span> <span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span>
+
+    <span class="c1"># files that should be ignored for doctests</span>
+    <span class="n">doctest_ignore</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;generate_numpy_api.py&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;setup.py&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Custom classes; class variables to allow subclassing</span>
+    <span class="n">doctest_case_class</span> <span class="o">=</span> <span class="n">NumpyDocTestCase</span>
+    <span class="n">out_check_class</span> <span class="o">=</span> <span class="n">NumpyOutputChecker</span>
+    <span class="n">test_finder_class</span> <span class="o">=</span> <span class="n">NumpyDocTestFinder</span>
+
+    <span class="c1"># Don&#39;t use the standard doctest option handler; hard-code the option values</span>
+    <span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">):</span>
+        <span class="n">Plugin</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+        <span class="c1"># Test doctests in &#39;test&#39; files / directories. Standard plugin default</span>
+        <span class="c1"># is False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doctest_tests</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Variable name; if defined, doctest results stored in this variable in</span>
+        <span class="c1"># the top-level namespace.  None is the standard default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doctest_result_var</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="c1"># parent method sets enabled flag from command line --with-numpydoctest</span>
+        <span class="n">Plugin</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_finder_class</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">DocTestParser</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="c1"># Pull standard doctest out of plugin list; there&#39;s no reason to run</span>
+            <span class="c1"># both.  In practice the Unplugger plugin above would cover us when</span>
+            <span class="c1"># run from a standard numpy.test() call; this is just in case</span>
+            <span class="c1"># someone wants to run our plugin outside the numpy.test() machinery</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">plugins</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">plugins</span>
+                                      <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;doctest&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">set_test_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Configure `test` object to set test context</span>
+
+<span class="sd">        We set the numpy / scipy standard doctest namespace</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        test : test object</span>
+<span class="sd">            with ``globs`` dictionary defining namespace</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        `test` object modified in place</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># set the namespace for tests</span>
+        <span class="n">pkg_name</span> <span class="o">=</span> <span class="n">get_package_name</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+
+        <span class="c1"># Each doctest should execute in an environment equivalent to</span>
+        <span class="c1"># starting Python and executing &quot;import numpy as np&quot;, and,</span>
+        <span class="c1"># for SciPy packages, an additional import of the local</span>
+        <span class="c1"># package (so that scipy.linalg.basic.py&#39;s doctests have an</span>
+        <span class="c1"># implicit &quot;from scipy import linalg&quot; as well.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Note: __file__ allows the doctest in NoseTester to run</span>
+        <span class="c1"># without producing an error</span>
+        <span class="n">test</span><span class="o">.</span><span class="n">globs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;__builtins__&#39;</span><span class="p">:</span><span class="n">__builtins__</span><span class="p">,</span>
+                      <span class="s1">&#39;__file__&#39;</span><span class="p">:</span><span class="s1">&#39;__main__&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;__name__&#39;</span><span class="p">:</span><span class="s1">&#39;__main__&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;np&#39;</span><span class="p">:</span><span class="n">numpy</span><span class="p">}</span>
+        <span class="c1"># add appropriate scipy import for SciPy tests</span>
+        <span class="k">if</span> <span class="s1">&#39;scipy&#39;</span> <span class="ow">in</span> <span class="n">pkg_name</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">pkg_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+            <span class="n">p2</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">test</span><span class="o">.</span><span class="n">globs</span><span class="p">[</span><span class="n">p2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">pkg_name</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">globs</span><span class="p">,</span> <span class="p">{},</span> <span class="p">[</span><span class="n">p2</span><span class="p">])</span>
+
+    <span class="c1"># Override test loading to customize test context (with set_test_context</span>
+    <span class="c1"># method), set standard docstring options, and install our own test output</span>
+    <span class="c1"># checker</span>
+    <span class="k">def</span> <span class="nf">loadTestsFromModule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="vm">__name__</span><span class="p">):</span>
+            <span class="n">npd</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Doctest doesn&#39;t want module </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tests</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">finder</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="c1"># nose allows module.__test__ = False; doctest does not and</span>
+            <span class="c1"># throws AttributeError</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tests</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">tests</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">module_file</span> <span class="o">=</span> <span class="n">src</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">test</span> <span class="ow">in</span> <span class="n">tests</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">test</span><span class="o">.</span><span class="n">examples</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">test</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span>
+                <span class="n">test</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">module_file</span>
+            <span class="c1"># Set test namespace; test altered in place</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_test_context</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">doctest_case_class</span><span class="p">(</span><span class="n">test</span><span class="p">,</span>
+                                          <span class="n">optionflags</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">doctest_optflags</span><span class="p">,</span>
+                                          <span class="n">checker</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_check_class</span><span class="p">(),</span>
+                                          <span class="n">result_var</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">doctest_result_var</span><span class="p">)</span>
+
+    <span class="c1"># Add an afterContext method to nose.plugins.doctests.Doctest in order</span>
+    <span class="c1"># to restore print options to the original state after each doctest</span>
+    <span class="k">def</span> <span class="nf">afterContext</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="o">**</span><span class="n">print_state</span><span class="p">)</span>
+
+    <span class="c1"># Ignore NumPy-specific build files that shouldn&#39;t be searched for tests</span>
+    <span class="k">def</span> <span class="nf">wantFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+        <span class="n">bn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">doctest_ignore</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">npd</span><span class="o">.</span><span class="n">Doctest</span><span class="o">.</span><span class="n">wantFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Unplugger</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Nose plugin to remove named plugin late in loading</span>
+
+<span class="sd">    By default it removes the &quot;doctest&quot; plugin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;unplugger&#39;</span>
+    <span class="n">enabled</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># always enabled</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="mi">4000</span> <span class="c1"># load late in order to be after builtins</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_unplug</span><span class="o">=</span><span class="s1">&#39;doctest&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_unplug</span> <span class="o">=</span> <span class="n">to_unplug</span>
+
+    <span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="c1"># Pull named plugin out of plugins list</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">plugins</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">plugins</span>
+                                  <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_unplug</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">KnownFailureTest</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Raise this exception to mark a test as a known failing test.&#39;&#39;&#39;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">KnownFailure</span><span class="p">(</span><span class="n">ErrorClassPlugin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Plugin that installs a KNOWNFAIL error class for the</span>
+<span class="sd">    KnownFailureClass exception.  When KnownFailureTest is raised,</span>
+<span class="sd">    the exception will be logged in the knownfail attribute of the</span>
+<span class="sd">    result, &#39;K&#39; or &#39;KNOWNFAIL&#39; (verbose) will be output, and the</span>
+<span class="sd">    exception will not be counted as an error or failure.&#39;&#39;&#39;</span>
+    <span class="n">enabled</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">knownfail</span> <span class="o">=</span> <span class="n">ErrorClass</span><span class="p">(</span><span class="n">KnownFailureTest</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;KNOWNFAIL&#39;</span><span class="p">,</span>
+                           <span class="n">isfailure</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">):</span>
+        <span class="n">env_opt</span> <span class="o">=</span> <span class="s1">&#39;NOSE_WITHOUT_KNOWNFAIL&#39;</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;--no-knownfail&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                          <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;noKnownFail&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">env_opt</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Disable special handling of KnownFailureTest &#39;</span>
+                               <span class="s1">&#39;exceptions&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">conf</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_configure</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conf</span> <span class="o">=</span> <span class="n">conf</span>
+        <span class="n">disable</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="s1">&#39;noKnownFail&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">disable</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="c1"># Class allows us to save the results of the tests in runTests - see runTests</span>
+<span class="c1"># method docstring for details</span>
+<span class="k">class</span> <span class="nc">NumpyTestProgram</span><span class="p">(</span><span class="n">nose</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">TestProgram</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">runTests</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run Tests. Returns true on success, false on failure, and</span>
+<span class="sd">        sets self.success to the same value.</span>
+
+<span class="sd">        Because nose currently discards the test result object, but we need</span>
+<span class="sd">        to return it to the user, override TestProgram.runTests to retain</span>
+<span class="sd">        the result</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">testRunner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">testRunner</span> <span class="o">=</span> <span class="n">nose</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">TextTestRunner</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">stream</span><span class="p">,</span>
+                                                       <span class="n">verbosity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">verbosity</span><span class="p">,</span>
+                                                       <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">plug_runner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">prepareTestRunner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">testRunner</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">plug_runner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">testRunner</span> <span class="o">=</span> <span class="n">plug_runner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">testRunner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">wasSuccessful</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">success</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

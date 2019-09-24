@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.testing.decorators.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="testing-decorators">
+<h1>testing.decorators<a class="headerlink" href="#testing-decorators" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.testing.decorators">
+<span id="module-testing-decorators"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">testing.decorators</span></code><a class="headerlink" href="#module-nipy.testing.decorators" title="Permalink to this headline">¶</a></h2>
+<p>Extend numpy’s decorators to use nipy’s gui and data labels.</p>
+<p>This module should not import nose at the top level to avoid a run-time
+dependency on nose.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.testing.decorators.if_datasource">
+<code class="sig-prename descclassname">nipy.testing.decorators.</code><code class="sig-name descname">if_datasource</code><span class="sig-paren">(</span><em class="sig-param">ds</em>, <em class="sig-param">msg</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/decorators.html#if_datasource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.decorators.if_datasource" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.decorators.if_example_data">
+<code class="sig-prename descclassname">nipy.testing.decorators.</code><code class="sig-name descname">if_example_data</code><span class="sig-paren">(</span><em class="sig-param">f</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/decorators.html#if_example_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.decorators.if_example_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.decorators.if_templates">
+<code class="sig-prename descclassname">nipy.testing.decorators.</code><code class="sig-name descname">if_templates</code><span class="sig-paren">(</span><em class="sig-param">f</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/decorators.html#if_templates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.decorators.if_templates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.decorators.knownfailure">
+<code class="sig-prename descclassname">nipy.testing.decorators.</code><code class="sig-name descname">knownfailure</code><span class="sig-paren">(</span><em class="sig-param">f</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/decorators.html#knownfailure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.decorators.knownfailure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.decorators.make_label_dec">
+<code class="sig-prename descclassname">nipy.testing.decorators.</code><code class="sig-name descname">make_label_dec</code><span class="sig-paren">(</span><em class="sig-param">label</em>, <em class="sig-param">ds=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/decorators.html#make_label_dec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.decorators.make_label_dec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Factory function to create a decorator that applies one or more labels.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>label</strong> : str or sequence</p>
+<blockquote>
+<div><p>One or more labels that will be applied by the decorator to the
+functions it decorates.  Labels are attributes of the decorated function
+with their value set to True.</p>
+</div></blockquote>
+<p><strong>ds</strong> : str</p>
+<blockquote>
+<div><p>An optional docstring for the resulting decorator.  If not given, a
+default docstring is auto-generated.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ldec</strong> : function</p>
+<blockquote>
+<div><p>A decorator.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slow</span> <span class="o">=</span> <span class="n">make_label_dec</span><span class="p">(</span><span class="s1">&#39;slow&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">slow</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+<span class="go">Labels a test as &#39;slow&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rare</span> <span class="o">=</span> <span class="n">make_label_dec</span><span class="p">([</span><span class="s1">&#39;slow&#39;</span><span class="p">,</span><span class="s1">&#39;hard&#39;</span><span class="p">],</span>
+<span class="gp">... </span><span class="s2">&quot;Mix labels &#39;slow&#39; and &#39;hard&#39; for rare tests&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@rare</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">f</span><span class="p">():</span> <span class="k">pass</span>
+<span class="gp">...</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">slow</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">hard</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.decorators.needs_mpl_agg">
+<code class="sig-prename descclassname">nipy.testing.decorators.</code><code class="sig-name descname">needs_mpl_agg</code><span class="sig-paren">(</span><em class="sig-param">func</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/decorators.html#needs_mpl_agg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.decorators.needs_mpl_agg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator requiring matplotlib with agg backend</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.decorators.needs_review">
+<code class="sig-prename descclassname">nipy.testing.decorators.</code><code class="sig-name descname">needs_review</code><span class="sig-paren">(</span><em class="sig-param">msg</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/decorators.html#needs_review"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.decorators.needs_review" title="Permalink to this definition">¶</a></dt>
+<dd><p>Skip a test that needs further review.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>msg</strong> : string</p>
+<blockquote>
+<div><p>msg regarding the review that needs to be done</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

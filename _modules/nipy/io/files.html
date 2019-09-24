@@ -1,0 +1,437 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.io.files</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot; The io.files module provides basic functions for working with file-based</span>
+<span class="sd">images in nipy.</span>
+
+<span class="sd">* load : load an image from a file</span>
+<span class="sd">* save : save an image to a file</span>
+
+<span class="sd">Examples</span>
+<span class="sd">--------</span>
+<span class="sd">See documentation for load and save functions for worked examples.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">nibabel</span> <span class="k">as</span> <span class="nn">nib</span>
+<span class="kn">from</span> <span class="nn">nibabel.spatialimages</span> <span class="k">import</span> <span class="n">HeaderDataError</span>
+
+<span class="kn">from</span> <span class="nn">..core.image.image</span> <span class="k">import</span> <span class="n">is_image</span>
+
+<span class="kn">from</span> <span class="nn">.nifti_ref</span> <span class="k">import</span> <span class="p">(</span><span class="n">nipy2nifti</span><span class="p">,</span> <span class="n">nifti2nipy</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.nibcompat</span> <span class="k">import</span> <span class="n">get_dataobj</span><span class="p">,</span> <span class="n">get_affine</span><span class="p">,</span> <span class="n">get_header</span>
+
+<span class="kn">from</span> <span class="nn">..externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<div class="viewcode-block" id="load"><a class="viewcode-back" href="../../../api/generated/nipy.io.files.html#nipy.io.files.load">[docs]</a><span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load an image from the given filename.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : string</span>
+<span class="sd">        Should resolve to a complete filename path.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    image : An `Image` object</span>
+<span class="sd">        If successful, a new `Image` object is returned.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    save_image : function for saving images</span>
+<span class="sd">    Image : image object</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.testing import anatfile</span>
+<span class="sd">    &gt;&gt;&gt; img = load_image(anatfile)</span>
+<span class="sd">    &gt;&gt;&gt; img.shape</span>
+<span class="sd">    (33, 41, 25)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.mnc&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sorry, we can&#39;t get the MINC axis names right yet&quot;</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="c1"># Deal with older nibabel</span>
+    <span class="n">ni_img</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">get_dataobj</span><span class="p">(</span><span class="n">img</span><span class="p">),</span>
+                             <span class="n">get_affine</span><span class="p">(</span><span class="n">img</span><span class="p">),</span>
+                             <span class="n">get_header</span><span class="p">(</span><span class="n">img</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">nifti2nipy</span><span class="p">(</span><span class="n">ni_img</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="save"><a class="viewcode-back" href="../../../api/generated/nipy.io.files.html#nipy.io.files.save">[docs]</a><span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">dtype_from</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write the image to a file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : An `Image` object</span>
+<span class="sd">    filename : string</span>
+<span class="sd">        Should be a valid filename.</span>
+<span class="sd">    dtype_from : {&#39;data&#39;, &#39;header&#39;} or dtype specifier, optional</span>
+<span class="sd">        Method of setting dtype to save data to disk. Value of &#39;data&#39; (default),</span>
+<span class="sd">        means use data dtype to save.  &#39;header&#39; means use data dtype specified</span>
+<span class="sd">        in header, if available, otherwise use data dtype.  Can also be any</span>
+<span class="sd">        valid specifier for a numpy dtype, e.g. &#39;i4&#39;, ``np.float32``.  Not every</span>
+<span class="sd">        format supports every dtype, so some values of this parameter or data</span>
+<span class="sd">        dtypes will raise errors.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    image : An `Image` object</span>
+<span class="sd">        Possibly modified by saving.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    load_image : function for loading images</span>
+<span class="sd">    Image : image object</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Make a temporary directory to store files</span>
+
+<span class="sd">    &gt;&gt;&gt; import os</span>
+<span class="sd">    &gt;&gt;&gt; from tempfile import mkdtemp</span>
+<span class="sd">    &gt;&gt;&gt; tmpdir = mkdtemp()</span>
+
+<span class="sd">    Make some some files and save them</span>
+
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.core.api import Image, AffineTransform</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.io.api import save_image</span>
+<span class="sd">    &gt;&gt;&gt; data = np.zeros((91,109,91), dtype=np.uint8)</span>
+<span class="sd">    &gt;&gt;&gt; cmap = AffineTransform(&#39;kji&#39;, &#39;zxy&#39;, np.eye(4))</span>
+<span class="sd">    &gt;&gt;&gt; img = Image(data, cmap)</span>
+<span class="sd">    &gt;&gt;&gt; fname1 = os.path.join(tmpdir, &#39;img1.nii.gz&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; saved_img1 = save_image(img, fname1)</span>
+<span class="sd">    &gt;&gt;&gt; saved_img1.shape</span>
+<span class="sd">    (91, 109, 91)</span>
+<span class="sd">    &gt;&gt;&gt; fname2 = os.path.join(tmpdir, &#39;img2.img.gz&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; saved_img2 = save_image(img, fname2)</span>
+<span class="sd">    &gt;&gt;&gt; saved_img2.shape</span>
+<span class="sd">    (91, 109, 91)</span>
+<span class="sd">    &gt;&gt;&gt; fname = &#39;test.mnc&#39;</span>
+<span class="sd">    &gt;&gt;&gt; saved_image3 = save_image(img, fname)</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">       ...</span>
+<span class="sd">    ValueError: Sorry, we cannot yet save as format &quot;minc&quot;</span>
+
+<span class="sd">    Finally, we clear up our temporary files:</span>
+
+<span class="sd">    &gt;&gt;&gt; import shutil</span>
+<span class="sd">    &gt;&gt;&gt; shutil.rmtree(tmpdir)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Filetype is determined by the file extension in &#39;filename&#39;.  Currently the</span>
+<span class="sd">    following filetypes are supported:</span>
+
+<span class="sd">    * Nifti single file : [&#39;.nii&#39;, &#39;.nii.gz&#39;]</span>
+<span class="sd">    * Nifti file pair : [&#39;.hdr&#39;, &#39;.hdr.gz&#39;]</span>
+<span class="sd">    * SPM Analyze : [&#39;.img&#39;, &#39;.img.gz&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Try and get nifti</span>
+    <span class="n">dt_from_is_str</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dtype_from</span><span class="p">,</span> <span class="n">string_types</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dt_from_is_str</span> <span class="ow">and</span> <span class="n">dtype_from</span> <span class="o">==</span> <span class="s1">&#39;header&#39;</span><span class="p">:</span>
+        <span class="c1"># All done</span>
+        <span class="n">io_dtype</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">dt_from_is_str</span> <span class="ow">and</span> <span class="n">dtype_from</span> <span class="o">==</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span>
+        <span class="n">io_dtype</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">io_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype_from</span><span class="p">)</span>
+    <span class="c1"># make new image</span>
+    <span class="n">ni_img</span> <span class="o">=</span> <span class="n">nipy2nifti</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">data_dtype</span> <span class="o">=</span> <span class="n">io_dtype</span><span class="p">)</span>
+    <span class="n">ftype</span> <span class="o">=</span> <span class="n">_type_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ftype</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;nifti1&#39;</span><span class="p">):</span>
+        <span class="n">ni_img</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">ftype</span> <span class="o">==</span> <span class="s1">&#39;analyze&#39;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ana_img</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">Spm2AnalyzeImage</span><span class="o">.</span><span class="n">from_image</span><span class="p">(</span><span class="n">ni_img</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">HeaderDataError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HeaderDataError</span><span class="p">(</span><span class="s1">&#39;SPM analyze does not support datatype </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                  <span class="n">ni_img</span><span class="o">.</span><span class="n">get_data_dtype</span><span class="p">())</span>
+        <span class="n">ana_img</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Sorry, we cannot yet save as format &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">ftype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">img</span></div>
+
+
+<span class="k">def</span> <span class="nf">_type_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Return image type determined from filename</span>
+
+<span class="sd">    Filetype is determined by the file extension in &#39;filename&#39;.</span>
+<span class="sd">    Currently the following filetypes are supported:</span>
+
+<span class="sd">    * Nifti single file : [&#39;.nii&#39;, &#39;.nii.gz&#39;]</span>
+<span class="sd">    * Nifti file pair : [&#39;.hdr&#39;, &#39;.hdr.gz&#39;]</span>
+<span class="sd">    * Analyze file pair : [&#39;.img&#39;, &#39;.img.gz&#39;]</span>
+
+<span class="sd">    &gt;&gt;&gt; _type_from_filename(&#39;test.nii&#39;)</span>
+<span class="sd">    &#39;nifti1single&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _type_from_filename(&#39;test&#39;)</span>
+<span class="sd">    &#39;nifti1single&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _type_from_filename(&#39;test.hdr&#39;)</span>
+<span class="sd">    &#39;nifti1pair&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _type_from_filename(&#39;test.hdr.gz&#39;)</span>
+<span class="sd">    &#39;nifti1pair&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _type_from_filename(&#39;test.img.gz&#39;)</span>
+<span class="sd">    &#39;analyze&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _type_from_filename(&#39;test.mnc&#39;)</span>
+<span class="sd">    &#39;minc&#39;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.gz&#39;</span><span class="p">):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.bz2&#39;</span><span class="p">):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;.nii&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;nifti1single&#39;</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.hdr&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;nifti1pair&#39;</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.img&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;analyze&#39;</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.mnc&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;minc&#39;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Strange file extension &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">ext</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="as_image"><a class="viewcode-back" href="../../../api/generated/nipy.io.files.html#nipy.io.files.as_image">[docs]</a><span class="k">def</span> <span class="nf">as_image</span><span class="p">(</span><span class="n">image_input</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Load image from filename or pass through image instance</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image_input : str or Image instance</span>
+<span class="sd">       image or string filename of image.  If a string, load image and</span>
+<span class="sd">       return.  If an image, pass through without modification</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    img : Image or Image-like instance</span>
+<span class="sd">       Input object if `image_input` seemed to be an image, loaded Image</span>
+<span class="sd">       object if `image_input` was a string.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError : if neither string nor image-like passed</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.testing import anatfile</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.io.api import load_image</span>
+<span class="sd">    &gt;&gt;&gt; img = as_image(anatfile)</span>
+<span class="sd">    &gt;&gt;&gt; img2 = as_image(img)</span>
+<span class="sd">    &gt;&gt;&gt; img2 is img</span>
+<span class="sd">    True</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">is_image</span><span class="p">(</span><span class="n">image_input</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">image_input</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_input</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">image_input</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Expecting an image-like object or filename string&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

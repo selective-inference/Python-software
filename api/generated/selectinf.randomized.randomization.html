@@ -1,0 +1,1488 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="randomized.screening" href="selectinf.randomized.screening.html" />
+    <link rel="prev" title="randomized.query" href="selectinf.randomized.query.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.glm.html">glm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">randomized.randomization</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-randomized-randomization">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.randomization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.randomized.randomization.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="randomized-randomization">
+<h1>randomized.randomization<a class="headerlink" href="#randomized-randomization" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-randomized-randomization">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.randomization</span></code><a class="headerlink" href="#module-randomized-randomization" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">selectinf.randomized.randomization</span></code>:</p>
+digraph inheritance025d2958e9 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;problems.composite.composite&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;A generic way to specify a problem in composite form.&quot;];
+  &quot;problems.composite.smooth&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;A composite subclass that has 0 as &quot;];
+  &quot;problems.composite.composite&quot; -&gt; &quot;problems.composite.smooth&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.randomization.cumulant&quot; [URL=&quot;#selectinf.randomized.randomization.cumulant&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class for CGF.&quot;];
+  &quot;randomized.randomization.from_grad_func&quot; -&gt; &quot;randomized.randomization.cumulant&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.randomization.cumulant_conjugate&quot; [URL=&quot;#selectinf.randomized.randomization.cumulant_conjugate&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class for conjugate of a CGF.&quot;];
+  &quot;randomized.randomization.from_grad_func&quot; -&gt; &quot;randomized.randomization.cumulant_conjugate&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.randomization.from_grad_func&quot; [URL=&quot;#selectinf.randomized.randomization.from_grad_func&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;take a (func, grad) pair and make a smooth_objective&quot;];
+  &quot;regreg.smooth.smooth_atom&quot; -&gt; &quot;randomized.randomization.from_grad_func&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.randomization.randomization&quot; [URL=&quot;#selectinf.randomized.randomization.randomization&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;regreg.smooth.smooth_atom&quot; -&gt; &quot;randomized.randomization.randomization&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;randomized.randomization.split&quot; [URL=&quot;#selectinf.randomized.randomization.split&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;randomized.randomization.randomization&quot; -&gt; &quot;randomized.randomization.split&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;regreg.smooth.smooth_atom&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;A class for representing a smooth function and its gradient&quot;];
+  &quot;problems.composite.smooth&quot; -&gt; &quot;regreg.smooth.smooth_atom&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-selectinf.randomized.randomization"></span><p>Different randomization options for selective sampler.
+Main method used in selective sampler is the gradient method which
+should be a gradient of the negative of the log-density. For a
+Gaussian density, this will be a convex function, not a concave function.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="cumulant">
+<h3><a class="reference internal" href="#selectinf.randomized.randomization.cumulant" title="selectinf.randomized.randomization.cumulant"><code class="xref py py-class docutils literal notranslate"><span class="pre">cumulant</span></code></a><a class="headerlink" href="#cumulant" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.randomization.cumulant">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">cumulant</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">func</em>, <em class="sig-param">grad</em>, <em class="sig-param">coef=1.0</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#cumulant"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.cumulant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.randomized.randomization.from_grad_func" title="selectinf.randomized.randomization.from_grad_func"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.randomized.randomization.from_grad_func</span></code></a></p>
+<p>Class for CGF.</p>
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">func</em>, <em class="sig-param">grad</em>, <em class="sig-param">coef=1.0</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.affine">
+<em class="property">classmethod </em><code class="sig-name descname">affine</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.apply_offset">
+<code class="sig-name descname">apply_offset</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.apply_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.offset is not None, return x-self.offset, else return x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.conjugate">
+<em class="property">property </em><code class="sig-name descname">conjugate</code><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.get_conjugate">
+<code class="sig-name descname">get_conjugate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.get_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.get_lipschitz">
+<code class="sig-name descname">get_lipschitz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.get_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.get_offset">
+<code class="sig-name descname">get_offset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.get_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.get_quadratic">
+<code class="sig-name descname">get_quadratic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.get_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.latexify">
+<code class="sig-name descname">latexify</code><span class="sig-paren">(</span><em class="sig-param">var=None</em>, <em class="sig-param">idx=''</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.latexify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.linear">
+<em class="property">classmethod </em><code class="sig-name descname">linear</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.lipschitz">
+<em class="property">property </em><code class="sig-name descname">lipschitz</code><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.nonsmooth_objective">
+<code class="sig-name descname">nonsmooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.nonsmooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.objective">
+<code class="sig-name descname">objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.cumulant.objective_template">
+<code class="sig-name descname">objective_template</code><em class="property"> = 'f(%(var)s)'</em><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.objective_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.cumulant.objective_vars">
+<code class="sig-name descname">objective_vars</code><em class="property"> = {'coef': 'C', 'offset': '\\alpha+', 'shape': 'p', 'var': '\\beta'}</em><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.objective_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.offset">
+<em class="property">property </em><code class="sig-name descname">offset</code><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.proximal">
+<code class="sig-name descname">proximal</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.proximal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.proximal_optimum">
+<code class="sig-name descname">proximal_optimum</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.proximal_optimum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.proximal_step">
+<code class="sig-name descname">proximal_step</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em>, <em class="sig-param">prox_control=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.proximal_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proximal optimization</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prox_control: [None, dict]</strong></p>
+<blockquote>
+<div><p>If not None, then a dictionary of parameters for the prox procedure</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.quadratic">
+<em class="property">property </em><code class="sig-name descname">quadratic</code><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic part of the object, instance of <cite>regreg.identity_quadratic.identity_quadratic</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.scale">
+<code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">copy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.set_lipschitz">
+<code class="sig-name descname">set_lipschitz</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.set_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.set_offset">
+<code class="sig-name descname">set_offset</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.set_quadratic">
+<code class="sig-name descname">set_quadratic</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.set_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.shift">
+<em class="property">classmethod </em><code class="sig-name descname">shift</code><span class="sig-paren">(</span><em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.smooth_objective">
+<code class="sig-name descname">smooth_objective</code><span class="sig-paren">(</span><em class="sig-param">param</em>, <em class="sig-param">mode='both'</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.smooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the smooth objective, computing its value, gradient or both.
+Parameters
+———-
+mean_param : ndarray</p>
+<blockquote>
+<div><p>The current parameter values.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>mode<span class="classifier">str</span></dt><dd><p>One of [‘func’, ‘grad’, ‘both’].</p>
+</dd>
+<dt>check_feasibility<span class="classifier">bool</span></dt><dd><p>If True, return <cite>np.inf</cite> when
+point is not feasible, i.e. when <cite>mean_param</cite> is not
+in the domain.</p>
+</dd>
+</dl>
+<p>If <cite>mode</cite> is ‘func’ returns just the objective value
+at <cite>mean_param</cite>, else if <cite>mode</cite> is ‘grad’ returns the gradient
+else returns both.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.smoothed">
+<code class="sig-name descname">smoothed</code><span class="sig-paren">(</span><em class="sig-param">smoothing_quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.smoothed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add quadratic smoothing term</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">quadratic=None</em>, <em class="sig-param">return_optimum=False</em>, <em class="sig-param">**fit_args</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cumulant-conjugate">
+<h3><a class="reference internal" href="#selectinf.randomized.randomization.cumulant_conjugate" title="selectinf.randomized.randomization.cumulant_conjugate"><code class="xref py py-class docutils literal notranslate"><span class="pre">cumulant_conjugate</span></code></a><a class="headerlink" href="#cumulant-conjugate" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">cumulant_conjugate</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">func</em>, <em class="sig-param">grad</em>, <em class="sig-param">coef=1.0</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#cumulant_conjugate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.randomized.randomization.from_grad_func" title="selectinf.randomized.randomization.from_grad_func"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.randomized.randomization.from_grad_func</span></code></a></p>
+<p>Class for conjugate of a CGF.</p>
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">func</em>, <em class="sig-param">grad</em>, <em class="sig-param">coef=1.0</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.affine">
+<em class="property">classmethod </em><code class="sig-name descname">affine</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.apply_offset">
+<code class="sig-name descname">apply_offset</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.apply_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.offset is not None, return x-self.offset, else return x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.conjugate">
+<em class="property">property </em><code class="sig-name descname">conjugate</code><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.get_conjugate">
+<code class="sig-name descname">get_conjugate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.get_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.get_lipschitz">
+<code class="sig-name descname">get_lipschitz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.get_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.get_offset">
+<code class="sig-name descname">get_offset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.get_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.get_quadratic">
+<code class="sig-name descname">get_quadratic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.get_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.latexify">
+<code class="sig-name descname">latexify</code><span class="sig-paren">(</span><em class="sig-param">var=None</em>, <em class="sig-param">idx=''</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.latexify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.linear">
+<em class="property">classmethod </em><code class="sig-name descname">linear</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.lipschitz">
+<em class="property">property </em><code class="sig-name descname">lipschitz</code><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.nonsmooth_objective">
+<code class="sig-name descname">nonsmooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.nonsmooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.objective">
+<code class="sig-name descname">objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.objective_template">
+<code class="sig-name descname">objective_template</code><em class="property"> = 'f(%(var)s)'</em><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.objective_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.objective_vars">
+<code class="sig-name descname">objective_vars</code><em class="property"> = {'coef': 'C', 'offset': '\\alpha+', 'shape': 'p', 'var': '\\beta'}</em><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.objective_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.offset">
+<em class="property">property </em><code class="sig-name descname">offset</code><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.proximal">
+<code class="sig-name descname">proximal</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.proximal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.proximal_optimum">
+<code class="sig-name descname">proximal_optimum</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.proximal_optimum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.proximal_step">
+<code class="sig-name descname">proximal_step</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em>, <em class="sig-param">prox_control=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.proximal_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proximal optimization</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prox_control: [None, dict]</strong></p>
+<blockquote>
+<div><p>If not None, then a dictionary of parameters for the prox procedure</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.quadratic">
+<em class="property">property </em><code class="sig-name descname">quadratic</code><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic part of the object, instance of <cite>regreg.identity_quadratic.identity_quadratic</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.scale">
+<code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">copy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.set_lipschitz">
+<code class="sig-name descname">set_lipschitz</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.set_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.set_offset">
+<code class="sig-name descname">set_offset</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.set_quadratic">
+<code class="sig-name descname">set_quadratic</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.set_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.shift">
+<em class="property">classmethod </em><code class="sig-name descname">shift</code><span class="sig-paren">(</span><em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.smooth_objective">
+<code class="sig-name descname">smooth_objective</code><span class="sig-paren">(</span><em class="sig-param">param</em>, <em class="sig-param">mode='both'</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.smooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the smooth objective, computing its value, gradient or both.
+Parameters
+———-
+mean_param : ndarray</p>
+<blockquote>
+<div><p>The current parameter values.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>mode<span class="classifier">str</span></dt><dd><p>One of [‘func’, ‘grad’, ‘both’].</p>
+</dd>
+<dt>check_feasibility<span class="classifier">bool</span></dt><dd><p>If True, return <cite>np.inf</cite> when
+point is not feasible, i.e. when <cite>mean_param</cite> is not
+in the domain.</p>
+</dd>
+</dl>
+<p>If <cite>mode</cite> is ‘func’ returns just the objective value
+at <cite>mean_param</cite>, else if <cite>mode</cite> is ‘grad’ returns the gradient
+else returns both.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.smoothed">
+<code class="sig-name descname">smoothed</code><span class="sig-paren">(</span><em class="sig-param">smoothing_quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.smoothed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add quadratic smoothing term</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.cumulant_conjugate.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">quadratic=None</em>, <em class="sig-param">return_optimum=False</em>, <em class="sig-param">**fit_args</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.cumulant_conjugate.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="from-grad-func">
+<h3><a class="reference internal" href="#selectinf.randomized.randomization.from_grad_func" title="selectinf.randomized.randomization.from_grad_func"><code class="xref py py-class docutils literal notranslate"><span class="pre">from_grad_func</span></code></a><a class="headerlink" href="#from-grad-func" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.randomization.from_grad_func">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">from_grad_func</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">func</em>, <em class="sig-param">grad</em>, <em class="sig-param">coef=1.0</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#from_grad_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">regreg.smooth.smooth_atom</span></code></p>
+<p>take a (func, grad) pair and make a smooth_objective</p>
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">func</em>, <em class="sig-param">grad</em>, <em class="sig-param">coef=1.0</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">initial=None</em>, <em class="sig-param">quadratic=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#from_grad_func.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.smooth_objective">
+<code class="sig-name descname">smooth_objective</code><span class="sig-paren">(</span><em class="sig-param">param</em>, <em class="sig-param">mode='both'</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#from_grad_func.smooth_objective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.smooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the smooth objective, computing its value, gradient or both.
+Parameters
+———-
+mean_param : ndarray</p>
+<blockquote>
+<div><p>The current parameter values.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>mode<span class="classifier">str</span></dt><dd><p>One of [‘func’, ‘grad’, ‘both’].</p>
+</dd>
+<dt>check_feasibility<span class="classifier">bool</span></dt><dd><p>If True, return <cite>np.inf</cite> when
+point is not feasible, i.e. when <cite>mean_param</cite> is not
+in the domain.</p>
+</dd>
+</dl>
+<p>If <cite>mode</cite> is ‘func’ returns just the objective value
+at <cite>mean_param</cite>, else if <cite>mode</cite> is ‘grad’ returns the gradient
+else returns both.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.affine">
+<em class="property">classmethod </em><code class="sig-name descname">affine</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.apply_offset">
+<code class="sig-name descname">apply_offset</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.apply_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.offset is not None, return x-self.offset, else return x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.conjugate">
+<em class="property">property </em><code class="sig-name descname">conjugate</code><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.get_conjugate">
+<code class="sig-name descname">get_conjugate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.get_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.get_lipschitz">
+<code class="sig-name descname">get_lipschitz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.get_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.get_offset">
+<code class="sig-name descname">get_offset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.get_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.get_quadratic">
+<code class="sig-name descname">get_quadratic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.get_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.latexify">
+<code class="sig-name descname">latexify</code><span class="sig-paren">(</span><em class="sig-param">var=None</em>, <em class="sig-param">idx=''</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.latexify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.linear">
+<em class="property">classmethod </em><code class="sig-name descname">linear</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.lipschitz">
+<em class="property">property </em><code class="sig-name descname">lipschitz</code><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.nonsmooth_objective">
+<code class="sig-name descname">nonsmooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.nonsmooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.objective">
+<code class="sig-name descname">objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.from_grad_func.objective_template">
+<code class="sig-name descname">objective_template</code><em class="property"> = 'f(%(var)s)'</em><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.objective_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.from_grad_func.objective_vars">
+<code class="sig-name descname">objective_vars</code><em class="property"> = {'coef': 'C', 'offset': '\\alpha+', 'shape': 'p', 'var': '\\beta'}</em><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.objective_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.offset">
+<em class="property">property </em><code class="sig-name descname">offset</code><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.proximal">
+<code class="sig-name descname">proximal</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.proximal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.proximal_optimum">
+<code class="sig-name descname">proximal_optimum</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.proximal_optimum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.proximal_step">
+<code class="sig-name descname">proximal_step</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em>, <em class="sig-param">prox_control=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.proximal_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proximal optimization</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prox_control: [None, dict]</strong></p>
+<blockquote>
+<div><p>If not None, then a dictionary of parameters for the prox procedure</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.quadratic">
+<em class="property">property </em><code class="sig-name descname">quadratic</code><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic part of the object, instance of <cite>regreg.identity_quadratic.identity_quadratic</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.scale">
+<code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">copy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.set_lipschitz">
+<code class="sig-name descname">set_lipschitz</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.set_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.set_offset">
+<code class="sig-name descname">set_offset</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.set_quadratic">
+<code class="sig-name descname">set_quadratic</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.set_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.shift">
+<em class="property">classmethod </em><code class="sig-name descname">shift</code><span class="sig-paren">(</span><em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.smoothed">
+<code class="sig-name descname">smoothed</code><span class="sig-paren">(</span><em class="sig-param">smoothing_quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.smoothed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add quadratic smoothing term</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.from_grad_func.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">quadratic=None</em>, <em class="sig-param">return_optimum=False</em>, <em class="sig-param">**fit_args</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.from_grad_func.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="randomization">
+<h3><a class="reference internal" href="#selectinf.randomized.randomization.randomization" title="selectinf.randomized.randomization.randomization"><code class="xref py py-class docutils literal notranslate"><span class="pre">randomization</span></code></a><a class="headerlink" href="#randomization" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.randomization.randomization">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">randomization</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">density</em>, <em class="sig-param">cdf</em>, <em class="sig-param">pdf</em>, <em class="sig-param">derivative_log_density</em>, <em class="sig-param">grad_negative_log_density</em>, <em class="sig-param">sampler</em>, <em class="sig-param">lipschitz=1</em>, <em class="sig-param">log_density=None</em>, <em class="sig-param">CGF=None</em>, <em class="sig-param">CGF_conjugate=None</em>, <em class="sig-param">cov_prec=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">regreg.smooth.smooth_atom</span></code></p>
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">density</em>, <em class="sig-param">cdf</em>, <em class="sig-param">pdf</em>, <em class="sig-param">derivative_log_density</em>, <em class="sig-param">grad_negative_log_density</em>, <em class="sig-param">sampler</em>, <em class="sig-param">lipschitz=1</em>, <em class="sig-param">log_density=None</em>, <em class="sig-param">CGF=None</em>, <em class="sig-param">CGF_conjugate=None</em>, <em class="sig-param">cov_prec=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.lipschitz">
+<em class="property">property </em><code class="sig-name descname">lipschitz</code><a class="headerlink" href="#selectinf.randomized.randomization.randomization.lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.smooth_objective">
+<code class="sig-name descname">smooth_objective</code><span class="sig-paren">(</span><em class="sig-param">perturbation</em>, <em class="sig-param">mode='both'</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.smooth_objective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.smooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the negative log-density and its gradient.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><em class="sig-param">size=()</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.sample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.gradient">
+<code class="sig-name descname">gradient</code><span class="sig-paren">(</span><em class="sig-param">perturbation</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.gradient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the gradient of the log-density.
+Parameters
+———-
+perturbation : np.float
+Returns
+——-
+gradient : np.float</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.log_density">
+<code class="sig-name descname">log_density</code><span class="sig-paren">(</span><em class="sig-param">perturbation</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.log_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.log_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the log-density.
+Parameters
+———-
+perturbation : np.float
+Returns
+——-
+value : float</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.randomize">
+<code class="sig-name descname">randomize</code><span class="sig-paren">(</span><em class="sig-param">loss</em>, <em class="sig-param">epsilon=0</em>, <em class="sig-param">perturb=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.randomize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.randomize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Randomize the loss.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.isotropic_gaussian">
+<em class="property">static </em><code class="sig-name descname">isotropic_gaussian</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.isotropic_gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.isotropic_gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Isotropic Gaussian with SD <cite>scale</cite>.
+Parameters
+———-
+shape : tuple</p>
+<blockquote>
+<div><p>Shape of noise.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>scale<span class="classifier">float</span></dt><dd><p>SD of noise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.gaussian">
+<em class="property">static </em><code class="sig-name descname">gaussian</code><span class="sig-paren">(</span><em class="sig-param">covariance</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gaussian noise with a given covariance.
+Parameters
+———-
+covariance : np.float((<em>,</em>))</p>
+<blockquote>
+<div><p>Positive definite covariance matrix. Non-negative definite
+will raise an error.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.laplace">
+<em class="property">static </em><code class="sig-name descname">laplace</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.laplace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard Laplace noise multiplied by <cite>scale</cite>
+Parameters
+———-
+shape : tuple</p>
+<blockquote>
+<div><p>Shape of noise.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>scale<span class="classifier">float</span></dt><dd><p>Scale of noise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.logistic">
+<em class="property">static </em><code class="sig-name descname">logistic</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#randomization.logistic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.randomization.logistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard logistic noise multiplied by <cite>scale</cite>
+Parameters
+———-
+shape : tuple</p>
+<blockquote>
+<div><p>Shape of noise.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>scale<span class="classifier">float</span></dt><dd><p>Scale of noise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.affine">
+<em class="property">classmethod </em><code class="sig-name descname">affine</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.apply_offset">
+<code class="sig-name descname">apply_offset</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.apply_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.offset is not None, return x-self.offset, else return x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.conjugate">
+<em class="property">property </em><code class="sig-name descname">conjugate</code><a class="headerlink" href="#selectinf.randomized.randomization.randomization.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.get_conjugate">
+<code class="sig-name descname">get_conjugate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.get_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.get_lipschitz">
+<code class="sig-name descname">get_lipschitz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.get_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.get_offset">
+<code class="sig-name descname">get_offset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.get_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.get_quadratic">
+<code class="sig-name descname">get_quadratic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.get_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.latexify">
+<code class="sig-name descname">latexify</code><span class="sig-paren">(</span><em class="sig-param">var=None</em>, <em class="sig-param">idx=''</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.latexify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.linear">
+<em class="property">classmethod </em><code class="sig-name descname">linear</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.nonsmooth_objective">
+<code class="sig-name descname">nonsmooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.nonsmooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.objective">
+<code class="sig-name descname">objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.randomization.objective_template">
+<code class="sig-name descname">objective_template</code><em class="property"> = 'f(%(var)s)'</em><a class="headerlink" href="#selectinf.randomized.randomization.randomization.objective_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.randomization.objective_vars">
+<code class="sig-name descname">objective_vars</code><em class="property"> = {'coef': 'C', 'offset': '\\alpha+', 'shape': 'p', 'var': '\\beta'}</em><a class="headerlink" href="#selectinf.randomized.randomization.randomization.objective_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.offset">
+<em class="property">property </em><code class="sig-name descname">offset</code><a class="headerlink" href="#selectinf.randomized.randomization.randomization.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.proximal">
+<code class="sig-name descname">proximal</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.proximal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.proximal_optimum">
+<code class="sig-name descname">proximal_optimum</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.proximal_optimum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.proximal_step">
+<code class="sig-name descname">proximal_step</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em>, <em class="sig-param">prox_control=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.proximal_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proximal optimization</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prox_control: [None, dict]</strong></p>
+<blockquote>
+<div><p>If not None, then a dictionary of parameters for the prox procedure</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.quadratic">
+<em class="property">property </em><code class="sig-name descname">quadratic</code><a class="headerlink" href="#selectinf.randomized.randomization.randomization.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic part of the object, instance of <cite>regreg.identity_quadratic.identity_quadratic</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.scale">
+<code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">copy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.set_lipschitz">
+<code class="sig-name descname">set_lipschitz</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.set_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.set_offset">
+<code class="sig-name descname">set_offset</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.set_quadratic">
+<code class="sig-name descname">set_quadratic</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.set_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.shift">
+<em class="property">classmethod </em><code class="sig-name descname">shift</code><span class="sig-paren">(</span><em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.smoothed">
+<code class="sig-name descname">smoothed</code><span class="sig-paren">(</span><em class="sig-param">smoothing_quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.smoothed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add quadratic smoothing term</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.randomization.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">quadratic=None</em>, <em class="sig-param">return_optimum=False</em>, <em class="sig-param">**fit_args</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.randomization.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="split">
+<h3><a class="reference internal" href="#selectinf.randomized.randomization.split" title="selectinf.randomized.randomization.split"><code class="xref py py-class docutils literal notranslate"><span class="pre">split</span></code></a><a class="headerlink" href="#split" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selectinf.randomized.randomization.split">
+<em class="property">class </em><code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">split</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">subsample_size</em>, <em class="sig-param">total_size</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.split" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selectinf.randomized.randomization.randomization" title="selectinf.randomized.randomization.randomization"><code class="xref py py-class docutils literal notranslate"><span class="pre">selectinf.randomized.randomization.randomization</span></code></a></p>
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">subsample_size</em>, <em class="sig-param">total_size</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#split.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.split.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.get_covariance">
+<code class="sig-name descname">get_covariance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#split.get_covariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.split.get_covariance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.set_covariance">
+<code class="sig-name descname">set_covariance</code><span class="sig-paren">(</span><em class="sig-param">covariance</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#split.set_covariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.split.set_covariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Once covariance has been set, then
+the usual API of randomization will work.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.covariance">
+<em class="property">property </em><code class="sig-name descname">covariance</code><a class="headerlink" href="#selectinf.randomized.randomization.split.covariance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.cov_prec">
+<em class="property">property </em><code class="sig-name descname">cov_prec</code><a class="headerlink" href="#selectinf.randomized.randomization.split.cov_prec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.smooth_objective">
+<code class="sig-name descname">smooth_objective</code><span class="sig-paren">(</span><em class="sig-param">perturbation</em>, <em class="sig-param">mode='both'</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#split.smooth_objective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.split.smooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the negative log-density and its gradient.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><em class="sig-param">size=()</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#split.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.split.sample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.gradient">
+<code class="sig-name descname">gradient</code><span class="sig-paren">(</span><em class="sig-param">perturbation</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#split.gradient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.split.gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the gradient of the log-density.
+Parameters
+———-
+perturbation : np.float
+Returns
+——-
+gradient : np.float</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.randomize">
+<code class="sig-name descname">randomize</code><span class="sig-paren">(</span><em class="sig-param">loss</em>, <em class="sig-param">epsilon</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#split.randomize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.split.randomize" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>loss</strong> : rr.glm</p>
+<blockquote>
+<div><p>A glm loss with a <cite>subsample</cite> method.</p>
+</div></blockquote>
+<p><strong>epsilon</strong> : float</p>
+<blockquote>
+<div><p>Coefficient in front of quadratic term</p>
+</div></blockquote>
+<p><strong>Returns</strong></p>
+<p><strong>——-</strong></p>
+<p><strong>Subsampled loss multiplied by `n / m` where</strong></p>
+<p><strong>m is the subsample size out of a total</strong></p>
+<p><strong>sample size of n.</strong></p>
+<p><strong>The quadratic term is not multiplied by `n / m`</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.affine">
+<em class="property">classmethod </em><code class="sig-name descname">affine</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.apply_offset">
+<code class="sig-name descname">apply_offset</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.apply_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.offset is not None, return x-self.offset, else return x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.conjugate">
+<em class="property">property </em><code class="sig-name descname">conjugate</code><a class="headerlink" href="#selectinf.randomized.randomization.split.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.gaussian">
+<em class="property">static </em><code class="sig-name descname">gaussian</code><span class="sig-paren">(</span><em class="sig-param">covariance</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gaussian noise with a given covariance.
+Parameters
+———-
+covariance : np.float((<em>,</em>))</p>
+<blockquote>
+<div><p>Positive definite covariance matrix. Non-negative definite
+will raise an error.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.get_conjugate">
+<code class="sig-name descname">get_conjugate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.get_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.get_lipschitz">
+<code class="sig-name descname">get_lipschitz</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.get_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.get_offset">
+<code class="sig-name descname">get_offset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.get_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.get_quadratic">
+<code class="sig-name descname">get_quadratic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.get_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.isotropic_gaussian">
+<em class="property">static </em><code class="sig-name descname">isotropic_gaussian</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.isotropic_gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Isotropic Gaussian with SD <cite>scale</cite>.
+Parameters
+———-
+shape : tuple</p>
+<blockquote>
+<div><p>Shape of noise.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>scale<span class="classifier">float</span></dt><dd><p>SD of noise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.laplace">
+<em class="property">static </em><code class="sig-name descname">laplace</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard Laplace noise multiplied by <cite>scale</cite>
+Parameters
+———-
+shape : tuple</p>
+<blockquote>
+<div><p>Shape of noise.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>scale<span class="classifier">float</span></dt><dd><p>Scale of noise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.latexify">
+<code class="sig-name descname">latexify</code><span class="sig-paren">(</span><em class="sig-param">var=None</em>, <em class="sig-param">idx=''</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.latexify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.linear">
+<em class="property">classmethod </em><code class="sig-name descname">linear</code><span class="sig-paren">(</span><em class="sig-param">linear_operator</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">diag=False</em>, <em class="sig-param">offset=None</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.lipschitz">
+<em class="property">property </em><code class="sig-name descname">lipschitz</code><a class="headerlink" href="#selectinf.randomized.randomization.split.lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.log_density">
+<code class="sig-name descname">log_density</code><span class="sig-paren">(</span><em class="sig-param">perturbation</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.log_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the log-density.
+Parameters
+———-
+perturbation : np.float
+Returns
+——-
+value : float</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.logistic">
+<em class="property">static </em><code class="sig-name descname">logistic</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.logistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard logistic noise multiplied by <cite>scale</cite>
+Parameters
+———-
+shape : tuple</p>
+<blockquote>
+<div><p>Shape of noise.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>scale<span class="classifier">float</span></dt><dd><p>Scale of noise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.nonsmooth_objective">
+<code class="sig-name descname">nonsmooth_objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.nonsmooth_objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.objective">
+<code class="sig-name descname">objective</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">check_feasibility=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.objective" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.split.objective_template">
+<code class="sig-name descname">objective_template</code><em class="property"> = 'f(%(var)s)'</em><a class="headerlink" href="#selectinf.randomized.randomization.split.objective_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="selectinf.randomized.randomization.split.objective_vars">
+<code class="sig-name descname">objective_vars</code><em class="property"> = {'coef': 'C', 'offset': '\\alpha+', 'shape': 'p', 'var': '\\beta'}</em><a class="headerlink" href="#selectinf.randomized.randomization.split.objective_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.offset">
+<em class="property">property </em><code class="sig-name descname">offset</code><a class="headerlink" href="#selectinf.randomized.randomization.split.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.proximal">
+<code class="sig-name descname">proximal</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.proximal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.proximal_optimum">
+<code class="sig-name descname">proximal_optimum</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.proximal_optimum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.proximal_step">
+<code class="sig-name descname">proximal_step</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em>, <em class="sig-param">prox_control=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.proximal_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proximal optimization</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prox_control: [None, dict]</strong></p>
+<blockquote>
+<div><p>If not None, then a dictionary of parameters for the prox procedure</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.quadratic">
+<em class="property">property </em><code class="sig-name descname">quadratic</code><a class="headerlink" href="#selectinf.randomized.randomization.split.quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic part of the object, instance of <cite>regreg.identity_quadratic.identity_quadratic</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.scale">
+<code class="sig-name descname">scale</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">copy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.set_lipschitz">
+<code class="sig-name descname">set_lipschitz</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.set_lipschitz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.set_offset">
+<code class="sig-name descname">set_offset</code><span class="sig-paren">(</span><em class="sig-param">value</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.set_quadratic">
+<code class="sig-name descname">set_quadratic</code><span class="sig-paren">(</span><em class="sig-param">quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.set_quadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quadratic part of the composite.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.shift">
+<em class="property">classmethod </em><code class="sig-name descname">shift</code><span class="sig-paren">(</span><em class="sig-param">offset</em>, <em class="sig-param">coef=1</em>, <em class="sig-param">quadratic=None</em>, <em class="sig-param">**kws</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywords given in kws are passed to cls constructor along with other arguments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.smoothed">
+<code class="sig-name descname">smoothed</code><span class="sig-paren">(</span><em class="sig-param">smoothing_quadratic</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.smoothed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add quadratic smoothing term</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selectinf.randomized.randomization.split.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param">quadratic=None</em>, <em class="sig-param">return_optimum=False</em>, <em class="sig-param">**fit_args</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.randomized.randomization.split.solve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.randomized.randomization.isotropic_gaussian_CGF">
+<code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">isotropic_gaussian_CGF</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#isotropic_gaussian_CGF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.isotropic_gaussian_CGF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.randomized.randomization.isotropic_gaussian_CGF_conjugate">
+<code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">isotropic_gaussian_CGF_conjugate</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#isotropic_gaussian_CGF_conjugate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.isotropic_gaussian_CGF_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.randomized.randomization.laplace_CGF">
+<code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">laplace_CGF</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#laplace_CGF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.laplace_CGF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.randomized.randomization.laplace_CGF_conjugate">
+<code class="sig-prename descclassname">selectinf.randomized.randomization.</code><code class="sig-name descname">laplace_CGF_conjugate</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/randomized/randomization.html#laplace_CGF_conjugate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.randomized.randomization.laplace_CGF_conjugate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.randomized.screening.html" class="btn btn-neutral float-right" title="randomized.screening" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.randomized.query.html" class="btn btn-neutral float-left" title="randomized.query" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

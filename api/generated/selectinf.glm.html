@@ -1,0 +1,528 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="learning.Rfitters" href="selectinf.learning.Rfitters.html" />
+    <link rel="prev" title="distributions.pvalue" href="selectinf.distributions.pvalue.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.covtest.html">algorithms.covtest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv.html">algorithms.cv</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.forward_step.html">algorithms.forward_step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.lasso.html">algorithms.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.pca.html">algorithms.pca</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.screening.html">algorithms.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.softmax.html">algorithms.softmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.affine.html">constraints.affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.base.html">constraints.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.estimation.html">constraints.estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.intervals.html">constraints.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quadratic.html">constraints.quadratic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chain.html">distributions.chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.chisq.html">distributions.chisq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_family.html">distributions.discrete_family</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.intervals.html">distributions.intervals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.distributions.pvalue.html">distributions.pvalue</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">glm</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-selectinf.glm">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">glm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rfitters.html">learning.Rfitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.Rutils.html">learning.Rutils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.core.html">learning.core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.fitters.html">learning.fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.learners.html">learning.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.samplers.html">learning.samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.learning.utils.html">learning.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.cv_view.html">randomized.cv_view</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.group_lasso.html">randomized.group_lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.lasso.html">randomized.lasso</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.modelQ.html">randomized.modelQ</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.query.html">randomized.query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.randomization.html">randomized.randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.screening.html">randomized.screening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.randomized.slope.html">randomized.slope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.langevin.html">sampling.langevin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.sampling.sequential.html">sampling.sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.F.html">truncated.F</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.T.html">truncated.T</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.base.html">truncated.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.chi.html">truncated.chi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.truncated.gaussian.html">truncated.gaussian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selectinf.utils.tools.html">utils.tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../documentation.html">Documentation</a> &raquo;</li>
+        
+          <li><a href="../index.html">API</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/selectinf.glm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="glm">
+<h1>glm<a class="headerlink" href="#glm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-selectinf.glm">
+<span id="module-glm"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">glm</span></code><a class="headerlink" href="#module-selectinf.glm" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selectinf.glm.bootstrap_cov">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">bootstrap_cov</code><span class="sig-paren">(</span><em class="sig-param">sampler</em>, <em class="sig-param">boot_target</em>, <em class="sig-param">cross_terms=()</em>, <em class="sig-param">nsample=2000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#bootstrap_cov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.bootstrap_cov" title="Permalink to this definition">¶</a></dt>
+<dd><p>m out of n bootstrap</p>
+<p>returns estimates of covariance matrices: boot_target with itself,
+and the blocks of (boot_target, boot_other) for other in cross_terms</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.glm_nonparametric_bootstrap">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">glm_nonparametric_bootstrap</code><span class="sig-paren">(</span><em class="sig-param">m</em>, <em class="sig-param">n</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#glm_nonparametric_bootstrap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.glm_nonparametric_bootstrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>The m out of n bootstrap.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.glm_parametric_covariance">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">glm_parametric_covariance</code><span class="sig-paren">(</span><em class="sig-param">glm_loss</em>, <em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-10}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#glm_parametric_covariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.glm_parametric_covariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>A constructor for parametric covariance</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.pairs_bootstrap_glm">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">pairs_bootstrap_glm</code><span class="sig-paren">(</span><em class="sig-param">glm_loss</em>, <em class="sig-param">active</em>, <em class="sig-param">beta_full=None</em>, <em class="sig-param">inactive=None</em>, <em class="sig-param">scaling=1.0</em>, <em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-10}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#pairs_bootstrap_glm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.pairs_bootstrap_glm" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Construct a non-parametric bootstrap sampler that 
+samples the estimates (<span class="math notranslate nohighlight">\(ar{eta}_E^*\)</span>) of a generalized 
+linear model (GLM) restricted to <cite>active</cite>
+as well as, optionally, the inactive coordinates of the score of the 
+GLM evaluated at the estimates (:math:<a href="#id1"><span class="problematic" id="id2">`</span></a></p>
+</div></blockquote>
+<dl class="simple">
+<dt>abla ell(ar{eta}_E)[-E]`) where</dt><dd><p><span class="math notranslate nohighlight">\(ar{eta}_E\)</span> is padded with zeros where necessary.</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>glm_loss</strong> : regreg.smooth.glm.glm</p>
+<blockquote>
+<div><blockquote>
+<div><p>The loss of the generalized linear model.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>active<span class="classifier">np.bool</span></dt><dd><p>Boolean indexing array</p>
+</dd>
+<dt>beta_full<span class="classifier">np.float (optional)</span></dt><dd><p>Solution to the restricted problem, zero except where active is nonzero.</p>
+</dd>
+<dt>inactive<span class="classifier">np.bool (optional)</span></dt><dd><p>Boolean indexing array</p>
+</dd>
+<dt>scaling<span class="classifier">float</span></dt><dd><p>Scaling to keep entries of roughly constant order. Active entries
+are multiplied by sqrt(scaling) inactive ones are divided
+by sqrt(scaling).</p>
+</dd>
+<dt>solve_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to solver of restricted problem (<cite>restricted_estimator</cite>) if 
+beta_full is None.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bootstrap_sampler</strong> : callable</p>
+<blockquote>
+<div><p>A callable object that takes a sample of indices and returns
+the corresponding bootstrap sample.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.pairs_bootstrap_score">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">pairs_bootstrap_score</code><span class="sig-paren">(</span><em class="sig-param">glm_loss</em>, <em class="sig-param">active</em>, <em class="sig-param">beta_active=None</em>, <em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-10}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#pairs_bootstrap_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.pairs_bootstrap_score" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Construct a non-parametric bootstrap sampler that 
+samples the score (:math:<a href="#id3"><span class="problematic" id="id4">`</span></a></p>
+</div></blockquote>
+<dl class="simple">
+<dt>abla ell(ar{eta}_E)) ofa generalized </dt><dd><p>linear model (GLM) restricted to <cite>active</cite>
+as well as, optionally, the inactive coordinates of the score of the 
+GLM evaluated at the estimates (`</p>
+</dd>
+<dt>abla ell(ar{eta}_E)[-E]:math:<a href="#id5"><span class="problematic" id="id6">`</span></a>) where</dt><dd><p><a href="#id7"><span class="problematic" id="id8">`</span></a>ar{eta}_E$ is padded with zeros where necessary.</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>glm_loss</strong> : regreg.smooth.glm.glm</p>
+<blockquote>
+<div><blockquote>
+<div><p>The loss of the generalized linear model.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>active<span class="classifier">np.bool</span></dt><dd><p>Boolean indexing array</p>
+</dd>
+<dt>beta_active<span class="classifier">np.float (optional)</span></dt><dd><p>Solution to the restricted problem.</p>
+</dd>
+<dt>solve_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to solver of restricted problem (<cite>restricted_estimator</cite>) if 
+beta_full is None.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bootstrap_sampler</strong> : callable</p>
+<blockquote>
+<div><p>A callable object that takes a sample of indices and returns
+the corresponding bootstrap sample.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.pairs_inactive_score_glm">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">pairs_inactive_score_glm</code><span class="sig-paren">(</span><em class="sig-param">glm_loss</em>, <em class="sig-param">active</em>, <em class="sig-param">beta_active</em>, <em class="sig-param">scaling=1.0</em>, <em class="sig-param">inactive=None</em>, <em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-10}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#pairs_inactive_score_glm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.pairs_inactive_score_glm" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Construct a non-parametric bootstrap sampler that 
+samples the inactive coordinates of the score of the 
+GLM evaluated at the estimates (:math:<a href="#id9"><span class="problematic" id="id10">`</span></a></p>
+</div></blockquote>
+<dl class="simple">
+<dt>abla ell(ar{eta}_E)[-E]`) where</dt><dd><p><span class="math notranslate nohighlight">\(ar{eta}_E\)</span> is padded with zeros where necessary.</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>glm_loss</strong> : regreg.smooth.glm.glm</p>
+<blockquote>
+<div><blockquote>
+<div><p>The loss of the generalized linear model.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>active<span class="classifier">np.bool</span></dt><dd><p>Boolean indexing array</p>
+</dd>
+<dt>beta_active<span class="classifier">np.float (optional)</span></dt><dd><p>Solution to the restricted problem.</p>
+</dd>
+<dt>scaling<span class="classifier">float</span></dt><dd><p>Scaling to keep entries of roughly constant order. Active entries
+are multiplied by sqrt(scaling) inactive ones are divided
+by sqrt(scaling).</p>
+</dd>
+<dt>inactive<span class="classifier">np.bool (optional)</span></dt><dd><p>Which coordinates to return. If None, defaults
+to ~active.</p>
+</dd>
+<dt>solve_args<span class="classifier">dict</span></dt><dd><p>Arguments passed to solver of restricted problem (<cite>restricted_estimator</cite>) if 
+beta_full is None.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bootstrap_sampler</strong> : callable</p>
+<blockquote>
+<div><p>A callable object that takes a sample of indices and returns
+the corresponding bootstrap sample.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.parametric_cov">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">parametric_cov</code><span class="sig-paren">(</span><em class="sig-param">glm_loss</em>, <em class="sig-param">target_with_linear_func</em>, <em class="sig-param">cross_terms=()</em>, <em class="sig-param">dispersion=None</em>, <em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-10}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#parametric_cov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.parametric_cov" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.resid_bootstrap">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">resid_bootstrap</code><span class="sig-paren">(</span><em class="sig-param">gaussian_loss</em>, <em class="sig-param">active</em>, <em class="sig-param">inactive=None</em>, <em class="sig-param">scaling=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#resid_bootstrap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.resid_bootstrap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.set_alpha_matrix">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">set_alpha_matrix</code><span class="sig-paren">(</span><em class="sig-param">glm_loss</em>, <em class="sig-param">active</em>, <em class="sig-param">beta_full=None</em>, <em class="sig-param">inactive=None</em>, <em class="sig-param">scaling=1.0</em>, <em class="sig-param">solve_args={'min_its': 50</em>, <em class="sig-param">'tol': 1e-10}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#set_alpha_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.set_alpha_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>DESCRIBE WHAT THIS DOES</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>glm_loss</strong> : regreg.smooth.glm.glm</p>
+<blockquote>
+<div><p>The loss of the generalized linear model.</p>
+</div></blockquote>
+<p><strong>active</strong> : np.bool</p>
+<blockquote>
+<div><p>Boolean indexing array</p>
+</div></blockquote>
+<p><strong>beta_full</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>Solution to the restricted problem, zero except where active is nonzero.</p>
+</div></blockquote>
+<p><strong>inactive</strong> : np.bool (optional)</p>
+<blockquote>
+<div><p>Boolean indexing array</p>
+</div></blockquote>
+<p><strong>scaling</strong> : float</p>
+<blockquote>
+<div><p>Scaling to keep entries of roughly constant order. Active entries
+are multiplied by sqrt(scaling) inactive ones are divided
+by sqrt(scaling).</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict</p>
+<blockquote>
+<div><p>Arguments passed to solver of restricted problem (<cite>restricted_estimator</cite>) if 
+beta_full is None.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="selectinf.glm.standard_split_ci">
+<code class="sig-prename descclassname">selectinf.glm.</code><code class="sig-name descname">standard_split_ci</code><span class="sig-paren">(</span><em class="sig-param">glm_loss</em>, <em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">active</em>, <em class="sig-param">leftout_indices</em>, <em class="sig-param">alpha=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/glm.html#standard_split_ci"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.glm.standard_split_ci" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data plitting confidence intervals via bootstrap.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="selectinf.learning.Rfitters.html" class="btn btn-neutral float-right" title="learning.Rfitters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selectinf.distributions.pvalue.html" class="btn btn-neutral float-left" title="distributions.pvalue" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

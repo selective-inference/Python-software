@@ -1,0 +1,431 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.spatial_models.structural_bfls.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-spatial-models-structural-bfls">
+<h1>labs.spatial_models.structural_bfls<a class="headerlink" href="#labs-spatial-models-structural-bfls" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-labs-spatial-models-structural-bfls">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.spatial_models.structural_bfls</span></code><a class="headerlink" href="#module-labs-spatial-models-structural-bfls" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.labs.spatial_models.structural_bfls</span></code>:</p>
+digraph inheritanceaaa97adb5e {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;spatial_models.structural_bfls.LandmarkRegions&quot; [URL=&quot;#nipy.labs.spatial_models.structural_bfls.LandmarkRegions&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;This class is intended to represent a set of inter-subject regions&quot;];
+}
+<span class="target" id="module-nipy.labs.spatial_models.structural_bfls"></span><p>The main routine of this module implement the LandmarkRegions class,
+that is used to represent Regions of interest at the population level
+(in a template space).</p>
+<p>This has been used in
+Thirion et al. Structural Analysis of fMRI
+Data Revisited: Improving the Sensitivity and Reliability of fMRI
+Group Studies.  IEEE TMI 2007</p>
+<p>Author : Bertrand Thirion, 2006-2013</p>
+</div>
+<div class="section" id="landmarkregions">
+<h2><a class="reference internal" href="#nipy.labs.spatial_models.structural_bfls.LandmarkRegions" title="nipy.labs.spatial_models.structural_bfls.LandmarkRegions"><code class="xref py py-class docutils literal notranslate"><span class="pre">LandmarkRegions</span></code></a><a class="headerlink" href="#landmarkregions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.labs.spatial_models.structural_bfls.LandmarkRegions">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.spatial_models.structural_bfls.</code><code class="sig-name descname">LandmarkRegions</code><span class="sig-paren">(</span><em class="sig-param">domain</em>, <em class="sig-param">k</em>, <em class="sig-param">indiv_coord</em>, <em class="sig-param">subjects</em>, <em class="sig-param">confidence</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/structural_bfls.html#LandmarkRegions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.structural_bfls.LandmarkRegions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This class is intended to represent a set of inter-subject regions
+It should inherit from some abstract multiple ROI class,
+not implemented yet.</p>
+<dl class="method">
+<dt id="nipy.labs.spatial_models.structural_bfls.LandmarkRegions.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">domain</em>, <em class="sig-param">k</em>, <em class="sig-param">indiv_coord</em>, <em class="sig-param">subjects</em>, <em class="sig-param">confidence</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/structural_bfls.html#LandmarkRegions.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.structural_bfls.LandmarkRegions.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Building the landmark_region</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>domain: ROI instance</strong></p>
+<blockquote>
+<div><p>defines the spatial context of the SubDomains</p>
+</div></blockquote>
+<p><strong>k: int,</strong></p>
+<blockquote>
+<div><p>the number of landmark regions considered</p>
+</div></blockquote>
+<p><strong>indiv_coord:  k-length list of arrays,</strong></p>
+<blockquote>
+<div><p>coordinates of the nodes in some embedding space.</p>
+</div></blockquote>
+<p><strong>subjects: k-length list of integers</strong></p>
+<blockquote>
+<div><p>these correspond to an ROI feature:
+the subject index of individual regions</p>
+</div></blockquote>
+<p><strong>confidence: k-length list of arrays,</strong></p>
+<blockquote>
+<div><p>confidence values for the regions (0 is low, 1 is high)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.structural_bfls.LandmarkRegions.centers">
+<code class="sig-name descname">centers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/structural_bfls.html#LandmarkRegions.centers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.structural_bfls.LandmarkRegions.centers" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the average of the coordinates for each region</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.structural_bfls.LandmarkRegions.kernel_density">
+<code class="sig-name descname">kernel_density</code><span class="sig-paren">(</span><em class="sig-param">k=None</em>, <em class="sig-param">coord=None</em>, <em class="sig-param">sigma=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/structural_bfls.html#LandmarkRegions.kernel_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.structural_bfls.LandmarkRegions.kernel_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the density of a component as a kde</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>k: int (&lt;= self.k) or None</strong></p>
+<blockquote>
+<div><p>component upon which the density is computed
+if None, the sum is taken over k</p>
+</div></blockquote>
+<p><strong>coord: array of shape(n, self.dom.em_dim), optional</strong></p>
+<blockquote>
+<div><p>a set of input coordinates</p>
+</div></blockquote>
+<p><strong>sigma: float, optional</strong></p>
+<blockquote>
+<div><p>kernel size</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>kde: array of shape(n)</p>
+<blockquote>
+<div><p>the density sampled at the coords</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.structural_bfls.LandmarkRegions.map_label">
+<code class="sig-name descname">map_label</code><span class="sig-paren">(</span><em class="sig-param">coord=None</em>, <em class="sig-param">pval=1.0</em>, <em class="sig-param">sigma=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/structural_bfls.html#LandmarkRegions.map_label"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.structural_bfls.LandmarkRegions.map_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample the set of landmark regions
+on the proposed coordiante set cs, assuming a Gaussian shape</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coord: array of shape(n,dim), optional,</strong></p>
+<blockquote>
+<div><p>a set of input coordinates</p>
+</div></blockquote>
+<p><strong>pval: float in [0,1]), optional</strong></p>
+<blockquote>
+<div><p>cutoff for the CR, i.e.  highest posterior density threshold</p>
+</div></blockquote>
+<p><strong>sigma: float, positive, optional</strong></p>
+<blockquote>
+<div><p>spatial scale of the spatial model</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>label: array of shape (n): the posterior labelling</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.structural_bfls.LandmarkRegions.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/structural_bfls.html#LandmarkRegions.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.structural_bfls.LandmarkRegions.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>function to print basic information on self</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.spatial_models.structural_bfls.LandmarkRegions.roi_prevalence">
+<code class="sig-name descname">roi_prevalence</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/structural_bfls.html#LandmarkRegions.roi_prevalence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.structural_bfls.LandmarkRegions.roi_prevalence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a confidence index over the different rois</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>confid: array of shape self.k</p>
+<blockquote>
+<div><p>the population_prevalence</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.spatial_models.structural_bfls.build_landmarks">
+<code class="sig-prename descclassname">nipy.labs.spatial_models.structural_bfls.</code><code class="sig-name descname">build_landmarks</code><span class="sig-paren">(</span><em class="sig-param">domain</em>, <em class="sig-param">coords</em>, <em class="sig-param">subjects</em>, <em class="sig-param">labels</em>, <em class="sig-param">confidence=None</em>, <em class="sig-param">prevalence_pval=0.95</em>, <em class="sig-param">prevalence_threshold=0</em>, <em class="sig-param">sigma=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/spatial_models/structural_bfls.html#build_landmarks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.spatial_models.structural_bfls.build_landmarks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of hierarchical ROIs, and an associated labelling, this
+creates an Amer structure wuch groups ROIs with the same label.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>domain: discrete_domain.DiscreteDomain instance,</strong></p>
+<blockquote>
+<div><p>description of the spatial context of the landmarks</p>
+</div></blockquote>
+<p><strong>coords: array of shape(n, 3)</strong></p>
+<blockquote>
+<div><p>Sets of coordinates for the different objects</p>
+</div></blockquote>
+<p><strong>subjects: array of shape (n), dtype = np.int</strong></p>
+<blockquote>
+<div><p>indicators of the dataset the objects come from</p>
+</div></blockquote>
+<p><strong>labels: array of shape (n), dtype = np.int</strong></p>
+<blockquote>
+<div><p>index of the landmark the object is associated with</p>
+</div></blockquote>
+<p><strong>confidence: array of shape (n),</strong></p>
+<blockquote>
+<div><p>measure of the significance of the regions</p>
+</div></blockquote>
+<p><strong>prevalence_pval: float, optional</strong></p>
+<p><strong>prevalence_threshold: float, optional,</strong></p>
+<blockquote>
+<div><p>(c) A label should be present in prevalence_threshold
+subjects with a probability&gt;prevalence_pval
+in order to be valid</p>
+</div></blockquote>
+<p><strong>sigma: float optional,</strong></p>
+<blockquote>
+<div><p>regularizing constant that defines a prior on the region extent</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>LR</strong> : None or structural_bfls.LR instance</p>
+<blockquote>
+<div><p>describing a cross-subject set of ROIs. If inference yields a null
+result, LR is set to None</p>
+</div></blockquote>
+<p>newlabel: array of shape (n)</p>
+<blockquote>
+<div><p>a relabelling of the individual ROIs, similar to u,
+that discards labels that do not fulfill the condition (c)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

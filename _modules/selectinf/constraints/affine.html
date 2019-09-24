@@ -1,0 +1,1335 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.constraints.affine</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the core code needed for post selection</span>
+<span class="sd">inference based on affine selection procedures as</span>
+<span class="sd">described in the papers `Kac Rice`_, `Spacings`_, `covTest`_</span>
+<span class="sd">and `post selection LASSO`_.</span>
+
+<span class="sd">.. _covTest: http://arxiv.org/abs/1301.7161</span>
+<span class="sd">.. _Kac Rice: http://arxiv.org/abs/1308.3020</span>
+<span class="sd">.. _Spacings: http://arxiv.org/abs/1401.3889</span>
+<span class="sd">.. _post selection LASSO: http://arxiv.org/abs/1311.6238</span>
+<span class="sd">.. _sample carving: http://arxiv.org/abs/1410.2597</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..distributions.pvalue</span> <span class="k">import</span> <span class="n">truncnorm_cdf</span><span class="p">,</span> <span class="n">norm_interval</span>
+<span class="kn">from</span> <span class="nn">..truncated.gaussian</span> <span class="k">import</span> <span class="n">truncated_gaussian</span><span class="p">,</span> <span class="n">truncated_gaussian_old</span>
+<span class="kn">from</span> <span class="nn">..sampling.api</span> <span class="k">import</span> <span class="p">(</span><span class="n">sample_truncnorm_white</span><span class="p">,</span> 
+                            <span class="n">sample_truncnorm_white_sphere</span><span class="p">,</span>
+                            <span class="n">sample_truncnorm_white_ball</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..distributions.chain</span> <span class="k">import</span> <span class="p">(</span><span class="n">reversible_markov_chain</span><span class="p">,</span>
+                                   <span class="n">parallel_test</span><span class="p">,</span>
+                                   <span class="n">serial_test</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.estimation</span> <span class="k">import</span> <span class="n">optimal_tilt</span>
+
+<span class="kn">from</span> <span class="nn">..distributions.discrete_family</span> <span class="k">import</span> <span class="n">discrete_family</span>
+<span class="kn">from</span> <span class="nn">mpmath</span> <span class="k">import</span> <span class="n">mp</span>
+
+<span class="n">WARNINGS</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="constraints"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints">[docs]</a><span class="k">class</span> <span class="nc">constraints</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class is the core object for affine selection procedures.</span>
+<span class="sd">    It is meant to describe sets of the form $C$</span>
+<span class="sd">    where</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">       C = \left\{z: Az\leq b \right \}</span>
+
+<span class="sd">    Its main purpose is to consider slices through $C$</span>
+<span class="sd">    and the conditional distribution of a Gaussian $N(\mu,\Sigma)$</span>
+<span class="sd">    restricted to such slices.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    In this parameterization, the parameter `self.mean` corresponds</span>
+<span class="sd">    to the *reference measure* that is being truncated. It is not the</span>
+<span class="sd">    mean of the truncated Gaussian.</span>
+
+<span class="sd">    &gt;&gt;&gt; positive = constraints(-np.identity(2), np.zeros(2))</span>
+<span class="sd">    &gt;&gt;&gt; Y = np.array([3, 4.4])</span>
+<span class="sd">    &gt;&gt;&gt; eta = np.array([1, 1], np.float)</span>
+<span class="sd">    &gt;&gt;&gt; list(positive.interval(eta, Y))  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS</span>
+<span class="sd">    [4.62...,  10.17...]</span>
+<span class="sd">    &gt;&gt;&gt; positive.pivot(eta, Y) # doctest: +ELLIPSIS </span>
+<span class="sd">    5.187...-07</span>
+<span class="sd">    &gt;&gt;&gt; list(positive.bounds(eta, Y)) # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS</span>
+<span class="sd">    [1.399..., 7.4..., inf, 1.414...]  </span>
+<span class="sd">    &gt;&gt;&gt; </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="constraints.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">linear_part</span><span class="p">,</span>
+                 <span class="n">offset</span><span class="p">,</span>
+                 <span class="n">covariance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">mean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">rank</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new inequality. </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        linear_part : np.float((q,p))</span>
+<span class="sd">            The linear part, $A$ of the affine constraint</span>
+<span class="sd">            $\{z:Az \leq b\}$. </span>
+
+<span class="sd">        offset: np.float(q)</span>
+<span class="sd">            The offset part, $b$ of the affine constraint</span>
+<span class="sd">            $\{z:Az \leq b\}$. </span>
+
+<span class="sd">        covariance : np.float((p,p))</span>
+<span class="sd">            Covariance matrix of Gaussian distribution to be </span>
+<span class="sd">            truncated. Defaults to `np.identity(self.dim)`.</span>
+
+<span class="sd">        mean : np.float(p)</span>
+<span class="sd">            Mean vector of Gaussian distribution to be </span>
+<span class="sd">            truncated. Defaults to `np.zeros(self.dim)`.</span>
+
+<span class="sd">        rank : int</span>
+<span class="sd">            If not None, this should specify</span>
+<span class="sd">            the rank of the covariance matrix. Defaults</span>
+<span class="sd">            to self.dim.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> \
+            <span class="n">linear_part</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="n">rank</span>
+
+        <span class="k">if</span> <span class="n">covariance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span>
+
+        <span class="k">if</span> <span class="n">mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean</span> <span class="o">=</span> <span class="n">mean</span></div>
+
+    <span class="k">def</span> <span class="nf">_repr_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; A = np.array([[0.32,0.27,0.19],</span>
+<span class="sd">        ... [0.59,0.98,0.71],</span>
+<span class="sd">        ... [0.34,0.15,0.17,0.25],</span>
+<span class="sd">        ... [0.34,0.15,0.17,0.25]])</span>
+<span class="sd">        &gt;&gt;&gt; B = np.array([ 0.51,  0.74,  0.72 ,  0.82])</span>
+<span class="sd">        &gt;&gt;&gt; C = constraints(A, B)</span>
+<span class="sd">        &gt;&gt;&gt; C._repr_latex_()</span>
+<span class="sd">        &#39;$$Z \\sim N(\\mu,\\Sigma) | AZ \\leq b$$&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot;&quot;&quot;$$Z \sim N(\mu,\Sigma) | AZ \leq b$$&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A copy of the constraints.</span>
+
+<span class="sd">        Also copies _sqrt_cov, _sqrt_inv if attributes are present.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">con</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="p">),</span>
+                          <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">),</span>
+                          <span class="n">mean</span><span class="o">=</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">),</span>
+                          <span class="n">covariance</span><span class="o">=</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">),</span>
+                          <span class="n">rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_sqrt_cov&quot;</span><span class="p">):</span>
+            <span class="n">con</span><span class="o">.</span><span class="n">_sqrt_cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqrt_cov</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">con</span><span class="o">.</span><span class="n">_sqrt_inv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqrt_inv</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">con</span><span class="o">.</span><span class="n">_rowspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rowspace</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">con</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-3</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether Y satisfies the linear</span>
+<span class="sd">        inequality constraints.</span>
+<span class="sd">        &gt;&gt;&gt; A = np.array([[1., -1.], [1., -1.]])</span>
+<span class="sd">        &gt;&gt;&gt; B = np.array([1., 1.])</span>
+<span class="sd">        &gt;&gt;&gt; con = constraints(A, B)</span>
+<span class="sd">        &gt;&gt;&gt; Y = np.array([-1., 1.])</span>
+<span class="sd">        &gt;&gt;&gt; con(Y)</span>
+<span class="sd">        True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">V1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">V1</span> <span class="o">&lt;</span> <span class="n">tol</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">V1</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+<div class="viewcode-block" id="constraints.value"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute $\max(Ay-b)$.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="constraints.conditional"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.conditional">[docs]</a>    <span class="k">def</span> <span class="nf">conditional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_part</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span>
+                    <span class="n">rank</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an equivalent constraint </span>
+<span class="sd">        after having conditioned on a linear equality.</span>
+<span class="sd">        </span>
+<span class="sd">        Let the inequality constraints be specified by</span>
+<span class="sd">        `(A,b)` and the equality constraints be specified</span>
+<span class="sd">        by `(C,d)`. We form equivalent inequality constraints by </span>
+<span class="sd">        considering the residual</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">           </span>
+<span class="sd">           AY - E(AY|CY=d)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        linear_part : np.float((k,q))</span>
+<span class="sd">             Linear part of equality constraint, `C` above.</span>
+
+<span class="sd">        value : np.float(k)</span>
+<span class="sd">             Value of equality constraint, `b` above.</span>
+
+<span class="sd">        rank : int</span>
+<span class="sd">            If not None, this should specify</span>
+<span class="sd">            the rank of `linear_part`. Defaults</span>
+<span class="sd">            to `min(k,q)`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        conditional_con : `constraints`</span>
+<span class="sd">             Affine constraints having applied equality constraint.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">S</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span>
+        <span class="n">C</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">linear_part</span><span class="p">,</span> <span class="n">value</span>
+
+        <span class="n">M1</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">M2</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">M2</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">M2i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">M2</span><span class="p">)</span>
+            <span class="n">delta_cov</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M2i</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M1</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+            <span class="n">delta_mean</span> <span class="o">=</span> <span class="n">M1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M2i</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span> <span class="o">-</span> <span class="n">d</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">delta_cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">M1</span><span class="p">,</span> <span class="n">M1</span><span class="p">)</span> <span class="o">/</span> <span class="n">M2</span>
+            <span class="n">delta_mean</span> <span class="o">=</span> <span class="n">M1</span> <span class="o">*</span> <span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span> <span class="o">-</span> <span class="n">d</span><span class="p">)</span> <span class="o">/</span> <span class="n">M2</span>
+
+        <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">linear_part</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">rank</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">linear_part</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rank</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">constraints</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+                           <span class="n">covariance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">-</span> <span class="n">delta_cov</span><span class="p">,</span>
+                           <span class="n">mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">delta_mean</span><span class="p">,</span>
+                           <span class="n">rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">-</span> <span class="n">rank</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="constraints.bounds"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.bounds">[docs]</a>    <span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction_of_interest</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For a realization $Y$ of the random variable $N(\mu,\Sigma)$</span>
+<span class="sd">        truncated to $C$ specified by `self.constraints` compute</span>
+<span class="sd">        the slice of the inequality constraints in a </span>
+<span class="sd">        given direction $\eta$.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        direction_of_interest: np.float</span>
+<span class="sd">            A direction $\eta$ for which we may want to form </span>
+<span class="sd">            selection intervals or a test.</span>
+
+<span class="sd">        Y : np.float</span>
+<span class="sd">            A realization of $N(\mu,\Sigma)$ where </span>
+<span class="sd">            $\Sigma$ is `self.covariance`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        L : np.float</span>
+<span class="sd">            Lower truncation bound.</span>
+
+<span class="sd">        Z : np.float</span>
+<span class="sd">            The observed $\eta^TY$</span>
+
+<span class="sd">        U : np.float</span>
+<span class="sd">            Upper truncation bound.</span>
+
+<span class="sd">        S : np.float</span>
+<span class="sd">            Standard deviation of $\eta^TY$.</span>
+
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">interval_constraints</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">,</span>
+                                    <span class="n">Y</span><span class="p">,</span>
+                                    <span class="n">direction_of_interest</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="constraints.pivot"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.pivot">[docs]</a>    <span class="k">def</span> <span class="nf">pivot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+              <span class="n">direction_of_interest</span><span class="p">,</span> 
+              <span class="n">Y</span><span class="p">,</span>
+              <span class="n">null_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">alternative</span><span class="o">=</span><span class="s1">&#39;greater&#39;</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For a realization $Y$ of the random variable $N(\mu,\Sigma)$</span>
+<span class="sd">        truncated to $C$ specified by `self.constraints` compute</span>
+<span class="sd">        the slice of the inequality constraints in a </span>
+<span class="sd">        given direction $\eta$ and test whether </span>
+<span class="sd">        $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        direction_of_interest: np.float</span>
+<span class="sd">            A direction $\eta$ for which we may want to form </span>
+<span class="sd">            selection intervals or a test.</span>
+
+<span class="sd">        Y : np.float</span>
+<span class="sd">            A realization of $N(0,\Sigma)$ where </span>
+<span class="sd">            $\Sigma$ is `self.covariance`.</span>
+
+<span class="sd">        alternative : [&#39;greater&#39;, &#39;less&#39;, &#39;twosided&#39;]</span>
+<span class="sd">            What alternative to use.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        P : np.float</span>
+<span class="sd">            $p$-value of corresponding test.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        All of the tests are based on the exact pivot $F$ given</span>
+<span class="sd">        by the truncated Gaussian distribution for the</span>
+<span class="sd">        given direction $\eta$. If the alternative is &#39;greater&#39;</span>
+<span class="sd">        then we return $1-F$; if it is &#39;less&#39; we return $F$</span>
+<span class="sd">        and if it is &#39;twosided&#39; we return $2 \min(F,1-F)$.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">alternative</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;greater&#39;</span><span class="p">,</span> <span class="s1">&#39;less&#39;</span><span class="p">,</span> <span class="s1">&#39;twosided&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;alternative should be one of [&#39;greater&#39;, &#39;less&#39;, &#39;twosided&#39;]&quot;</span><span class="p">)</span>
+        <span class="n">L</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">S</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">direction_of_interest</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">null_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">meanZ</span> <span class="o">=</span> <span class="p">(</span><span class="n">direction_of_interest</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">meanZ</span> <span class="o">=</span> <span class="n">null_value</span>
+
+        <span class="n">P</span> <span class="o">=</span> <span class="n">truncnorm_cdf</span><span class="p">((</span><span class="n">Z</span><span class="o">-</span><span class="n">meanZ</span><span class="p">)</span><span class="o">/</span><span class="n">S</span><span class="p">,</span> <span class="p">(</span><span class="n">L</span><span class="o">-</span><span class="n">meanZ</span><span class="p">)</span><span class="o">/</span><span class="n">S</span><span class="p">,</span> <span class="p">(</span><span class="n">U</span><span class="o">-</span><span class="n">meanZ</span><span class="p">)</span><span class="o">/</span><span class="n">S</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">alternative</span> <span class="o">==</span> <span class="s1">&#39;greater&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">P</span>
+        <span class="k">elif</span> <span class="n">alternative</span> <span class="o">==</span> <span class="s1">&#39;less&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">P</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="n">P</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="constraints.interval"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.interval">[docs]</a>    <span class="k">def</span> <span class="nf">interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction_of_interest</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span>
+                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">UMAU</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For a realization $Y$ of the random variable $N(\mu,\Sigma)$</span>
+<span class="sd">        truncated to $C$ specified by `self.constraints` compute</span>
+<span class="sd">        the slice of the inequality constraints in a </span>
+<span class="sd">        given direction $\eta$ and test whether </span>
+<span class="sd">        $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        direction_of_interest: np.float</span>
+
+<span class="sd">            A direction $\eta$ for which we may want to form </span>
+<span class="sd">            selection intervals or a test.</span>
+
+<span class="sd">        Y : np.float</span>
+
+<span class="sd">            A realization of $N(0,\Sigma)$ where </span>
+<span class="sd">            $\Sigma$ is `self.covariance`.</span>
+
+<span class="sd">        alpha : float</span>
+
+<span class="sd">            What level of confidence?</span>
+
+<span class="sd">        UMAU : bool</span>
+
+<span class="sd">            Use the UMAU intervals?</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        [U,L] : selection interval</span>
+
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">## THE DOCUMENTATION IS NOT GOOD ! HAS TO BE CHANGED !</span>
+
+        <span class="k">return</span> <span class="n">selection_interval</span><span class="p">(</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">,</span>
+            <span class="n">Y</span><span class="p">,</span>
+            <span class="n">direction_of_interest</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="n">UMAU</span><span class="o">=</span><span class="n">UMAU</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="constraints.covariance_factors"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.covariance_factors">[docs]</a>    <span class="k">def</span> <span class="nf">covariance_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Factor `self.covariance`,</span>
+<span class="sd">        finding a possibly non-square square-root.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        force : bool</span>
+<span class="sd">            If True, force a recomputation of</span>
+<span class="sd">            the covariance. If not, assumes that</span>
+<span class="sd">            covariance has not changed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_sqrt_cov&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">force</span><span class="p">:</span>
+
+            <span class="c1"># original matrix is np.dot(U, (D**2 * U).T)</span>
+
+            <span class="n">U</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">D</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span><span class="p">])</span>
+            <span class="n">U</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,:</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span><span class="p">]</span>
+        
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sqrt_cov</span> <span class="o">=</span> <span class="n">U</span> <span class="o">*</span> <span class="n">D</span><span class="p">[</span><span class="kc">None</span><span class="p">,:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sqrt_inv</span> <span class="o">=</span> <span class="p">(</span><span class="n">U</span> <span class="o">/</span> <span class="n">D</span><span class="p">[</span><span class="kc">None</span><span class="p">,:])</span><span class="o">.</span><span class="n">T</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rowspace</span> <span class="o">=</span> <span class="n">U</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqrt_cov</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqrt_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rowspace</span></div>
+
+<div class="viewcode-block" id="constraints.estimate_mean"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.estimate_mean">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observed</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Softmax estimator based on an observed data point.</span>
+<span class="sd">        </span>
+<span class="sd">        Makes a whitened copy </span>
+<span class="sd">        then returns softmax estimate.</span>
+
+<span class="sd">        TODO: what if self.mean != 0 before hand?</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">inverse_map</span><span class="p">,</span> <span class="n">forward_map</span><span class="p">,</span> <span class="n">white_con</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">()</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="n">white_con</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">W</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span> <span class="n">W</span><span class="o">.</span><span class="n">offset</span>
+
+        <span class="n">white_observed</span> <span class="o">=</span> <span class="n">forward_map</span><span class="p">(</span><span class="n">observed</span><span class="p">)</span>
+        <span class="n">slack</span> <span class="o">=</span> <span class="n">b</span> <span class="o">-</span> <span class="n">A</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">white_observed</span><span class="p">)</span> 
+        <span class="n">dslack</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">slack</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">slack</span>
+        <span class="k">return</span> <span class="n">inverse_map</span><span class="p">(</span><span class="n">white_observed</span> <span class="o">-</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dslack</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="constraints.whiten"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.whiten">[docs]</a>    <span class="k">def</span> <span class="nf">whiten</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Return a whitened version of constraints in a different</span>
+<span class="sd">        basis, and a change of basis matrix.</span>
+
+<span class="sd">        If `self.covariance` is rank deficient, the change-of</span>
+<span class="sd">        basis matrix will not be square.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        inverse_map : callable</span>
+
+<span class="sd">        forward_map : callable</span>
+
+<span class="sd">        white_con : `constraints`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sqrt_cov</span><span class="p">,</span> <span class="n">sqrt_inv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance_factors</span><span class="p">()[:</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">new_A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sqrt_cov</span><span class="p">)</span>
+        <span class="n">den</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">new_A</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">new_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_part</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+        <span class="n">new_con</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">new_A</span> <span class="o">/</span> <span class="n">den</span><span class="p">[:,</span><span class="kc">None</span><span class="p">],</span> <span class="n">new_b</span> <span class="o">/</span> <span class="n">den</span><span class="p">)</span>
+
+        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">inverse_map</span><span class="p">(</span><span class="n">Z</span><span class="p">):</span> 
+            <span class="k">if</span> <span class="n">Z</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">sqrt_cov</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">+</span> <span class="n">mu</span><span class="p">[:,</span><span class="kc">None</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">sqrt_cov</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">+</span> <span class="n">mu</span>
+
+        <span class="n">forward_map</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">W</span><span class="p">:</span> <span class="n">sqrt_inv</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">inverse_map</span><span class="p">,</span> <span class="n">forward_map</span><span class="p">,</span> <span class="n">new_con</span></div>
+
+<div class="viewcode-block" id="constraints.project_rowspace"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.project_rowspace">[docs]</a>    <span class="k">def</span> <span class="nf">project_rowspace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Project a vector onto rowspace</span>
+<span class="sd">        of the covariance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rowspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance_factors</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">rowspace</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">rowspace</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="constraints.solve"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.constraints.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the inverse of the covariance</span>
+<span class="sd">        times a direction vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sqrt_inv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance_factors</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">sqrt_inv</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">sqrt_inv</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction</span><span class="p">))</span></div></div>
+
+<div class="viewcode-block" id="stack"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.stack">[docs]</a><span class="k">def</span> <span class="nf">stack</span><span class="p">(</span><span class="o">*</span><span class="n">cons</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Combine constraints into a large constaint</span>
+<span class="sd">    by intersection. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    cons : [`selection.affine.constraints`_]</span>
+<span class="sd">         A sequence of constraints.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    intersection : `selection.affine.constraints`_</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    Resulting constraint will have mean 0 and covariance $I$.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ineq</span><span class="p">,</span> <span class="n">ineq_off</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">con</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">:</span>
+        <span class="n">ineq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">con</span><span class="o">.</span><span class="n">linear_part</span><span class="p">)</span>
+        <span class="n">ineq_off</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">con</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+
+    <span class="n">intersection</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">ineq</span><span class="p">),</span> 
+                               <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">ineq_off</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">intersection</span></div>
+
+<div class="viewcode-block" id="interval_constraints"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.interval_constraints">[docs]</a><span class="k">def</span> <span class="nf">interval_constraints</span><span class="p">(</span><span class="n">support_directions</span><span class="p">,</span> 
+                         <span class="n">support_offsets</span><span class="p">,</span>
+                         <span class="n">covariance</span><span class="p">,</span>
+                         <span class="n">observed_data</span><span class="p">,</span> 
+                         <span class="n">direction_of_interest</span><span class="p">,</span>
+                         <span class="n">tol</span> <span class="o">=</span> <span class="mf">1.e-4</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an affine constraint $\{z:Az \leq b \leq \}$ (elementwise)</span>
+<span class="sd">    specified with $A$ as `support_directions` and $b$ as</span>
+<span class="sd">    `support_offset`, a new direction of interest $\eta$, and</span>
+<span class="sd">    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ </span>
+<span class="sd">    with `covariance` matrix $\Sigma$, this</span>
+<span class="sd">    function returns $\eta^TZ$ as well as an interval</span>
+<span class="sd">    bounding this value. </span>
+
+<span class="sd">    The interval constructed is such that the endpoints are </span>
+<span class="sd">    independent of $\eta^TZ$, hence the $p$-value</span>
+<span class="sd">    of `Kac Rice`_</span>
+<span class="sd">    can be used to form an exact pivot.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    support_directions : np.float</span>
+<span class="sd">         Matrix specifying constraint, $A$.</span>
+
+<span class="sd">    support_offsets : np.float</span>
+<span class="sd">         Offset in constraint, $b$.</span>
+
+<span class="sd">    covariance : np.float</span>
+<span class="sd">         Covariance matrix of `observed_data`.</span>
+
+<span class="sd">    observed_data : np.float</span>
+<span class="sd">         Observations.</span>
+
+<span class="sd">    direction_of_interest : np.float</span>
+<span class="sd">         Direction in which we&#39;re interested for the</span>
+<span class="sd">         contrast.</span>
+
+<span class="sd">    tol : float</span>
+<span class="sd">         Relative tolerance parameter for deciding </span>
+<span class="sd">         sign of $Az-b$.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    lower_bound : float</span>
+
+<span class="sd">    observed : float</span>
+
+<span class="sd">    upper_bound : float</span>
+
+<span class="sd">    sigma : float</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># shorthand</span>
+    <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="n">support_directions</span><span class="p">,</span>
+                     <span class="n">support_offsets</span><span class="p">,</span>
+                     <span class="n">covariance</span><span class="p">,</span>
+                     <span class="n">observed_data</span><span class="p">,</span>
+                     <span class="n">direction_of_interest</span><span class="p">)</span>
+
+    <span class="n">U</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">-</span> <span class="n">b</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">U</span>  <span class="o">&lt;</span> <span class="n">tol</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">U</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="ow">and</span> <span class="n">WARNINGS</span><span class="p">:</span>
+        <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;constraints not satisfied: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="n">U</span><span class="p">))</span>
+
+    <span class="n">Sw</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">w</span><span class="o">*</span><span class="n">Sw</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Sw</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span><span class="o">*</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="c1"># \eta^TZ</span>
+
+    <span class="c1"># adding the zero_coords in the denominator ensures that</span>
+    <span class="c1"># there are no divide-by-zero errors in RHS</span>
+    <span class="c1"># these coords are never used in upper_bound or lower_bound</span>
+
+    <span class="n">zero_coords</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="n">RHS</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">U</span> <span class="o">+</span> <span class="n">V</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="n">zero_coords</span><span class="p">)</span>
+    <span class="n">RHS</span><span class="p">[</span><span class="n">zero_coords</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">pos_coords</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">&gt;</span> <span class="n">tol</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">pos_coords</span><span class="p">):</span>
+        <span class="n">upper_bound</span> <span class="o">=</span> <span class="n">RHS</span><span class="p">[</span><span class="n">pos_coords</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">upper_bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">neg_coords</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">tol</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">neg_coords</span><span class="p">):</span>
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="n">RHS</span><span class="p">[</span><span class="n">neg_coords</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="k">return</span> <span class="n">lower_bound</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">,</span> <span class="n">sigma</span></div>
+
+<div class="viewcode-block" id="selection_interval"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.selection_interval">[docs]</a><span class="k">def</span> <span class="nf">selection_interval</span><span class="p">(</span><span class="n">support_directions</span><span class="p">,</span> 
+                       <span class="n">support_offsets</span><span class="p">,</span>
+                       <span class="n">covariance</span><span class="p">,</span>
+                       <span class="n">observed_data</span><span class="p">,</span> 
+                       <span class="n">direction_of_interest</span><span class="p">,</span>
+                       <span class="n">tol</span> <span class="o">=</span> <span class="mf">1.e-4</span><span class="p">,</span>
+                       <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+                       <span class="n">UMAU</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)</span>
+<span class="sd">    specified with $A$ as `support_directions` and $b$ as</span>
+<span class="sd">    `support_offset`, a new direction of interest $\eta$, and</span>
+<span class="sd">    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ </span>
+<span class="sd">    with `covariance` matrix $\Sigma$, this</span>
+<span class="sd">    function returns a confidence interval</span>
+<span class="sd">    for $\eta^T\mu$.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    support_directions : np.float</span>
+<span class="sd">         Matrix specifying constraint, $A$.</span>
+
+<span class="sd">    support_offset : np.float</span>
+<span class="sd">         Offset in constraint, $b$.</span>
+
+<span class="sd">    covariance : np.float</span>
+<span class="sd">         Covariance matrix of `observed_data`.</span>
+
+<span class="sd">    observed_data : np.float</span>
+<span class="sd">         Observations.</span>
+
+<span class="sd">    direction_of_interest : np.float</span>
+<span class="sd">         Direction in which we&#39;re interested for the</span>
+<span class="sd">         contrast.</span>
+
+<span class="sd">    tol : float</span>
+<span class="sd">         Relative tolerance parameter for deciding </span>
+<span class="sd">         sign of $Az-b$.</span>
+
+<span class="sd">    UMAU : bool</span>
+<span class="sd">         Use the UMAU interval, or twosided pivot.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    selection_interval : (float, float)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lower_bound</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">interval_constraints</span><span class="p">(</span> \
+        <span class="n">support_directions</span><span class="p">,</span> 
+        <span class="n">support_offsets</span><span class="p">,</span>
+        <span class="n">covariance</span><span class="p">,</span>
+        <span class="n">observed_data</span><span class="p">,</span> 
+        <span class="n">direction_of_interest</span><span class="p">,</span>
+        <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">)</span>
+
+    <span class="n">truncated</span> <span class="o">=</span> <span class="n">truncated_gaussian_old</span><span class="p">([(</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">)],</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">UMAU</span><span class="p">:</span>
+        <span class="n">_selection_interval</span> <span class="o">=</span> <span class="n">truncated</span><span class="o">.</span><span class="n">UMAU_interval</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_selection_interval</span> <span class="o">=</span> <span class="n">truncated</span><span class="o">.</span><span class="n">equal_tailed_interval</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">_selection_interval</span></div>
+
+<div class="viewcode-block" id="sample_from_constraints"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.sample_from_constraints">[docs]</a><span class="k">def</span> <span class="nf">sample_from_constraints</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> 
+                            <span class="n">Y</span><span class="p">,</span>
+                            <span class="n">direction_of_interest</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">how_often</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="n">ndraw</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                            <span class="n">burnin</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                            <span class="n">white</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">use_constraint_directions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">use_random_directions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">accept_reject_params</span><span class="o">=</span><span class="p">()):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use Gibbs sampler to simulate from `con`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    con : `selection.affine.constraints`_</span>
+
+<span class="sd">    Y : np.float</span>
+<span class="sd">        Point satisfying the constraint.</span>
+
+<span class="sd">    direction_of_interest : np.float (optional)</span>
+<span class="sd">        Which projection is of most interest?</span>
+
+<span class="sd">    how_often : int (optional)</span>
+<span class="sd">        How often should the sampler make a move along `direction_of_interest`?</span>
+<span class="sd">        If negative, defaults to ndraw+burnin (so it will never be used).</span>
+
+<span class="sd">    ndraw : int (optional)</span>
+<span class="sd">        Defaults to 1000.</span>
+
+<span class="sd">    burnin : int (optional)</span>
+<span class="sd">        Defaults to 1000.</span>
+
+<span class="sd">    white : bool (optional)</span>
+<span class="sd">        Is con.covariance equal to identity?</span>
+
+<span class="sd">    use_constraint_directions : bool (optional)</span>
+<span class="sd">        Use the directions formed by the constraints as in</span>
+<span class="sd">        the Gibbs scheme?</span>
+
+<span class="sd">    use_random_directions : bool (optional)</span>
+<span class="sd">        Use additional random directions in</span>
+<span class="sd">        the Gibbs scheme?</span>
+
+<span class="sd">    accept_reject_params : tuple</span>
+<span class="sd">        If not () should be a tuple (num_trial, min_accept, num_draw).</span>
+<span class="sd">        In this case, we first try num_trial accept-reject samples,</span>
+<span class="sd">        if at least min_accept of them succeed, we just draw num_draw</span>
+<span class="sd">        accept_reject samples.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    Z : np.float((ndraw, n))</span>
+<span class="sd">        Sample from the Gaussian distribution conditioned on the constraints.</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">direction_of_interest</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">direction_of_interest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">how_often</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">how_often</span> <span class="o">=</span> <span class="n">ndraw</span> <span class="o">+</span> <span class="n">burnin</span>
+
+    <span class="n">DEBUG</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">white</span><span class="p">:</span>
+        <span class="n">inverse_map</span><span class="p">,</span> <span class="n">forward_map</span><span class="p">,</span> <span class="n">white_con</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">whiten</span><span class="p">()</span>
+        <span class="n">white_Y</span> <span class="o">=</span> <span class="n">forward_map</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+        <span class="n">white_direction_of_interest</span> <span class="o">=</span> <span class="n">forward_map</span><span class="p">(</span><span class="n">con</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction_of_interest</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="n">white_direction_of_interest</span> <span class="o">*</span> <span class="n">white_Y</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="p">(</span><span class="n">Y</span> <span class="o">*</span> <span class="n">direction_of_interest</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="s1">&#39;white&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">white_con</span> <span class="o">=</span> <span class="n">con</span>
+        <span class="n">inverse_map</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">V</span><span class="p">:</span> <span class="n">V</span>
+
+    <span class="c1"># try 100 draws of accept reject</span>
+    <span class="c1"># if we get more than 50 good draws, then just return a smaller sample</span>
+    <span class="c1"># of size (burnin+ndraw)/5</span>
+
+    <span class="k">if</span> <span class="n">accept_reject_params</span><span class="p">:</span> 
+        <span class="n">use_hit_and_run</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">num_trial</span><span class="p">,</span> <span class="n">min_accept</span><span class="p">,</span> <span class="n">num_draw</span> <span class="o">=</span> <span class="n">accept_reject_params</span>
+
+        <span class="k">def</span> <span class="nf">_accept_reject</span><span class="p">(</span><span class="n">sample_size</span><span class="p">,</span> <span class="n">linear_part</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+            <span class="n">Z_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="n">linear_part</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">constraint_satisfied</span> <span class="o">=</span> <span class="p">(</span><span class="n">Z_sample</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">linear_part</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">-</span> 
+                                    <span class="n">offset</span><span class="p">[</span><span class="kc">None</span><span class="p">,:])</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">Z_sample</span><span class="p">[</span><span class="n">constraint_satisfied</span><span class="p">]</span>
+
+        <span class="n">Z_sample</span> <span class="o">=</span> <span class="n">_accept_reject</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> 
+                                  <span class="n">white_con</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span>
+                                  <span class="n">white_con</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">Z_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_accept</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">Z_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">Z_sample</span><span class="p">,</span>
+                                      <span class="n">_accept_reject</span><span class="p">(</span><span class="n">num_draw</span> <span class="o">/</span> <span class="mi">5</span><span class="p">,</span>
+                                                     <span class="n">white_con</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span>
+                                                     <span class="n">white_con</span><span class="o">.</span><span class="n">offset</span><span class="p">)])</span>
+                <span class="k">if</span> <span class="n">Z_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">num_draw</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="n">white_samples</span> <span class="o">=</span> <span class="n">Z_sample</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">use_hit_and_run</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">use_hit_and_run</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">use_hit_and_run</span><span class="p">:</span>
+        <span class="n">white_samples</span> <span class="o">=</span> <span class="n">sample_truncnorm_white</span><span class="p">(</span>  
+            <span class="n">white_con</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span>
+            <span class="n">white_con</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+            <span class="n">white_Y</span><span class="p">,</span> 
+            <span class="n">white_direction_of_interest</span><span class="p">,</span>
+            <span class="n">how_often</span><span class="o">=</span><span class="n">how_often</span><span class="p">,</span>
+            <span class="n">ndraw</span><span class="o">=</span><span class="n">ndraw</span><span class="p">,</span> 
+            <span class="n">burnin</span><span class="o">=</span><span class="n">burnin</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+            <span class="n">use_constraint_directions</span><span class="o">=</span><span class="n">use_constraint_directions</span><span class="p">,</span>
+            <span class="n">use_random_directions</span><span class="o">=</span><span class="n">use_random_directions</span><span class="p">)</span>
+
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">inverse_map</span><span class="p">(</span><span class="n">white_samples</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">Z</span></div>
+
+<div class="viewcode-block" id="sample_from_sphere"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.sample_from_sphere">[docs]</a><span class="k">def</span> <span class="nf">sample_from_sphere</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> 
+                       <span class="n">Y</span><span class="p">,</span>
+                       <span class="n">direction_of_interest</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">how_often</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                       <span class="n">ndraw</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                       <span class="n">burnin</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                       <span class="n">use_constraint_directions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">use_random_directions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">white</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use Gibbs sampler to simulate from `con` </span>
+<span class="sd">    intersected with (whitened) sphere of radius `np.linalg.norm(Y)`.</span>
+<span class="sd">    When `con.covariance` is not $I$, it samples from the</span>
+<span class="sd">    ellipse of constant Mahalanobis distance from `con.mean`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    con : `selection.affine.constraints`_</span>
+
+<span class="sd">    Y : np.float</span>
+<span class="sd">        Point satisfying the constraint.</span>
+
+<span class="sd">    direction_of_interest : np.float (optional)</span>
+<span class="sd">        Which projection is of most interest?</span>
+
+<span class="sd">    how_often : int (optional)</span>
+<span class="sd">        How often should the sampler make a move along `direction_of_interest`?</span>
+<span class="sd">        If negative, defaults to ndraw+burnin (so it will never be used).</span>
+
+<span class="sd">    ndraw : int (optional)</span>
+<span class="sd">        Defaults to 1000.</span>
+
+<span class="sd">    burnin : int (optional)</span>
+<span class="sd">        Defaults to 1000.</span>
+
+<span class="sd">    white : bool (optional)</span>
+<span class="sd">        Is con.covariance equal to identity?</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    Z : np.float((ndraw, n))</span>
+<span class="sd">        Sample from the sphere intersect the constraints.</span>
+<span class="sd">        </span>
+<span class="sd">    weights : np.float(ndraw)</span>
+<span class="sd">        Importance weights for the sample.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">direction_of_interest</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">direction_of_interest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">how_often</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">how_often</span> <span class="o">=</span> <span class="n">ndraw</span> <span class="o">+</span> <span class="n">burnin</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">white</span><span class="p">:</span>
+        <span class="n">inverse_map</span><span class="p">,</span> <span class="n">forward_map</span><span class="p">,</span> <span class="n">white</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">whiten</span><span class="p">()</span>
+        <span class="n">white_Y</span> <span class="o">=</span> <span class="n">forward_map</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+        <span class="n">white_direction_of_interest</span> <span class="o">=</span> <span class="n">forward_map</span><span class="p">(</span><span class="n">direction_of_interest</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">white</span> <span class="o">=</span> <span class="n">con</span>
+        <span class="n">inverse_map</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">V</span><span class="p">:</span> <span class="n">V</span>
+
+    <span class="n">white_samples</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">sample_truncnorm_white_sphere</span><span class="p">(</span><span class="n">white</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span>
+                                                           <span class="n">white</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+                                                           <span class="n">white_Y</span><span class="p">,</span> 
+                                                           <span class="n">white_direction_of_interest</span><span class="p">,</span>
+                                                           <span class="n">how_often</span><span class="o">=</span><span class="n">how_often</span><span class="p">,</span>
+                                                           <span class="n">ndraw</span><span class="o">=</span><span class="n">ndraw</span><span class="p">,</span> 
+                                                           <span class="n">burnin</span><span class="o">=</span><span class="n">burnin</span><span class="p">,</span>
+                                                           <span class="n">use_constraint_directions</span><span class="o">=</span><span class="n">use_constraint_directions</span><span class="p">,</span>
+                                                           <span class="n">use_random_directions</span><span class="o">=</span><span class="n">use_random_directions</span><span class="p">)</span>
+
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">inverse_map</span><span class="p">(</span><span class="n">white_samples</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">Z</span><span class="p">,</span> <span class="n">weights</span></div>
+
+<div class="viewcode-block" id="gibbs_test"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.gibbs_test">[docs]</a><span class="k">def</span> <span class="nf">gibbs_test</span><span class="p">(</span><span class="n">affine_con</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">direction_of_interest</span><span class="p">,</span>
+               <span class="n">how_often</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+               <span class="n">ndraw</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+               <span class="n">burnin</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+               <span class="n">white</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">alternative</span><span class="o">=</span><span class="s1">&#39;twosided&#39;</span><span class="p">,</span>
+               <span class="n">UMPU</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">sigma_known</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+               <span class="n">pvalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+               <span class="n">use_constraint_directions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">use_random_directions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">tilt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">test_statistic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">accept_reject_params</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span>
+               <span class="n">MLE_opts</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;burnin&#39;</span><span class="p">:</span><span class="mi">1000</span><span class="p">,</span> 
+                         <span class="s1">&#39;ndraw&#39;</span><span class="p">:</span><span class="mi">500</span><span class="p">,</span> 
+                         <span class="s1">&#39;how_often&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> 
+                         <span class="s1">&#39;niter&#39;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="s1">&#39;step_size&#39;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">,</span>
+                         <span class="s1">&#39;hessian_min&#39;</span><span class="p">:</span><span class="mf">1.</span><span class="p">,</span>
+                         <span class="s1">&#39;tol&#39;</span><span class="p">:</span><span class="mf">1.e-6</span><span class="p">,</span>
+                         <span class="s1">&#39;startMLE&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">}</span>
+               <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Monte Carlo significance test for</span>
+<span class="sd">    a given function of `con.mean`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    affine_con : `selection.affine.constraints`_</span>
+
+<span class="sd">    Y : np.float</span>
+<span class="sd">        Point satisfying the constraint.</span>
+
+<span class="sd">    direction_of_interest: np.float</span>
+<span class="sd">        Which linear function of `con.mean` is of interest?</span>
+<span class="sd">        (a.k.a. $\eta$ in many of related papers)</span>
+
+<span class="sd">    how_often : int (optional)</span>
+<span class="sd">        How often should the sampler make a move along `direction_of_interest`?</span>
+<span class="sd">        If negative, defaults to ndraw+burnin (so it will never be used).</span>
+
+<span class="sd">    ndraw : int (optional)</span>
+<span class="sd">        Defaults to 5000.</span>
+
+<span class="sd">    burnin : int (optional)</span>
+<span class="sd">        Defaults to 2000.</span>
+
+<span class="sd">    white : bool (optional)</span>
+<span class="sd">        Is con.covariance equal to identity?</span>
+
+<span class="sd">    alternative : str</span>
+<span class="sd">        One of [&#39;greater&#39;, &#39;less&#39;, &#39;twosided&#39;]</span>
+
+<span class="sd">    UMPU : bool</span>
+<span class="sd">        Perform the UMPU test?</span>
+
+<span class="sd">    sigma_known : bool</span>
+<span class="sd">        Is $\sigma$ assumed known?</span>
+
+<span class="sd">    alpha : </span>
+<span class="sd">        Level for UMPU test.</span>
+
+<span class="sd">    pvalue : </span>
+<span class="sd">        Return a pvalue or just the decision.</span>
+
+<span class="sd">    use_constraint_directions : bool (optional)</span>
+<span class="sd">        Use the directions formed by the constraints as in</span>
+<span class="sd">        the Gibbs scheme?</span>
+
+<span class="sd">    use_random_directions : bool (optional)</span>
+<span class="sd">        Use additional random directions in</span>
+<span class="sd">        the Gibbs scheme?</span>
+
+<span class="sd">    tilt : np.float (optional)</span>
+<span class="sd">        If not None, a direction</span>
+<span class="sd">        to tilt. The likelihood ratio is effectively multiplied</span>
+<span class="sd">        by $y^TP\eta$ where $\eta$ is `tilt`, and $P$ is </span>
+<span class="sd">        projection onto the rowspace of `affine_con`.</span>
+
+<span class="sd">    accept_reject_params : tuple</span>
+<span class="sd">        If not () should be a tuple (num_trial, min_accept, num_draw).</span>
+<span class="sd">        In this case, we first try num_trial accept-reject samples,</span>
+<span class="sd">        if at least min_accept of them succeed, we just draw num_draw</span>
+<span class="sd">        accept_reject samples.</span>
+
+<span class="sd">    MLE_opts : {}</span>
+<span class="sd">        Arguments passed to `one_parameter_MLE` if `tilt` is not None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    pvalue : float</span>
+<span class="sd">        P-value (using importance weights) for specified hypothesis test.</span>
+
+<span class="sd">    Z : np.float((ndraw, n))</span>
+<span class="sd">        Sample from the sphere intersect the constraints.</span>
+<span class="sd">        </span>
+<span class="sd">    weights : np.float(ndraw)</span>
+<span class="sd">        Importance weights for the sample.</span>
+
+<span class="sd">    dfam : discrete_family</span>
+<span class="sd">        Discrete exponential family with above sufficient</span>
+<span class="sd">        statistics Z and weights.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">direction_of_interest</span> <span class="c1"># shorthand</span>
+
+    <span class="k">if</span> <span class="n">tilt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sigma_known</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;need to know variance for tilting&#39;</span><span class="p">)</span>
+
+        <span class="c1"># first find the lowest cost tilt</span>
+        <span class="c1"># of the current contrast to the constraints,</span>
+
+        <span class="n">tilted1_con</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">affine_con</span><span class="p">)</span>
+        
+        <span class="c1"># move tilted1&#39;s mean so its mean on </span>
+        <span class="c1"># eta matches the observed value</span>
+
+        <span class="n">delta</span> <span class="o">=</span> <span class="p">((</span><span class="n">Y</span> <span class="o">-</span> <span class="n">affine_con</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">eta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">tilted1_con</span><span class="o">.</span><span class="n">mean</span> <span class="o">+=</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">eta</span>
+
+        <span class="n">tilt1</span> <span class="o">=</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">eta</span>
+
+        <span class="n">opt_tilt</span> <span class="o">=</span> <span class="n">optimal_tilt</span><span class="p">(</span><span class="n">tilted1_con</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+        <span class="n">tilt2</span> <span class="o">=</span> <span class="n">opt_tilt</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+
+        <span class="c1"># tilted contrast will be a point whose mean </span>
+        <span class="c1"># (approximately) satisfies the constraint</span>
+        <span class="c1"># and whose mean is closest to tilted1_con</span>
+
+        <span class="n">tilted2_con</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">tilted1_con</span><span class="p">)</span>
+        <span class="n">tilted2_con</span><span class="o">.</span><span class="n">mean</span> <span class="o">=</span> <span class="n">tilted1_con</span><span class="o">.</span><span class="n">mean</span> <span class="o">+</span> <span class="n">tilt2</span>
+
+        <span class="c1"># TODO use the selective_mle from estimation module</span>
+
+        <span class="n">MLE</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># one_parameter_MLE(tilted2_con,</span>
+                <span class="c1">#                Y,</span>
+                <span class="c1">#                tilt,</span>
+                <span class="c1">#                **MLE_opts)</span>
+
+        <span class="n">tilted2_con</span><span class="o">.</span><span class="n">mean</span> <span class="o">+=</span> <span class="n">MLE</span> <span class="o">*</span> <span class="n">tilt</span>
+
+        <span class="n">total_tilt</span> <span class="o">=</span> <span class="n">tilted2_con</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">affine_con</span><span class="o">.</span><span class="n">mean</span>
+        <span class="n">total_reweight</span> <span class="o">=</span> <span class="n">affine_con</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">total_tilt</span><span class="p">)</span>
+        <span class="n">affine_con</span> <span class="o">=</span> <span class="n">tilted2_con</span>
+
+    <span class="k">if</span> <span class="n">alternative</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;greater&#39;</span><span class="p">,</span> <span class="s1">&#39;less&#39;</span><span class="p">,</span> <span class="s1">&#39;twosided&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;expecting alternative to be in [&#39;greater&#39;, &#39;less&#39;, &#39;twosided&#39;]&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sigma_known</span><span class="p">:</span>
+        <span class="n">Z</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">sample_from_sphere</span><span class="p">(</span><span class="n">affine_con</span><span class="p">,</span>
+                                  <span class="n">Y</span><span class="p">,</span>
+                                  <span class="n">eta</span><span class="p">,</span>
+                                  <span class="n">how_often</span><span class="o">=</span><span class="n">how_often</span><span class="p">,</span>
+                                  <span class="n">ndraw</span><span class="o">=</span><span class="n">ndraw</span><span class="p">,</span>
+                                  <span class="n">burnin</span><span class="o">=</span><span class="n">burnin</span><span class="p">,</span>
+                                  <span class="n">white</span><span class="o">=</span><span class="n">white</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">sample_from_constraints</span><span class="p">(</span><span class="n">affine_con</span><span class="p">,</span>
+                                    <span class="n">Y</span><span class="p">,</span>
+                                    <span class="n">eta</span><span class="p">,</span>
+                                    <span class="n">how_often</span><span class="o">=</span><span class="n">how_often</span><span class="p">,</span>
+                                    <span class="n">ndraw</span><span class="o">=</span><span class="n">ndraw</span><span class="p">,</span>
+                                    <span class="n">burnin</span><span class="o">=</span><span class="n">burnin</span><span class="p">,</span>
+                                    <span class="n">white</span><span class="o">=</span><span class="n">white</span><span class="p">,</span>
+                                    <span class="n">use_constraint_directions</span><span class="o">=</span>\
+                                        <span class="n">use_constraint_directions</span><span class="p">,</span>
+                                    <span class="n">use_random_directions</span><span class="o">=</span>\
+                                        <span class="n">use_random_directions</span><span class="p">,</span>
+                                    <span class="n">accept_reject_params</span><span class="o">=</span><span class="n">accept_reject_params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tilt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Z</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># now reweight </span>
+            <span class="n">logW</span> <span class="o">=</span> <span class="o">-</span><span class="n">Z</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">total_reweight</span><span class="p">)</span>
+            <span class="n">logW</span> <span class="o">-=</span> <span class="n">logW</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mf">4.</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logW</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">test_statistic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">suff_statistics</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">eta</span><span class="p">)</span>
+        <span class="n">observed</span> <span class="o">=</span> <span class="p">(</span><span class="n">eta</span><span class="o">*</span><span class="n">Y</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">suff_statistics</span> <span class="o">=</span> <span class="n">test_statistic</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+        <span class="n">observed</span> <span class="o">=</span> <span class="n">test_statistic</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+
+    <span class="n">dfam</span> <span class="o">=</span> <span class="n">discrete_family</span><span class="p">(</span><span class="n">suff_statistics</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">alternative</span> <span class="o">==</span> <span class="s1">&#39;greater&#39;</span><span class="p">:</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span><span class="o">*</span><span class="p">(</span><span class="n">suff_statistics</span> <span class="o">&gt;=</span> <span class="n">observed</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">W</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">alternative</span> <span class="o">==</span> <span class="s1">&#39;less&#39;</span><span class="p">:</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span><span class="o">*</span><span class="p">(</span><span class="n">suff_statistics</span> <span class="o">&lt;=</span> <span class="n">observed</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">W</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">UMPU</span><span class="p">:</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span><span class="o">*</span><span class="p">(</span><span class="n">suff_statistics</span> <span class="o">&lt;=</span> <span class="n">observed</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">W</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">pvalue</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">pvalue</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="n">dfam</span><span class="o">.</span><span class="n">two_sided_test</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">decision</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">dfam</span>
+    <span class="k">return</span> <span class="n">pvalue</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">dfam</span></div>
+
+<span class="c1"># make sure nose does not try to test this function</span>
+<span class="n">gibbs_test</span><span class="o">.</span><span class="n">__test__</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="gaussian_hit_and_run"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.gaussian_hit_and_run">[docs]</a><span class="k">class</span> <span class="nc">gaussian_hit_and_run</span><span class="p">(</span><span class="n">reversible_markov_chain</span><span class="p">):</span>
+
+<div class="viewcode-block" id="gaussian_hit_and_run.__init__"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.gaussian_hit_and_run.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">nstep</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">constraints</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;state does not satisfy constraints&quot;</span><span class="p">)</span>
+
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inverse_map</span><span class="p">,</span> 
+         <span class="bp">self</span><span class="o">.</span><span class="n">_forward_map</span><span class="p">,</span> 
+         <span class="bp">self</span><span class="o">.</span><span class="n">_white_con</span><span class="p">)</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">whiten</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_white_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_map</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">state</span>
+
+        <span class="c1"># how many steps of hit and run constitute</span>
+        <span class="c1"># a step of the chain?</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstep</span> <span class="o">=</span> <span class="n">nstep</span>
+
+        <span class="c1"># unused in code but needs to be specified</span>
+        <span class="c1"># for `sample_truncnorm_white`</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bias_direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_white_state</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="gaussian_hit_and_run.step"><a class="viewcode-back" href="../../../api/generated/selectinf.constraints.affine.html#selectinf.constraints.affine.gaussian_hit_and_run.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">white_con</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_white_con</span>
+
+        <span class="n">white_samples</span> <span class="o">=</span> <span class="n">sample_truncnorm_white</span><span class="p">(</span>  
+            <span class="n">white_con</span><span class="o">.</span><span class="n">linear_part</span><span class="p">,</span>
+            <span class="n">white_con</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_white_state</span><span class="p">,</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bias_direction</span><span class="p">,</span>
+            <span class="n">how_often</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">ndraw</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nstep</span><span class="p">,</span> 
+            <span class="n">burnin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+            <span class="n">use_constraint_directions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">use_random_directions</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_white_state</span> <span class="o">=</span> <span class="n">white_samples</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_white_state</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

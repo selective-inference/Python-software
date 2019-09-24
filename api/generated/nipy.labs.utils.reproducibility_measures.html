@@ -1,0 +1,744 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.utils.reproducibility_measures.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-utils-reproducibility-measures">
+<h1>labs.utils.reproducibility_measures<a class="headerlink" href="#labs-utils-reproducibility-measures" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.labs.utils.reproducibility_measures">
+<span id="module-labs-utils-reproducibility-measures"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.utils.reproducibility_measures</span></code><a class="headerlink" href="#module-nipy.labs.utils.reproducibility_measures" title="Permalink to this headline">¶</a></h2>
+<p>Functions for computing reproducibility measures.</p>
+<dl class="simple">
+<dt>General procedure is:</dt><dd><ul class="simple">
+<li><p>dataset is subject to jacknife subampling (‘splitting’),</p></li>
+<li><p>each subsample being analysed independently,</p></li>
+<li><p>a reproducibility measure is then derived;</p></li>
+</ul>
+</dd>
+</dl>
+<p>It is used to produce the work described in Analysis of a large fMRI
+cohort:</p>
+<p>Statistical and methodological issues for group analyses.
+Thirion B, Pinel P, Meriaux S, Roche A, Dehaene S, Poline JB.
+Neuroimage. 2007 Mar;35(1):105-20.</p>
+<p>Bertrand Thirion, 2009-2010</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.bootstrap_group">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">bootstrap_group</code><span class="sig-paren">(</span><em class="sig-param">nsubj</em>, <em class="sig-param">ngroups</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#bootstrap_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.bootstrap_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split the proposed group into redundant subgroups by bootstrap</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nsubj (int) the number of subjects in the population</strong></p>
+<p><strong>ngroups(int) Number of subbgroups to be drawn</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>samples: a list of ngroups arrays containing</p>
+<blockquote>
+<div><p>the indexes of the subjects in each subgroup</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.cluster_reproducibility">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">cluster_reproducibility</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">vardata</em>, <em class="sig-param">domain</em>, <em class="sig-param">ngroups</em>, <em class="sig-param">sigma</em>, <em class="sig-param">method='crfx'</em>, <em class="sig-param">swap=False</em>, <em class="sig-param">verbose=0</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#cluster_reproducibility"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.cluster_reproducibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a measure of cluster-level reproducibility
+of activation patterns
+(i.e. how far clusters are from each other)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data: array of shape (nvox,nsubj)</strong></p>
+<blockquote>
+<div><p>the input data from which everything is computed</p>
+</div></blockquote>
+<p><strong>vardata: array of shape (nvox,nsubj)</strong></p>
+<blockquote>
+<div><p>the variance of the data that is also available</p>
+</div></blockquote>
+<p><strong>domain: referential- and domain- defining image instance</strong></p>
+<p><strong>ngroups (int),</strong></p>
+<blockquote>
+<div><p>Number of subbgroups to be drawn</p>
+</div></blockquote>
+<p><strong>sigma (float): parameter that encodes how far far is</strong></p>
+<p><strong>threshold (float):</strong></p>
+<blockquote>
+<div><p>binarization threshold</p>
+</div></blockquote>
+<p><strong>method=’crfx’, string to be chosen among ‘crfx’, ‘cmfx’ or ‘cffx’</strong></p>
+<blockquote>
+<div><p>inference method under study</p>
+</div></blockquote>
+<p><strong>swap = False: if True, a random sign swap of the data is performed</strong></p>
+<blockquote>
+<div><p>This is used to simulate a null hypothesis on the data.</p>
+</div></blockquote>
+<p><strong>verbose=0</strong> : verbosity mode</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>score (float): the desired  cluster-level reproducibility index</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.cluster_threshold">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">cluster_threshold</code><span class="sig-paren">(</span><em class="sig-param">stat_map</em>, <em class="sig-param">domain</em>, <em class="sig-param">th</em>, <em class="sig-param">csize</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#cluster_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.cluster_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a thresholding of a map at the cluster-level</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stat_map: array of shape(nbvox)</strong></p>
+<blockquote>
+<div><p>the input data</p>
+</div></blockquote>
+<p><strong>domain: Nifti1Image instance,</strong></p>
+<blockquote>
+<div><p>referential- and domain-defining image</p>
+</div></blockquote>
+<p><strong>th (float): cluster-forming threshold</strong></p>
+<p><strong>csize (int&gt;0): cluster size threshold</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>binary array of shape (nvox): the binarized thresholded map</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Should be replaced by a more standard function in the future</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.conjunction">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">conjunction</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">vx</em>, <em class="sig-param">k</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#conjunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.conjunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a conjunction statistic as the sum of the k lowest t-values</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(nrows, ncols),</strong></p>
+<blockquote>
+<div><p>effect matrix</p>
+</div></blockquote>
+<p><strong>vx: array of shape(nrows, ncols),</strong></p>
+<blockquote>
+<div><p>variance matrix</p>
+</div></blockquote>
+<p><strong>k: int,</strong></p>
+<blockquote>
+<div><p>number of subjects in the conjunction</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>t array of shape(nrows): conjunction statistic</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.coord_bsa">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">coord_bsa</code><span class="sig-paren">(</span><em class="sig-param">domain</em>, <em class="sig-param">betas</em>, <em class="sig-param">theta=3.0</em>, <em class="sig-param">dmax=5.0</em>, <em class="sig-param">ths=0</em>, <em class="sig-param">thq=0.5</em>, <em class="sig-param">smin=0</em>, <em class="sig-param">afname=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#coord_bsa"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.coord_bsa" title="Permalink to this definition">¶</a></dt>
+<dd><p>main function for  performing bsa on a dataset
+where bsa =  nipy.labs.spatial_models.bayesian_structural_analysis</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>domain: image instance,</strong></p>
+<blockquote>
+<div><p>referential- and domain-defining image</p>
+</div></blockquote>
+<p><strong>betas: array of shape (nbnodes, subjects),</strong></p>
+<blockquote>
+<div><p>the multi-subject statistical maps</p>
+</div></blockquote>
+<p><strong>theta: float, optional</strong></p>
+<blockquote>
+<div><p>first level threshold</p>
+</div></blockquote>
+<p><strong>dmax: float&gt;0, optional</strong></p>
+<blockquote>
+<div><p>expected cluster std in the common space in units of coord</p>
+</div></blockquote>
+<p><strong>ths: int, &gt;=0), optional</strong></p>
+<blockquote>
+<div><p>representatitivity threshold</p>
+</div></blockquote>
+<p><strong>thq: float, optional,</strong></p>
+<blockquote>
+<div><p>posterior significance threshold should be in [0,1]</p>
+</div></blockquote>
+<p><strong>smin: int, optional,</strong></p>
+<blockquote>
+<div><p>minimal size of the regions to validate them</p>
+</div></blockquote>
+<p><strong>afname: string, optional</strong></p>
+<blockquote>
+<div><p>path where intermediate results cam be pickled</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>afcoord array of shape(number_of_regions,3):</p>
+<blockquote>
+<div><p>coordinate of the found landmark regions</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.draw_samples">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">draw_samples</code><span class="sig-paren">(</span><em class="sig-param">nsubj</em>, <em class="sig-param">ngroups</em>, <em class="sig-param">split_method='default'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#draw_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.draw_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw randomly ngroups sets of samples from [0..nsubj-1]</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nsubj, int, the total number of items</strong></p>
+<p><strong>ngroups, int, the number of desired groups</strong></p>
+<p><strong>split_method: string, optional,</strong></p>
+<blockquote>
+<div><p>to be chosen among ‘default’, ‘bootstrap’, ‘jacknife’
+if ‘bootstrap’, then each group will be nsubj</p>
+<blockquote>
+<div><p>drawn with repetitions among nsubj</p>
+</div></blockquote>
+<dl class="simple">
+<dt>if ‘jacknife’ the population is divided into</dt><dd><p>ngroups disjoint equally-sized subgroups</p>
+</dd>
+<dt>if ‘default’, ‘bootstrap’ is used when nsubj &lt; 10 * ngroups</dt><dd><p>otherwise jacknife is used</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>samples, a list of ngroups array that represent the subsets.</p>
+<p><strong>fixme</strong> : this should allow variable bootstrap,</p>
+<p>i.e. draw ngroups of groupsize among nsubj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.fttest">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">fttest</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">vx</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#fttest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.fttest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assuming that x and vx represent a effect and variance estimates,
+returns a cumulated (‘fixed effects’) t-test of the data over each row</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(nrows, ncols): effect matrix</strong></p>
+<p><strong>vx: array of shape(nrows, ncols): variance matrix</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>t array of shape(nrows): fixed effect statistics array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.get_cluster_position_from_thresholded_map">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">get_cluster_position_from_thresholded_map</code><span class="sig-paren">(</span><em class="sig-param">stat_map</em>, <em class="sig-param">domain</em>, <em class="sig-param">thr=3.0</em>, <em class="sig-param">csize=10</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#get_cluster_position_from_thresholded_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.get_cluster_position_from_thresholded_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>the clusters above thr of size greater than csize in
+18-connectivity are computed</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stat_map</strong> : array of shape (nbvox),</p>
+<blockquote>
+<div><p>map to threshold</p>
+</div></blockquote>
+<p><strong>mask: Nifti1Image instance,</strong></p>
+<blockquote>
+<div><p>referential- and domain-defining image</p>
+</div></blockquote>
+<p><strong>thr: float, optional,</strong></p>
+<blockquote>
+<div><p>cluster-forming threshold</p>
+</div></blockquote>
+<p><strong>cisze=10: int</strong></p>
+<blockquote>
+<div><p>cluster size threshold</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>positions array of shape(k,anat_dim):</p>
+<blockquote>
+<div><p>the cluster positions in physical coordinates
+where k= number of clusters
+if no such cluster exists, None is returned</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.get_peak_position_from_thresholded_map">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">get_peak_position_from_thresholded_map</code><span class="sig-paren">(</span><em class="sig-param">stat_map</em>, <em class="sig-param">domain</em>, <em class="sig-param">threshold</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#get_peak_position_from_thresholded_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.get_peak_position_from_thresholded_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>The peaks above thr in 18-connectivity are computed</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stat_map: array of shape (nbvox): map to threshold</strong></p>
+<p><strong>deomain: referential- and domain-defining image</strong></p>
+<p><strong>thr, float: cluster-forming threshold</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>positions array of shape(k,anat_dim):</p>
+<blockquote>
+<div><p>the cluster positions in physical coordinates
+where k= number of clusters
+if no such cluster exists, None is returned</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.group_reproducibility_metrics">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">group_reproducibility_metrics</code><span class="sig-paren">(</span><em class="sig-param">mask_images</em>, <em class="sig-param">contrast_images</em>, <em class="sig-param">variance_images</em>, <em class="sig-param">thresholds</em>, <em class="sig-param">ngroups</em>, <em class="sig-param">method</em>, <em class="sig-param">cluster_threshold=10</em>, <em class="sig-param">number_of_samples=10</em>, <em class="sig-param">sigma=6.0</em>, <em class="sig-param">do_clusters=True</em>, <em class="sig-param">do_voxels=True</em>, <em class="sig-param">do_peaks=True</em>, <em class="sig-param">swap=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#group_reproducibility_metrics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.group_reproducibility_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function to perform reproducibility analysis, including nifti1 io</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>threshold: list or 1-d array,</strong></p>
+<blockquote>
+<div><p>the thresholds to be tested</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>cluster_rep_results: dictionary,</p>
+<blockquote>
+<div><p>results of cluster-level reproducibility analysis</p>
+</div></blockquote>
+<p>voxel_rep_results: dictionary,</p>
+<blockquote>
+<div><p>results of voxel-level reproducibility analysis</p>
+</div></blockquote>
+<p>peak_rep_results: dictionary,</p>
+<blockquote>
+<div><p>results of peak-level reproducibility analysis</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.histo_repro">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">histo_repro</code><span class="sig-paren">(</span><em class="sig-param">h</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#histo_repro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.histo_repro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the histogram h, compute a standardized reproducibility measure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>h array of shape(xmax+1), the histogram values</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hr, float: the measure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.map_reproducibility">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">map_reproducibility</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">vardata</em>, <em class="sig-param">domain</em>, <em class="sig-param">ngroups</em>, <em class="sig-param">method='crfx'</em>, <em class="sig-param">swap=False</em>, <em class="sig-param">verbose=0</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#map_reproducibility"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.map_reproducibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a reproducibility map for the given method</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data: array of shape (nvox,nsubj)</strong></p>
+<blockquote>
+<div><p>the input data from which everything is computed</p>
+</div></blockquote>
+<p><strong>vardata: array of the same size</strong></p>
+<blockquote>
+<div><p>the corresponding variance information</p>
+</div></blockquote>
+<p><strong>domain: referential- and domain-defining image</strong></p>
+<p><strong>ngroups (int): the size of each subrgoup to be studied</strong></p>
+<p><strong>threshold (float): binarization threshold</strong></p>
+<blockquote>
+<div><p>(makes sense only if method==rfx)</p>
+</div></blockquote>
+<p><strong>method=’crfx’, string to be chosen among ‘crfx’, ‘cmfx’, ‘cffx’</strong></p>
+<blockquote>
+<div><p>inference method under study</p>
+</div></blockquote>
+<p><strong>verbose=0</strong> : verbosity mode</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>rmap: array of shape(nvox)</p>
+<blockquote>
+<div><p>the reproducibility map</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.mfx_ttest">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">mfx_ttest</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">vx</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#mfx_ttest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.mfx_ttest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Idem fttest, but returns a mixed-effects statistic</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(nrows, ncols): effect matrix</strong></p>
+<p><strong>vx: array of shape(nrows, ncols): variance matrix</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>t array of shape(nrows): mixed effect statistics array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.peak_reproducibility">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">peak_reproducibility</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">vardata</em>, <em class="sig-param">domain</em>, <em class="sig-param">ngroups</em>, <em class="sig-param">sigma</em>, <em class="sig-param">method='crfx'</em>, <em class="sig-param">swap=False</em>, <em class="sig-param">verbose=0</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#peak_reproducibility"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.peak_reproducibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a measure of cluster-level reproducibility
+of activation patterns
+(i.e. how far clusters are from each other)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data: array of shape (nvox,nsubj)</strong></p>
+<blockquote>
+<div><p>the input data from which everything is computed</p>
+</div></blockquote>
+<p><strong>vardata: array of shape (nvox,nsubj)</strong></p>
+<blockquote>
+<div><p>the variance of the data that is also available</p>
+</div></blockquote>
+<p><strong>domain: referential- and domain-defining image</strong></p>
+<p><strong>ngroups (int),</strong></p>
+<blockquote>
+<div><p>Number of subbgroups to be drawn</p>
+</div></blockquote>
+<p><strong>sigma: float, parameter that encodes how far far is</strong></p>
+<p><strong>threshold: float, binarization threshold</strong></p>
+<p><strong>method: string to be chosen among ‘crfx’, ‘cmfx’ or ‘cffx’,</strong></p>
+<blockquote>
+<div><p>inference method under study</p>
+</div></blockquote>
+<p><strong>swap = False: if True, a random sign swap of the data is performed</strong></p>
+<blockquote>
+<div><p>This is used to simulate a null hypothesis on the data.</p>
+</div></blockquote>
+<p><strong>verbose=0</strong> : verbosity mode</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>score (float): the desired  cluster-level reproducibility index</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.split_group">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">split_group</code><span class="sig-paren">(</span><em class="sig-param">nsubj</em>, <em class="sig-param">ngroups</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#split_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.split_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split the proposed group into random disjoint subgroups</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nsubj (int) the number of subjects to be split</strong></p>
+<p><strong>ngroups(int) Number of subbgroups to be drawn</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>samples: a list of ngroups arrays containing</p>
+<blockquote>
+<div><p>the indexes of the subjects in each subgroup</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.statistics_from_position">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">statistics_from_position</code><span class="sig-paren">(</span><em class="sig-param">target</em>, <em class="sig-param">data</em>, <em class="sig-param">sigma=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#statistics_from_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.statistics_from_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a number characterizing how close data is from
+target using a kernel-based statistic</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>target: array of shape(nt,anat_dim) or None</strong></p>
+<blockquote>
+<div><p>the target positions</p>
+</div></blockquote>
+<p><strong>data: array of shape(nd,anat_dim) or None</strong></p>
+<blockquote>
+<div><p>the data position</p>
+</div></blockquote>
+<p><strong>sigma=1.0 (float), kernel parameter</strong></p>
+<blockquote>
+<div><p>or  a distance that say how good good is</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>sensitivity (float): how well the targets are fitted</p>
+<blockquote>
+<div><p>by the data  in [0,1] interval
+1 is good
+0 is bad</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.ttest">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">ttest</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#ttest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.ttest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the t-test for each row of the data x</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.voxel_reproducibility">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">voxel_reproducibility</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">vardata</em>, <em class="sig-param">domain</em>, <em class="sig-param">ngroups</em>, <em class="sig-param">method='crfx'</em>, <em class="sig-param">swap=False</em>, <em class="sig-param">verbose=0</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#voxel_reproducibility"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.voxel_reproducibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a measure of voxel-level reproducibility of activation patterns</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data: array of shape (nvox,nsubj)</strong></p>
+<blockquote>
+<div><p>the input data from which everything is computed</p>
+</div></blockquote>
+<p><strong>vardata: array of shape (nvox,nsubj)</strong></p>
+<blockquote>
+<div><p>the corresponding variance information
+ngroups (int):
+Number of subbgroups to be drawn</p>
+</div></blockquote>
+<p><strong>domain: referential- and domain-defining image</strong></p>
+<p><strong>ngourps: int,</strong></p>
+<blockquote>
+<div><p>number of groups to be used in the resampling procedure</p>
+</div></blockquote>
+<p><strong>method: string, to be chosen among ‘crfx’, ‘cmfx’, ‘cffx’</strong></p>
+<blockquote>
+<div><p>inference method under study</p>
+</div></blockquote>
+<p><strong>verbose: bool, verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>kappa (float): the desired  reproducibility index</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.labs.utils.reproducibility_measures.voxel_thresholded_ttest">
+<code class="sig-prename descclassname">nipy.labs.utils.reproducibility_measures.</code><code class="sig-name descname">voxel_thresholded_ttest</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">threshold</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/utils/reproducibility_measures.html#voxel_thresholded_ttest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.utils.reproducibility_measures.voxel_thresholded_ttest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a binary map of the ttest&gt;threshold</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

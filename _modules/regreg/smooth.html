@@ -1,0 +1,580 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for regreg.smooth</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">sparse</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+
+<span class="kn">from</span> <span class="nn">..problems.composite</span> <span class="k">import</span> <span class="n">smooth</span> <span class="k">as</span> <span class="n">smooth_composite</span>
+<span class="kn">from</span> <span class="nn">..affine</span> <span class="k">import</span> <span class="n">affine_transform</span><span class="p">,</span> <span class="n">linear_transform</span><span class="p">,</span> <span class="n">astransform</span>
+<span class="kn">from</span> <span class="nn">..identity_quadratic</span> <span class="k">import</span> <span class="n">identity_quadratic</span>
+
+<span class="c1">#TODO: create proximal methods for known smooth things</span>
+<span class="k">class</span> <span class="nc">smooth_atom</span><span class="p">(</span><span class="n">smooth_composite</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for representing a smooth function and its gradient</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    shape : tuple</span>
+<span class="sd">       Shape of argument to `smooth_objective`</span>
+
+<span class="sd">    coef : float (optional)</span>
+<span class="sd">       Scalar multiple to be applied (must be nonnegative)</span>
+
+<span class="sd">    offset : ndarray (optional)</span>
+<span class="sd">       Vector to be subtracted before evaluating `smooth_objective`. </span>
+
+<span class="sd">    quadratic : `identity_quadratic` (optional)</span>
+<span class="sd">       Instance of `identity_quadratic` to be added to overall</span>
+<span class="sd">       objective.</span>
+
+<span class="sd">    initial : ndarray (optional)</span>
+<span class="sd">       Initial value for coefficients.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objective_template</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;&#39;&#39;f(</span><span class="si">%(var)s</span><span class="s1">)&#39;&#39;&#39;</span>
+    <span class="n">objective_vars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;var&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;\beta&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;shape&#39;</span><span class="p">:</span><span class="s1">&#39;p&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;coef&#39;</span><span class="p">:</span><span class="s1">&#39;C&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;offset&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;\alpha+&#39;</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">smooth_composite</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span>
+                                  <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
+                                  <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">,</span>
+                                  <span class="n">initial</span><span class="o">=</span><span class="n">initial</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coef</span> <span class="o">=</span> <span class="n">coef</span>
+        <span class="k">if</span> <span class="n">coef</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;coefs must be nonnegative to ensure convexity (assuming all atoms are indeed convex)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        arg : ndarray</span>
+<span class="sd">            The current parameter values.</span>
+
+<span class="sd">        mode : str</span>
+<span class="sd">            One of [&#39;func&#39;, &#39;grad&#39;, &#39;both&#39;]. </span>
+
+<span class="sd">        check_feasibility : bool</span>
+<span class="sd">            If True, return `np.inf` when</span>
+<span class="sd">            point is not feasible, i.e. when `beta` is not</span>
+<span class="sd">            in the domain.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        If `mode` is &#39;func&#39; returns just the objective value </span>
+<span class="sd">        at `beta`, else if `mode` is &#39;grad&#39; returns the gradient</span>
+<span class="sd">        else returns both.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Abstract method.&quot;</span><span class="p">)</span>
+    
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">affine</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">linear_operator</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Keywords given in kws are passed to cls constructor along with other arguments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">linear_operator</span><span class="p">,</span> <span class="n">affine_transform</span><span class="p">):</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">linear_transform</span><span class="p">(</span><span class="n">linear_operator</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="n">diag</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">linear_operator</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">acceptable_init_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kws</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid arguments being passed to initialize &quot;</span> <span class="o">+</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        
+        <span class="c1"># the minus signs below for offset is there until affine transforms SUBTRACT </span>
+        <span class="c1"># their offset until add. </span>
+        <span class="c1"># for atoms, the offset is really the &quot;center&quot;</span>
+
+        <span class="n">atom</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">output_shape</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="n">coef</span><span class="p">,</span> <span class="n">offset</span><span class="o">=-</span><span class="n">offset</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">affine_smooth</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">linear</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">linear_operator</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+               <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Keywords given in kws are passed to cls constructor along with other arguments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">acceptable_init_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kws</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid arguments being passed to initialize &quot;</span> <span class="o">+</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="n">atransform</span> <span class="o">=</span> <span class="n">affine_transform</span><span class="p">(</span><span class="n">linear_operator</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="n">diag</span><span class="p">)</span>
+        <span class="n">atom</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">atransform</span><span class="o">.</span><span class="n">output_shape</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="n">coef</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">affine_smooth</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="n">atransform</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">shift</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Keywords given in kws are passed to cls constructor along with other arguments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">acceptable_init_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kws</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid arguments being passed to initialize &quot;</span> <span class="o">+</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        
+        <span class="n">atom</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">offset</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="n">coef</span><span class="p">,</span> <span class="n">quadratic</span><span class="o">=</span><span class="n">quadratic</span><span class="p">,</span> 
+                   <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">atom</span>
+
+    <span class="k">def</span> <span class="nf">scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coef</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obj</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">coef</span>
+        <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">def</span> <span class="nf">get_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;each smooth loss should implement its own get_conjugate&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_conjugate</span><span class="p">()</span>
+ 
+
+<span class="k">def</span> <span class="nf">acceptable_init_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">proposed_keywords</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check that the keywords in the dictionary proposed_keywords are arguments to __init__ of class cls</span>
+
+<span class="sd">    Returns True/False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargspec</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span><span class="o">.</span><span class="n">args</span>
+    <span class="n">forbidden</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">,</span> <span class="s1">&#39;coef&#39;</span><span class="p">,</span> <span class="s1">&#39;quadratic&#39;</span><span class="p">,</span> <span class="s1">&#39;initial&#39;</span><span class="p">,</span> <span class="s1">&#39;offset&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">proposed_keywords</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">forbidden</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+<span class="k">class</span> <span class="nc">affine_smooth</span><span class="p">(</span><span class="n">smooth_atom</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Composition of a smooth objective with an affine transform.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">force_reshape</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">objective_vars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;linear&#39;</span><span class="p">:</span><span class="s1">&#39;X&#39;</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_atom</span><span class="p">,</span> <span class="n">atransform</span><span class="p">,</span> <span class="n">store_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        smooth_atom : `regreg.smooth.smooth_atom`</span>
+<span class="sd">             A smooth atom.</span>
+
+<span class="sd">        atransform : `regreg.affine.affine_transform`</span>
+<span class="sd">             An affine transformation, or cast to one</span>
+<span class="sd">             using `regreg.affine.linear_transform`</span>
+
+<span class="sd">        store_grad : bool</span>
+<span class="sd">             If True, when computing the gradient,</span>
+<span class="sd">             store a reference to the gradient of `smooth_atom`</span>
+<span class="sd">             in the attribute `grad`.</span>
+
+<span class="sd">        diag : bool</span>
+<span class="sd">             Indicates if `atransform` acts diagonally,</span>
+<span class="sd">             i.e. a rescaling.</span>
+<span class="sd">             Passed to `regreg.affine.linear_transform`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_grad</span> <span class="o">=</span> <span class="n">store_grad</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">smooth_atom</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atransform</span><span class="p">,</span> <span class="n">affine_transform</span><span class="p">):</span>
+            <span class="n">atransform</span> <span class="o">=</span> <span class="n">linear_transform</span><span class="p">(</span><span class="n">atransform</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="n">diag</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">affine_transform</span> <span class="o">=</span> <span class="n">atransform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">atransform</span><span class="o">.</span><span class="n">input_shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_coef</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">coef</span>
+
+    <span class="k">def</span> <span class="nf">_set_coef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coef</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">coef</span> <span class="o">=</span> <span class="n">coef</span>
+    <span class="n">coef</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_coef</span><span class="p">,</span> <span class="n">_set_coef</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the smooth objective at the point `self.transform.affine_map(arg)`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        arg : ndarray</span>
+<span class="sd">            The current parameter values.</span>
+
+<span class="sd">        mode : str</span>
+<span class="sd">            One of [&#39;func&#39;, &#39;grad&#39;, &#39;both&#39;]. </span>
+
+<span class="sd">        check_feasibility : bool</span>
+<span class="sd">            If True, return `np.inf` when</span>
+<span class="sd">            point is not feasible, i.e. when `beta` is not</span>
+<span class="sd">            in the domain.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        If `mode` is &#39;func&#39; returns just the objective value </span>
+<span class="sd">        at `self.transform(arg)`, else if `mode` is &#39;grad&#39; returns the gradient</span>
+<span class="sd">        else returns both.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">eta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine_transform</span><span class="o">.</span><span class="n">affine_map</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;both&#39;</span><span class="p">:</span>
+            <span class="n">v</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_grad</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">g</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine_transform</span><span class="o">.</span><span class="n">adjoint_map</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_reshape</span><span class="p">:</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span><span class="p">,</span> <span class="n">g</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;grad&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_grad</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">g</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine_transform</span><span class="o">.</span><span class="n">adjoint_map</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_reshape</span><span class="p">:</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">g</span> 
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;func&#39;</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;func&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span> 
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dual</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="n">conj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">conjugate</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">affine_transform</span><span class="p">,</span> <span class="n">conj</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;affine_smooth(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, store_grad=</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> 
+                <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">),</span>
+                <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">affine_transform</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">store_grad</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">latexify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">template_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">objective_vars</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;linear&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objective_vars</span><span class="p">[</span><span class="s1">&#39;linear&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;var&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span>
+        <span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;idx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+
+        <span class="n">obj_latex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">latexify</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(linear)s</span><span class="s1">_{</span><span class="si">%(idx)s</span><span class="s1">}</span><span class="si">%(var)s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">template_dict</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">iszero</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39; + &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">obj_latex</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadratic</span><span class="o">.</span><span class="n">latexify</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="n">template_dict</span><span class="p">[</span><span class="s1">&#39;var&#39;</span><span class="p">],</span> <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obj_latex</span>
+
+<span class="k">class</span> <span class="nc">zero</span><span class="p">(</span><span class="n">smooth_atom</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The zero function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;both&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;func&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mode not specified correctly&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">sum</span><span class="p">(</span><span class="n">smooth_atom</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A simple way to combine smooth objectives</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        atoms : sequence</span>
+<span class="sd">            A sequence of `regreg.smooth.smooth_atom` that will be summed</span>
+<span class="sd">            to make a new atom.</span>
+
+<span class="sd">        weights : ndarray (optional)</span>
+<span class="sd">            If provided, these weights will appear as coefficients</span>
+<span class="sd">            in front of each atom.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="n">atoms</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;weights and atoms have different lengths&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;weights should be non-negative to maintain convexity&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coefs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coefs</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">def</span> <span class="nf">smooth_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">check_feasibility</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the smooth objective at the point `self.transform.affine_map(arg)`,</span>
+<span class="sd">        which is the sum of each `atom`&#39;s objective with its respective weight.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        arg : ndarray</span>
+<span class="sd">            The current parameter values.</span>
+
+<span class="sd">        mode : str</span>
+<span class="sd">            One of [&#39;func&#39;, &#39;grad&#39;, &#39;both&#39;]. </span>
+
+<span class="sd">        check_feasibility : bool</span>
+<span class="sd">            If True, return `np.inf` when</span>
+<span class="sd">            point is not feasible, i.e. when `beta` is not</span>
+<span class="sd">            in the domain.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        If `mode` is &#39;func&#39; returns just the objective value </span>
+<span class="sd">        at `self.transform(arg)`, else if `mode` is &#39;grad&#39; returns the gradient</span>
+<span class="sd">        else returns both.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_offset</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">atom</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;func&#39;</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">+=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;func&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+                <span class="n">g</span> <span class="o">+=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;grad&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;both&#39;</span><span class="p">:</span>
+                <span class="n">fa</span><span class="p">,</span> <span class="n">ga</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">smooth_objective</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;both&#39;</span><span class="p">)</span>
+                <span class="n">f</span> <span class="o">+=</span> <span class="n">fa</span><span class="p">;</span> <span class="n">g</span> <span class="o">+=</span> <span class="n">ga</span>
+
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;func&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">f</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">g</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;both&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">f</span><span class="p">,</span> <span class="n">g</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;mode incorrectly specified&quot;</span><span class="p">)</span>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

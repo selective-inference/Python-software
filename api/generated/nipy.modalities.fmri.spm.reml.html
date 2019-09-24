@@ -1,0 +1,297 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.modalities.fmri.spm.reml.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="modalities-fmri-spm-reml">
+<h1>modalities.fmri.spm.reml<a class="headerlink" href="#modalities-fmri-spm-reml" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.modalities.fmri.spm.reml">
+<span id="module-modalities-fmri-spm-reml"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">modalities.fmri.spm.reml</span></code><a class="headerlink" href="#module-nipy.modalities.fmri.spm.reml" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.modalities.fmri.spm.reml.orth">
+<code class="sig-prename descclassname">nipy.modalities.fmri.spm.reml.</code><code class="sig-name descname">orth</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">tol=1e-07</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/spm/reml.html#orth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.spm.reml.orth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute orthonormal basis for the column span of X.</p>
+<p>Rank is determined by zeroing all singular values, u, less
+than or equal to tol*u.max().</p>
+<dl class="simple">
+<dt>INPUTS:</dt><dd><p>X  – n-by-p matrix</p>
+</dd>
+<dt>OUTPUTS:</dt><dd><dl class="simple">
+<dt>B  – n-by-rank(X) matrix with orthonormal columns spanning</dt><dd><p>the column rank of X</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.spm.reml.reml">
+<code class="sig-prename descclassname">nipy.modalities.fmri.spm.reml.</code><code class="sig-name descname">reml</code><span class="sig-paren">(</span><em class="sig-param">sigma</em>, <em class="sig-param">components</em>, <em class="sig-param">design=None</em>, <em class="sig-param">n=1</em>, <em class="sig-param">niter=128</em>, <em class="sig-param">penalty_cov=1.2664165549094176e-14</em>, <em class="sig-param">penalty_mean=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/spm/reml.html#reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.spm.reml.reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adapted from spm_reml.m</p>
+<p>ReML estimation of covariance components from sigma using design matrix.</p>
+<dl>
+<dt>INPUTS:</dt><dd><p>sigma        – m-by-m covariance matrix
+components   – q-by-m-by-m array of variance components</p>
+<blockquote>
+<div><p>mean of sigma is modeled as a some over components[i]</p>
+</div></blockquote>
+<dl class="simple">
+<dt>design       – m-by-p design matrix whose effect is to be removed for</dt><dd><p>ReML. If None, no effect removed (???)</p>
+</dd>
+</dl>
+<p>n            – degrees of freedom of sigma
+penalty_cov  – quadratic penalty to be applied in Fisher algorithm.</p>
+<blockquote>
+<div><p>If the value is a float, f, the penalty is
+f * identity(m). If the value is a 1d array, this is
+the diagonal of the penalty.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>penalty_mean – mean of quadratic penalty to be applied in Fisher</dt><dd><p>algorithm. If the value is a float, f, the location
+is f * np.ones(m).</p>
+</dd>
+</dl>
+</dd>
+<dt>OUTPUTS:</dt><dd><p>C            – estimated mean of sigma
+h            – array of length q representing coefficients</p>
+<blockquote>
+<div><p>of variance components</p>
+</div></blockquote>
+<p>cov_h        – estimated covariance matrix of h</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

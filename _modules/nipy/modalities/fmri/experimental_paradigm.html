@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.modalities.fmri.experimental_paradigm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module implements an object to deal with experimental paradigms.</span>
+<span class="sd">In fMRI data analysis, there are two main types of experimental</span>
+<span class="sd">paradigms: block and event-related paradigms. They correspond to 2</span>
+<span class="sd">classes EventRelatedParadigm and BlockParadigm. Both are implemented</span>
+<span class="sd">here, together with functions to write paradigms to csv files.</span>
+
+<span class="sd">Notes</span>
+<span class="sd">-----</span>
+<span class="sd">Although the Paradigm object have no notion of session or acquisitions</span>
+<span class="sd">(they are assumed to correspond to a sequential acquisition, called</span>
+<span class="sd">&#39;session&#39; in SPM jargon), the .csv file used to represent paradigm may</span>
+<span class="sd">be multi-session, so it is assumed that the first column of a file</span>
+<span class="sd">yielding a paradigm is in fact a session index</span>
+
+<span class="sd">Author: Bertrand Thirion, 2009-2011</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">...utils.compat3</span> <span class="k">import</span> <span class="n">open4csv</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="c1">##########################################################</span>
+<span class="c1"># Paradigm handling</span>
+<span class="c1">##########################################################</span>
+
+
+<div class="viewcode-block" id="Paradigm"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.experimental_paradigm.html#nipy.modalities.fmri.experimental_paradigm.Paradigm">[docs]</a><span class="k">class</span> <span class="nc">Paradigm</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Simple class to handle the experimental paradigm in one session</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Paradigm.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.experimental_paradigm.html#nipy.modalities.fmri.experimental_paradigm.Paradigm.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">con_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        con_id: array of shape (n_events), type = string, optional</span>
+<span class="sd">               identifier of the events</span>
+<span class="sd">        onset: array of shape (n_events), type = float, optional,</span>
+<span class="sd">               onset time (in s.) of the events</span>
+<span class="sd">        amplitude: array of shape (n_events), type = float, optional,</span>
+<span class="sd">                   amplitude of the events (if applicable)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">con_id</span> <span class="o">=</span> <span class="n">con_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">onset</span> <span class="o">=</span> <span class="n">onset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">=</span> <span class="n">amplitude</span>
+        <span class="k">if</span> <span class="n">con_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_events</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">con_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">con_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">con_id</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">onset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">onset</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_events</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;inconsistent definition of ids and onsets&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">onset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">onset</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">amplitude</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_events</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;inconsistent definition of amplitude&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">amplitude</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;event&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_conditions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">con_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Paradigm.write_to_csv"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.experimental_paradigm.html#nipy.modalities.fmri.experimental_paradigm.Paradigm.write_to_csv">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">csv_file</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s1">&#39;0&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Write the paradigm to a csv file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        csv_file: string, path of the csv file</span>
+<span class="sd">        session: string, optional, session identifier</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">csv</span>
+        <span class="k">with</span> <span class="n">open4csv</span><span class="p">(</span><span class="n">csv_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fid</span><span class="p">:</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="n">n_pres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">con_id</span><span class="p">)</span>
+            <span class="n">sess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">n_pres</span><span class="p">)</span>
+            <span class="n">pdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">sess</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">con_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">onset</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+            <span class="c1"># add the duration information</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span>
+                <span class="n">duration</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">con_id</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">duration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+            <span class="n">pdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">pdata</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="p">(</span><span class="n">n_pres</span><span class="p">,</span> <span class="mi">1</span><span class="p">))))</span>
+
+            <span class="c1"># add the amplitude information</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">amplitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span><span class="p">,</span> <span class="p">(</span><span class="n">n_pres</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">pdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">pdata</span><span class="p">,</span> <span class="n">amplitude</span><span class="p">))</span>
+
+            <span class="c1"># write pdata</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">pdata</span><span class="p">:</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">row</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="EventRelatedParadigm"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.experimental_paradigm.html#nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm">[docs]</a><span class="k">class</span> <span class="nc">EventRelatedParadigm</span><span class="p">(</span><span class="n">Paradigm</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Class to handle event-related paradigms</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EventRelatedParadigm.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.experimental_paradigm.html#nipy.modalities.fmri.experimental_paradigm.EventRelatedParadigm.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">con_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        con_id: array of shape (n_events), type = string, optional</span>
+<span class="sd">               id of the events (name of the experimental condition)</span>
+<span class="sd">        onset: array of shape (n_events), type = float, optional</span>
+<span class="sd">               onset time (in s.) of the events</span>
+<span class="sd">        amplitude: array of shape (n_events), type = float, optional,</span>
+<span class="sd">                   amplitude of the events (if applicable)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Paradigm</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">con_id</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">amplitude</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="BlockParadigm"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.experimental_paradigm.html#nipy.modalities.fmri.experimental_paradigm.BlockParadigm">[docs]</a><span class="k">class</span> <span class="nc">BlockParadigm</span><span class="p">(</span><span class="n">Paradigm</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Class to handle block paradigms</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BlockParadigm.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.experimental_paradigm.html#nipy.modalities.fmri.experimental_paradigm.BlockParadigm.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">con_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">onset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        con_id: array of shape (n_events), type = string, optional</span>
+<span class="sd">               id of the events (name of the experimental condition)</span>
+<span class="sd">        onset: array of shape (n_events), type = float, optional</span>
+<span class="sd">               onset time (in s.) of the events</span>
+<span class="sd">        amplitude: array of shape (n_events), type = float, optional,</span>
+<span class="sd">                   amplitude of the events (if applicable)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Paradigm</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">con_id</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">amplitude</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;block&#39;</span>
+        <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_events</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;inconsistent definition of duration&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">duration</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="load_paradigm_from_csv_file"><a class="viewcode-back" href="../../../../api/generated/nipy.modalities.fmri.experimental_paradigm.html#nipy.modalities.fmri.experimental_paradigm.load_paradigm_from_csv_file">[docs]</a><span class="k">def</span> <span class="nf">load_paradigm_from_csv_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read a (.csv) paradigm file consisting of values yielding</span>
+<span class="sd">    (occurrence time, (duration), event ID, modulation)</span>
+<span class="sd">    and returns a paradigm instance or a dictionary of paradigm instances</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path: string,</span>
+<span class="sd">          path to a .csv file that describes the paradigm</span>
+<span class="sd">    session: string, optional, session identifier</span>
+<span class="sd">             by default the output is a dictionary</span>
+<span class="sd">             of session-level dictionaries indexed by session</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    paradigm, paradigm instance (if session is provided), or</span>
+<span class="sd">              dictionary of paradigm instances otherwise,</span>
+<span class="sd">              the resulting session-by-session paradigm</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    It is assumed that the csv file contains the following columns:</span>
+<span class="sd">    (session id, condition id, onset),</span>
+<span class="sd">    plus possibly (duration) and/or (amplitude).</span>
+<span class="sd">    If all the durations are 0, the paradigm will be handled as event-related.</span>
+
+<span class="sd">    FIXME: would be much clearer if amplitude was put before duration in the</span>
+<span class="sd">    .csv</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">csv</span>
+    <span class="k">with</span> <span class="n">open4csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+        <span class="n">dialect</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">Sniffer</span><span class="p">()</span><span class="o">.</span><span class="n">sniff</span><span class="p">(</span><span class="n">csvfile</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="n">csvfile</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">dialect</span><span class="p">)</span>
+
+        <span class="c1"># load the csv as a paradigm array</span>
+        <span class="n">sess</span><span class="p">,</span> <span class="n">cid</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">amplitude</span><span class="p">,</span> <span class="n">duration</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="n">sess</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">cid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">onset</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">duration</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="n">amplitude</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+
+        <span class="n">paradigm_info</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sess</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cid</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">onset</span><span class="p">),</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">duration</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)]</span>
+        <span class="n">paradigm_info</span> <span class="o">=</span> <span class="n">paradigm_info</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">read_session</span><span class="p">(</span><span class="n">paradigm_info</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return a paradigm instance corresponding to session</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ps</span> <span class="o">=</span> <span class="p">(</span><span class="n">paradigm_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">session</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">ampli</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ps</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">paradigm_info</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">cid</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">ampli</span> <span class="o">=</span> <span class="p">[</span><span class="n">lp</span><span class="p">[</span><span class="n">ps</span><span class="p">]</span> <span class="k">for</span> <span class="n">lp</span> <span class="ow">in</span> <span class="n">paradigm_info</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">duration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="n">paradigm</span> <span class="o">=</span> <span class="n">EventRelatedParadigm</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">ampli</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">paradigm</span> <span class="o">=</span> <span class="n">BlockParadigm</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">ampli</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">paradigm_info</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">cid</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">duration</span> <span class="o">=</span> <span class="p">[</span><span class="n">lp</span><span class="p">[</span><span class="n">ps</span><span class="p">]</span> <span class="k">for</span> <span class="n">lp</span> <span class="ow">in</span> <span class="n">paradigm_info</span><span class="p">]</span>
+            <span class="n">paradigm</span> <span class="o">=</span> <span class="n">BlockParadigm</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">ampli</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">cid</span><span class="p">,</span> <span class="n">onset</span> <span class="o">=</span> <span class="p">[</span><span class="n">lp</span><span class="p">[</span><span class="n">ps</span><span class="p">]</span> <span class="k">for</span> <span class="n">lp</span> <span class="ow">in</span> <span class="n">paradigm_info</span><span class="p">]</span>
+            <span class="n">paradigm</span> <span class="o">=</span> <span class="n">EventRelatedParadigm</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">onset</span><span class="p">,</span> <span class="n">ampli</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">paradigm</span>
+
+    <span class="n">sessions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">paradigm_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">paradigm</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">session</span> <span class="ow">in</span> <span class="n">sessions</span><span class="p">:</span>
+            <span class="n">paradigm</span><span class="p">[</span><span class="n">session</span><span class="p">]</span> <span class="o">=</span> <span class="n">read_session</span><span class="p">(</span><span class="n">paradigm_info</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">paradigm</span> <span class="o">=</span> <span class="n">read_session</span><span class="p">(</span><span class="n">paradigm_info</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">paradigm</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

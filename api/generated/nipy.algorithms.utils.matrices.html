@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.utils.matrices.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-utils-matrices">
+<h1>algorithms.utils.matrices<a class="headerlink" href="#algorithms-utils-matrices" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.algorithms.utils.matrices">
+<span id="module-algorithms-utils-matrices"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.utils.matrices</span></code><a class="headerlink" href="#module-nipy.algorithms.utils.matrices" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for working with matrices</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.utils.matrices.full_rank">
+<code class="sig-prename descclassname">nipy.algorithms.utils.matrices.</code><code class="sig-name descname">full_rank</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">r=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/utils/matrices.html#full_rank"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.utils.matrices.full_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return full-rank matrix whose column span is the same as X</p>
+<p>Uses an SVD decomposition.</p>
+<p>If the rank of <cite>X</cite> is known it can be specified by <cite>r</cite> – no check is made
+to ensure that this really is the rank of X.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> : array-like</p>
+<blockquote>
+<div><p>2D array which may not be of full rank.</p>
+</div></blockquote>
+<p><strong>r</strong> : None or int</p>
+<blockquote>
+<div><p>Known rank of <cite>X</cite>.  r=None results in standard matrix rank calculation.
+We do not check <cite>r</cite> is really the rank of X; it is to speed up
+calculations when the rank is already known.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fX</strong> : array</p>
+<blockquote>
+<div><p>Full-rank matrix with column span matching that of <cite>X</cite></p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.utils.matrices.matrix_rank">
+<code class="sig-prename descclassname">nipy.algorithms.utils.matrices.</code><code class="sig-name descname">matrix_rank</code><span class="sig-paren">(</span><em class="sig-param">M</em>, <em class="sig-param">tol=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/utils/matrices.html#matrix_rank"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.utils.matrices.matrix_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return rank of matrix using SVD method</p>
+<p>Rank of the array is the number of SVD singular values of the
+array that are greater than <cite>tol</cite>.</p>
+<p>This version of matrix rank is very similar to the numpy.linalg version
+except for the use of:</p>
+<ul class="simple">
+<li><p>scipy.linalg.svd istead of numpy.linalg.svd.</p></li>
+<li><p>the MATLAB algorithm for default tolerance calculation</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">matrix_rank</span></code> appeared in numpy.linalg in December 2009, first available
+in numpy 1.5.0.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>M</strong> : array-like</p>
+<blockquote>
+<div><p>array of &lt;=2 dimensions</p>
+</div></blockquote>
+<p><strong>tol</strong> : {None, float}</p>
+<blockquote>
+<div><p>threshold below which SVD values are considered zero. If <cite>tol</cite>
+is None, and <cite>S</cite> is an array with singular values for <cite>M</cite>, and
+<cite>eps</cite> is the epsilon value for datatype of <cite>S</cite>, then <cite>tol</cite> set
+to <code class="docutils literal notranslate"><span class="pre">S.max()</span> <span class="pre">*</span> <span class="pre">eps</span> <span class="pre">*</span> <span class="pre">max(M.shape)</span></code>.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>We check for numerical rank deficiency by using <code class="docutils literal notranslate"><span class="pre">tol=max(M.shape)</span> <span class="pre">*</span> <span class="pre">eps</span> <span class="pre">*</span>
+<span class="pre">S[0]</span></code> (where <code class="docutils literal notranslate"><span class="pre">S[0]</span></code> is the maximum singular value and thus the 2-norm of
+the matrix). This is one tolerance threshold for rank deficiency, and the
+default algorithm used by MATLAB <a href="#id6"><span class="problematic" id="id1">[#2]_</span></a>.  When floating point roundoff is the
+main concern, then “numerical rank deficiency” is a reasonable choice. In
+some cases you may prefer other definitions. The most useful measure of the
+tolerance depends on the operations you intend to use on your matrix. For
+example, if your data come from uncertain measurements with uncertainties
+greater than floating point epsilon, choosing a tolerance near that
+uncertainty may be preferable.  The tolerance may be absolute if the
+uncertainties are absolute rather than relative.</p>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id2"><span class="brackets">2</span></dt>
+<dd><ol class="upperalpha simple" start="7">
+<li><ol class="upperalpha simple" start="8">
+<li><p>Golub and C. F. Van Loan, _Matrix <a href="#id7"><span class="problematic" id="id8">Computations_</span></a>.</p></li>
+</ol>
+</li>
+</ol>
+</dd>
+</dl>
+<p>Baltimore: Johns Hopkins University Press, 1996.
+.. [#2] <a class="reference external" href="http://www.mathworks.com/help/techdoc/ref/rank.html">http://www.mathworks.com/help/techdoc/ref/rank.html</a></p>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">matrix_rank</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span> <span class="c1"># Full rank matrix</span>
+<span class="go">4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="n">I</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span> <span class="c1"># rank deficient matrix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matrix_rank</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matrix_rank</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">)))</span> <span class="c1"># All zeros - zero rank</span>
+<span class="go">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matrix_rank</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">4</span><span class="p">,)))</span> <span class="c1"># 1 dimension - rank 1 unless all 0</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matrix_rank</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,)))</span>
+<span class="go">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">matrix_rank</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span> <span class="c1"># accepts array-like</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.utils.matrices.pos_recipr">
+<code class="sig-prename descclassname">nipy.algorithms.utils.matrices.</code><code class="sig-name descname">pos_recipr</code><span class="sig-paren">(</span><em class="sig-param">X</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/utils/matrices.html#pos_recipr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.utils.matrices.pos_recipr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return element-wise reciprocal of array, setting <cite>X</cite>&gt;=0 to 0</p>
+<p>Return the reciprocal of an array, setting all entries less than or
+equal to 0 to 0. Therefore, it presumes that X should be positive in
+general.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> : array-like</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rX</strong> : array</p>
+<blockquote>
+<div><p>array of same shape as <cite>X</cite>, dtype np.float, with values set to
+1/X where X &gt; 0, 0 otherwise</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.utils.matrices.recipr0">
+<code class="sig-prename descclassname">nipy.algorithms.utils.matrices.</code><code class="sig-name descname">recipr0</code><span class="sig-paren">(</span><em class="sig-param">X</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/utils/matrices.html#recipr0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.utils.matrices.recipr0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return element-wise reciprocal of array, <a href="#id3"><span class="problematic" id="id4">`</span></a>X`==0 -&gt; 0</p>
+<p>Return the reciprocal of an array, setting all entries equal to 0 as 0. It
+does not assume that X should be positive in general.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> : array-like</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rX</strong> : array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

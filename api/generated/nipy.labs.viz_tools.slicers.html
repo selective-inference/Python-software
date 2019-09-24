@@ -1,0 +1,1660 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.labs.viz_tools.slicers.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="labs-viz-tools-slicers">
+<h1>labs.viz_tools.slicers<a class="headerlink" href="#labs-viz-tools-slicers" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-labs-viz-tools-slicers">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">labs.viz_tools.slicers</span></code><a class="headerlink" href="#module-labs-viz-tools-slicers" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.labs.viz_tools.slicers</span></code>:</p>
+digraph inheritance077079e6e0 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;viz_tools.slicers.BaseSlicer&quot; [URL=&quot;#nipy.labs.viz_tools.slicers.BaseSlicer&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;The main purpose of these class is to have auto adjust of axes size&quot;];
+  &quot;viz_tools.slicers.BaseStackedSlicer&quot; [URL=&quot;#nipy.labs.viz_tools.slicers.BaseStackedSlicer&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A class to create linked axes for plotting stacked&quot;];
+  &quot;viz_tools.slicers.BaseSlicer&quot; -&gt; &quot;viz_tools.slicers.BaseStackedSlicer&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;viz_tools.slicers.CutAxes&quot; [URL=&quot;#nipy.labs.viz_tools.slicers.CutAxes&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;An MPL axis-like object that displays a cut of 3D volumes&quot;];
+  &quot;viz_tools.slicers.OrthoSlicer&quot; [URL=&quot;#nipy.labs.viz_tools.slicers.OrthoSlicer&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A class to create 3 linked axes for plotting orthogonal&quot;];
+  &quot;viz_tools.slicers.BaseSlicer&quot; -&gt; &quot;viz_tools.slicers.OrthoSlicer&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;viz_tools.slicers.XSlicer&quot; [URL=&quot;#nipy.labs.viz_tools.slicers.XSlicer&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;viz_tools.slicers.BaseStackedSlicer&quot; -&gt; &quot;viz_tools.slicers.XSlicer&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;viz_tools.slicers.YSlicer&quot; [URL=&quot;#nipy.labs.viz_tools.slicers.YSlicer&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;viz_tools.slicers.BaseStackedSlicer&quot; -&gt; &quot;viz_tools.slicers.YSlicer&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;viz_tools.slicers.ZSlicer&quot; [URL=&quot;#nipy.labs.viz_tools.slicers.ZSlicer&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;viz_tools.slicers.BaseStackedSlicer&quot; -&gt; &quot;viz_tools.slicers.ZSlicer&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.labs.viz_tools.slicers"></span><p>The Slicer classes.</p>
+<p>The main purpose of these classes is to have auto adjust of axes size to
+the data with different layout of cuts.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="baseslicer">
+<h3><a class="reference internal" href="#nipy.labs.viz_tools.slicers.BaseSlicer" title="nipy.labs.viz_tools.slicers.BaseSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSlicer</span></code></a><a class="headerlink" href="#baseslicer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.viz_tools.slicers.</code><code class="sig-name descname">BaseSlicer</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The main purpose of these class is to have auto adjust of axes size
+to the data with different layout of cuts.</p>
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create 3 linked axes for plotting orthogonal cuts.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3 tuple of ints</strong></p>
+<blockquote>
+<div><p>The cut position, in world space.</p>
+</div></blockquote>
+<p><strong>axes: matplotlib axes object, optional</strong></p>
+<blockquote>
+<div><p>The axes that will be subdivided in 3.</p>
+</div></blockquote>
+<p><strong>black_bg: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, the background of the figure will be put to
+black. If you whish to save figures with a black background, 
+you will need to pass “facecolor=’k’, edgecolor=’k’” to 
+pylab’s savefig.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer.find_cut_coords">
+<em class="property">static </em><code class="sig-name descname">find_cut_coords</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer.find_cut_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer.find_cut_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer.init_with_figure">
+<em class="property">classmethod </em><code class="sig-name descname">init_with_figure</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">figure=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em>, <em class="sig-param">leave_space=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer.init_with_figure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer.init_with_figure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer.title">
+<code class="sig-name descname">title</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">x=0.01</em>, <em class="sig-param">y=0.99</em>, <em class="sig-param">size=15</em>, <em class="sig-param">color=None</em>, <em class="sig-param">bgcolor=None</em>, <em class="sig-param">alpha=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer.title"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a title to the view.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text: string</strong></p>
+<blockquote>
+<div><p>The text of the title</p>
+</div></blockquote>
+<p><strong>x: float, optional</strong></p>
+<blockquote>
+<div><p>The horizontal position of the title on the frame in 
+fraction of the frame width.</p>
+</div></blockquote>
+<p><strong>y: float, optional</strong></p>
+<blockquote>
+<div><p>The vertical position of the title on the frame in 
+fraction of the frame height.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the title text.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the font of the title.</p>
+</div></blockquote>
+<p><strong>bgcolor: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the background of the title.</p>
+</div></blockquote>
+<p><strong>alpha: float, optional</strong></p>
+<blockquote>
+<div><p>The alpha value for the background.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer.plot_map">
+<code class="sig-name descname">plot_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer.plot_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer.plot_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : a number, None, or ‘auto’</p>
+<blockquote>
+<div><p>If None is given, the maps are not thresholded.
+If a number is given, it is used to threshold the maps:
+values below the threshold are plotted as transparent.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to imshow.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer.contour_map">
+<code class="sig-name descname">contour_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer.contour_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer.contour_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contour a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to contour.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer.edge_map">
+<code class="sig-name descname">edge_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">color='r'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer.edge_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer.edge_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the edges of a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color: string or (r, g, b) value</strong></p>
+<blockquote>
+<div><p>The color used to display the edge map</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseSlicer.annotate">
+<code class="sig-name descname">annotate</code><span class="sig-paren">(</span><em class="sig-param">left_right=True</em>, <em class="sig-param">positions=True</em>, <em class="sig-param">size=12</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseSlicer.annotate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseSlicer.annotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add annotations to the plot.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>left_right: boolean, optional</strong></p>
+<blockquote>
+<div><p>If left_right is True, annotations indicating which side
+is left and which side is right are drawn.</p>
+</div></blockquote>
+<p><strong>positions: boolean, optional</strong></p>
+<blockquote>
+<div><p>If positions is True, annotations indicating the
+positions of the cuts are drawn.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the text used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="basestackedslicer">
+<h3><a class="reference internal" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer" title="nipy.labs.viz_tools.slicers.BaseStackedSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseStackedSlicer</span></code></a><a class="headerlink" href="#basestackedslicer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.viz_tools.slicers.</code><code class="sig-name descname">BaseStackedSlicer</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseStackedSlicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.viz_tools.slicers.BaseSlicer" title="nipy.labs.viz_tools.slicers.BaseSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.viz_tools.slicers.BaseSlicer</span></code></a></p>
+<p>A class to create linked axes for plotting stacked
+cuts of 3D maps.</p>
+<p class="rubric">Notes</p>
+<p>The extent of the different axes are adjusted to fit the data
+best in the viewing area.</p>
+<p class="rubric">Attributes</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 58%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>axes: dictionnary of axes</strong></p></td>
+<td><p>The axes used to plot each view.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>frame_axes: axes</strong></p></td>
+<td><p>The axes framing the whole set of views.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create 3 linked axes for plotting orthogonal cuts.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3 tuple of ints</strong></p>
+<blockquote>
+<div><p>The cut position, in world space.</p>
+</div></blockquote>
+<p><strong>axes: matplotlib axes object, optional</strong></p>
+<blockquote>
+<div><p>The axes that will be subdivided in 3.</p>
+</div></blockquote>
+<p><strong>black_bg: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, the background of the figure will be put to
+black. If you whish to save figures with a black background, 
+you will need to pass “facecolor=’k’, edgecolor=’k’” to 
+pylab’s savefig.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.find_cut_coords">
+<em class="property">classmethod </em><code class="sig-name descname">find_cut_coords</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseStackedSlicer.find_cut_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.find_cut_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.draw_cross">
+<code class="sig-name descname">draw_cross</code><span class="sig-paren">(</span><em class="sig-param">cut_coords=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#BaseStackedSlicer.draw_cross"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.draw_cross" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw a crossbar on the plot to show where the cut is
+performed.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3-tuple of floats, optional</strong></p>
+<blockquote>
+<div><p>The position of the cross to draw. If none is passed, the
+ortho_slicer’s cut coordinnates are used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to axhline</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.annotate">
+<code class="sig-name descname">annotate</code><span class="sig-paren">(</span><em class="sig-param">left_right=True</em>, <em class="sig-param">positions=True</em>, <em class="sig-param">size=12</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.annotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add annotations to the plot.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>left_right: boolean, optional</strong></p>
+<blockquote>
+<div><p>If left_right is True, annotations indicating which side
+is left and which side is right are drawn.</p>
+</div></blockquote>
+<p><strong>positions: boolean, optional</strong></p>
+<blockquote>
+<div><p>If positions is True, annotations indicating the
+positions of the cuts are drawn.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the text used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.contour_map">
+<code class="sig-name descname">contour_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.contour_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contour a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to contour.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.edge_map">
+<code class="sig-name descname">edge_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">color='r'</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.edge_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the edges of a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color: string or (r, g, b) value</strong></p>
+<blockquote>
+<div><p>The color used to display the edge map</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.init_with_figure">
+<em class="property">classmethod </em><code class="sig-name descname">init_with_figure</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">figure=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em>, <em class="sig-param">leave_space=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.init_with_figure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.plot_map">
+<code class="sig-name descname">plot_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.plot_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : a number, None, or ‘auto’</p>
+<blockquote>
+<div><p>If None is given, the maps are not thresholded.
+If a number is given, it is used to threshold the maps:
+values below the threshold are plotted as transparent.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to imshow.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.BaseStackedSlicer.title">
+<code class="sig-name descname">title</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">x=0.01</em>, <em class="sig-param">y=0.99</em>, <em class="sig-param">size=15</em>, <em class="sig-param">color=None</em>, <em class="sig-param">bgcolor=None</em>, <em class="sig-param">alpha=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a title to the view.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text: string</strong></p>
+<blockquote>
+<div><p>The text of the title</p>
+</div></blockquote>
+<p><strong>x: float, optional</strong></p>
+<blockquote>
+<div><p>The horizontal position of the title on the frame in 
+fraction of the frame width.</p>
+</div></blockquote>
+<p><strong>y: float, optional</strong></p>
+<blockquote>
+<div><p>The vertical position of the title on the frame in 
+fraction of the frame height.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the title text.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the font of the title.</p>
+</div></blockquote>
+<p><strong>bgcolor: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the background of the title.</p>
+</div></blockquote>
+<p><strong>alpha: float, optional</strong></p>
+<blockquote>
+<div><p>The alpha value for the background.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cutaxes">
+<h3><a class="reference internal" href="#nipy.labs.viz_tools.slicers.CutAxes" title="nipy.labs.viz_tools.slicers.CutAxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">CutAxes</span></code></a><a class="headerlink" href="#cutaxes" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.viz_tools.slicers.CutAxes">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.viz_tools.slicers.</code><code class="sig-name descname">CutAxes</code><span class="sig-paren">(</span><em class="sig-param">ax</em>, <em class="sig-param">direction</em>, <em class="sig-param">coord</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#CutAxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.CutAxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An MPL axis-like object that displays a cut of 3D volumes</p>
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.CutAxes.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">ax</em>, <em class="sig-param">direction</em>, <em class="sig-param">coord</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#CutAxes.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.CutAxes.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>An MPL axis-like object that displays a cut of 3D volumes</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ax: a MPL axes instance</strong></p>
+<blockquote>
+<div><p>The axes in which the plots will be drawn</p>
+</div></blockquote>
+<p><strong>direction: {‘x’, ‘y’, ‘z’}</strong></p>
+<blockquote>
+<div><p>The directions of the cut</p>
+</div></blockquote>
+<p><strong>coord: float</strong></p>
+<blockquote>
+<div><p>The coordinnate along the direction of the cut</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.CutAxes.do_cut">
+<code class="sig-name descname">do_cut</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#CutAxes.do_cut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.CutAxes.do_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cut the 3D volume into a 2D slice</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D volume to cut</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine of the volume</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.CutAxes.draw_cut">
+<code class="sig-name descname">draw_cut</code><span class="sig-paren">(</span><em class="sig-param">cut</em>, <em class="sig-param">data_bounds</em>, <em class="sig-param">bounding_box</em>, <em class="sig-param">type='imshow'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#CutAxes.draw_cut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.CutAxes.draw_cut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.CutAxes.get_object_bounds">
+<code class="sig-name descname">get_object_bounds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#CutAxes.get_object_bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.CutAxes.get_object_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the bounds of the objects on this axes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.CutAxes.draw_left_right">
+<code class="sig-name descname">draw_left_right</code><span class="sig-paren">(</span><em class="sig-param">size</em>, <em class="sig-param">bg_color</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#CutAxes.draw_left_right"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.CutAxes.draw_left_right" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.CutAxes.draw_position">
+<code class="sig-name descname">draw_position</code><span class="sig-paren">(</span><em class="sig-param">size</em>, <em class="sig-param">bg_color</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#CutAxes.draw_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.CutAxes.draw_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="orthoslicer">
+<h3><a class="reference internal" href="#nipy.labs.viz_tools.slicers.OrthoSlicer" title="nipy.labs.viz_tools.slicers.OrthoSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">OrthoSlicer</span></code></a><a class="headerlink" href="#orthoslicer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.viz_tools.slicers.</code><code class="sig-name descname">OrthoSlicer</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#OrthoSlicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.viz_tools.slicers.BaseSlicer" title="nipy.labs.viz_tools.slicers.BaseSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.viz_tools.slicers.BaseSlicer</span></code></a></p>
+<p>A class to create 3 linked axes for plotting orthogonal
+cuts of 3D maps.</p>
+<p class="rubric">Notes</p>
+<p>The extent of the different axes are adjusted to fit the data
+best in the viewing area.</p>
+<p class="rubric">Attributes</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 58%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>axes: dictionnary of axes</strong></p></td>
+<td><p>The 3 axes used to plot each view.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>frame_axes: axes</strong></p></td>
+<td><p>The axes framing the whole set of views.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create 3 linked axes for plotting orthogonal cuts.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3 tuple of ints</strong></p>
+<blockquote>
+<div><p>The cut position, in world space.</p>
+</div></blockquote>
+<p><strong>axes: matplotlib axes object, optional</strong></p>
+<blockquote>
+<div><p>The axes that will be subdivided in 3.</p>
+</div></blockquote>
+<p><strong>black_bg: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, the background of the figure will be put to
+black. If you whish to save figures with a black background, 
+you will need to pass “facecolor=’k’, edgecolor=’k’” to 
+pylab’s savefig.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.find_cut_coords">
+<em class="property">static </em><code class="sig-name descname">find_cut_coords</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#OrthoSlicer.find_cut_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.find_cut_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.draw_cross">
+<code class="sig-name descname">draw_cross</code><span class="sig-paren">(</span><em class="sig-param">cut_coords=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#OrthoSlicer.draw_cross"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.draw_cross" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw a crossbar on the plot to show where the cut is
+performed.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3-tuple of floats, optional</strong></p>
+<blockquote>
+<div><p>The position of the cross to draw. If none is passed, the
+ortho_slicer’s cut coordinnates are used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to axhline</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.annotate">
+<code class="sig-name descname">annotate</code><span class="sig-paren">(</span><em class="sig-param">left_right=True</em>, <em class="sig-param">positions=True</em>, <em class="sig-param">size=12</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.annotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add annotations to the plot.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>left_right: boolean, optional</strong></p>
+<blockquote>
+<div><p>If left_right is True, annotations indicating which side
+is left and which side is right are drawn.</p>
+</div></blockquote>
+<p><strong>positions: boolean, optional</strong></p>
+<blockquote>
+<div><p>If positions is True, annotations indicating the
+positions of the cuts are drawn.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the text used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.contour_map">
+<code class="sig-name descname">contour_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.contour_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contour a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to contour.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.edge_map">
+<code class="sig-name descname">edge_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">color='r'</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.edge_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the edges of a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color: string or (r, g, b) value</strong></p>
+<blockquote>
+<div><p>The color used to display the edge map</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.init_with_figure">
+<em class="property">classmethod </em><code class="sig-name descname">init_with_figure</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">figure=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em>, <em class="sig-param">leave_space=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.init_with_figure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.plot_map">
+<code class="sig-name descname">plot_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.plot_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : a number, None, or ‘auto’</p>
+<blockquote>
+<div><p>If None is given, the maps are not thresholded.
+If a number is given, it is used to threshold the maps:
+values below the threshold are plotted as transparent.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to imshow.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.OrthoSlicer.title">
+<code class="sig-name descname">title</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">x=0.01</em>, <em class="sig-param">y=0.99</em>, <em class="sig-param">size=15</em>, <em class="sig-param">color=None</em>, <em class="sig-param">bgcolor=None</em>, <em class="sig-param">alpha=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.OrthoSlicer.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a title to the view.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text: string</strong></p>
+<blockquote>
+<div><p>The text of the title</p>
+</div></blockquote>
+<p><strong>x: float, optional</strong></p>
+<blockquote>
+<div><p>The horizontal position of the title on the frame in 
+fraction of the frame width.</p>
+</div></blockquote>
+<p><strong>y: float, optional</strong></p>
+<blockquote>
+<div><p>The vertical position of the title on the frame in 
+fraction of the frame height.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the title text.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the font of the title.</p>
+</div></blockquote>
+<p><strong>bgcolor: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the background of the title.</p>
+</div></blockquote>
+<p><strong>alpha: float, optional</strong></p>
+<blockquote>
+<div><p>The alpha value for the background.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="xslicer">
+<h3><a class="reference internal" href="#nipy.labs.viz_tools.slicers.XSlicer" title="nipy.labs.viz_tools.slicers.XSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">XSlicer</span></code></a><a class="headerlink" href="#xslicer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.viz_tools.slicers.</code><code class="sig-name descname">XSlicer</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#XSlicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer" title="nipy.labs.viz_tools.slicers.BaseStackedSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.viz_tools.slicers.BaseStackedSlicer</span></code></a></p>
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create 3 linked axes for plotting orthogonal cuts.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3 tuple of ints</strong></p>
+<blockquote>
+<div><p>The cut position, in world space.</p>
+</div></blockquote>
+<p><strong>axes: matplotlib axes object, optional</strong></p>
+<blockquote>
+<div><p>The axes that will be subdivided in 3.</p>
+</div></blockquote>
+<p><strong>black_bg: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, the background of the figure will be put to
+black. If you whish to save figures with a black background, 
+you will need to pass “facecolor=’k’, edgecolor=’k’” to 
+pylab’s savefig.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.annotate">
+<code class="sig-name descname">annotate</code><span class="sig-paren">(</span><em class="sig-param">left_right=True</em>, <em class="sig-param">positions=True</em>, <em class="sig-param">size=12</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.annotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add annotations to the plot.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>left_right: boolean, optional</strong></p>
+<blockquote>
+<div><p>If left_right is True, annotations indicating which side
+is left and which side is right are drawn.</p>
+</div></blockquote>
+<p><strong>positions: boolean, optional</strong></p>
+<blockquote>
+<div><p>If positions is True, annotations indicating the
+positions of the cuts are drawn.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the text used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.contour_map">
+<code class="sig-name descname">contour_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.contour_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contour a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to contour.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.draw_cross">
+<code class="sig-name descname">draw_cross</code><span class="sig-paren">(</span><em class="sig-param">cut_coords=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.draw_cross" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw a crossbar on the plot to show where the cut is
+performed.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3-tuple of floats, optional</strong></p>
+<blockquote>
+<div><p>The position of the cross to draw. If none is passed, the
+ortho_slicer’s cut coordinnates are used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to axhline</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.edge_map">
+<code class="sig-name descname">edge_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">color='r'</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.edge_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the edges of a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color: string or (r, g, b) value</strong></p>
+<blockquote>
+<div><p>The color used to display the edge map</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.find_cut_coords">
+<em class="property">classmethod </em><code class="sig-name descname">find_cut_coords</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.find_cut_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.init_with_figure">
+<em class="property">classmethod </em><code class="sig-name descname">init_with_figure</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">figure=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em>, <em class="sig-param">leave_space=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.init_with_figure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.plot_map">
+<code class="sig-name descname">plot_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.plot_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : a number, None, or ‘auto’</p>
+<blockquote>
+<div><p>If None is given, the maps are not thresholded.
+If a number is given, it is used to threshold the maps:
+values below the threshold are plotted as transparent.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to imshow.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.XSlicer.title">
+<code class="sig-name descname">title</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">x=0.01</em>, <em class="sig-param">y=0.99</em>, <em class="sig-param">size=15</em>, <em class="sig-param">color=None</em>, <em class="sig-param">bgcolor=None</em>, <em class="sig-param">alpha=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.XSlicer.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a title to the view.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text: string</strong></p>
+<blockquote>
+<div><p>The text of the title</p>
+</div></blockquote>
+<p><strong>x: float, optional</strong></p>
+<blockquote>
+<div><p>The horizontal position of the title on the frame in 
+fraction of the frame width.</p>
+</div></blockquote>
+<p><strong>y: float, optional</strong></p>
+<blockquote>
+<div><p>The vertical position of the title on the frame in 
+fraction of the frame height.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the title text.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the font of the title.</p>
+</div></blockquote>
+<p><strong>bgcolor: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the background of the title.</p>
+</div></blockquote>
+<p><strong>alpha: float, optional</strong></p>
+<blockquote>
+<div><p>The alpha value for the background.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="yslicer">
+<h3><a class="reference internal" href="#nipy.labs.viz_tools.slicers.YSlicer" title="nipy.labs.viz_tools.slicers.YSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">YSlicer</span></code></a><a class="headerlink" href="#yslicer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.viz_tools.slicers.</code><code class="sig-name descname">YSlicer</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#YSlicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer" title="nipy.labs.viz_tools.slicers.BaseStackedSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.viz_tools.slicers.BaseStackedSlicer</span></code></a></p>
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create 3 linked axes for plotting orthogonal cuts.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3 tuple of ints</strong></p>
+<blockquote>
+<div><p>The cut position, in world space.</p>
+</div></blockquote>
+<p><strong>axes: matplotlib axes object, optional</strong></p>
+<blockquote>
+<div><p>The axes that will be subdivided in 3.</p>
+</div></blockquote>
+<p><strong>black_bg: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, the background of the figure will be put to
+black. If you whish to save figures with a black background, 
+you will need to pass “facecolor=’k’, edgecolor=’k’” to 
+pylab’s savefig.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.annotate">
+<code class="sig-name descname">annotate</code><span class="sig-paren">(</span><em class="sig-param">left_right=True</em>, <em class="sig-param">positions=True</em>, <em class="sig-param">size=12</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.annotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add annotations to the plot.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>left_right: boolean, optional</strong></p>
+<blockquote>
+<div><p>If left_right is True, annotations indicating which side
+is left and which side is right are drawn.</p>
+</div></blockquote>
+<p><strong>positions: boolean, optional</strong></p>
+<blockquote>
+<div><p>If positions is True, annotations indicating the
+positions of the cuts are drawn.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the text used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.contour_map">
+<code class="sig-name descname">contour_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.contour_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contour a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to contour.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.draw_cross">
+<code class="sig-name descname">draw_cross</code><span class="sig-paren">(</span><em class="sig-param">cut_coords=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.draw_cross" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw a crossbar on the plot to show where the cut is
+performed.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3-tuple of floats, optional</strong></p>
+<blockquote>
+<div><p>The position of the cross to draw. If none is passed, the
+ortho_slicer’s cut coordinnates are used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to axhline</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.edge_map">
+<code class="sig-name descname">edge_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">color='r'</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.edge_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the edges of a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color: string or (r, g, b) value</strong></p>
+<blockquote>
+<div><p>The color used to display the edge map</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.find_cut_coords">
+<em class="property">classmethod </em><code class="sig-name descname">find_cut_coords</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.find_cut_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.init_with_figure">
+<em class="property">classmethod </em><code class="sig-name descname">init_with_figure</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">figure=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em>, <em class="sig-param">leave_space=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.init_with_figure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.plot_map">
+<code class="sig-name descname">plot_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.plot_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : a number, None, or ‘auto’</p>
+<blockquote>
+<div><p>If None is given, the maps are not thresholded.
+If a number is given, it is used to threshold the maps:
+values below the threshold are plotted as transparent.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to imshow.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.YSlicer.title">
+<code class="sig-name descname">title</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">x=0.01</em>, <em class="sig-param">y=0.99</em>, <em class="sig-param">size=15</em>, <em class="sig-param">color=None</em>, <em class="sig-param">bgcolor=None</em>, <em class="sig-param">alpha=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.YSlicer.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a title to the view.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text: string</strong></p>
+<blockquote>
+<div><p>The text of the title</p>
+</div></blockquote>
+<p><strong>x: float, optional</strong></p>
+<blockquote>
+<div><p>The horizontal position of the title on the frame in 
+fraction of the frame width.</p>
+</div></blockquote>
+<p><strong>y: float, optional</strong></p>
+<blockquote>
+<div><p>The vertical position of the title on the frame in 
+fraction of the frame height.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the title text.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the font of the title.</p>
+</div></blockquote>
+<p><strong>bgcolor: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the background of the title.</p>
+</div></blockquote>
+<p><strong>alpha: float, optional</strong></p>
+<blockquote>
+<div><p>The alpha value for the background.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="zslicer">
+<h3><a class="reference internal" href="#nipy.labs.viz_tools.slicers.ZSlicer" title="nipy.labs.viz_tools.slicers.ZSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZSlicer</span></code></a><a class="headerlink" href="#zslicer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.labs.viz_tools.slicers.</code><code class="sig-name descname">ZSlicer</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#ZSlicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.labs.viz_tools.slicers.BaseStackedSlicer" title="nipy.labs.viz_tools.slicers.BaseStackedSlicer"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.labs.viz_tools.slicers.BaseStackedSlicer</span></code></a></p>
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">cut_coords</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create 3 linked axes for plotting orthogonal cuts.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3 tuple of ints</strong></p>
+<blockquote>
+<div><p>The cut position, in world space.</p>
+</div></blockquote>
+<p><strong>axes: matplotlib axes object, optional</strong></p>
+<blockquote>
+<div><p>The axes that will be subdivided in 3.</p>
+</div></blockquote>
+<p><strong>black_bg: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, the background of the figure will be put to
+black. If you whish to save figures with a black background, 
+you will need to pass “facecolor=’k’, edgecolor=’k’” to 
+pylab’s savefig.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.annotate">
+<code class="sig-name descname">annotate</code><span class="sig-paren">(</span><em class="sig-param">left_right=True</em>, <em class="sig-param">positions=True</em>, <em class="sig-param">size=12</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.annotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add annotations to the plot.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>left_right: boolean, optional</strong></p>
+<blockquote>
+<div><p>If left_right is True, annotations indicating which side
+is left and which side is right are drawn.</p>
+</div></blockquote>
+<p><strong>positions: boolean, optional</strong></p>
+<blockquote>
+<div><p>If positions is True, annotations indicating the
+positions of the cuts are drawn.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the text used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.contour_map">
+<code class="sig-name descname">contour_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.contour_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contour a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to contour.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.draw_cross">
+<code class="sig-name descname">draw_cross</code><span class="sig-paren">(</span><em class="sig-param">cut_coords=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.draw_cross" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw a crossbar on the plot to show where the cut is
+performed.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cut_coords: 3-tuple of floats, optional</strong></p>
+<blockquote>
+<div><p>The position of the cross to draw. If none is passed, the
+ortho_slicer’s cut coordinnates are used.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to axhline</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.edge_map">
+<code class="sig-name descname">edge_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">color='r'</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.edge_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the edges of a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color: string or (r, g, b) value</strong></p>
+<blockquote>
+<div><p>The color used to display the edge map</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.find_cut_coords">
+<em class="property">classmethod </em><code class="sig-name descname">find_cut_coords</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.find_cut_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.init_with_figure">
+<em class="property">classmethod </em><code class="sig-name descname">init_with_figure</code><span class="sig-paren">(</span><em class="sig-param">data=None</em>, <em class="sig-param">affine=None</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">cut_coords=None</em>, <em class="sig-param">figure=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">black_bg=False</em>, <em class="sig-param">leave_space=False</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.init_with_figure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.plot_map">
+<code class="sig-name descname">plot_map</code><span class="sig-paren">(</span><em class="sig-param">map</em>, <em class="sig-param">affine</em>, <em class="sig-param">threshold=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.plot_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a 3D map in all the views.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>map: 3D ndarray</strong></p>
+<blockquote>
+<div><p>The 3D map to be plotted. If it is a masked array, only
+the non-masked part will be plotted.</p>
+</div></blockquote>
+<p><strong>affine: 4x4 ndarray</strong></p>
+<blockquote>
+<div><p>The affine matrix giving the transformation from voxel
+indices to world space.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : a number, None, or ‘auto’</p>
+<blockquote>
+<div><p>If None is given, the maps are not thresholded.
+If a number is given, it is used to threshold the maps:
+values below the threshold are plotted as transparent.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to imshow.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.labs.viz_tools.slicers.ZSlicer.title">
+<code class="sig-name descname">title</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">x=0.01</em>, <em class="sig-param">y=0.99</em>, <em class="sig-param">size=15</em>, <em class="sig-param">color=None</em>, <em class="sig-param">bgcolor=None</em>, <em class="sig-param">alpha=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.labs.viz_tools.slicers.ZSlicer.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a title to the view.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text: string</strong></p>
+<blockquote>
+<div><p>The text of the title</p>
+</div></blockquote>
+<p><strong>x: float, optional</strong></p>
+<blockquote>
+<div><p>The horizontal position of the title on the frame in 
+fraction of the frame width.</p>
+</div></blockquote>
+<p><strong>y: float, optional</strong></p>
+<blockquote>
+<div><p>The vertical position of the title on the frame in 
+fraction of the frame height.</p>
+</div></blockquote>
+<p><strong>size: integer, optional</strong></p>
+<blockquote>
+<div><p>The size of the title text.</p>
+</div></blockquote>
+<p><strong>color: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the font of the title.</p>
+</div></blockquote>
+<p><strong>bgcolor: matplotlib color specifier, optional</strong></p>
+<blockquote>
+<div><p>The color of the background of the title.</p>
+</div></blockquote>
+<p><strong>alpha: float, optional</strong></p>
+<blockquote>
+<div><p>The alpha value for the background.</p>
+</div></blockquote>
+<p><strong>kwargs:</strong></p>
+<blockquote>
+<div><p>Extra keyword arguments are passed to matplotlib’s text
+function.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="function">
+<h2>Function<a class="headerlink" href="#function" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.labs.viz_tools.slicers.demo_ortho_slicer">
+<code class="sig-prename descclassname">nipy.labs.viz_tools.slicers.</code><code class="sig-name descname">demo_ortho_slicer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/labs/viz_tools/slicers.html#demo_ortho_slicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.labs.viz_tools.slicers.demo_ortho_slicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>A small demo of the OrthoSlicer functionality.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

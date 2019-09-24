@@ -1,0 +1,586 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html">
+          
+
+          
+            
+            <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/gen.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.change_point.html">algorithms.change_point</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.change_point.html#module-algorithms-change-point">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.change_point</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.change_point.html#change-point"><code class="xref py py-class docutils literal notranslate"><span class="pre">change_point</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.covtest.html">algorithms.covtest</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.covtest.html#module-selectinf.algorithms.covtest">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.covtest</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.covtest.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.cv.html">algorithms.cv</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.cv.html#module-algorithms-cv">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.cv</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.cv.html#cv"><code class="xref py py-class docutils literal notranslate"><span class="pre">CV</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.cv_glmnet.html">algorithms.cv_glmnet</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.cv_glmnet.html#module-algorithms-cv-glmnet">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.cv_glmnet</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.cv_glmnet.html#cv-glmnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">CV_glmnet</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.debiased_lasso.html">algorithms.debiased_lasso</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.debiased_lasso.html#module-selectinf.algorithms.debiased_lasso">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.debiased_lasso</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.debiased_lasso.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.forward_step.html">algorithms.forward_step</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.forward_step.html#module-algorithms-forward-step">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.forward_step</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.forward_step.html#class">Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.forward_step.html#forward-step"><code class="xref py py-class docutils literal notranslate"><span class="pre">forward_step</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.forward_step.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html">algorithms.lasso</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html#module-algorithms-lasso">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.lasso</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html#rosi"><code class="xref py py-class docutils literal notranslate"><span class="pre">ROSI</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html#rosi-modelq"><code class="xref py py-class docutils literal notranslate"><span class="pre">ROSI_modelQ</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html#data-carving"><code class="xref py py-class docutils literal notranslate"><span class="pre">data_carving</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html#data-splitting"><code class="xref py py-class docutils literal notranslate"><span class="pre">data_splitting</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html#lasso"><code class="xref py py-class docutils literal notranslate"><span class="pre">lasso</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.lasso.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.pca.html">algorithms.pca</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.pca.html#module-selectinf.algorithms.pca">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.pca</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.screening.html">algorithms.screening</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.screening.html#module-algorithms-screening">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.screening</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.screening.html#topk"><code class="xref py py-class docutils literal notranslate"><span class="pre">topK</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.softmax.html">algorithms.softmax</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.softmax.html#module-algorithms-softmax">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.softmax</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.softmax.html#softmax-objective"><code class="xref py py-class docutils literal notranslate"><span class="pre">softmax_objective</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.sqrt_lasso.html">algorithms.sqrt_lasso</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.sqrt_lasso.html#module-algorithms-sqrt-lasso">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.sqrt_lasso</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.sqrt_lasso.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.algorithms.sqrt_lasso.html#l2norm-saturated"><code class="xref py py-class docutils literal notranslate"><span class="pre">l2norm_saturated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.algorithms.sqrt_lasso.html#sqlasso-objective"><code class="xref py py-class docutils literal notranslate"><span class="pre">sqlasso_objective</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.algorithms.sqrt_lasso.html#sqlasso-objective-skinny"><code class="xref py py-class docutils literal notranslate"><span class="pre">sqlasso_objective_skinny</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.sqrt_lasso.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.algorithms.stopping_rules.html">algorithms.stopping_rules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.stopping_rules.html#module-selectinf.algorithms.stopping_rules">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.stopping_rules</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.algorithms.stopping_rules.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.base.html">base</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.base.html#module-selectinf.base">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">base</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.constraints.affine.html">constraints.affine</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.affine.html#module-constraints-affine">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.affine</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.affine.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.affine.html#constraints"><code class="xref py py-class docutils literal notranslate"><span class="pre">constraints</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.affine.html#gaussian-hit-and-run"><code class="xref py py-class docutils literal notranslate"><span class="pre">gaussian_hit_and_run</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.affine.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.constraints.base.html">constraints.base</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.base.html#module-constraints-base">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.base</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.base.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.base.html#cons-op"><code class="xref py py-class docutils literal notranslate"><span class="pre">cons_op</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.base.html#constraints"><code class="xref py py-class docutils literal notranslate"><span class="pre">constraints</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.base.html#noconstraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">noConstraint</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.constraints.estimation.html">constraints.estimation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#module-constraints-estimation">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.estimation</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#gaussian-cumulant"><code class="xref py py-class docutils literal notranslate"><span class="pre">gaussian_cumulant</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#gaussian-cumulant-conjugate"><code class="xref py py-class docutils literal notranslate"><span class="pre">gaussian_cumulant_conjugate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#gaussian-cumulant-conjugate-known"><code class="xref py py-class docutils literal notranslate"><span class="pre">gaussian_cumulant_conjugate_known</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#gaussian-cumulant-known"><code class="xref py py-class docutils literal notranslate"><span class="pre">gaussian_cumulant_known</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#optimal-tilt"><code class="xref py py-class docutils literal notranslate"><span class="pre">optimal_tilt</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#softmax"><code class="xref py py-class docutils literal notranslate"><span class="pre">softmax</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.estimation.html#softmax-conjugate"><code class="xref py py-class docutils literal notranslate"><span class="pre">softmax_conjugate</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.constraints.intervals.html">constraints.intervals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.intervals.html#module-constraints-intervals">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.intervals</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.intervals.html#intervals"><code class="xref py py-class docutils literal notranslate"><span class="pre">intervals</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.constraints.quadratic.html">constraints.quadratic</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.quadratic.html#module-constraints-quadratic">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.quadratic</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.quadratic.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.quadratic.html#constraints"><code class="xref py py-class docutils literal notranslate"><span class="pre">constraints</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.quadratic.html#constraints-vecnorm"><code class="xref py py-class docutils literal notranslate"><span class="pre">constraints_vecnorm</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.quadratic.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.constraints.quasi_affine.html">constraints.quasi_affine</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.quasi_affine.html#module-constraints-quasi-affine">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">constraints.quasi_affine</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.quasi_affine.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.quasi_affine.html#constraints"><code class="xref py py-class docutils literal notranslate"><span class="pre">constraints</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.constraints.quasi_affine.html#orthogonal"><code class="xref py py-class docutils literal notranslate"><span class="pre">orthogonal</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.constraints.quasi_affine.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.distributions.chain.html">distributions.chain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.chain.html#module-distributions-chain">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.chain</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.chain.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.distributions.chain.html#markov-chain"><code class="xref py py-class docutils literal notranslate"><span class="pre">markov_chain</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.distributions.chain.html#reversible-markov-chain"><code class="xref py py-class docutils literal notranslate"><span class="pre">reversible_markov_chain</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.chain.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.distributions.chisq.html">distributions.chisq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.chisq.html#module-selectinf.distributions.chisq">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.chisq</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.chisq.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.distributions.discrete_family.html">distributions.discrete_family</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.discrete_family.html#module-distributions-discrete-family">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.discrete_family</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.discrete_family.html#discrete-family"><code class="xref py py-class docutils literal notranslate"><span class="pre">discrete_family</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.distributions.discrete_multiparameter.html">distributions.discrete_multiparameter</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.discrete_multiparameter.html#module-distributions-discrete-multiparameter">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.discrete_multiparameter</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.discrete_multiparameter.html#multiparameter-family"><code class="xref py py-class docutils literal notranslate"><span class="pre">multiparameter_family</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.distributions.intervals.html">distributions.intervals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.intervals.html#module-distributions-intervals">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.intervals</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.intervals.html#intervals-from-sample"><code class="xref py py-class docutils literal notranslate"><span class="pre">intervals_from_sample</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.distributions.pvalue.html">distributions.pvalue</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.pvalue.html#module-distributions-pvalue">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">distributions.pvalue</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.pvalue.html#class">Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.pvalue.html#selectioninterval"><code class="xref py py-class docutils literal notranslate"><span class="pre">SelectionInterval</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.distributions.pvalue.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.glm.html">glm</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.glm.html#module-selectinf.glm">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">glm</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.glm.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.learning.Rfitters.html">learning.Rfitters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.Rfitters.html#module-selectinf.learning.Rfitters">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.Rfitters</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.Rfitters.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.learning.Rutils.html">learning.Rutils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.Rutils.html#module-learning-rutils">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.Rutils</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.Rutils.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.learning.Rutils.html#generic-method"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic_method</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.learning.Rutils.html#lasso-glmnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lasso_glmnet</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.Rutils.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.learning.core.html">learning.core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.core.html#module-selectinf.learning.core">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.core</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.core.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.learning.fitters.html">learning.fitters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.fitters.html#module-selectinf.learning.fitters">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.fitters</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.fitters.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.learning.learners.html">learning.learners</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.learners.html#module-learning-learners">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.learners</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.learners.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.learning.learners.html#mixture-learner"><code class="xref py py-class docutils literal notranslate"><span class="pre">mixture_learner</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.learning.learners.html#sparse-mixture-learner"><code class="xref py py-class docutils literal notranslate"><span class="pre">sparse_mixture_learner</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.learning.samplers.html">learning.samplers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.samplers.html#module-learning-samplers">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.samplers</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.samplers.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.learning.samplers.html#normal-sampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">normal_sampler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.learning.samplers.html#split-sampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">split_sampler</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.learning.utils.html">learning.utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.utils.html#module-selectinf.learning.utils">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">learning.utils</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.learning.utils.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.randomized.cv_view.html">randomized.cv_view</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.cv_view.html#module-randomized-cv-view">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.cv_view</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.cv_view.html#cv-view"><code class="xref py py-class docutils literal notranslate"><span class="pre">CV_view</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.randomized.group_lasso.html">randomized.group_lasso</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.group_lasso.html#module-randomized-group-lasso">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.group_lasso</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.group_lasso.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.group_lasso.html#group-lasso"><code class="xref py py-class docutils literal notranslate"><span class="pre">group_lasso</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.group_lasso.html#polynomial-gaussian-sampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">polynomial_gaussian_sampler</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.group_lasso.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.randomized.lasso.html">randomized.lasso</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.lasso.html#module-randomized-lasso">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.lasso</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.lasso.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.lasso.html#lasso"><code class="xref py py-class docutils literal notranslate"><span class="pre">lasso</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.lasso.html#split-lasso"><code class="xref py py-class docutils literal notranslate"><span class="pre">split_lasso</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.lasso.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.randomized.modelQ.html">randomized.modelQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.modelQ.html#module-randomized-modelq">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.modelQ</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.modelQ.html#modelq"><code class="xref py py-class docutils literal notranslate"><span class="pre">modelQ</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.randomized.query.html">randomized.query</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.query.html#module-randomized-query">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.query</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.query.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.query.html#affine-gaussian-sampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">affine_gaussian_sampler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.query.html#gaussian-query"><code class="xref py py-class docutils literal notranslate"><span class="pre">gaussian_query</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.query.html#multiple-queries"><code class="xref py py-class docutils literal notranslate"><span class="pre">multiple_queries</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.query.html#optimization-intervals"><code class="xref py py-class docutils literal notranslate"><span class="pre">optimization_intervals</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.query.html#optimization-sampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">optimization_sampler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.query.html#query"><code class="xref py py-class docutils literal notranslate"><span class="pre">query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.query.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.randomized.randomization.html">randomized.randomization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.randomization.html#module-randomized-randomization">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.randomization</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.randomization.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.randomization.html#cumulant"><code class="xref py py-class docutils literal notranslate"><span class="pre">cumulant</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.randomization.html#cumulant-conjugate"><code class="xref py py-class docutils literal notranslate"><span class="pre">cumulant_conjugate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.randomization.html#from-grad-func"><code class="xref py py-class docutils literal notranslate"><span class="pre">from_grad_func</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.randomization.html#randomization"><code class="xref py py-class docutils literal notranslate"><span class="pre">randomization</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.randomization.html#split"><code class="xref py py-class docutils literal notranslate"><span class="pre">split</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.randomization.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.randomized.screening.html">randomized.screening</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.screening.html#module-randomized-screening">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.screening</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.screening.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.screening.html#marginal-screening"><code class="xref py py-class docutils literal notranslate"><span class="pre">marginal_screening</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.screening.html#screening"><code class="xref py py-class docutils literal notranslate"><span class="pre">screening</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.screening.html#stepup"><code class="xref py py-class docutils literal notranslate"><span class="pre">stepup</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.randomized.screening.html#topk"><code class="xref py py-class docutils literal notranslate"><span class="pre">topK</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.screening.html#function">Function</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.randomized.slope.html">randomized.slope</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.slope.html#module-randomized-slope">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">randomized.slope</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.randomized.slope.html#slope"><code class="xref py py-class docutils literal notranslate"><span class="pre">slope</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.sampling.langevin.html">sampling.langevin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.sampling.langevin.html#module-sampling-langevin">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">sampling.langevin</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.sampling.langevin.html#projected-langevin"><code class="xref py py-class docutils literal notranslate"><span class="pre">projected_langevin</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.sampling.sequential.html">sampling.sequential</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.sampling.sequential.html#module-selectinf.sampling.sequential">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">sampling.sequential</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.truncated.F.html">truncated.F</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.F.html#module-truncated-f">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">truncated.F</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.F.html#class">Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.F.html#id1"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated_F</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.F.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.truncated.T.html">truncated.T</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.T.html#module-truncated-t">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">truncated.T</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.T.html#id1"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated_T</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.truncated.base.html">truncated.base</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.base.html#module-truncated-base">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">truncated.base</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.base.html#truncated"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.truncated.chi.html">truncated.chi</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.chi.html#module-truncated-chi">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">truncated.chi</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.chi.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.truncated.chi.html#id1"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated_chi</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.truncated.chi.html#truncated-chi2"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated_chi2</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.truncated.gaussian.html">truncated.gaussian</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.gaussian.html#module-truncated-gaussian">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">truncated.gaussian</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.gaussian.html#classes">Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.truncated.gaussian.html#truncatedgaussianerror"><code class="xref py py-class docutils literal notranslate"><span class="pre">TruncatedGaussianError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.truncated.gaussian.html#id1"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated_gaussian</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/selectinf.truncated.gaussian.html#truncated-gaussian-old"><code class="xref py py-class docutils literal notranslate"><span class="pre">truncated_gaussian_old</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.truncated.gaussian.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generated/selectinf.utils.tools.html">utils.tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/selectinf.utils.tools.html#module-selectinf.utils.tools">Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.tools</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

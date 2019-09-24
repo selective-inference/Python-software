@@ -1,0 +1,624 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.testing.doctester.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="testing-doctester">
+<h1>testing.doctester<a class="headerlink" href="#testing-doctester" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-testing-doctester">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">testing.doctester</span></code><a class="headerlink" href="#module-testing-doctester" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.testing.doctester</span></code>:</p>
+digraph inheritanceecdc83e39f {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;doctest.OutputChecker&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;A class used to check the whether the actual output from a doctest&quot;];
+  &quot;plugins.base.Plugin&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;Base class for nose plugins. It's recommended but not *necessary* to&quot;];
+  &quot;plugins.doctests.Doctest&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,tooltip=&quot;Activate doctest plugin to find and run doctests in non-test modules.&quot;];
+  &quot;plugins.base.Plugin&quot; -&gt; &quot;plugins.doctests.Doctest&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;testing.doctester.NipyDoctest&quot; [URL=&quot;#nipy.testing.doctester.NipyDoctest&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;testing.noseclasses.NumpyDoctest&quot; -&gt; &quot;testing.doctester.NipyDoctest&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;testing.doctester.NipyOutputChecker&quot; [URL=&quot;#nipy.testing.doctester.NipyOutputChecker&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;testing.noseclasses.NumpyOutputChecker&quot; -&gt; &quot;testing.doctester.NipyOutputChecker&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;testing.noseclasses.NumpyDoctest&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;plugins.doctests.Doctest&quot; -&gt; &quot;testing.noseclasses.NumpyDoctest&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;testing.noseclasses.NumpyOutputChecker&quot; [fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;doctest.OutputChecker&quot; -&gt; &quot;testing.noseclasses.NumpyOutputChecker&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.testing.doctester"></span><p>Custom doctester based on Numpy doctester</p>
+<p>To run doctests via nose, you’ll need <code class="docutils literal notranslate"><span class="pre">nosetests</span> <span class="pre">nipy/testing/doctester.py</span>
+<span class="pre">--doctest-test</span></code>, because this file will be identified as containing tests.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="nipydoctest">
+<h3><a class="reference internal" href="#nipy.testing.doctester.NipyDoctest" title="nipy.testing.doctester.NipyDoctest"><code class="xref py py-class docutils literal notranslate"><span class="pre">NipyDoctest</span></code></a><a class="headerlink" href="#nipydoctest" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.testing.doctester.NipyDoctest">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.testing.doctester.</code><code class="sig-name descname">NipyDoctest</code><a class="reference internal" href="../../_modules/nipy/testing/doctester.html#NipyDoctest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.fixes.numpy.testing.noseclasses.NumpyDoctest</span></code></p>
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.name">
+<code class="sig-name descname">name</code><em class="property"> = 'nipydoctest'</em><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.out_check_class">
+<code class="sig-name descname">out_check_class</code><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.out_check_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#nipy.testing.doctester.NipyOutputChecker" title="nipy.testing.doctester.NipyOutputChecker"><code class="xref py py-class docutils literal notranslate"><span class="pre">NipyOutputChecker</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.set_test_context">
+<code class="sig-name descname">set_test_context</code><span class="sig-paren">(</span><em class="sig-param">test</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/doctester.html#NipyDoctest.set_test_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.set_test_context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure <cite>test</cite> object to set test context</p>
+<p>We set the numpy / scipy standard doctest namespace</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>test</strong> : test object</p>
+<blockquote>
+<div><p>with <code class="docutils literal notranslate"><span class="pre">globs</span></code> dictionary defining namespace</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p><cite>test</cite> object modified in place</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.options">
+<code class="sig-name descname">options</code><span class="sig-paren">(</span><em class="sig-param">parser</em>, <em class="sig-param">env=&lt;class 'nipy.utils._NoValue'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/doctester.html#NipyDoctest.options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register commmandline options.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.addOptions">
+<code class="sig-name descname">addOptions</code><span class="sig-paren">(</span><em class="sig-param">parser</em>, <em class="sig-param">env=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.addOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add command-line options for this plugin.</p>
+<p>The base plugin class adds –with-$name by default, used to enable the
+plugin.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Don’t implement addOptions unless you want to override
+all default option handling behavior, including
+warnings for conflicting options. Implement
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">options</span></code>
+instead.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.add_options">
+<code class="sig-name descname">add_options</code><span class="sig-paren">(</span><em class="sig-param">parser</em>, <em class="sig-param">env=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.add_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-camel-case version of func name for backwards compatibility.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>DEPRECATED: Do not use this method,
+use <code class="xref py py-meth docutils literal notranslate"><span class="pre">options</span></code>
+instead.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.afterContext">
+<code class="sig-name descname">afterContext</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.afterContext" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.can_configure">
+<code class="sig-name descname">can_configure</code><em class="property"> = False</em><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.can_configure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.configure">
+<code class="sig-name descname">configure</code><span class="sig-paren">(</span><em class="sig-param">options</em>, <em class="sig-param">config</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.configure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure plugin.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.doctest_case_class">
+<code class="sig-name descname">doctest_case_class</code><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.doctest_case_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.fixes.numpy.testing.noseclasses.NumpyDocTestCase</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.doctest_ignore">
+<code class="sig-name descname">doctest_ignore</code><em class="property"> = ['generate_numpy_api.py', 'setup.py']</em><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.doctest_ignore" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.doctest_optflags">
+<code class="sig-name descname">doctest_optflags</code><em class="property"> = 12</em><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.doctest_optflags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.enableOpt">
+<code class="sig-name descname">enableOpt</code><em class="property"> = None</em><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.enableOpt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.enabled">
+<code class="sig-name descname">enabled</code><em class="property"> = False</em><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.enabled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.extension">
+<code class="sig-name descname">extension</code><em class="property"> = None</em><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.help">
+<code class="sig-name descname">help</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return help for this plugin. This will be output as the help
+section of the –with-$name option that enables the plugin.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.loadTestsFromFile">
+<code class="sig-name descname">loadTestsFromFile</code><span class="sig-paren">(</span><em class="sig-param">filename</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.loadTestsFromFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load doctests from the file.</p>
+<p>Tests are loaded only if filename’s extension matches
+configured doctest extension.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.loadTestsFromModule">
+<code class="sig-name descname">loadTestsFromModule</code><span class="sig-paren">(</span><em class="sig-param">module</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.loadTestsFromModule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load doctests from the module.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.makeTest">
+<code class="sig-name descname">makeTest</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">parent</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.makeTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look for doctests in the given object, which will be a
+function, method or class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.matches">
+<code class="sig-name descname">matches</code><span class="sig-paren">(</span><em class="sig-param">name</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.matches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.prepareTestLoader">
+<code class="sig-name descname">prepareTestLoader</code><span class="sig-paren">(</span><em class="sig-param">loader</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.prepareTestLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Capture loader’s suiteClass.</p>
+<p>This is used to create test suites from doctest files.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.score">
+<code class="sig-name descname">score</code><em class="property"> = 1000</em><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.score" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.suiteClass">
+<code class="sig-name descname">suiteClass</code><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.suiteClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">nose.plugins.doctests.DoctestSuite</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.testing.doctester.NipyDoctest.test_finder_class">
+<code class="sig-name descname">test_finder_class</code><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.test_finder_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.fixes.numpy.testing.noseclasses.NumpyDocTestFinder</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.tolist">
+<code class="sig-name descname">tolist</code><span class="sig-paren">(</span><em class="sig-param">val</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.tolist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyDoctest.wantFile">
+<code class="sig-name descname">wantFile</code><span class="sig-paren">(</span><em class="sig-param">file</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyDoctest.wantFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override to select all modules and any file ending with
+configured doctest extension.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="nipyoutputchecker">
+<h3><a class="reference internal" href="#nipy.testing.doctester.NipyOutputChecker" title="nipy.testing.doctester.NipyOutputChecker"><code class="xref py py-class docutils literal notranslate"><span class="pre">NipyOutputChecker</span></code></a><a class="headerlink" href="#nipyoutputchecker" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.testing.doctester.NipyOutputChecker">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.testing.doctester.</code><code class="sig-name descname">NipyOutputChecker</code><a class="reference internal" href="../../_modules/nipy/testing/doctester.html#NipyOutputChecker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.doctester.NipyOutputChecker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.fixes.numpy.testing.noseclasses.NumpyOutputChecker</span></code></p>
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyOutputChecker.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">$self</em>, <em class="sig-param">/</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyOutputChecker.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyOutputChecker.check_output">
+<code class="sig-name descname">check_output</code><span class="sig-paren">(</span><em class="sig-param">want</em>, <em class="sig-param">got</em>, <em class="sig-param">optionflags</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/doctester.html#NipyOutputChecker.check_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.doctester.NipyOutputChecker.check_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True iff the actual output from an example (<cite>got</cite>)
+matches the expected output (<cite>want</cite>).  These strings are
+always considered to match if they are identical; but
+depending on what option flags the test runner is using,
+several non-exact match types are also possible.  See the
+documentation for <cite>TestRunner</cite> for more information about
+option flags.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.testing.doctester.NipyOutputChecker.output_difference">
+<code class="sig-name descname">output_difference</code><span class="sig-paren">(</span><em class="sig-param">example</em>, <em class="sig-param">got</em>, <em class="sig-param">optionflags</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.testing.doctester.NipyOutputChecker.output_difference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string describing the differences between the
+expected output for a given example (<cite>example</cite>) and the actual
+output (<cite>got</cite>).  <cite>optionflags</cite> is the set of option flags used
+to compare <cite>want</cite> and <cite>got</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.testing.doctester.ignore_dtype">
+<code class="sig-prename descclassname">nipy.testing.doctester.</code><code class="sig-name descname">ignore_dtype</code><span class="sig-paren">(</span><em class="sig-param">in_str</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/doctester.html#ignore_dtype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.doctester.ignore_dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes dtype=[dtype] from string <cite>in_str</cite></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>in_str</strong> : str</p>
+<blockquote>
+<div><p>String maybe containing dtype specifier</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>out_str</strong> : str</p>
+<blockquote>
+<div><p>String from which the dtype specifier has been removed.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;i2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here’s the normal repr:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span>
+<span class="go">array([0, 1, 2, 3, 4], dtype=int16)</span>
+</pre></div>
+</div>
+<p>The repr with the dtype bits removed</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_dtype</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span>
+<span class="go">&#39;array([0, 1, 2, 3, 4])&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_dtype</span><span class="p">(</span><span class="s1">&#39;something(again, dtype=something)&#39;</span><span class="p">)</span>
+<span class="go">&#39;something(again)&#39;</span>
+</pre></div>
+</div>
+<p>Even if there are more closed brackets after the dtype</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_dtype</span><span class="p">(</span><span class="s1">&#39;something(again, dtype=something) (1, 2)&#39;</span><span class="p">)</span>
+<span class="go">&#39;something(again) (1, 2)&#39;</span>
+</pre></div>
+</div>
+<p>We need the close brackets to match</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_dtype</span><span class="p">(</span><span class="s1">&#39;again, dtype=something&#39;</span><span class="p">)</span>
+<span class="go">&#39;again, dtype=something&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.doctester.round_numbers">
+<code class="sig-prename descclassname">nipy.testing.doctester.</code><code class="sig-name descname">round_numbers</code><span class="sig-paren">(</span><em class="sig-param">in_str</em>, <em class="sig-param">precision</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/doctester.html#round_numbers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.doctester.round_numbers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace fp numbers in <cite>in_str</cite> with numbers rounded to <cite>precision</cite></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>in_str</strong> : str</p>
+<blockquote>
+<div><p>string possibly containing floating point numbers</p>
+</div></blockquote>
+<p><strong>precision</strong> : int</p>
+<blockquote>
+<div><p>number of decimal places to round to</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>out_str</strong> : str</p>
+<blockquote>
+<div><p><cite>in_str</cite> with any floating point numbers replaced with same numbers
+rounded to <cite>precision</cite> decimal places.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">round_numbers</span><span class="p">(</span><span class="s1">&#39;A=0.234, B=12.345&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">&#39;A=0.23, B=12.35&#39;</span>
+</pre></div>
+</div>
+<p>Rounds the floating point value as it finds it in the string.  This is even
+true for numbers with exponentials.  Remember that:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;</span><span class="si">%.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="mf">0.3339e-10</span>
+<span class="go">&#39;0.000&#39;</span>
+</pre></div>
+</div>
+<p>This routine will recognize an exponential as something to process, but only
+works on the decimal part (leaving the exponential part is it is):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">round_numbers</span><span class="p">(</span><span class="s1">&#39;(0.3339e-10, &quot;string&quot;)&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">&#39;(0.334e-10, &quot;string&quot;)&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.testing.doctester.strip_array_repr">
+<code class="sig-prename descclassname">nipy.testing.doctester.</code><code class="sig-name descname">strip_array_repr</code><span class="sig-paren">(</span><em class="sig-param">in_str</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/testing/doctester.html#strip_array_repr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.testing.doctester.strip_array_repr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes array-specific part of repr from string <cite>in_str</cite></p>
+<p>This parser only works on lines that contain <em>only</em> an array repr (and
+therefore start with <code class="docutils literal notranslate"><span class="pre">array</span></code>, and end with a close parenthesis.  To remove
+dtypes in array reprs that may be somewhere within the line, use the
+<code class="docutils literal notranslate"><span class="pre">IGNORE_DTYPE</span></code> doctest option.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>in_str</strong> : str</p>
+<blockquote>
+<div><p>String maybe containing a repr for an array</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>out_str</strong> : str</p>
+<blockquote>
+<div><p>String from which the array specific parts of the repr have been
+removed.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;i2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here’s the normal repr:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span>
+<span class="go">array([0, 1, 2, 3, 4], dtype=int16)</span>
+</pre></div>
+</div>
+<p>The repr with the ‘array’ bits removed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">strip_array_repr</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span>
+<span class="go">&#39;[0, 1, 2, 3, 4]&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

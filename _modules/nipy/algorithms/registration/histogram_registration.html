@@ -1,0 +1,884 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.registration.histogram_registration</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Intensity-based image registration</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.ndimage</span> <span class="k">as</span> <span class="nn">nd</span>
+
+<span class="kn">from</span> <span class="nn">...core.image.image_spaces</span> <span class="k">import</span> <span class="p">(</span><span class="n">make_xyz_image</span><span class="p">,</span>
+                                        <span class="n">as_xyz_image</span><span class="p">,</span>
+                                        <span class="n">xyz_affine</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.optimizer</span> <span class="k">import</span> <span class="n">configure_optimizer</span>
+<span class="kn">from</span> <span class="nn">.affine</span> <span class="k">import</span> <span class="n">inverse_affine</span><span class="p">,</span> <span class="n">subgrid_affine</span><span class="p">,</span> <span class="n">affine_transforms</span>
+<span class="kn">from</span> <span class="nn">.chain_transform</span> <span class="k">import</span> <span class="n">ChainTransform</span>
+<span class="kn">from</span> <span class="nn">.similarity_measures</span> <span class="k">import</span> <span class="n">similarity_measures</span> <span class="k">as</span> <span class="n">_sms</span>
+<span class="kn">from</span> <span class="nn">._registration</span> <span class="k">import</span> <span class="n">_joint_histogram</span>
+
+<span class="n">MAX_INT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
+
+<span class="c1"># Module globals</span>
+<span class="n">VERBOSE</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># enables online print statements</span>
+<span class="n">OPTIMIZER</span> <span class="o">=</span> <span class="s1">&#39;powell&#39;</span>
+<span class="n">XTOL</span> <span class="o">=</span> <span class="mf">1e-2</span>
+<span class="n">FTOL</span> <span class="o">=</span> <span class="mf">1e-2</span>
+<span class="n">GTOL</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">MAXITER</span> <span class="o">=</span> <span class="mi">25</span>
+<span class="n">MAXFUN</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">CLAMP_DTYPE</span> <span class="o">=</span> <span class="s1">&#39;short&#39;</span>  <span class="c1"># do not edit</span>
+<span class="n">NPOINTS</span> <span class="o">=</span> <span class="mi">64</span> <span class="o">**</span> <span class="mi">3</span>
+
+<span class="c1"># Dictionary of interpolation methods (partial volume, trilinear,</span>
+<span class="c1"># random)</span>
+<span class="n">interp_methods</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pv&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;tri&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;rand&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="HistogramRegistration"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration">[docs]</a><span class="k">class</span> <span class="nc">HistogramRegistration</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to reprensent a generic intensity-based image registration</span>
+<span class="sd">    algorithm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="HistogramRegistration.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_img</span><span class="p">,</span> <span class="n">to_img</span><span class="p">,</span>
+                 <span class="n">from_bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">to_bins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">from_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">to_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">similarity</span><span class="o">=</span><span class="s1">&#39;crl1&#39;</span><span class="p">,</span> <span class="n">interp</span><span class="o">=</span><span class="s1">&#39;pv&#39;</span><span class="p">,</span>
+                 <span class="n">smooth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">renormalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new histogram registration object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        from_img : nipy-like image</span>
+<span class="sd">          `From` image</span>
+<span class="sd">        to_img : nipy-like image</span>
+<span class="sd">          `To` image</span>
+<span class="sd">        from_bins : integer</span>
+<span class="sd">          Number of histogram bins to represent the `from` image</span>
+<span class="sd">        to_bins : integer</span>
+<span class="sd">          Number of histogram bins to represent the `to` image</span>
+<span class="sd">        from_mask : array-like</span>
+<span class="sd">          Mask to apply to the `from` image</span>
+<span class="sd">        to_mask : array-like</span>
+<span class="sd">          Mask to apply to the `to` image</span>
+<span class="sd">        similarity : str or callable</span>
+<span class="sd">          Cost-function for assessing image similarity. If a string,</span>
+<span class="sd">          one of &#39;cc&#39;: correlation coefficient, &#39;cr&#39;: correlation</span>
+<span class="sd">          ratio, &#39;crl1&#39;: L1-norm based correlation ratio, &#39;mi&#39;: mutual</span>
+<span class="sd">          information, &#39;nmi&#39;: normalized mutual information, &#39;slr&#39;:</span>
+<span class="sd">          supervised log-likelihood ratio. If a callable, it should</span>
+<span class="sd">          take a two-dimensional array representing the image joint</span>
+<span class="sd">          histogram as an input and return a float.</span>
+<span class="sd">       dist: None or array-like</span>
+<span class="sd">          Joint intensity probability distribution model for use with the </span>
+<span class="sd">          &#39;slr&#39; measure. Should be of shape (from_bins, to_bins).</span>
+<span class="sd">       interp : str</span>
+<span class="sd">         Interpolation method.  One of &#39;pv&#39;: Partial volume, &#39;tri&#39;:</span>
+<span class="sd">         Trilinear, &#39;rand&#39;: Random interpolation.  See ``joint_histogram.c``</span>
+<span class="sd">       smooth : float</span>
+<span class="sd">         Standard deviation in millimeters of an isotropic Gaussian</span>
+<span class="sd">         kernel used to smooth the `To` image. If 0, no smoothing is</span>
+<span class="sd">         applied.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Function assumes xyx_affine for inputs</span>
+        <span class="n">from_img</span> <span class="o">=</span> <span class="n">as_xyz_image</span><span class="p">(</span><span class="n">from_img</span><span class="p">)</span>
+        <span class="n">to_img</span> <span class="o">=</span> <span class="n">as_xyz_image</span><span class="p">(</span><span class="n">to_img</span><span class="p">)</span>
+
+        <span class="c1"># Binning sizes</span>
+        <span class="k">if</span> <span class="n">to_bins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">to_bins</span> <span class="o">=</span> <span class="n">from_bins</span>
+
+        <span class="c1"># Clamping of the `from` image. The number of bins may be</span>
+        <span class="c1"># overriden if unnecessarily large.</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">from_bins_adjusted</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">from_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">from_bins</span><span class="p">,</span>
+                                         <span class="n">mask</span><span class="o">=</span><span class="n">from_mask</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">similarity</span> <span class="o">==</span> <span class="s1">&#39;slr&#39;</span><span class="p">:</span>
+            <span class="n">from_bins</span> <span class="o">=</span> <span class="n">from_bins_adjusted</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_from_img</span> <span class="o">=</span> <span class="n">make_xyz_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="n">from_img</span><span class="p">),</span> <span class="s1">&#39;scanner&#39;</span><span class="p">)</span>
+        <span class="c1"># Set field of view in the `from` image with potential</span>
+        <span class="c1"># subsampling for faster similarity evaluation. This also sets</span>
+        <span class="c1"># the _from_data and _vox_coords attributes</span>
+        <span class="k">if</span> <span class="n">from_mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">npoints</span><span class="o">=</span><span class="n">NPOINTS</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">corner</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="n">smallest_bounding_box</span><span class="p">(</span><span class="n">from_mask</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_fov</span><span class="p">(</span><span class="n">corner</span><span class="o">=</span><span class="n">corner</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="n">NPOINTS</span><span class="p">)</span>
+
+        <span class="c1"># Clamping of the `to` image including padding with -1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_smooth</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_smooth</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;smoothing kernel cannot have negative scale&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_smooth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">smooth_image</span><span class="p">(</span><span class="n">to_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">xyz_affine</span><span class="p">(</span><span class="n">to_img</span><span class="p">),</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_smooth</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">to_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">to_bins_adjusted</span> <span class="o">=</span> <span class="n">clamp</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">to_bins</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">to_mask</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">similarity</span> <span class="o">==</span> <span class="s1">&#39;slr&#39;</span><span class="p">:</span>
+            <span class="n">to_bins</span> <span class="o">=</span> <span class="n">to_bins_adjusted</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_to_data</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">to_img</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CLAMP_DTYPE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_to_data</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_to_inv_affine</span> <span class="o">=</span> <span class="n">inverse_affine</span><span class="p">(</span><span class="n">xyz_affine</span><span class="p">(</span><span class="n">to_img</span><span class="p">))</span>
+
+        <span class="c1"># Joint histogram: must be double contiguous as it will be</span>
+        <span class="c1"># passed to C routines which assume so</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_joint_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">from_bins</span><span class="p">,</span> <span class="n">to_bins</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Set default registration parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_interp</span><span class="p">(</span><span class="n">interp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_similarity</span><span class="p">(</span><span class="n">similarity</span><span class="p">,</span> <span class="n">renormalize</span><span class="o">=</span><span class="n">renormalize</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="n">dist</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_interp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">interp_methods</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span>\
+            <span class="nb">list</span><span class="p">(</span><span class="n">interp_methods</span><span class="o">.</span><span class="n">values</span><span class="p">())</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_interp</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">_set_interp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interp</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interp</span> <span class="o">=</span> <span class="n">interp_methods</span><span class="p">[</span><span class="n">interp</span><span class="p">]</span>
+
+    <span class="n">interp</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_interp</span><span class="p">,</span> <span class="n">_set_interp</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_slicer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corner</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">spacing</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">slice</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+                  <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+                  <span class="nb">int</span><span class="p">(</span><span class="n">spacing</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+
+<div class="viewcode-block" id="HistogramRegistration.set_fov"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration.set_fov">[docs]</a>    <span class="k">def</span> <span class="nf">set_fov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">corner</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">npoints</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Defines a subset of the `from` image to restrict joint</span>
+<span class="sd">        histogram computation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        spacing : sequence (3,) of positive integers</span>
+<span class="sd">          Subsampling of image in voxels, where None (default) results</span>
+<span class="sd">          in the subsampling to be automatically adjusted to roughly</span>
+<span class="sd">          match a cubic grid with `npoints` voxels</span>
+<span class="sd">        corner : sequence (3,) of positive integers</span>
+<span class="sd">          Bounding box origin in voxel coordinates</span>
+<span class="sd">        size : sequence (3,) of positive integers</span>
+<span class="sd">          Desired bounding box size</span>
+<span class="sd">        npoints : positive integer</span>
+<span class="sd">          Desired number of voxels in the bounding box. If a `spacing`</span>
+<span class="sd">          argument is provided, then `npoints` is ignored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">spacing</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">npoints</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">spacing</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_img</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># Adjust spacing to match desired field of view size</span>
+        <span class="k">if</span> <span class="n">spacing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fov_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_slicer</span><span class="p">(</span><span class="n">corner</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">spacing</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fov_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_slicer</span><span class="p">(</span><span class="n">corner</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])]</span>
+            <span class="n">spacing</span> <span class="o">=</span> <span class="n">ideal_spacing</span><span class="p">(</span><span class="n">fov_data</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="n">npoints</span><span class="p">)</span>
+            <span class="n">fov_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_slicer</span><span class="p">(</span><span class="n">corner</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">spacing</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_from_data</span> <span class="o">=</span> <span class="n">fov_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_from_npoints</span> <span class="o">=</span> <span class="p">(</span><span class="n">fov_data</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_from_affine</span> <span class="o">=</span> <span class="n">subgrid_affine</span><span class="p">(</span><span class="n">xyz_affine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_from_img</span><span class="p">),</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">_slicer</span><span class="p">(</span><span class="n">corner</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">spacing</span><span class="p">))</span>
+        <span class="c1"># We cache the voxel coordinates of the clamped image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vox_coords</span> <span class="o">=</span>\
+            <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_from_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="HistogramRegistration.subsample"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration.subsample">[docs]</a>    <span class="k">def</span> <span class="nf">subsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_fov</span><span class="p">(</span><span class="n">spacing</span><span class="o">=</span><span class="n">spacing</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="n">npoints</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_set_similarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">similarity</span><span class="p">,</span> <span class="n">renormalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">similarity</span> <span class="ow">in</span> <span class="n">_sms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">similarity</span> <span class="o">==</span> <span class="s1">&#39;slr&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;slr measure requires a joint intensity distribution model, &#39;</span>
+                                     <span class="s1">&#39;see `dist` argument of HistogramRegistration&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_joint_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Wrong shape for the `dist` argument&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_similarity</span> <span class="o">=</span> <span class="n">similarity</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_similarity_call</span> <span class="o">=</span>\
+                <span class="n">_sms</span><span class="p">[</span><span class="n">similarity</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">_joint_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">renormalize</span><span class="p">,</span> <span class="n">dist</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">similarity</span><span class="p">,</span> <span class="s1">&#39;__call__&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;similarity should be callable&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_similarity</span> <span class="o">=</span> <span class="s1">&#39;custom&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_similarity_call</span> <span class="o">=</span> <span class="n">similarity</span>
+
+    <span class="k">def</span> <span class="nf">_get_similarity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_similarity</span>
+
+    <span class="n">similarity</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_similarity</span><span class="p">,</span> <span class="n">_set_similarity</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HistogramRegistration.eval"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration.eval">[docs]</a>    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate similarity function given a world-to-world transform.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T : Transform</span>
+<span class="sd">            Transform object implementing ``apply`` method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Tv</span> <span class="o">=</span> <span class="n">ChainTransform</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_from_affine</span><span class="p">,</span> <span class="n">post</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_inv_affine</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval</span><span class="p">(</span><span class="n">Tv</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HistogramRegistration.eval_gradient"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration.eval_gradient">[docs]</a>    <span class="k">def</span> <span class="nf">eval_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the gradient of the similarity function wrt</span>
+<span class="sd">        transformation parameters.</span>
+
+<span class="sd">        The gradient is approximated using central finite differences</span>
+<span class="sd">        at the transformation specified by `T`. The input</span>
+<span class="sd">        transformation object `T` is modified in place unless it has a</span>
+<span class="sd">        ``copy`` method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T : Transform</span>
+<span class="sd">            Transform object implementing ``apply`` method</span>
+<span class="sd">        epsilon : float</span>
+<span class="sd">            Step size for finite differences in units of the</span>
+<span class="sd">            transformation parameters</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        g : ndarray</span>
+<span class="sd">            Similarity gradient estimate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">param0</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="s1">&#39;copy&#39;</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">simi</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+            <span class="n">T</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">param</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">approx_gradient</span><span class="p">(</span><span class="n">simi</span><span class="p">,</span> <span class="n">param0</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HistogramRegistration.eval_hessian"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration.eval_hessian">[docs]</a>    <span class="k">def</span> <span class="nf">eval_hessian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-1</span><span class="p">,</span> <span class="n">diag</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the Hessian of the similarity function wrt</span>
+<span class="sd">        transformation parameters.</span>
+
+<span class="sd">        The Hessian or its diagonal is approximated at the</span>
+<span class="sd">        transformation specified by `T` using central finite</span>
+<span class="sd">        differences. The input transformation object `T` is modified</span>
+<span class="sd">        in place unless it has a ``copy`` method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T : Transform</span>
+<span class="sd">            Transform object implementing ``apply`` method</span>
+<span class="sd">        epsilon : float</span>
+<span class="sd">            Step size for finite differences in units of the</span>
+<span class="sd">            transformation parameters</span>
+<span class="sd">        diag : bool</span>
+<span class="sd">            If True, approximate the Hessian by a diagonal matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        H : ndarray</span>
+<span class="sd">            Similarity Hessian matrix estimate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">param0</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="s1">&#39;copy&#39;</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">simi</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+            <span class="n">T</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">param</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">diag</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">approx_hessian_diag</span><span class="p">(</span><span class="n">simi</span><span class="p">,</span> <span class="n">param0</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">approx_hessian</span><span class="p">(</span><span class="n">simi</span><span class="p">,</span> <span class="n">param0</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Tv</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate similarity function given a voxel-to-voxel transform.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Tv : Transform</span>
+<span class="sd">             Transform object implementing ``apply`` method</span>
+<span class="sd">             Should map voxel space to voxel space</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># trans_vox_coords needs be C-contiguous</span>
+        <span class="n">trans_vox_coords</span> <span class="o">=</span> <span class="n">Tv</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vox_coords</span><span class="p">)</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interp</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">interp</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">MAX_INT</span><span class="p">)</span>
+        <span class="n">_joint_histogram</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_joint_hist</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">_from_data</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span>  <span class="c1"># array iterator</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">_to_data</span><span class="p">,</span>
+                         <span class="n">trans_vox_coords</span><span class="p">,</span>
+                         <span class="n">interp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_similarity_call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_joint_hist</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HistogramRegistration.optimize"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">OPTIMIZER</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Optimize transform `T` with respect to similarity measure.</span>
+
+<span class="sd">        The input object `T` will change as a result of the optimization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T : object or str</span>
+<span class="sd">          An object representing a transformation that should</span>
+<span class="sd">          implement ``apply`` method and ``param`` attribute or</span>
+<span class="sd">          property. If a string, one of &#39;rigid&#39;, &#39;similarity&#39;, or</span>
+<span class="sd">          &#39;affine&#39;. The corresponding transformation class is then</span>
+<span class="sd">          initialized by default.</span>
+<span class="sd">        optimizer : str</span>
+<span class="sd">          Name of optimization function (one of &#39;powell&#39;, &#39;steepest&#39;,</span>
+<span class="sd">          &#39;cg&#39;, &#39;bfgs&#39;, &#39;simplex&#39;)</span>
+<span class="sd">        **kwargs : dict</span>
+<span class="sd">          keyword arguments to pass to optimizer</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        T : object</span>
+<span class="sd">          Locally optimal transformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Replace T if a string is passed</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">affine_transforms</span><span class="p">:</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">affine_transforms</span><span class="p">[</span><span class="n">T</span><span class="p">]()</span>
+
+        <span class="c1"># Pull callback out of keyword arguments, if present</span>
+        <span class="n">callback</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;callback&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Create transform chain object with T generating params</span>
+        <span class="n">Tv</span> <span class="o">=</span> <span class="n">ChainTransform</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_from_affine</span><span class="p">,</span> <span class="n">post</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_inv_affine</span><span class="p">)</span>
+        <span class="n">tc0</span> <span class="o">=</span> <span class="n">Tv</span><span class="o">.</span><span class="n">param</span>
+
+        <span class="c1"># Cost function to minimize</span>
+        <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="n">tc</span><span class="p">):</span>
+            <span class="c1"># This is where the similarity function is calculcated</span>
+            <span class="n">Tv</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">tc</span>
+            <span class="k">return</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_eval</span><span class="p">(</span><span class="n">Tv</span><span class="p">)</span>
+
+        <span class="c1"># Callback during optimization</span>
+        <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">VERBOSE</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">tc</span><span class="p">):</span>
+                <span class="n">Tv</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">tc</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">Tv</span><span class="o">.</span><span class="n">optimizable</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">similarity</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval</span><span class="p">(</span><span class="n">Tv</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Switching to the appropriate optimizer</span>
+        <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initial guess...&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">Tv</span><span class="o">.</span><span class="n">optimizable</span><span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;xtol&#39;</span><span class="p">,</span> <span class="n">XTOL</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;ftol&#39;</span><span class="p">,</span> <span class="n">FTOL</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;gtol&#39;</span><span class="p">,</span> <span class="n">GTOL</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;maxiter&#39;</span><span class="p">,</span> <span class="n">MAXITER</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;maxfun&#39;</span><span class="p">,</span> <span class="n">MAXFUN</span><span class="p">)</span>
+
+        <span class="n">fmin</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">configure_optimizer</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span>
+                                                 <span class="n">fprime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                 <span class="n">fhess</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                 <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Output</span>
+        <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Optimizing using </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">fmin</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;callback&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">callback</span>
+        <span class="n">Tv</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">fmin</span><span class="p">(</span><span class="n">cost</span><span class="p">,</span> <span class="n">tc0</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Tv</span><span class="o">.</span><span class="n">optimizable</span></div>
+
+<div class="viewcode-block" id="HistogramRegistration.explore"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.HistogramRegistration.explore">[docs]</a>    <span class="k">def</span> <span class="nf">explore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the similarity at the transformations specified by</span>
+<span class="sd">        sequences of parameter values.</span>
+
+<span class="sd">        For instance:</span>
+
+<span class="sd">        s, p = explore(T, (0, [-1,0,1]), (4, [-2.,2]))</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T : object</span>
+<span class="sd">          Transformation around which the similarity function is to be</span>
+<span class="sd">          evaluated. It is modified in place unless it has a ``copy``</span>
+<span class="sd">          method.</span>
+<span class="sd">        args : tuple</span>
+<span class="sd">          Each element of `args` is a sequence of two elements, where</span>
+<span class="sd">          the first element specifies a transformation parameter axis</span>
+<span class="sd">          and the second element gives the successive parameter values</span>
+<span class="sd">          to evaluate along that axis.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        s : ndarray</span>
+<span class="sd">          Array of similarity values</span>
+<span class="sd">        p : ndarray</span>
+<span class="sd">          Corresponding array of evaluated transformation parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nparams</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="s1">&#39;copy&#39;</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">deltas</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nparams</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="n">deltas</span><span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">grids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mgrid</span><span class="p">[[</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">deltas</span><span class="p">]]</span>
+        <span class="n">ntrials</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">grids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">Deltas</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">deltas</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="n">grids</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>\
+                      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nparams</span><span class="p">)]</span>
+        <span class="n">simis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntrials</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">nparams</span><span class="p">,</span> <span class="n">ntrials</span><span class="p">])</span>
+
+        <span class="n">Tv</span> <span class="o">=</span> <span class="n">ChainTransform</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">pre</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_from_affine</span><span class="p">,</span>
+                            <span class="n">post</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_inv_affine</span><span class="p">)</span>
+        <span class="n">param0</span> <span class="o">=</span> <span class="n">Tv</span><span class="o">.</span><span class="n">param</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntrials</span><span class="p">):</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">param0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">D</span> <span class="ow">in</span> <span class="n">Deltas</span><span class="p">])</span>
+            <span class="n">Tv</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">param</span>
+            <span class="n">simis</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval</span><span class="p">(</span><span class="n">Tv</span><span class="p">)</span>
+            <span class="n">params</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span>
+
+        <span class="k">return</span> <span class="n">simis</span><span class="p">,</span> <span class="n">params</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">_clamp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">bins</span><span class="p">):</span>
+
+    <span class="c1"># Threshold</span>
+    <span class="n">dmaxmax</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">dmax</span> <span class="o">=</span> <span class="n">bins</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># default output maximum value</span>
+    <span class="k">if</span> <span class="n">dmax</span> <span class="o">&gt;</span> <span class="n">dmaxmax</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Excess number of bins&#39;</span><span class="p">)</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    If the image dynamic is small, no need for compression: just</span>
+<span class="sd">    downshift image values and re-estimate the dynamic range (hence</span>
+<span class="sd">    xmax is translated to xmax-tth casted to the appropriate</span>
+<span class="sd">    dtype. Otherwise, compress after downshifting image values (values</span>
+<span class="sd">    equal to the threshold are reset to zero).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)</span> <span class="ow">and</span> <span class="n">d</span> <span class="o">&lt;=</span> <span class="n">dmax</span><span class="p">:</span>
+        <span class="n">y</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">xmin</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">dmax</span> <span class="o">/</span> <span class="n">d</span>
+        <span class="n">y</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">bins</span>
+
+
+<div class="viewcode-block" id="clamp"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.clamp">[docs]</a><span class="k">def</span> <span class="nf">clamp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Clamp array values that fall within a given mask in the range</span>
+<span class="sd">    [0..bins-1] and reset masked values to -1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : ndarray</span>
+<span class="sd">      The input array</span>
+<span class="sd">    bins : number</span>
+<span class="sd">      Desired number of bins</span>
+<span class="sd">    mask : ndarray, tuple or slice</span>
+<span class="sd">      Anything such that x[mask] is an array.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    y : ndarray</span>
+<span class="sd">      Clamped array, masked items are assigned -1</span>
+<span class="sd">    bins : number</span>
+<span class="sd">      Adjusted number of bins</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">bins</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">short</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Too large a bin size&#39;</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">CLAMP_DTYPE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">_clamp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ym</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="n">xm</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="n">ym</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">_clamp</span><span class="p">(</span><span class="n">xm</span><span class="p">,</span> <span class="n">ym</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+        <span class="n">y</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">ym</span>
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">bins</span></div>
+
+
+<div class="viewcode-block" id="ideal_spacing"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.ideal_spacing">[docs]</a><span class="k">def</span> <span class="nf">ideal_spacing</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">npoints</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tune spacing factors so that the number of voxels in the</span>
+<span class="sd">    output block matches a given number.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : ndarray or sequence</span>
+<span class="sd">      Data image to subsample</span>
+<span class="sd">    npoints : number</span>
+<span class="sd">      Target number of voxels (negative values will be ignored)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    spacing: ndarray</span>
+<span class="sd">      Spacing factors</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dims</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">actual_npoints</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">spacing</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint&#39;</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="n">actual_npoints</span> <span class="o">&gt;</span> <span class="n">npoints</span><span class="p">:</span>
+
+        <span class="c1"># Subsample the direction with the highest number of samples</span>
+        <span class="n">ddims</span> <span class="o">=</span> <span class="n">dims</span> <span class="o">/</span> <span class="n">spacing</span>
+        <span class="k">if</span> <span class="n">ddims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ddims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">ddims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ddims</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="nb">dir</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">ddims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ddims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">ddims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ddims</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="nb">dir</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">dir</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">spacing</span><span class="p">[</span><span class="nb">dir</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">subdata</span> <span class="o">=</span> <span class="n">data</span><span class="p">[::</span><span class="n">spacing</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">::</span><span class="n">spacing</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">::</span><span class="n">spacing</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">actual_npoints</span> <span class="o">=</span> <span class="p">(</span><span class="n">subdata</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">spacing</span></div>
+
+
+<div class="viewcode-block" id="smallest_bounding_box"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.smallest_bounding_box">[docs]</a><span class="k">def</span> <span class="nf">smallest_bounding_box</span><span class="p">(</span><span class="n">msk</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract the smallest bounding box from a mask</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    msk : ndarray</span>
+<span class="sd">      Array of boolean</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    corner: ndarray</span>
+<span class="sd">      3-dimensional coordinates of bounding box corner</span>
+<span class="sd">    size: ndarray</span>
+<span class="sd">      3-dimensional size of bounding box</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">msk</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">corner</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">z</span><span class="o">.</span><span class="n">min</span><span class="p">()])</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">corner</span><span class="p">,</span> <span class="n">size</span></div>
+
+
+<div class="viewcode-block" id="approx_gradient"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.approx_gradient">[docs]</a><span class="k">def</span> <span class="nf">approx_gradient</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Approximate the gradient of a function using central finite</span>
+<span class="sd">    differences</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f: callable</span>
+<span class="sd">      The function to differentiate</span>
+<span class="sd">    x: ndarray</span>
+<span class="sd">      Point where the function gradient is to be evaluated</span>
+<span class="sd">    epsilon: float</span>
+<span class="sd">      Stepsize for finite differences</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    g: ndarray</span>
+<span class="sd">      Function gradient at `x`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">ei</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">ei</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="n">epsilon</span>
+        <span class="n">g</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">ei</span><span class="p">)</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">ei</span><span class="p">))</span> <span class="o">/</span> <span class="n">epsilon</span>
+        <span class="n">ei</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">g</span></div>
+
+
+<div class="viewcode-block" id="approx_hessian_diag"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.approx_hessian_diag">[docs]</a><span class="k">def</span> <span class="nf">approx_hessian_diag</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Approximate the Hessian diagonal of a function using central</span>
+<span class="sd">    finite differences</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f: callable</span>
+<span class="sd">      The function to differentiate</span>
+<span class="sd">    x: ndarray</span>
+<span class="sd">      Point where the Hessian is to be evaluated</span>
+<span class="sd">    epsilon: float</span>
+<span class="sd">      Stepsize for finite differences</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    h: ndarray</span>
+<span class="sd">      Diagonal of the Hessian at `x`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">ei</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">fx</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">ei</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">ei</span><span class="p">)</span> <span class="o">+</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">ei</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">fx</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">epsilon</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">ei</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">h</span></div>
+
+
+<div class="viewcode-block" id="approx_hessian"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.approx_hessian">[docs]</a><span class="k">def</span> <span class="nf">approx_hessian</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Approximate the full Hessian matrix of a function using central</span>
+<span class="sd">    finite differences</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f: callable</span>
+<span class="sd">      The function to differentiate</span>
+<span class="sd">    x: ndarray</span>
+<span class="sd">      Point where the Hessian is to be evaluated</span>
+<span class="sd">    epsilon: float</span>
+<span class="sd">      Stepsize for finite differences</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    H: ndarray</span>
+<span class="sd">      Hessian matrix at `x`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="n">ei</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">ei</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="n">epsilon</span>
+        <span class="n">g1</span> <span class="o">=</span> <span class="n">approx_gradient</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">ei</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+        <span class="n">g2</span> <span class="o">=</span> <span class="n">approx_gradient</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span> <span class="o">-</span> <span class="n">ei</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+        <span class="n">H</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">g1</span> <span class="o">-</span> <span class="n">g2</span><span class="p">)</span> <span class="o">/</span> <span class="n">epsilon</span>
+        <span class="n">ei</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">H</span></div>
+
+
+<div class="viewcode-block" id="smooth_image"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.histogram_registration.html#nipy.algorithms.registration.histogram_registration.smooth_image">[docs]</a><span class="k">def</span> <span class="nf">smooth_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Smooth an image by an isotropic Gaussian filter</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data: ndarray</span>
+<span class="sd">      Image data array</span>
+<span class="sd">    affine: ndarray</span>
+<span class="sd">      Image affine transform</span>
+<span class="sd">    sigma: float</span>
+<span class="sd">      Filter standard deviation in mm</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sdata: ndarray</span>
+<span class="sd">      Smoothed data array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sigma_vox</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">affine</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">nd</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sigma_vox</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

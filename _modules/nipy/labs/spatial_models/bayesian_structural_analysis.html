@@ -1,0 +1,587 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.spatial_models.bayesian_structural_analysis</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The main routine of this package that aims at performing the</span>
+<span class="sd">extraction of ROIs from multisubject dataset using the localization</span>
+<span class="sd">and activation strength of extracted regions.</span>
+
+<span class="sd">This has been published in:</span>
+<span class="sd">- Thirion et al. High level group analysis of FMRI data based on</span>
+<span class="sd">Dirichlet process mixture models, IPMI 2007</span>
+<span class="sd">- Thirion et al.</span>
+<span class="sd">Accurate Definition of Brain Regions Position Through the</span>
+<span class="sd">Functional Landmark Approach, MICCAI 2010</span>
+
+<span class="sd">Author : Bertrand Thirion, 2006-2013</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">st</span>
+
+<span class="kn">from</span> <span class="nn">.structural_bfls</span> <span class="k">import</span> <span class="n">build_landmarks</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.graph</span> <span class="k">import</span> <span class="n">wgraph_from_coo_matrix</span>
+<span class="kn">from</span> <span class="nn">...algorithms.statistics.empirical_pvalue</span> <span class="k">import</span> \
+    <span class="n">NormalEmpiricalNull</span><span class="p">,</span> <span class="n">three_classes_GMM_fit</span><span class="p">,</span> <span class="n">gamma_gaussian_fit</span>
+<span class="kn">from</span> <span class="nn">.hroi</span> <span class="k">import</span> <span class="n">HROI_as_discrete_domain_blobs</span>
+
+<span class="c1">####################################################################</span>
+<span class="c1"># Ancillary functions</span>
+<span class="c1">####################################################################</span>
+
+
+<span class="k">def</span> <span class="nf">_stat_to_proba</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">learn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;prior&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a set of statistics to posterior probabilities of  being</span>
+<span class="sd">    generated under H0</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    test: array of shape(n_samples),</span>
+<span class="sd">           data that is assessed</span>
+<span class="sd">    learn: array of shape(n_samples), optional,</span>
+<span class="sd">           data to learn a mixture model</span>
+<span class="sd">           defaults to learn</span>
+<span class="sd">    method: {&#39;gauss_mixture&#39;, &#39;emp_null&#39;, &#39;gam_gauss&#39;, &#39;prior&#39;}, optional,</span>
+<span class="sd">           &#39;gauss_mixture&#39; A Gaussian Mixture Model is used</span>
+<span class="sd">           &#39;emp_null&#39; a null mode is fitted to test</span>
+<span class="sd">           &#39;gam_gauss&#39; a Gamma-Gaussian mixture is used</span>
+<span class="sd">           &#39;prior&#39; a hard-coded function is used</span>
+<span class="sd">    alpha: float in the [0,1] range, optional,</span>
+<span class="sd">           parameter that yields the prior probability that a region is active</span>
+<span class="sd">           should be chosen close to 0</span>
+<span class="sd">    verbose: int, optional,</span>
+<span class="sd">             verbosity mode</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_null: array of shape(n_samples)</span>
+<span class="sd">                    an estimation of the probability that the observation</span>
+<span class="sd">                    is generated under the null</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;gauss_mixture&#39;</span><span class="p">:</span>
+        <span class="n">prior_strength</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="n">fixed_scale</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">posterior_probas</span> <span class="o">=</span> <span class="n">three_classes_GMM_fit</span><span class="p">(</span>
+            <span class="n">learn</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">prior_strength</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">fixed_scale</span><span class="p">)</span>
+        <span class="n">posterior_null</span> <span class="o">=</span> <span class="n">posterior_probas</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;emp_null&#39;</span><span class="p">:</span>
+        <span class="n">enn</span> <span class="o">=</span> <span class="n">NormalEmpiricalNull</span><span class="p">(</span><span class="n">learn</span><span class="p">)</span>
+        <span class="n">enn</span><span class="o">.</span><span class="n">learn</span><span class="p">()</span>
+        <span class="n">posterior_null</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">enn</span><span class="o">.</span><span class="n">fdr</span><span class="p">(</span><span class="n">test</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">test</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;gam_gauss&#39;</span><span class="p">:</span>
+        <span class="n">posterior_probas</span> <span class="o">=</span> <span class="n">gamma_gaussian_fit</span><span class="p">(</span><span class="n">learn</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+        <span class="n">posterior_null</span> <span class="o">=</span> <span class="n">posterior_probas</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;prior&#39;</span><span class="p">:</span>
+        <span class="n">y0</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+        <span class="n">shape_</span><span class="p">,</span> <span class="n">scale_</span> <span class="o">=</span> <span class="mf">3.</span><span class="p">,</span> <span class="mf">2.</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">gamma</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">shape_</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale_</span><span class="p">)</span>
+        <span class="n">posterior_null</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span>
+            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">y0</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">y1</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">y0</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown method&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">posterior_null</span>
+
+
+<span class="k">def</span> <span class="nf">_compute_individual_regions</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">smin</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                               <span class="n">method</span><span class="o">=</span><span class="s1">&#39;gauss_mixture&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute the individual regions that are real activation candidates</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    domain : StructuredDomain instance,</span>
+<span class="sd">          generic descriptor of the space domain</span>
+<span class="sd">    stats: an array of shape (n_voxels, n_subjects)</span>
+<span class="sd">           the multi-subject statistical maps</span>
+<span class="sd">    threshold: float, optional</span>
+<span class="sd">           first level threshold</span>
+<span class="sd">    smin: int, optional</span>
+<span class="sd">          minimal size of the regions to validate them</span>
+<span class="sd">    method: {&#39;gauss_mixture&#39;, &#39;emp_null&#39;, &#39;gam_gauss&#39;, &#39;prior&#39;}, optional,</span>
+<span class="sd">           &#39;gauss_mixture&#39; A Gaussian Mixture Model is used</span>
+<span class="sd">           &#39;emp_null&#39; a null mode is fitted to test</span>
+<span class="sd">           &#39;gam_gauss&#39; a Gamma-Gaussian mixture is used</span>
+<span class="sd">           &#39;prior&#39; a hard-coded function is used</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hrois: list of nipy.labs.spatial_models.hroi.HierrachicalROI instances</span>
+<span class="sd">           that represent individual ROIs</span>
+<span class="sd">           let nr be the number of terminal regions across subjects</span>
+<span class="sd">    prior_h0: array of shape (nr),</span>
+<span class="sd">              the mixture-based prior probability</span>
+<span class="sd">              that the terminal regions are false positives</span>
+<span class="sd">    subjects: array of shape (nr),</span>
+<span class="sd">              the subject index associated with the terminal regions</span>
+<span class="sd">    coords: array of shape (nr, coord.shape[1]),</span>
+<span class="sd">            the coordinates of the of the terminal regions</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    FIXME: should allow for subject specific domains</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hrois</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prior_h0</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">subjects</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">n_subjects</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">nvox</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">subject</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subjects</span><span class="p">):</span>
+        <span class="c1"># description in terms of blobs</span>
+        <span class="n">stats_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">stats</span><span class="p">[:,</span> <span class="n">subject</span><span class="p">],</span> <span class="p">(</span><span class="n">nvox</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">hroi</span> <span class="o">=</span> <span class="n">HROI_as_discrete_domain_blobs</span><span class="p">(</span>
+            <span class="n">domain</span><span class="p">,</span> <span class="n">stats_</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span> <span class="n">smin</span><span class="o">=</span><span class="n">smin</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">hroi</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">hroi</span><span class="o">.</span><span class="n">k</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># get the leave regions (i.e. the local maxima)</span>
+            <span class="n">leaves</span> <span class="o">=</span> <span class="p">[</span><span class="n">hroi</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">hroi</span><span class="o">.</span><span class="n">get_leaves_id</span><span class="p">()]</span>
+
+            <span class="c1"># get the region mean statistical value</span>
+            <span class="n">mean_val</span> <span class="o">=</span> <span class="n">hroi</span><span class="o">.</span><span class="n">representative_feature</span><span class="p">(</span><span class="s1">&#39;signal&#39;</span><span class="p">,</span> <span class="s1">&#39;weighted mean&#39;</span><span class="p">)</span>
+            <span class="n">mean_val</span> <span class="o">=</span> <span class="n">mean_val</span><span class="p">[</span><span class="n">leaves</span><span class="p">]</span>
+
+            <span class="c1"># get the regions position</span>
+            <span class="n">mean_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">hroi</span><span class="o">.</span><span class="n">get_coord</span><span class="p">()])</span>
+            <span class="n">hroi</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;position&#39;</span><span class="p">,</span> <span class="n">mean_pos</span><span class="p">)</span>
+            <span class="n">coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_pos</span><span class="p">[</span><span class="n">leaves</span><span class="p">])</span>
+
+            <span class="c1"># compute the prior proba of being null</span>
+            <span class="n">learning_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">stats_</span><span class="p">[</span><span class="n">stats_</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">prior_h0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_stat_to_proba</span><span class="p">(</span><span class="n">mean_val</span><span class="p">,</span> <span class="n">learning_set</span><span class="p">,</span> <span class="n">method</span><span class="p">))</span>
+            <span class="n">subjects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subject</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">mean_val</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subjects</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+            <span class="n">prior_h0</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+            <span class="n">coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">domain</span><span class="o">.</span><span class="n">dim</span><span class="p">)))</span>
+        <span class="n">hrois</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hroi</span><span class="p">)</span>
+
+    <span class="n">prior_h0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">prior_h0</span><span class="p">)</span>
+    <span class="n">subjects</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">subjects</span><span class="p">)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hrois</span><span class="p">,</span> <span class="n">prior_h0</span><span class="p">,</span> <span class="n">subjects</span><span class="p">,</span> <span class="n">coords</span>
+
+
+<span class="k">def</span> <span class="nf">_dpmm</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">null_density</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">prior_precision</span><span class="p">,</span> <span class="n">prior_h0</span><span class="p">,</span>
+          <span class="n">subjects</span><span class="p">,</span> <span class="n">sampling_coords</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">burnin</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+          <span class="n">co_clust</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Apply the dpmm analysis to compute clusters from regions coordinates</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">nipy.algorithms.clustering.imm</span> <span class="k">import</span> <span class="n">MixedIMM</span>
+
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">migmm</span> <span class="o">=</span> <span class="n">MixedIMM</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+    <span class="n">migmm</span><span class="o">.</span><span class="n">set_priors</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+    <span class="n">migmm</span><span class="o">.</span><span class="n">set_constant_densities</span><span class="p">(</span>
+        <span class="n">null_dens</span><span class="o">=</span><span class="n">null_density</span><span class="p">,</span> <span class="n">prior_dens</span><span class="o">=</span><span class="n">null_density</span><span class="p">)</span>
+    <span class="n">migmm</span><span class="o">.</span><span class="n">_prior_dof</span> <span class="o">=</span> <span class="n">dof</span>
+    <span class="n">migmm</span><span class="o">.</span><span class="n">_prior_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">prior_precision</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">dof</span><span class="p">)</span>
+    <span class="n">migmm</span><span class="o">.</span><span class="n">_inv_prior_scale_</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">dof</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">prior_precision</span><span class="p">[</span><span class="mi">0</span><span class="p">]))]</span>
+    <span class="n">migmm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">null_class_proba</span><span class="o">=</span><span class="n">prior_h0</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">burnin</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">kfold</span><span class="o">=</span><span class="n">subjects</span><span class="p">)</span>
+
+    <span class="c1"># sampling</span>
+    <span class="n">like</span><span class="p">,</span> <span class="n">pproba</span><span class="p">,</span> <span class="n">co_clustering</span> <span class="o">=</span> <span class="n">migmm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="n">null_class_proba</span><span class="o">=</span><span class="n">prior_h0</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span> <span class="n">kfold</span><span class="o">=</span><span class="n">subjects</span><span class="p">,</span>
+        <span class="n">sampling_points</span><span class="o">=</span><span class="n">sampling_coords</span><span class="p">,</span> <span class="n">co_clustering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">co_clust</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">like</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">pproba</span><span class="p">,</span> <span class="n">co_clustering</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">like</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">pproba</span>
+
+
+<span class="k">def</span> <span class="nf">_update_hroi_labels</span><span class="p">(</span><span class="n">hrois</span><span class="p">,</span> <span class="n">new_labels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Update the labels of the hroisusing new_labels&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">subject</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hrois</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">hrois</span><span class="p">[</span><span class="n">subject</span><span class="p">]</span><span class="o">.</span><span class="n">k</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">us</span> <span class="o">=</span> <span class="n">hrois</span><span class="p">[</span><span class="n">subject</span><span class="p">]</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">)</span>
+            <span class="n">us</span><span class="p">[</span><span class="n">us</span> <span class="o">&gt;</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_labels</span><span class="p">[</span><span class="n">us</span><span class="p">[</span><span class="n">us</span> <span class="o">&gt;</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+            <span class="n">hrois</span><span class="p">[</span><span class="n">subject</span><span class="p">]</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="n">us</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_bsa_dpmm</span><span class="p">(</span><span class="n">hrois</span><span class="p">,</span> <span class="n">prior_h0</span><span class="p">,</span> <span class="n">subjects</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">prevalence_pval</span><span class="p">,</span>
+             <span class="n">prevalence_threshold</span><span class="p">,</span> <span class="n">dof</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">burnin</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+             <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;density&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Estimation of the population level model of activation density using</span>
+<span class="sd">    dpmm and inference</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hrois: list of nipy.labs.spatial_models.hroi.HierarchicalROI instances</span>
+<span class="sd">           representing individual ROIs</span>
+<span class="sd">           Let nr be the number of terminal regions across subjects</span>
+<span class="sd">    prior_h0: array of shape (nr)</span>
+<span class="sd">              mixture-based prior probability</span>
+<span class="sd">              that the terminal regions are true positives</span>
+<span class="sd">    subjects: array of shape (nr)</span>
+<span class="sd">              subject index associated with the terminal regions</span>
+<span class="sd">    coords: array of shape (nr, coord.shape[1])</span>
+<span class="sd">            coordinates of the of the terminal regions</span>
+<span class="sd">    sigma: float &gt; 0,</span>
+<span class="sd">           expected cluster scatter in the common space in units of coord</span>
+<span class="sd">    prevalence_pval: float in the [0,1] interval, optional</span>
+<span class="sd">                     p-value of the prevalence test</span>
+<span class="sd">    prevalence_threshold: float in the rannge [0,nsubj]</span>
+<span class="sd">                         null hypothesis on region prevalence</span>
+<span class="sd">    dof: float &gt; 0, optional,</span>
+<span class="sd">         degrees of freedom of the prior</span>
+<span class="sd">    alpha: float &gt; 0, optional,</span>
+<span class="sd">           creation parameter of the DPMM</span>
+<span class="sd">    niter: int, optional,</span>
+<span class="sd">           number of iterations of the DPMM</span>
+<span class="sd">    burnin: int, optional,</span>
+<span class="sd">            number of iterations of the DPMM</span>
+<span class="sd">    algorithm: {&#39;density&#39;, &#39;co_occurrence&#39;}, optional,</span>
+<span class="sd">               algorithm used in the DPMM inference</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    landmarks: instance of sbf.LandmarkRegions</span>
+<span class="sd">               that describes the ROIs found in inter-subject inference</span>
+<span class="sd">               If no such thing can be defined landmarks is set to None</span>
+<span class="sd">    hrois: List of nipy.labs.spatial_models.hroi.HierarchicalROI instances</span>
+<span class="sd">           representing individual ROIs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">nipy.algorithms.graph.field</span> <span class="k">import</span> <span class="n">field_from_coo_matrix_and_data</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">hrois</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">domain</span>
+    <span class="n">n_subjects</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hrois</span><span class="p">)</span>
+
+    <span class="n">landmarks</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subjects</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">landmarks</span><span class="p">,</span> <span class="n">hrois</span>
+
+    <span class="n">null_density</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">domain</span><span class="o">.</span><span class="n">local_volume</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># prepare the DPMM</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">em_dim</span>
+    <span class="n">prior_precision</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
+
+    <span class="c1"># n_iter = number of iterations to estimate density</span>
+    <span class="k">if</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="s1">&#39;density&#39;</span><span class="p">:</span>
+        <span class="n">density</span><span class="p">,</span> <span class="n">post_proba</span> <span class="o">=</span> <span class="n">_dpmm</span><span class="p">(</span>
+            <span class="n">coords</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">null_density</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">prior_precision</span><span class="p">,</span> <span class="n">prior_h0</span><span class="p">,</span>
+            <span class="n">subjects</span><span class="p">,</span> <span class="n">domain</span><span class="o">.</span><span class="n">coord</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span> <span class="n">burnin</span><span class="o">=</span><span class="n">burnin</span><span class="p">)</span>
+            <span class="c1"># associate labels with coords</span>
+        <span class="n">Fbeta</span> <span class="o">=</span> <span class="n">field_from_coo_matrix_and_data</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">density</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">Fbeta</span><span class="o">.</span><span class="n">custom_watershed</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">null_density</span><span class="p">)</span>
+        <span class="n">midx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">domain</span><span class="o">.</span><span class="n">coord</span> <span class="o">-</span> <span class="n">coord_</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                         <span class="k">for</span> <span class="n">coord_</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">])</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="n">label</span><span class="p">[</span><span class="n">midx</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="s1">&#39;co-occurrence&#39;</span><span class="p">:</span>
+        <span class="n">post_proba</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">co_clustering</span> <span class="o">=</span> <span class="n">_dpmm</span><span class="p">(</span>
+            <span class="n">coords</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">null_density</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">prior_precision</span><span class="p">,</span> <span class="n">prior_h0</span><span class="p">,</span>
+            <span class="n">subjects</span><span class="p">,</span>  <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span> <span class="n">burnin</span><span class="o">=</span><span class="n">burnin</span><span class="p">,</span> <span class="n">co_clust</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">contingency_graph</span> <span class="o">=</span> <span class="n">wgraph_from_coo_matrix</span><span class="p">(</span><span class="n">co_clustering</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">contingency_graph</span><span class="o">.</span><span class="n">E</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">contingency_graph</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">contingency_graph</span><span class="o">.</span><span class="n">weights</span> <span class="o">&gt;</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="n">components</span> <span class="o">=</span> <span class="n">contingency_graph</span><span class="o">.</span><span class="n">cc</span><span class="p">()</span>
+        <span class="n">components</span><span class="p">[</span><span class="n">density</span> <span class="o">&lt;</span> <span class="n">null_density</span><span class="p">]</span> <span class="o">=</span> <span class="n">components</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span>\
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">density</span> <span class="o">&lt;</span> <span class="n">null_density</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown algorithm&#39;</span><span class="p">)</span>
+
+    <span class="c1"># append some information to the hroi in each subject</span>
+    <span class="k">for</span> <span class="n">subject</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subjects</span><span class="p">):</span>
+        <span class="n">bfs</span> <span class="o">=</span> <span class="n">hrois</span><span class="p">[</span><span class="n">subject</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">bfs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">bfs</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">bfs</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span>
+            <span class="k">continue</span>
+
+        <span class="n">leaves_pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">bfs</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">bfs</span><span class="o">.</span><span class="n">get_leaves_id</span><span class="p">()]</span>
+        <span class="c1"># save posterior proba</span>
+        <span class="n">post_proba_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">bfs</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">post_proba_</span><span class="p">[</span><span class="n">leaves_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">post_proba</span><span class="p">[</span><span class="n">subjects</span> <span class="o">==</span> <span class="n">subject</span><span class="p">]</span>
+        <span class="n">bfs</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;posterior_proba&#39;</span><span class="p">,</span> <span class="n">post_proba_</span><span class="p">)</span>
+
+        <span class="c1"># save prior proba</span>
+        <span class="n">prior_proba</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">bfs</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">prior_proba</span><span class="p">[</span><span class="n">leaves_pos</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">prior_h0</span><span class="p">[</span><span class="n">subjects</span> <span class="o">==</span> <span class="n">subject</span><span class="p">]</span>
+        <span class="n">bfs</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;prior_proba&#39;</span><span class="p">,</span> <span class="n">prior_proba</span><span class="p">)</span>
+
+        <span class="c1"># assign labels to ROIs</span>
+        <span class="n">roi_label</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">bfs</span><span class="o">.</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="n">roi_label</span><span class="p">[</span><span class="n">leaves_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">components</span><span class="p">[</span><span class="n">subjects</span> <span class="o">==</span> <span class="n">subject</span><span class="p">]</span>
+        <span class="c1"># when parent regions has similarly labelled children,</span>
+        <span class="c1"># include it also</span>
+        <span class="n">roi_label</span> <span class="o">=</span> <span class="n">bfs</span><span class="o">.</span><span class="n">make_forest</span><span class="p">()</span><span class="o">.</span><span class="n">propagate_upward</span><span class="p">(</span><span class="n">roi_label</span><span class="p">)</span>
+        <span class="n">bfs</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="n">roi_label</span><span class="p">)</span>
+
+    <span class="c1"># derive the group-level landmarks</span>
+    <span class="c1"># with a threshold on the number of subjects</span>
+    <span class="c1"># that are represented in each one</span>
+    <span class="n">landmarks</span><span class="p">,</span> <span class="n">new_labels</span> <span class="o">=</span> <span class="n">build_landmarks</span><span class="p">(</span>
+        <span class="n">domain</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">subjects</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">components</span><span class="p">),</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">prior_h0</span><span class="p">,</span>
+        <span class="n">prevalence_pval</span><span class="p">,</span> <span class="n">prevalence_threshold</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+    <span class="c1"># relabel the regions</span>
+    <span class="n">_update_hroi_labels</span><span class="p">(</span><span class="n">hrois</span><span class="p">,</span> <span class="n">new_labels</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">landmarks</span><span class="p">,</span> <span class="n">hrois</span>
+
+
+<span class="c1">###########################################################################</span>
+<span class="c1"># Main function</span>
+<span class="c1">###########################################################################</span>
+
+
+<div class="viewcode-block" id="compute_landmarks"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.bayesian_structural_analysis.html#nipy.labs.spatial_models.bayesian_structural_analysis.compute_landmarks">[docs]</a><span class="k">def</span> <span class="nf">compute_landmarks</span><span class="p">(</span>
+    <span class="n">domain</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">prevalence_pval</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">prevalence_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">smin</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;prior&#39;</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">burnin</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute the  Bayesian Structural Activation patterns</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    domain: StructuredDomain instance,</span>
+<span class="sd">            Description of the spatial context of the data</span>
+<span class="sd">    stats: array of shape (nbnodes, subjects):</span>
+<span class="sd">           the multi-subject statistical maps</span>
+<span class="sd">    sigma: float &gt; 0:</span>
+<span class="sd">           expected cluster std in the common space in units of coord</span>
+<span class="sd">    prevalence_pval: float in the [0,1] interval, optional</span>
+<span class="sd">                     posterior significance threshold</span>
+<span class="sd">    prevalence_threshold: float, optional,</span>
+<span class="sd">                          reference threshold for the prevalence value</span>
+<span class="sd">    threshold: float, optional,</span>
+<span class="sd">               first level threshold</span>
+<span class="sd">    smin: int, optional,</span>
+<span class="sd">          minimal size of the regions to validate them</span>
+<span class="sd">    method: {&#39;gauss_mixture&#39;, &#39;emp_null&#39;, &#39;gam_gauss&#39;, &#39;prior&#39;}, optional,</span>
+<span class="sd">           &#39;gauss_mixture&#39; A Gaussian Mixture Model is used</span>
+<span class="sd">           &#39;emp_null&#39; a null mode is fitted to test</span>
+<span class="sd">           &#39;gam_gauss&#39; a Gamma-Gaussian mixture is used</span>
+<span class="sd">           &#39;prior&#39; a hard-coded function is used</span>
+<span class="sd">    algorithm: string, one of [&#39;density&#39;, &#39;co-occurrence&#39;], optional</span>
+<span class="sd">               method used to compute the landmarks</span>
+<span class="sd">    niter: int, optional,</span>
+<span class="sd">           number of iterations of the DPMM</span>
+<span class="sd">    burnin: int, optional,</span>
+<span class="sd">            number of iterations of the DPMM</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    landmarks: Instance of sbf.LandmarkRegions or None,</span>
+<span class="sd">               Describes the ROIs found in inter-subject inference</span>
+<span class="sd">               None if nothing can be defined</span>
+<span class="sd">    hrois: list of  nipy.labs.spatial_models.hroi.Nroi instances</span>
+<span class="sd">           representing individual ROIs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hrois</span><span class="p">,</span> <span class="n">prior_h0</span><span class="p">,</span> <span class="n">subjects</span><span class="p">,</span> <span class="n">coords</span> <span class="o">=</span> <span class="n">_compute_individual_regions</span><span class="p">(</span>
+        <span class="n">domain</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+
+    <span class="n">landmarks</span><span class="p">,</span> <span class="n">hrois</span> <span class="o">=</span> <span class="n">_bsa_dpmm</span><span class="p">(</span>
+        <span class="n">hrois</span><span class="p">,</span> <span class="n">prior_h0</span><span class="p">,</span> <span class="n">subjects</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">prevalence_pval</span><span class="p">,</span>
+        <span class="n">prevalence_threshold</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="n">algorithm</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span>
+        <span class="n">burnin</span><span class="o">=</span><span class="n">burnin</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">landmarks</span><span class="p">,</span> <span class="n">hrois</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

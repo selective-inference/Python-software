@@ -1,0 +1,404 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.io.files.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="io-files">
+<h1>io.files<a class="headerlink" href="#io-files" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.io.files">
+<span id="module-io-files"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">io.files</span></code><a class="headerlink" href="#module-nipy.io.files" title="Permalink to this headline">¶</a></h2>
+<p>The io.files module provides basic functions for working with file-based
+images in nipy.</p>
+<ul class="simple">
+<li><p>load : load an image from a file</p></li>
+<li><p>save : save an image to a file</p></li>
+</ul>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<p>See documentation for load and save functions for worked examples.</p>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.io.files.as_image">
+<code class="sig-prename descclassname">nipy.io.files.</code><code class="sig-name descname">as_image</code><span class="sig-paren">(</span><em class="sig-param">image_input</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/io/files.html#as_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.io.files.as_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load image from filename or pass through image instance</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>image_input</strong> : str or Image instance</p>
+<blockquote>
+<div><p>image or string filename of image.  If a string, load image and
+return.  If an image, pass through without modification</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>img</strong> : Image or Image-like instance</p>
+<blockquote>
+<div><p>Input object if <cite>image_input</cite> seemed to be an image, loaded Image
+object if <cite>image_input</cite> was a string.</p>
+</div></blockquote>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>TypeError</strong> : if neither string nor image-like passed</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">anatfile</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.io.api</span> <span class="k">import</span> <span class="n">load_image</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">as_image</span><span class="p">(</span><span class="n">anatfile</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img2</span> <span class="o">=</span> <span class="n">as_image</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img2</span> <span class="ow">is</span> <span class="n">img</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.io.files.load">
+<code class="sig-prename descclassname">nipy.io.files.</code><code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param">filename</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/io/files.html#load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.io.files.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load an image from the given filename.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> : string</p>
+<blockquote>
+<div><p>Should resolve to a complete filename path.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>image</strong> : An <cite>Image</cite> object</p>
+<blockquote>
+<div><p>If successful, a new <cite>Image</cite> object is returned.</p>
+</div></blockquote>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_image</span></code></dt><dd><p>function for saving images</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">Image</span></code></dt><dd><p>image object</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.io.api</span> <span class="k">import</span> <span class="n">load_image</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">anatfile</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">load_image</span><span class="p">(</span><span class="n">anatfile</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(33, 41, 25)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.io.files.save">
+<code class="sig-prename descclassname">nipy.io.files.</code><code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param">img</em>, <em class="sig-param">filename</em>, <em class="sig-param">dtype_from='data'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/io/files.html#save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.io.files.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the image to a file.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>img</strong> : An <cite>Image</cite> object</p>
+<p><strong>filename</strong> : string</p>
+<blockquote>
+<div><p>Should be a valid filename.</p>
+</div></blockquote>
+<p><strong>dtype_from</strong> : {‘data’, ‘header’} or dtype specifier, optional</p>
+<blockquote>
+<div><p>Method of setting dtype to save data to disk. Value of ‘data’ (default),
+means use data dtype to save.  ‘header’ means use data dtype specified
+in header, if available, otherwise use data dtype.  Can also be any
+valid specifier for a numpy dtype, e.g. ‘i4’, <code class="docutils literal notranslate"><span class="pre">np.float32</span></code>.  Not every
+format supports every dtype, so some values of this parameter or data
+dtypes will raise errors.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>image</strong> : An <cite>Image</cite> object</p>
+<blockquote>
+<div><p>Possibly modified by saving.</p>
+</div></blockquote>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_image</span></code></dt><dd><p>function for loading images</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">Image</span></code></dt><dd><p>image object</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Notes</p>
+<p>Filetype is determined by the file extension in ‘filename’.  Currently the
+following filetypes are supported:</p>
+<ul class="simple">
+<li><p>Nifti single file : [‘.nii’, ‘.nii.gz’]</p></li>
+<li><p>Nifti file pair : [‘.hdr’, ‘.hdr.gz’]</p></li>
+<li><p>SPM Analyze : [‘.img’, ‘.img.gz’]</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<p>Make a temporary directory to store files</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tempfile</span> <span class="k">import</span> <span class="n">mkdtemp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tmpdir</span> <span class="o">=</span> <span class="n">mkdtemp</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Make some some files and save them</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.core.api</span> <span class="k">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">AffineTransform</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.io.api</span> <span class="k">import</span> <span class="n">save_image</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">91</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">91</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmap</span> <span class="o">=</span> <span class="n">AffineTransform</span><span class="p">(</span><span class="s1">&#39;kji&#39;</span><span class="p">,</span> <span class="s1">&#39;zxy&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">cmap</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fname1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">,</span> <span class="s1">&#39;img1.nii.gz&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">saved_img1</span> <span class="o">=</span> <span class="n">save_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">fname1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">saved_img1</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(91, 109, 91)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fname2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">,</span> <span class="s1">&#39;img2.img.gz&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">saved_img2</span> <span class="o">=</span> <span class="n">save_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">fname2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">saved_img2</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(91, 109, 91)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;test.mnc&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">saved_image3</span> <span class="o">=</span> <span class="n">save_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+   <span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">Sorry, we cannot yet save as format &quot;minc&quot;</span>
+</pre></div>
+</div>
+<p>Finally, we clear up our temporary files:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shutil</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

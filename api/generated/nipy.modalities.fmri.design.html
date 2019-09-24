@@ -1,0 +1,613 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.modalities.fmri.design.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="modalities-fmri-design">
+<h1>modalities.fmri.design<a class="headerlink" href="#modalities-fmri-design" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.modalities.fmri.design">
+<span id="module-modalities-fmri-design"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">modalities.fmri.design</span></code><a class="headerlink" href="#module-nipy.modalities.fmri.design" title="Permalink to this headline">¶</a></h2>
+<p>Convenience functions for specifying a design in the GLM</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.block_amplitudes">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">block_amplitudes</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">block_spec</em>, <em class="sig-param">t</em>, <em class="sig-param">hrfs=(glover</em>, <em class="sig-param">)</em>, <em class="sig-param">convolution_padding=5.0</em>, <em class="sig-param">convolution_dt=0.02</em>, <em class="sig-param">hrf_interval=(0.0</em>, <em class="sig-param">30.0)</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#block_amplitudes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.block_amplitudes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Design matrix at times <cite>t</cite> for blocks specification <cite>block_spec</cite></p>
+<p>Create design matrix for linear model from a block specification
+<cite>block_spec</cite>,  evaluating design rows at a sequence of time values <cite>t</cite>.</p>
+<p><cite>block_spec</cite> may specify amplitude of response for each event, if different
+(see description of <cite>block_spec</cite> parameter below).</p>
+<p>The on-off step function implied by <cite>block_spec</cite> will be convolved with
+each HRF in <cite>hrfs</cite> to form a design matrix shape <code class="docutils literal notranslate"><span class="pre">(len(t),</span> <span class="pre">len(hrfs))</span></code>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> : str</p>
+<blockquote>
+<div><p>Name of condition</p>
+</div></blockquote>
+<p><strong>block_spec</strong> : np.recarray or array-like</p>
+<blockquote>
+<div><p>A recarray having fields <code class="docutils literal notranslate"><span class="pre">start,</span> <span class="pre">end,</span> <span class="pre">amplitude</span></code>, or a 2D ndarray /
+array-like with three columns corresponding to start, end, amplitude.</p>
+</div></blockquote>
+<p><strong>t</strong> : np.ndarray</p>
+<blockquote>
+<div><p>An array of np.float values at which to evaluate the design. Common
+examples would be the acquisition times of an fMRI image.</p>
+</div></blockquote>
+<p><strong>hrfs</strong> : sequence, optional</p>
+<blockquote>
+<div><p>A sequence of (symbolic) HRFs that will be convolved with each block.
+Default is <code class="docutils literal notranslate"><span class="pre">(glover,)</span></code>.</p>
+</div></blockquote>
+<p><strong>convolution_padding</strong> : float, optional</p>
+<blockquote>
+<div><p>A padding for the convolution with the HRF. The intervals
+used for the convolution are the smallest ‘start’ minus this
+padding to the largest ‘end’ plus this padding.</p>
+</div></blockquote>
+<p><strong>convolution_dt</strong> : float, optional</p>
+<blockquote>
+<div><p>Time step for high-resolution time course for use in convolving the
+blocks with each HRF.</p>
+</div></blockquote>
+<p><strong>hrf_interval: length 2 sequence of floats, optional</strong></p>
+<blockquote>
+<div><p>Interval over which the HRF is assumed supported, used in the
+convolution.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.ndarray</p>
+<blockquote>
+<div><p>The design matrix with <code class="docutils literal notranslate"><span class="pre">X.shape[0]</span> <span class="pre">==</span> <span class="pre">t.shape[0]</span></code>. The number of
+columns will be <code class="docutils literal notranslate"><span class="pre">len(hrfs)</span></code>.</p>
+</div></blockquote>
+<p><strong>contrasts</strong> : dict</p>
+<blockquote>
+<div><p>A contrast is generated for each HRF specified in <cite>hrfs</cite>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.block_design">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">block_design</code><span class="sig-paren">(</span><em class="sig-param">block_spec</em>, <em class="sig-param">t</em>, <em class="sig-param">order=2</em>, <em class="sig-param">hrfs=(glover</em>, <em class="sig-param">)</em>, <em class="sig-param">convolution_padding=5.0</em>, <em class="sig-param">convolution_dt=0.02</em>, <em class="sig-param">hrf_interval=(0.0</em>, <em class="sig-param">30.0)</em>, <em class="sig-param">level_contrasts=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#block_design"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.block_design" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create design matrix at times <cite>t</cite> for blocks specification <cite>block_spec</cite></p>
+<p>Create design matrix for linear model from a block specification
+<cite>block_spec</cite>,  evaluating design rows at a sequence of time values <cite>t</cite>.
+Each column in the design matrix will be convolved with each HRF in <cite>hrfs</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>block_spec</strong> : np.recarray</p>
+<blockquote>
+<div><p>A recarray having at least a field named ‘start’ and a field named ‘end’
+signifying the block onset and offset times. All other fields will be
+treated as factors in an ANOVA-type model.  If there is no field other
+than ‘start’ and ‘end’, add a single-level placeholder block type
+<code class="docutils literal notranslate"><span class="pre">_block_</span></code>.</p>
+</div></blockquote>
+<p><strong>t</strong> : np.ndarray</p>
+<blockquote>
+<div><p>An array of np.float values at which to evaluate the design. Common
+examples would be the acquisition times of an fMRI image.</p>
+</div></blockquote>
+<p><strong>order</strong> : int, optional</p>
+<blockquote>
+<div><p>The highest order interaction to be considered in constructing the
+contrast matrices.</p>
+</div></blockquote>
+<p><strong>hrfs</strong> : sequence, optional</p>
+<blockquote>
+<div><p>A sequence of (symbolic) HRFs that will be convolved with each block.
+Default is <code class="docutils literal notranslate"><span class="pre">(glover,)</span></code>.</p>
+</div></blockquote>
+<p><strong>convolution_padding</strong> : float, optional</p>
+<blockquote>
+<div><p>A padding for the convolution with the HRF. The intervals
+used for the convolution are the smallest ‘start’ minus this
+padding to the largest ‘end’ plus this padding.</p>
+</div></blockquote>
+<p><strong>convolution_dt</strong> : float, optional</p>
+<blockquote>
+<div><p>Time step for high-resolution time course for use in convolving the
+blocks with each HRF.</p>
+</div></blockquote>
+<p><strong>hrf_interval: length 2 sequence of floats, optional</strong></p>
+<blockquote>
+<div><p>Interval over which the HRF is assumed supported, used in the
+convolution.</p>
+</div></blockquote>
+<p><strong>level_contrasts</strong> : bool, optional</p>
+<blockquote>
+<div><p>If true, generate contrasts for each individual level
+of each factor.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.ndarray</p>
+<blockquote>
+<div><p>The design matrix with <code class="docutils literal notranslate"><span class="pre">X.shape[0]</span> <span class="pre">==</span> <span class="pre">t.shape[0]</span></code>. The number of
+columns will depend on the other fields of <cite>block_spec</cite>.</p>
+</div></blockquote>
+<p><strong>contrasts</strong> : dict</p>
+<blockquote>
+<div><p>Dictionary of contrasts that are expected to be of interest from the
+block specification. Each interaction / effect up to a given order will
+be returned. Also, a contrast is generated for each interaction / effect
+for each HRF specified in <cite>hrfs</cite>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.event_design">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">event_design</code><span class="sig-paren">(</span><em class="sig-param">event_spec</em>, <em class="sig-param">t</em>, <em class="sig-param">order=2</em>, <em class="sig-param">hrfs=(glover</em>, <em class="sig-param">)</em>, <em class="sig-param">level_contrasts=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#event_design"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.event_design" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create design matrix at times <cite>t</cite> for event specification <cite>event_spec</cite></p>
+<p>Create a design matrix for linear model based on an event specification
+<cite>event_spec</cite>, evaluating the design rows at a sequence of time values <cite>t</cite>.
+Each column in the design matrix will be convolved with each HRF in <cite>hrfs</cite>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>event_spec</strong> : np.recarray</p>
+<blockquote>
+<div><p>A recarray having at least a field named ‘time’ signifying the event
+time, and all other fields will be treated as factors in an ANOVA-type
+model.  If there is no field other than time, add a single-level
+placeholder event type <code class="docutils literal notranslate"><span class="pre">_event_</span></code>.</p>
+</div></blockquote>
+<p><strong>t</strong> : np.ndarray</p>
+<blockquote>
+<div><p>An array of np.float values at which to evaluate the design. Common
+examples would be the acquisition times of an fMRI image.</p>
+</div></blockquote>
+<p><strong>order</strong> : int, optional</p>
+<blockquote>
+<div><p>The highest order interaction to be considered in constructing
+the contrast matrices.</p>
+</div></blockquote>
+<p><strong>hrfs</strong> : sequence, optional</p>
+<blockquote>
+<div><p>A sequence of (symbolic) HRFs that will be convolved with each event.
+Default is <code class="docutils literal notranslate"><span class="pre">(glover,)</span></code>.</p>
+</div></blockquote>
+<p><strong>level_contrasts</strong> : bool, optional</p>
+<blockquote>
+<div><p>If True, generate contrasts for each individual level of each factor.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.ndarray</p>
+<blockquote>
+<div><p>The design matrix with <code class="docutils literal notranslate"><span class="pre">X.shape[0]</span> <span class="pre">==</span> <span class="pre">t.shape[0]</span></code>. The number of
+columns will depend on the other fields of <cite>event_spec</cite>.</p>
+</div></blockquote>
+<p><strong>contrasts</strong> : dict</p>
+<blockquote>
+<div><p>Dictionary of contrasts that is expected to be of interest from the
+event specification. Each interaction / effect up to a given order will
+be returned. Also, a contrast is generated for each interaction / effect
+for each HRF specified in <cite>hrfs</cite>.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.fourier_basis">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">fourier_basis</code><span class="sig-paren">(</span><em class="sig-param">t</em>, <em class="sig-param">freq</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#fourier_basis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.fourier_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a design matrix with columns given by the Fourier
+basis with a given set of frequencies.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t</strong> : np.ndarray</p>
+<blockquote>
+<div><p>An array of np.float values at which to evaluate
+the design. Common examples would be the acquisition
+times of an fMRI image.</p>
+</div></blockquote>
+<p><strong>freq</strong> : sequence of float</p>
+<blockquote>
+<div><p>Frequencies for the terms in the Fourier basis.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">drift</span> <span class="o">=</span> <span class="n">fourier_basis</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">8</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">drift</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(101, 6)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.natural_spline">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">natural_spline</code><span class="sig-paren">(</span><em class="sig-param">tvals</em>, <em class="sig-param">knots=None</em>, <em class="sig-param">order=3</em>, <em class="sig-param">intercept=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#natural_spline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.natural_spline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Design matrix with columns given by a natural spline order <cite>order</cite></p>
+<p>Return design matrix with natural splines with knots <cite>knots</cite>, order
+<cite>order</cite>.  If <cite>intercept</cite> == True (the default), add constant column.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tvals</strong> : np.array</p>
+<blockquote>
+<div><p>Time values</p>
+</div></blockquote>
+<p><strong>knots</strong> : None or sequence, optional</p>
+<blockquote>
+<div><p>Sequence of float.  Default None (same as empty list)</p>
+</div></blockquote>
+<p><strong>order</strong> : int, optional</p>
+<blockquote>
+<div><p>Order of the spline. Defaults to a cubic (==3)</p>
+</div></blockquote>
+<p><strong>intercept</strong> : bool, optional</p>
+<blockquote>
+<div><p>If True, include a constant function in the natural
+spline. Default is False</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">drift</span> <span class="o">=</span> <span class="n">natural_spline</span><span class="p">(</span><span class="n">tvals</span><span class="p">,</span> <span class="n">knots</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">drift</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(101, 8)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.openfmri2nipy">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">openfmri2nipy</code><span class="sig-paren">(</span><em class="sig-param">ons_dur_amp</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#openfmri2nipy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.openfmri2nipy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contents of OpenFMRI condition file <cite>ons_dur_map</cite> as nipy recarray</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ons_dur_amp</strong> : str or array</p>
+<blockquote>
+<div><p>Path to OpenFMRI stimulus file or 2D array containing three columns
+corresponding to onset, duration, amplitude.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>block_spec</strong> : array</p>
+<blockquote>
+<div><p>Structured array with fields “start” (corresponding to onset time),
+“end” (onset time plus duration), “amplitude”.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.stack2designs">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">stack2designs</code><span class="sig-paren">(</span><em class="sig-param">old_X</em>, <em class="sig-param">new_X</em>, <em class="sig-param">old_contrasts={}</em>, <em class="sig-param">new_contrasts={}</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#stack2designs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.stack2designs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add some columns to a design matrix that has contrasts matrices
+already specified, adding some possibly new contrasts as well.</p>
+<p>This basically performs an np.hstack of old_X, new_X
+and makes sure the contrast matrices are dealt with accordingly.</p>
+<p>If two contrasts have the same name, an exception is raised.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>old_X</strong> : np.ndarray</p>
+<blockquote>
+<div><p>A design matrix</p>
+</div></blockquote>
+<p><strong>new_X</strong> : np.ndarray</p>
+<blockquote>
+<div><p>A second design matrix to be stacked with old_X</p>
+</div></blockquote>
+<p><strong>old_contrast</strong> : dict</p>
+<blockquote>
+<div><p>Dictionary of contrasts in the old_X column space</p>
+</div></blockquote>
+<p><strong>new_contrasts</strong> : dict</p>
+<blockquote>
+<div><p>Dictionary of contrasts in the new_X column space</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.ndarray</p>
+<blockquote>
+<div><p>A new design matrix:  np.hstack([old_X, new_X])</p>
+</div></blockquote>
+<p><strong>contrasts</strong> : dict</p>
+<blockquote>
+<div><p>The new contrast matrices reflecting changes to the columns.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.stack_contrasts">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">stack_contrasts</code><span class="sig-paren">(</span><em class="sig-param">contrasts</em>, <em class="sig-param">name</em>, <em class="sig-param">keys</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#stack_contrasts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.stack_contrasts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new F-contrast matrix called ‘name’
+based on a sequence of keys. The contrast
+is added to contrasts, in-place.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>contrasts</strong> : dict</p>
+<blockquote>
+<div><p>Dictionary of contrast matrices</p>
+</div></blockquote>
+<p><strong>name</strong> : str</p>
+<blockquote>
+<div><p>Name of new contrast. Should not already be a key of contrasts.</p>
+</div></blockquote>
+<p><strong>keys</strong> : sequence of str</p>
+<blockquote>
+<div><p>Keys of contrasts that are to be stacked.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.modalities.fmri.design.stack_designs">
+<code class="sig-prename descclassname">nipy.modalities.fmri.design.</code><code class="sig-name descname">stack_designs</code><span class="sig-paren">(</span><em class="sig-param">*pairs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/modalities/fmri/design.html#stack_designs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.modalities.fmri.design.stack_designs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stack a sequence of design / contrast dictionary pairs</p>
+<p>Uses multiple calls to <a class="reference internal" href="#nipy.modalities.fmri.design.stack2designs" title="nipy.modalities.fmri.design.stack2designs"><code class="xref py py-func docutils literal notranslate"><span class="pre">stack2designs()</span></code></a></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*pairs</strong> : sequence</p>
+<blockquote>
+<div><p>Elements of either (np.ndarray, dict) or (np.ndarray,) or np.ndarray</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X</strong> : np.ndarray</p>
+<blockquote>
+<div><p>new design matrix:  np.hstack([old_X, new_X])</p>
+</div></blockquote>
+<p><strong>contrasts</strong> : dict</p>
+<blockquote>
+<div><p>The new contrast matrices reflecting changes to the columns.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

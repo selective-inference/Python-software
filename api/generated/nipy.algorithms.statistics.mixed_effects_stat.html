@@ -1,0 +1,609 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.statistics.mixed_effects_stat.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-statistics-mixed-effects-stat">
+<h1>algorithms.statistics.mixed_effects_stat<a class="headerlink" href="#algorithms-statistics-mixed-effects-stat" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-statistics-mixed-effects-stat">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.statistics.mixed_effects_stat</span></code><a class="headerlink" href="#module-algorithms-statistics-mixed-effects-stat" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.statistics.mixed_effects_stat</span></code>:</p>
+digraph inheritancec29ee4253e {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;statistics.mixed_effects_stat.MixedEffectsModel&quot; [URL=&quot;#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Class to handle multiple one-sample mixed effects models&quot;];
+}
+<span class="target" id="module-nipy.algorithms.statistics.mixed_effects_stat"></span><p>Module for computation of mixed effects statistics with an EM algorithm.
+i.e.
+solves problems of the form
+y = X beta + e1 + e2,
+where X and Y are known, e1 and e2 are centered with diagonal covariance.
+V1 = var(e1) is known, and V2 = var(e2) = lambda identity.
+the code estimates beta and lambda using an EM algorithm.
+Likelihood ratio tests can then be used to test the columns of beta.</p>
+<p>Author: Bertrand Thirion, 2012.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">N</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">500</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">V1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">effects</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Y</span> <span class="o">=</span> <span class="n">generate_data</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="n">effects</span><span class="p">,</span> <span class="o">.</span><span class="mi">25</span><span class="p">,</span> <span class="n">V1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">T1</span> <span class="o">=</span> <span class="n">one_sample_ttest</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">V1</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">T2</span> <span class="o">=</span> <span class="n">t_stat</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span><span class="p">(</span><span class="n">T1</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">T2</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="mixedeffectsmodel">
+<h2><a class="reference internal" href="#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel" title="nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixedEffectsModel</span></code></a><a class="headerlink" href="#mixedeffectsmodel" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">MixedEffectsModel</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">n_iter=5</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#MixedEffectsModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to handle multiple one-sample mixed effects models</p>
+<dl class="method">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">n_iter=5</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#MixedEffectsModel.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the effects and first-level variance,
+and initialize related quantities</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X: array of shape(n_samples, n_effects),</strong></p>
+<blockquote>
+<div><p>the design matrix</p>
+</div></blockquote>
+<p><strong>n_iter: int, optional,</strong></p>
+<blockquote>
+<div><p>number of iterations of the EM algorithm</p>
+</div></blockquote>
+<p><strong>verbose: bool, optional, verbosity mode</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.log_like">
+<code class="sig-name descname">log_like</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#MixedEffectsModel.log_like"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.log_like" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the log-likelihood of (Y, V1) under the model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y, array of shape (n_samples, n_tests) or (n_samples)</strong></p>
+<blockquote>
+<div><p>the estimated effects</p>
+</div></blockquote>
+<p><strong>V1, array of shape (n_samples, n_tests) or (n_samples)</strong></p>
+<blockquote>
+<div><p>first-level variance</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>logl: array of shape self.n_tests,</p>
+<blockquote>
+<div><p>the log-likelihood of the model</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#MixedEffectsModel.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the log_likelihood of the data.See the log_like method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.score">
+<code class="sig-name descname">score</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#MixedEffectsModel.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the log_likelihood of the data. See the log_like method</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#MixedEffectsModel.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.MixedEffectsModel.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launches the EM algorithm to estimate self</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y, array of shape (n_samples, n_tests) or (n_samples)</strong></p>
+<blockquote>
+<div><p>the estimated effects</p>
+</div></blockquote>
+<p><strong>V1, array of shape (n_samples, n_tests) or (n_samples)</strong></p>
+<blockquote>
+<div><p>first-level variance</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.check_arrays">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">check_arrays</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#check_arrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.check_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the given data can be used for the models</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y: array of shape (n_samples, n_tests) or (n_samples)</strong></p>
+<blockquote>
+<div><p>the estimated effects</p>
+</div></blockquote>
+<p><strong>V1: array of shape (n_samples, n_tests) or (n_samples)</strong></p>
+<blockquote>
+<div><p>first-level variance</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.generate_data">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">generate_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">beta</em>, <em class="sig-param">V2</em>, <em class="sig-param">V1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#generate_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.generate_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a group of individuals from the provided parameters</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X: array of shape (n_samples, n_reg),</strong></p>
+<blockquote>
+<div><p>the design matrix of the model</p>
+</div></blockquote>
+<p><strong>beta: float or array of shape (n_reg, n_tests),</strong></p>
+<blockquote>
+<div><p>the associated effects</p>
+</div></blockquote>
+<p><strong>V2: float or array of shape (n_tests),</strong></p>
+<blockquote>
+<div><p>group variance</p>
+</div></blockquote>
+<p><strong>V1: array of shape(n_samples, n_tests),</strong></p>
+<blockquote>
+<div><p>the individual variances</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Y: array of shape(n_samples, n_tests)</p>
+<blockquote>
+<div><p>the individual data related to the two-level normal model</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.mfx_stat">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">mfx_stat</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em>, <em class="sig-param">X</em>, <em class="sig-param">column</em>, <em class="sig-param">n_iter=5</em>, <em class="sig-param">return_t=True</em>, <em class="sig-param">return_f=False</em>, <em class="sig-param">return_effect=False</em>, <em class="sig-param">return_var=False</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#mfx_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.mfx_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a mixed-effects model test on the column of the design matrix</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>the data</p>
+</div></blockquote>
+<p><strong>V1: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>first-level variance assocated with the data</p>
+</div></blockquote>
+<p><strong>X: array of shape(n_samples, n_regressors)</strong></p>
+<blockquote>
+<div><p>the design matrix of the model</p>
+</div></blockquote>
+<p><strong>column: int,</strong></p>
+<blockquote>
+<div><p>index of the column of X to be tested</p>
+</div></blockquote>
+<p><strong>n_iter: int, optional,</strong></p>
+<blockquote>
+<div><p>number of iterations of the EM algorithm</p>
+</div></blockquote>
+<p><strong>return_t: bool, optional,</strong></p>
+<blockquote>
+<div><p>should one return the t test (True by default)</p>
+</div></blockquote>
+<p><strong>return_f: bool, optional,</strong></p>
+<blockquote>
+<div><p>should one return the F test (False by default)</p>
+</div></blockquote>
+<p><strong>return_effect: bool, optional,</strong></p>
+<blockquote>
+<div><p>should one return the effect estimate (False by default)</p>
+</div></blockquote>
+<p><strong>return_var: bool, optional,</strong></p>
+<blockquote>
+<div><p>should one return the variance estimate (False by default)</p>
+</div></blockquote>
+<p><strong>verbose: bool, optional, verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(tstat, fstat, effect, var): tuple of arrays of shape (n_tests),</p>
+<blockquote>
+<div><p>those required by the input return booleans</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.one_sample_ftest">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">one_sample_ftest</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em>, <em class="sig-param">n_iter=5</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#one_sample_ftest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.one_sample_ftest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the mixed effects F-stat for each row of the X
+(one sample test)
+This uses the Formula in Roche et al., NeuroImage 2007</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>the data</p>
+</div></blockquote>
+<p><strong>V1: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>first-level variance ssociated with the data</p>
+</div></blockquote>
+<p><strong>n_iter: int, optional,</strong></p>
+<blockquote>
+<div><p>number of iterations of the EM algorithm</p>
+</div></blockquote>
+<p><strong>verbose: bool, optional, verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>fstat, array of shape (n_tests),</p>
+<blockquote>
+<div><p>statistical values obtained from the likelihood ratio test</p>
+</div></blockquote>
+<p>sign, array of shape (n_tests),</p>
+<blockquote>
+<div><p>sign of the mean for each test (allow for post-hoc signed tests)</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.one_sample_ttest">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">one_sample_ttest</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em>, <em class="sig-param">n_iter=5</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#one_sample_ttest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.one_sample_ttest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the mixed effects t-stat for each row of the X
+(one sample test)
+This uses the Formula in Roche et al., NeuroImage 2007</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>the observations</p>
+</div></blockquote>
+<p><strong>V1: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>first-level variance associated with the observations</p>
+</div></blockquote>
+<p><strong>n_iter: int, optional,</strong></p>
+<blockquote>
+<div><p>number of iterations of the EM algorithm</p>
+</div></blockquote>
+<p><strong>verbose: bool, optional, verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tstat: array of shape (n_tests),</p>
+<blockquote>
+<div><p>statistical values obtained from the likelihood ratio test</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.t_stat">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">t_stat</code><span class="sig-paren">(</span><em class="sig-param">Y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#t_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.t_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the t stat of the sample on each row of the matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y, array of shape (n_samples, n_tests)</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>t_variates, array of shape (n_tests)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.two_sample_ftest">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">two_sample_ftest</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em>, <em class="sig-param">group</em>, <em class="sig-param">n_iter=5</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#two_sample_ftest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.two_sample_ftest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the mixed effects t-stat for each row of the X
+(one sample test)
+This uses the Formula in Roche et al., NeuroImage 2007</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>the data</p>
+</div></blockquote>
+<p><strong>V1: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>first-level variance assocated with the data</p>
+</div></blockquote>
+<p><strong>group: array of shape (n_samples)</strong></p>
+<blockquote>
+<div><p>a vector of indicators yielding the samples membership</p>
+</div></blockquote>
+<p><strong>n_iter: int, optional,</strong></p>
+<blockquote>
+<div><p>number of iterations of the EM algorithm</p>
+</div></blockquote>
+<p><strong>verbose: bool, optional, verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tstat: array of shape (n_tests),</p>
+<blockquote>
+<div><p>statistical values obtained from the likelihood ratio test</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.statistics.mixed_effects_stat.two_sample_ttest">
+<code class="sig-prename descclassname">nipy.algorithms.statistics.mixed_effects_stat.</code><code class="sig-name descname">two_sample_ttest</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">V1</em>, <em class="sig-param">group</em>, <em class="sig-param">n_iter=5</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/mixed_effects_stat.html#two_sample_ttest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.mixed_effects_stat.two_sample_ttest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the mixed effects t-stat for each row of the X
+(one sample test)
+This uses the Formula in Roche et al., NeuroImage 2007</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>the data</p>
+</div></blockquote>
+<p><strong>V1: array of shape (n_samples, n_tests)</strong></p>
+<blockquote>
+<div><p>first-level variance assocated with the data</p>
+</div></blockquote>
+<p><strong>group: array of shape (n_samples)</strong></p>
+<blockquote>
+<div><p>a vector of indicators yielding the samples membership</p>
+</div></blockquote>
+<p><strong>n_iter: int, optional,</strong></p>
+<blockquote>
+<div><p>number of iterations of the EM algorithm</p>
+</div></blockquote>
+<p><strong>verbose: bool, optional, verbosity mode</strong></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tstat: array of shape (n_tests),</p>
+<blockquote>
+<div><p>statistical values obtained from the likelihood ratio test</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

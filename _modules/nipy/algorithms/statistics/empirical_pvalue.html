@@ -1,0 +1,801 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.statistics.empirical_pvalue</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;Routines to get corrected p-values estimates, based on the observations.</span>
+
+<span class="sd">It implements 3 approaches:</span>
+
+<span class="sd">- Benjamini-Hochberg FDR: http://en.wikipedia.org/wiki/False_discovery_rate</span>
+
+<span class="sd">- a class that fits a Gaussian model to the central part of an</span>
+<span class="sd">  histogram, following [1]</span>
+
+<span class="sd">  [1] Schwartzman A, Dougherty RF, Lee J, Ghahremani D, Taylor</span>
+<span class="sd">  JE. Empirical null and false discovery rate analysis in</span>
+<span class="sd">  neuroimaging. Neuroimage. 2009 Jan 1;44(1):71-82.  PubMed PMID:</span>
+<span class="sd">  18547821. DOI: 10.1016/j.neuroimage.2008.04.182</span>
+
+<span class="sd">  This is typically necessary to estimate a FDR when one is not</span>
+<span class="sd">  certain that the data behaves as a standard normal under H_0.</span>
+
+<span class="sd">- a model based on Gaussian mixture modelling &#39;a la Oxford&#39;</span>
+
+<span class="sd">Author : Bertrand Thirion, Yaroslav Halchenko, 2008-2012</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">pinv</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">st</span>
+
+
+<div class="viewcode-block" id="check_p_values"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.check_p_values">[docs]</a><span class="k">def</span> <span class="nf">check_p_values</span><span class="p">(</span><span class="n">p_values</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Basic checks on the p_values array: values should be within [0,1]</span>
+
+<span class="sd">    Assures also that p_values are at least in 1d array.  None of the</span>
+<span class="sd">    checks is performed if p_values is None.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p_values : array of shape (n)</span>
+<span class="sd">        The sample p-values</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    p_values : array of shape (n)</span>
+<span class="sd">        The sample p-values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">p_values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="c1"># Take all elements unfolded and assure having at least 1d</span>
+    <span class="n">p_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">p_values</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">p_values</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> values are NaN&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">p_values</span><span class="p">))))</span>
+    <span class="k">if</span> <span class="n">p_values</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Negative p-values. Min=</span><span class="si">%g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">p_values</span><span class="o">.</span><span class="n">min</span><span class="p">(),))</span>
+    <span class="k">if</span> <span class="n">p_values</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;P-values greater than 1! Max=</span><span class="si">%g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">p_values</span><span class="o">.</span><span class="n">max</span><span class="p">(),))</span>
+    <span class="k">return</span> <span class="n">p_values</span></div>
+
+
+<div class="viewcode-block" id="gaussian_fdr"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.gaussian_fdr">[docs]</a><span class="k">def</span> <span class="nf">gaussian_fdr</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the FDR associated with each value assuming a Gaussian distribution</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">fdr</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="gaussian_fdr_threshold"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.gaussian_fdr_threshold">[docs]</a><span class="k">def</span> <span class="nf">gaussian_fdr_threshold</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return FDR threshold given normal variates</span>
+
+<span class="sd">    Given an array x of normal variates, this function returns the</span>
+<span class="sd">    critical p-value associated with alpha.</span>
+<span class="sd">    x is explicitly assumed to be normal distributed under H_0</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    x: ndarray</span>
+<span class="sd">        input data</span>
+<span class="sd">    alpha: float, optional</span>
+<span class="sd">        desired significance</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    threshold : float</span>
+<span class="sd">        threshold, given as a Gaussian critical value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pvals</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">pth</span> <span class="o">=</span> <span class="n">fdr_threshold</span><span class="p">(</span><span class="n">pvals</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">isf</span><span class="p">(</span><span class="n">pth</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fdr_threshold"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.fdr_threshold">[docs]</a><span class="k">def</span> <span class="nf">fdr_threshold</span><span class="p">(</span><span class="n">p_values</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return FDR threshold given p values</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    p_values : array of shape (n), optional</span>
+<span class="sd">        The samples p-value</span>
+<span class="sd">    alpha : float, optional</span>
+<span class="sd">        The desired FDR significance</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    critical_p_value: float</span>
+<span class="sd">        The p value corresponding to the FDR alpha</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_values</span> <span class="o">=</span> <span class="n">check_p_values</span><span class="p">(</span><span class="n">p_values</span><span class="p">)</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">p_values</span><span class="p">)</span>
+    <span class="n">p_corr</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">/</span> <span class="n">n_samples</span>
+    <span class="n">sp_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">p_values</span><span class="p">)</span>
+    <span class="n">critical_set</span> <span class="o">=</span> <span class="n">sp_values</span><span class="p">[</span>
+        <span class="n">sp_values</span> <span class="o">&lt;</span> <span class="n">p_corr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">critical_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">critical_p_value</span> <span class="o">=</span> <span class="n">critical_set</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">critical_p_value</span> <span class="o">=</span> <span class="n">p_corr</span>
+    <span class="k">return</span> <span class="n">critical_p_value</span></div>
+
+
+<div class="viewcode-block" id="fdr"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.fdr">[docs]</a><span class="k">def</span> <span class="nf">fdr</span><span class="p">(</span><span class="n">p_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the FDR associated with each p value</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    p_values : ndarray of shape (n)</span>
+<span class="sd">        The samples p-value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    q : array of shape(n)</span>
+<span class="sd">        The corresponding fdr values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_values</span> <span class="o">=</span> <span class="n">check_p_values</span><span class="p">(</span><span class="n">p_values</span><span class="p">)</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="n">p_values</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">p_values</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+    <span class="n">sp_values</span> <span class="o">=</span> <span class="n">p_values</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+
+    <span class="c1"># compute q while in ascending order</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">*</span> <span class="n">sp_values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">q</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># reorder the results</span>
+    <span class="n">inverse_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+    <span class="n">inverse_order</span><span class="p">[</span><span class="n">order</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">[</span><span class="n">inverse_order</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="nn">mp</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Input p-value&#39;</span><span class="p">)</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">p_values</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Associated fdr&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">q</span></div>
+
+
+<div class="viewcode-block" id="NormalEmpiricalNull"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull">[docs]</a><span class="k">class</span> <span class="nc">NormalEmpiricalNull</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to compute the empirical null normal fit to the data.</span>
+
+<span class="sd">    The data which is used to estimate the FDR, assuming a Gaussian null</span>
+<span class="sd">    from Schwartzmann et al., NeuroImage 44 (2009) 71--82</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NormalEmpiricalNull.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize an empirical null normal object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        x : 1D ndarray</span>
+<span class="sd">            The data used to estimate the empirical null.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learned</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="NormalEmpiricalNull.learn"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.learn">[docs]</a>    <span class="k">def</span> <span class="nf">learn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.8</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimate the proportion, mean and variance of a Gaussian distribution</span>
+<span class="sd">        for a fraction of the data</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        left: float, optional</span>
+<span class="sd">            Left cut parameter to prevent fitting non-gaussian data</span>
+<span class="sd">        right: float, optional</span>
+<span class="sd">            Right cut parameter to prevent fitting non-gaussian data</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        This method stores the following attributes:</span>
+
+<span class="sd">        * mu = mu</span>
+<span class="sd">        * p0 = min(1, np.exp(lp0))</span>
+<span class="sd">        * sqsigma: variance of the estimated normal</span>
+<span class="sd">          distribution</span>
+<span class="sd">        * sigma: np.sqrt(sqsigma) : standard deviation of the estimated</span>
+<span class="sd">          normal distribution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># take a central subsample of x</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">*</span> <span class="n">left</span><span class="p">):</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">*</span> <span class="n">right</span><span class="p">)]</span>
+
+        <span class="c1"># generate the histogram</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="mf">3.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">//</span> <span class="n">step</span><span class="p">))</span>
+        <span class="n">hist</span><span class="p">,</span> <span class="n">ledge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="n">ledge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ledge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">medge</span> <span class="o">=</span> <span class="n">ledge</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">step</span>
+
+        <span class="c1"># remove null bins</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="n">hist</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="n">medge</span> <span class="o">=</span> <span class="n">medge</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">hist</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># edges include rightmost outer</span>
+
+        <span class="c1"># fit the histogram</span>
+        <span class="n">dmtx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">hist</span><span class="p">)))</span>
+        <span class="n">dmtx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">medge</span>
+        <span class="n">dmtx</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">medge</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">coef</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">hist</span><span class="p">),</span> <span class="n">pinv</span><span class="p">(</span><span class="n">dmtx</span><span class="p">))</span>
+        <span class="n">sqsigma</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">coef</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">sqsigma</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">sqsigma</span><span class="p">,</span> <span class="mf">1.e-6</span><span class="p">)</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">coef</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sqsigma</span>
+        <span class="n">lp0</span> <span class="o">=</span> <span class="p">(</span><span class="n">coef</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">step</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+                <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">sqsigma</span><span class="p">)</span> <span class="o">+</span> <span class="n">mu</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sqsigma</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p0</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lp0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sqsigma</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sqsigma</span> <span class="o">=</span> <span class="n">sqsigma</span></div>
+
+<div class="viewcode-block" id="NormalEmpiricalNull.fdrcurve"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.fdrcurve">[docs]</a>    <span class="k">def</span> <span class="nf">fdrcurve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the FDR associated with any point of self.x</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">st</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learned</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">learn</span><span class="p">()</span>
+        <span class="n">efp</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p0</span> <span class="o">*</span> <span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span>
+               <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">efp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">efp</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">efp</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">efp</span><span class="p">[</span><span class="n">ix</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">efp</span><span class="p">[</span><span class="n">ix</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">efp</span><span class="p">[</span><span class="n">ix</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sorted_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sorted_fdr</span> <span class="o">=</span> <span class="n">efp</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">efp</span></div>
+
+<div class="viewcode-block" id="NormalEmpiricalNull.threshold"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.threshold">[docs]</a>    <span class="k">def</span> <span class="nf">threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the threshold corresponding to an alpha-level FDR for x</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        alpha : float, optional</span>
+<span class="sd">            the chosen false discovery rate threshold.</span>
+<span class="sd">        verbose : boolean, optional</span>
+<span class="sd">            the verbosity level, if True a plot is generated.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        theta: float</span>
+<span class="sd">            the critical value associated with the provided FDR</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">efp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fdrcurve</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">efp</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">efp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">alpha</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;the maximal value is </span><span class="si">%f</span><span class="s2"> , the corresponding FDR is </span><span class="si">%f</span><span class="s2"> &quot;</span>
+                  <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">efp</span><span class="p">[</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">efp</span><span class="p">[::</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span> <span class="o">-</span> <span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span> <span class="o">-</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="NormalEmpiricalNull.uncorrected_threshold"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.uncorrected_threshold">[docs]</a>    <span class="k">def</span> <span class="nf">uncorrected_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the threshold corresponding to a specificity alpha for x</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        alpha : float, optional</span>
+<span class="sd">            the chosen false discovery rate (FDR) threshold.</span>
+<span class="sd">        verbose : boolean, optional</span>
+<span class="sd">            the verbosity level, if True a plot is generated.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        theta: float</span>
+<span class="sd">            the critical value associated with the provided p-value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learned</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">learn</span><span class="p">()</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">isf</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">threshold</span><span class="p">):</span>
+            <span class="n">threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">threshold</span></div>
+
+<div class="viewcode-block" id="NormalEmpiricalNull.fdr"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.fdr">[docs]</a>    <span class="k">def</span> <span class="nf">fdr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given a threshold theta, find the estimated FDR</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        theta : float or array of shape (n_samples)</span>
+<span class="sd">            values to test</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        afp : value of array of shape(n)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">norm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fdrcurve</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">theta</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorted_x</span><span class="p">[</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="mi">0</span>
+            <span class="n">maj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sorted_x</span> <span class="o">&gt;=</span> <span class="n">theta</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">efp</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p0</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>\
+                  <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">theta</span><span class="p">))</span>
+            <span class="n">efp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sorted_fdr</span><span class="p">[</span><span class="n">maj</span><span class="p">],</span> <span class="n">efp</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">efp</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="n">theta</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">th</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorted_x</span><span class="p">[</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">efp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">maj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorted_fdr</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sorted_x</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="n">efp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">maj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p0</span> <span class="o">*</span> <span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">th</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">th</span><span class="p">)))</span>
+            <span class="n">efp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">efp</span><span class="p">)</span>
+            <span class="c1">#</span>
+        <span class="n">efp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">efp</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">efp</span></div>
+
+<div class="viewcode-block" id="NormalEmpiricalNull.plot"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.NormalEmpiricalNull.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">efp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mpaxes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot the  histogram of x</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ------------</span>
+<span class="sd">        efp : float, optional</span>
+<span class="sd">            The empirical FDR (corresponding to x)</span>
+<span class="sd">            if efp==None, the false positive rate threshold plot is not</span>
+<span class="sd">            drawn.</span>
+<span class="sd">        alpha : float, optional</span>
+<span class="sd">            The chosen FDR threshold</span>
+<span class="sd">        bar=1 : bool, optional</span>
+<span class="sd">        mpaxes=None: if not None, handle to an axes where the fig</span>
+<span class="sd">        will be drawn. Avoids creating unnecessarily new figures</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">learned</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">learn</span><span class="p">()</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">)))</span>
+        <span class="n">hist</span><span class="p">,</span> <span class="n">ledge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">hist</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="n">ledge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ledge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">medge</span> <span class="o">=</span> <span class="n">ledge</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">step</span>
+        <span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">st</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p0</span> <span class="o">*</span> <span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">medge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="n">hist</span> <span class="o">/=</span> <span class="n">step</span>
+
+        <span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="nn">mp</span>
+        <span class="k">if</span> <span class="n">mpaxes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mp</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">mpaxes</span>
+        <span class="k">if</span> <span class="n">bar</span><span class="p">:</span>
+            <span class="c1"># We need to cut ledge to len(hist) to accommodate for pre and</span>
+            <span class="c1"># post numpy 1.3 hist semantic change.</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">ledge</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">hist</span><span class="p">)],</span> <span class="n">hist</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">medge</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">hist</span><span class="p">)],</span> <span class="n">hist</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">medge</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Robust fit of the histogram&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">((</span><span class="s1">&#39;empirical null&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">l</span><span class="o">.</span><span class="n">get_texts</span><span class="p">():</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">set_fontsize</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">get_xticks</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">get_yticks</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">efp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">efp</span><span class="p">),</span> <span class="s1">&#39;k&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="three_classes_GMM_fit"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.three_classes_GMM_fit">[docs]</a><span class="k">def</span> <span class="nf">three_classes_GMM_fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">prior_strength</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                          <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fixed_scale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mpaxes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">theta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_estimator</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fit the data with a 3-classes Gaussian Mixture Model,</span>
+<span class="sd">    i.e. compute some probability that the voxels of a certain map</span>
+<span class="sd">    are in class disactivated, null or active</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array of shape (nvox,1)</span>
+<span class="sd">      The map to be analysed</span>
+<span class="sd">    test: array of shape(nbitems,1), optional</span>
+<span class="sd">      the test values for which the p-value needs to be computed</span>
+<span class="sd">      by default (if None), test=x</span>
+<span class="sd">    alpha: float, optional</span>
+<span class="sd">      the prior weights of the positive and negative classes</span>
+<span class="sd">    prior_strength: float, optional</span>
+<span class="sd">      the confidence on the prior (should be compared to size(x))</span>
+<span class="sd">    verbose: int</span>
+<span class="sd">      verbosity mode</span>
+<span class="sd">    fixed_scale: bool, optional</span>
+<span class="sd">      boolean, variance parameterization. if True, the variance is locked to 1</span>
+<span class="sd">      otherwise, it is estimated from the data</span>
+<span class="sd">    mpaxes:</span>
+<span class="sd">      axes handle used to plot the figure in verbose mode</span>
+<span class="sd">      if None, new axes are created</span>
+<span class="sd">    bias:  bool</span>
+<span class="sd">      allows a rescaling of the posterior probability</span>
+<span class="sd">      that takes into account the threshold theta. Not rigorous.</span>
+<span class="sd">    theta: float</span>
+<span class="sd">      the threshold used to correct the posterior p-values</span>
+<span class="sd">      when bias=1; normally, it is such that test&gt;theta</span>
+<span class="sd">      note that if theta = -np.inf, the method has a standard behaviour</span>
+<span class="sd">    return_estimator: boolean, optional</span>
+<span class="sd">      If return_estimator is true, the estimator object is</span>
+<span class="sd">      returned.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bfp : array of shape (nbitems,3):</span>
+<span class="sd">        the posterior probability of each test item belonging to each component</span>
+<span class="sd">        in the GMM (sum to 1 across the 3 classes)</span>
+<span class="sd">        if np.size(test)==0, i.e. nbitem==0, None is returned</span>
+<span class="sd">    estimator : nipy.labs.clustering.GMM object</span>
+<span class="sd">        The estimator object, returned only if return_estimator is true.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Our convention is that:</span>
+
+<span class="sd">    * class 1 represents the negative class</span>
+<span class="sd">    * class 2 represents the null class</span>
+<span class="sd">    * class 3 represents the positive class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">..clustering.bgmm</span> <span class="k">import</span> <span class="n">VBGMM</span>
+    <span class="kn">from</span> <span class="nn">..clustering.gmm</span> <span class="k">import</span> <span class="n">GridDescriptor</span>
+
+    <span class="n">nvox</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">nvox</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">test</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">test</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">sx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">nclasses</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="c1"># set the priors from a reasonable model of the data (!)</span>
+    <span class="c1"># prior means</span>
+    <span class="n">mb0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sx</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">nvox</span><span class="p">)])</span>
+    <span class="n">mb2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sx</span><span class="p">[</span><span class="nb">int</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">nvox</span><span class="p">):])</span>
+    <span class="n">prior_means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mb0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">mb2</span><span class="p">]),</span> <span class="p">(</span><span class="n">nclasses</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">fixed_scale</span><span class="p">:</span>
+        <span class="n">prior_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">nclasses</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">prior_strength</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">prior_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">nclasses</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> \
+            <span class="p">(</span><span class="n">prior_strength</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">prior_dof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nclasses</span><span class="p">)</span> <span class="o">*</span> <span class="n">prior_strength</span>
+    <span class="n">prior_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">alpha</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">alpha</span><span class="p">])</span> <span class="o">*</span> <span class="n">prior_strength</span>
+    <span class="n">prior_shrinkage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nclasses</span><span class="p">)</span> <span class="o">*</span> <span class="n">prior_strength</span>
+
+    <span class="c1"># instantiate the class and set the priors</span>
+    <span class="n">BayesianGMM</span> <span class="o">=</span> <span class="n">VBGMM</span><span class="p">(</span><span class="n">nclasses</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">prior_means</span><span class="p">,</span> <span class="n">prior_scale</span><span class="p">,</span>
+                        <span class="n">prior_weights</span><span class="p">,</span> <span class="n">prior_shrinkage</span><span class="p">,</span> <span class="n">prior_dof</span><span class="p">)</span>
+    <span class="n">BayesianGMM</span><span class="o">.</span><span class="n">set_priors</span><span class="p">(</span><span class="n">prior_means</span><span class="p">,</span> <span class="n">prior_weights</span><span class="p">,</span> <span class="n">prior_scale</span><span class="p">,</span>
+                           <span class="n">prior_dof</span><span class="p">,</span> <span class="n">prior_shrinkage</span><span class="p">)</span>
+
+    <span class="c1"># estimate the model</span>
+    <span class="n">BayesianGMM</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">1.e-8</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># create a sampling grid</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">verbose</span> <span class="ow">or</span> <span class="n">bias</span><span class="p">):</span>
+        <span class="n">gd</span> <span class="o">=</span> <span class="n">GridDescriptor</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">gd</span><span class="o">.</span><span class="n">set</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()],</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">gdm</span> <span class="o">=</span> <span class="n">gd</span><span class="o">.</span><span class="n">make_grid</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="n">lj</span> <span class="o">=</span> <span class="n">BayesianGMM</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">gd</span><span class="o">.</span><span class="n">make_grid</span><span class="p">())</span>
+
+    <span class="c1"># estimate the prior weights</span>
+    <span class="n">bfp</span> <span class="o">=</span> <span class="n">BayesianGMM</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bias</span><span class="p">:</span>
+        <span class="n">lw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">lj</span><span class="p">[</span><span class="n">gdm</span> <span class="o">&gt;</span> <span class="n">theta</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">BayesianGMM</span><span class="o">.</span><span class="n">weights</span> <span class="o">/</span> <span class="p">(</span><span class="n">BayesianGMM</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="n">bfp</span> <span class="o">=</span> <span class="p">(</span><span class="n">lw</span> <span class="o">/</span> <span class="n">weights</span><span class="p">)</span> <span class="o">*</span> <span class="n">BayesianGMM</span><span class="o">.</span><span class="n">slikelihood</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="p">(</span><span class="n">mpaxes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">BayesianGMM</span><span class="o">.</span><span class="n">show_components</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">gd</span><span class="p">,</span> <span class="n">lj</span><span class="p">,</span> <span class="n">mpaxes</span><span class="p">)</span>
+
+    <span class="n">bfp</span> <span class="o">=</span> <span class="p">(</span><span class="n">bfp</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">bfp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">return_estimator</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">bfp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">bfp</span><span class="p">,</span> <span class="n">BayesianGMM</span></div>
+
+
+<div class="viewcode-block" id="gamma_gaussian_fit"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.gamma_gaussian_fit">[docs]</a><span class="k">def</span> <span class="nf">gamma_gaussian_fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">mpaxes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">bias</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gaussian_mix</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_estimator</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computing some prior probabilities that the voxels of a certain map</span>
+<span class="sd">    are in class disactivated, null or active using a gamma-Gaussian mixture</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ------------</span>
+<span class="sd">    x: array of shape (nvox,)</span>
+<span class="sd">        the map to be analysed</span>
+<span class="sd">    test: array of shape (nbitems,), optional</span>
+<span class="sd">        the test values for which the p-value needs to be computed</span>
+<span class="sd">        by default, test = x</span>
+<span class="sd">    verbose: 0, 1 or 2, optional</span>
+<span class="sd">        verbosity mode, 0 is quiet, and 2 calls matplotlib to display</span>
+<span class="sd">        graphs.</span>
+<span class="sd">    mpaxes: matplotlib axes, optional</span>
+<span class="sd">        axes handle used to plot the figure in verbose mode</span>
+<span class="sd">        if None, new axes are created</span>
+<span class="sd">        if false, nothing is done</span>
+<span class="sd">    bias: float, optional</span>
+<span class="sd">        lower bound on the Gaussian variance (to avoid shrinkage)</span>
+<span class="sd">    gaussian_mix: float, optional</span>
+<span class="sd">        if nonzero, lower bound on the Gaussian mixing weight</span>
+<span class="sd">        (to avoid shrinkage)</span>
+<span class="sd">    return_estimator: boolean, optional</span>
+<span class="sd">        if return_estimator is true, the estimator object is</span>
+<span class="sd">        returned.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bfp: array of shape (nbitems,3)</span>
+<span class="sd">        The probability of each component in the mixture model for each</span>
+<span class="sd">        test value</span>
+<span class="sd">    estimator: nipy.labs.clustering.ggmixture.GGGM object</span>
+<span class="sd">        The estimator object, returned only if return_estimator is true.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">..clustering</span> <span class="k">import</span> <span class="n">ggmixture</span>
+    <span class="n">Ggg</span> <span class="o">=</span> <span class="n">ggmixture</span><span class="o">.</span><span class="n">GGGM</span><span class="p">()</span>
+    <span class="n">Ggg</span><span class="o">.</span><span class="n">init_fdr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">Ggg</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">1.e-8</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">bias</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">gaussian_mix</span><span class="o">=</span><span class="n">gaussian_mix</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mpaxes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="c1"># hyper-verbose mode</span>
+        <span class="n">Ggg</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mpaxes</span><span class="o">=</span><span class="n">mpaxes</span><span class="p">)</span>
+        <span class="n">Ggg</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">test</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">test</span><span class="p">))</span>
+
+    <span class="n">bfp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Ggg</span><span class="o">.</span><span class="n">posterior</span><span class="p">(</span><span class="n">test</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">if</span> <span class="n">return_estimator</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">bfp</span><span class="p">,</span> <span class="n">Ggg</span>
+    <span class="k">return</span> <span class="n">bfp</span></div>
+
+
+<div class="viewcode-block" id="smoothed_histogram_from_samples"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.statistics.empirical_pvalue.html#nipy.algorithms.statistics.empirical_pvalue.smoothed_histogram_from_samples">[docs]</a><span class="k">def</span> <span class="nf">smoothed_histogram_from_samples</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Smooth histogram corresponding to density underlying the samples in `x`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: array of shape(n_samples)</span>
+<span class="sd">       input data</span>
+<span class="sd">    bins: array of shape(nbins+1), optional</span>
+<span class="sd">       the bins location</span>
+<span class="sd">    nbins: int, optional</span>
+<span class="sd">       the number of bins of the resulting histogram</span>
+<span class="sd">    normalized: bool, optional</span>
+<span class="sd">       if True, the result is returned as a density value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    h: array of shape (nbins)</span>
+<span class="sd">       the histogram</span>
+<span class="sd">    bins: array of shape(nbins+1),</span>
+<span class="sd">       the bins location</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="k">import</span> <span class="n">gaussian_filter1d</span>
+
+    <span class="c1"># first define the bins</span>
+    <span class="k">if</span> <span class="n">bins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">nbins</span><span class="p">)</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">bins</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">+</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="p">(</span><span class="n">bins</span> <span class="o">-</span> <span class="n">bins</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+
+    <span class="c1"># possibly normalize to density</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">h</span>
+    <span class="n">dc</span> <span class="o">=</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">normalized</span><span class="p">:</span>
+        <span class="n">h</span> <span class="o">/=</span> <span class="p">(</span><span class="n">dc</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+    <span class="c1"># define the optimal width</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">dc</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">.</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)))</span>
+
+    <span class="c1"># smooth the histogram</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="n">bins</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

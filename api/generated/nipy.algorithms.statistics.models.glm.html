@@ -1,0 +1,471 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.statistics.models.glm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-statistics-models-glm">
+<h1>algorithms.statistics.models.glm<a class="headerlink" href="#algorithms-statistics-models-glm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-statistics-models-glm">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.statistics.models.glm</span></code><a class="headerlink" href="#module-algorithms-statistics-models-glm" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.statistics.models.glm</span></code>:</p>
+digraph inheritance54b72dce5b {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;models.glm.Model&quot; [URL=&quot;#nipy.algorithms.statistics.models.glm.Model&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;models.regression.WLSModel&quot; -&gt; &quot;models.glm.Model&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;models.model.LikelihoodModel&quot; [URL=&quot;nipy.algorithms.statistics.models.model.html#nipy.algorithms.statistics.models.model.LikelihoodModel&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;];
+  &quot;models.model.Model&quot; -&gt; &quot;models.model.LikelihoodModel&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;models.model.Model&quot; [URL=&quot;nipy.algorithms.statistics.models.model.html#nipy.algorithms.statistics.models.model.Model&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A (predictive) statistical model.&quot;];
+  &quot;models.regression.OLSModel&quot; [URL=&quot;nipy.algorithms.statistics.models.regression.html#nipy.algorithms.statistics.models.regression.OLSModel&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A simple ordinary least squares model.&quot;];
+  &quot;models.model.LikelihoodModel&quot; -&gt; &quot;models.regression.OLSModel&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;models.regression.WLSModel&quot; [URL=&quot;nipy.algorithms.statistics.models.regression.html#nipy.algorithms.statistics.models.regression.WLSModel&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;A regression model with diagonal but non-identity covariance structure.&quot;];
+  &quot;models.regression.OLSModel&quot; -&gt; &quot;models.regression.WLSModel&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.algorithms.statistics.models.glm"></span><div class="section" id="general-linear-models">
+<h3>General linear models<a class="headerlink" href="#general-linear-models" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="model">
+<h2><a class="reference internal" href="#nipy.algorithms.statistics.models.glm.Model" title="nipy.algorithms.statistics.models.glm.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a><a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nipy.algorithms.statistics.models.glm.Model">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.statistics.models.glm.</code><code class="sig-name descname">Model</code><span class="sig-paren">(</span><em class="sig-param">design</em>, <em class="sig-param">family=&lt;nipy.algorithms.statistics.models.family.family.Gaussian object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/glm.html#Model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="nipy.algorithms.statistics.models.regression.html#nipy.algorithms.statistics.models.regression.WLSModel" title="nipy.algorithms.statistics.models.regression.WLSModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.statistics.models.regression.WLSModel</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">design</em>, <em class="sig-param">family=&lt;nipy.algorithms.statistics.models.family.family.Gaussian object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/glm.html#Model.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>design</strong> : array-like</p>
+<blockquote>
+<div><p>This is your design matrix.
+Data are assumed to be column ordered with
+observations in rows.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nipy.algorithms.statistics.models.glm.Model.niter">
+<code class="sig-name descname">niter</code><em class="property"> = 10</em><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.niter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.deviance">
+<code class="sig-name descname">deviance</code><span class="sig-paren">(</span><em class="sig-param">Y=None</em>, <em class="sig-param">results=None</em>, <em class="sig-param">scale=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/glm.html#Model.deviance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.deviance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return (unnormalized) log-likelihood for GLM.</p>
+<p>Note that self.scale is interpreted as a variance in old_model, so
+we divide the residuals by its sqrt.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.cont">
+<code class="sig-name descname">cont</code><span class="sig-paren">(</span><em class="sig-param">tol=1e-05</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/glm.html#Model.cont"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.cont" title="Permalink to this definition">¶</a></dt>
+<dd><p>Continue iterating, or has convergence been obtained?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.estimate_scale">
+<code class="sig-name descname">estimate_scale</code><span class="sig-paren">(</span><em class="sig-param">Y=None</em>, <em class="sig-param">results=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/glm.html#Model.estimate_scale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.estimate_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return Pearson’s X^2 estimate of scale.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">Y</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/glm.html#Model.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit model to data <cite>Y</cite></p>
+<p>Full fit of the model including estimate of covariance matrix,
+(whitened) residuals and scale.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>Y</strong> : array-like</p>
+<blockquote>
+<div><p>The dependent variable for the Least Squares problem.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fit</strong> : RegressionResults</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.has_intercept">
+<code class="sig-name descname">has_intercept</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.has_intercept" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if column of 1s is in column space of design</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.information">
+<code class="sig-name descname">information</code><span class="sig-paren">(</span><em class="sig-param">beta</em>, <em class="sig-param">nuisance=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.information" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the information matrix at (beta, Y, nuisance).</p>
+<p>See logL for details.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>beta</strong> : ndarray</p>
+<blockquote>
+<div><p>The parameter estimates.  Must be of length df_model.</p>
+</div></blockquote>
+<p><strong>nuisance</strong> : dict</p>
+<blockquote>
+<div><p>A dict with key ‘sigma’, which is an estimate of sigma. If None,
+defaults to its maximum likelihood estimate (with beta fixed) as
+<code class="docutils literal notranslate"><span class="pre">sum((Y</span> <span class="pre">-</span> <span class="pre">X*beta)**2)</span> <span class="pre">/</span> <span class="pre">n</span></code> where n=Y.shape[0], X=self.design.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>info</strong> : array</p>
+<blockquote>
+<div><p>The information matrix, the negative of the inverse of the Hessian
+of the of the log-likelihood function evaluated at (theta, Y,
+nuisance).</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.initialize">
+<code class="sig-name descname">initialize</code><span class="sig-paren">(</span><em class="sig-param">design</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize (possibly re-initialize) a Model instance.</p>
+<p>For instance, the design matrix of a linear model may change and some
+things must be recomputed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.logL">
+<code class="sig-name descname">logL</code><span class="sig-paren">(</span><em class="sig-param">beta</em>, <em class="sig-param">Y</em>, <em class="sig-param">nuisance=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.logL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the loglikelihood function at beta.</p>
+<p>Given the whitened design matrix, the loglikelihood is evaluated
+at the parameter vector, beta, for the dependent variable, Y
+and the nuisance parameter, sigma.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>beta</strong> : ndarray</p>
+<blockquote>
+<div><p>The parameter estimates.  Must be of length df_model.</p>
+</div></blockquote>
+<p><strong>Y</strong> : ndarray</p>
+<blockquote>
+<div><p>The dependent variable</p>
+</div></blockquote>
+<p><strong>nuisance</strong> : dict, optional</p>
+<blockquote>
+<div><p>A dict with key ‘sigma’, which is an optional estimate of sigma. If
+None, defaults to its maximum likelihood estimate (with beta fixed)
+as <code class="docutils literal notranslate"><span class="pre">sum((Y</span> <span class="pre">-</span> <span class="pre">X*beta)**2)</span> <span class="pre">/</span> <span class="pre">n</span></code>, where n=Y.shape[0], X=self.design.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>loglf</strong> : float</p>
+<blockquote>
+<div><p>The value of the loglikelihood function.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The log-Likelihood Function is defined as</p>
+<div class="math notranslate nohighlight">
+\[\ell(\beta,\sigma,Y)=
+-\frac{n}{2}\log(2\pi\sigma^2) - \|Y-X\beta\|^2/(2\sigma^2)\]</div>
+<p>The parameter <span class="math notranslate nohighlight">\(\sigma\)</span> above is what is sometimes referred to as a
+nuisance parameter. That is, the likelihood is considered as a function
+of <span class="math notranslate nohighlight">\(\beta\)</span>, but to evaluate it, a value of <span class="math notranslate nohighlight">\(\sigma\)</span> is
+needed.</p>
+<p>If <span class="math notranslate nohighlight">\(\sigma\)</span> is not provided, then its maximum likelihood estimate:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\sigma}(\beta) = \frac{\text{SSE}(\beta)}{n}\]</div>
+<p>is plugged in. This likelihood is now a function of only <span class="math notranslate nohighlight">\(\beta\)</span>
+and is technically referred to as a profile-likelihood.</p>
+<p class="rubric">References</p>
+<dl class="citation">
+<dt class="label" id="r1"><span class="brackets"><a class="fn-backref" href="#id1">R1</a></span></dt>
+<dd><ol class="upperalpha simple" start="23">
+<li><p>Green.  “Econometric Analysis,” 5th ed., Pearson, 2003.</p></li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">design=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/statistics/models/model.html#Model.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>After a model has been fit, results are (assumed to be) stored
+in self.results, which itself should have a predict method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.rank">
+<code class="sig-name descname">rank</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute rank of design matrix</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.score">
+<code class="sig-name descname">score</code><span class="sig-paren">(</span><em class="sig-param">beta</em>, <em class="sig-param">Y</em>, <em class="sig-param">nuisance=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gradient of the loglikelihood function at (beta, Y, nuisance).</p>
+<p>The graient of the loglikelihood function at (beta, Y, nuisance) is the
+score function.</p>
+<p>See <a class="reference internal" href="#nipy.algorithms.statistics.models.glm.Model.logL" title="nipy.algorithms.statistics.models.glm.Model.logL"><code class="xref py py-meth docutils literal notranslate"><span class="pre">logL()</span></code></a> for details.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>beta</strong> : ndarray</p>
+<blockquote>
+<div><p>The parameter estimates.  Must be of length df_model.</p>
+</div></blockquote>
+<p><strong>Y</strong> : ndarray</p>
+<blockquote>
+<div><p>The dependent variable.</p>
+</div></blockquote>
+<p><strong>nuisance</strong> : dict, optional</p>
+<blockquote>
+<div><p>A dict with key ‘sigma’, which is an optional estimate of sigma. If
+None, defaults to its maximum likelihood estimate (with beta fixed)
+as <code class="docutils literal notranslate"><span class="pre">sum((Y</span> <span class="pre">-</span> <span class="pre">X*beta)**2)</span> <span class="pre">/</span> <span class="pre">n</span></code>, where n=Y.shape[0], X=self.design.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The gradient of the loglikelihood function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.statistics.models.glm.Model.whiten">
+<code class="sig-name descname">whiten</code><span class="sig-paren">(</span><em class="sig-param">X</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.statistics.models.glm.Model.whiten" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whitener for WLS model, multiplies by sqrt(self.weights)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

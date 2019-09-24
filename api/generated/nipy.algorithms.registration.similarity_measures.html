@@ -1,0 +1,547 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.registration.similarity_measures.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-registration-similarity-measures">
+<h1>algorithms.registration.similarity_measures<a class="headerlink" href="#algorithms-registration-similarity-measures" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-registration-similarity-measures">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.registration.similarity_measures</span></code><a class="headerlink" href="#module-algorithms-registration-similarity-measures" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures</span></code>:</p>
+digraph inheritanced9abb88a7c {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;registration.similarity_measures.CorrelationCoefficient&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.CorrelationCoefficient&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Use a bivariate Gaussian as a distribution model&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; -&gt; &quot;registration.similarity_measures.CorrelationCoefficient&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;registration.similarity_measures.CorrelationRatio&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.CorrelationRatio&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Use a nonlinear regression model with Gaussian errors as a&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; -&gt; &quot;registration.similarity_measures.CorrelationRatio&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;registration.similarity_measures.CorrelationRatioL1&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.CorrelationRatioL1&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Use a nonlinear regression model with Laplace distributed errors&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; -&gt; &quot;registration.similarity_measures.CorrelationRatioL1&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;registration.similarity_measures.DiscreteParzenMutualInformation&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Use Parzen windowing in the discrete case to estimate the&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; -&gt; &quot;registration.similarity_measures.DiscreteParzenMutualInformation&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;registration.similarity_measures.MutualInformation&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.MutualInformation&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Use the normalized joint histogram as a distribution model&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; -&gt; &quot;registration.similarity_measures.MutualInformation&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;registration.similarity_measures.NormalizedMutualInformation&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;NMI = 2*(1 - H(I,J)/[H(I)+H(J)])&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; -&gt; &quot;registration.similarity_measures.NormalizedMutualInformation&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;registration.similarity_measures.ParzenMutualInformation&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.ParzenMutualInformation&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Use Parzen windowing to estimate the distribution model&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; -&gt; &quot;registration.similarity_measures.ParzenMutualInformation&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.SimilarityMeasure&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Template class&quot;];
+  &quot;registration.similarity_measures.SupervisedLikelihoodRatio&quot; [URL=&quot;#nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Assume a joint intensity distribution model is given by self.dist&quot;];
+  &quot;registration.similarity_measures.SimilarityMeasure&quot; -&gt; &quot;registration.similarity_measures.SupervisedLikelihoodRatio&quot; [arrowsize=0.5,style=&quot;setlinewidth(0.5)&quot;];
+}
+<span class="target" id="module-nipy.algorithms.registration.similarity_measures"></span></div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="correlationcoefficient">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.CorrelationCoefficient" title="nipy.algorithms.registration.similarity_measures.CorrelationCoefficient"><code class="xref py py-class docutils literal notranslate"><span class="pre">CorrelationCoefficient</span></code></a><a class="headerlink" href="#correlationcoefficient" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationCoefficient">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">CorrelationCoefficient</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#CorrelationCoefficient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationCoefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures.SimilarityMeasure</span></code></a></p>
+<p>Use a bivariate Gaussian as a distribution model</p>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationCoefficient.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationCoefficient.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationCoefficient.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#CorrelationCoefficient.loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationCoefficient.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationCoefficient.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationCoefficient.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="correlationratio">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatio" title="nipy.algorithms.registration.similarity_measures.CorrelationRatio"><code class="xref py py-class docutils literal notranslate"><span class="pre">CorrelationRatio</span></code></a><a class="headerlink" href="#correlationratio" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationRatio">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">CorrelationRatio</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#CorrelationRatio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures.SimilarityMeasure</span></code></a></p>
+<p>Use a nonlinear regression model with Gaussian errors as a
+distribution model</p>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationRatio.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatio.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationRatio.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatio.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationRatio.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatio.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="correlationratiol1">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatioL1" title="nipy.algorithms.registration.similarity_measures.CorrelationRatioL1"><code class="xref py py-class docutils literal notranslate"><span class="pre">CorrelationRatioL1</span></code></a><a class="headerlink" href="#correlationratiol1" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationRatioL1">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">CorrelationRatioL1</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#CorrelationRatioL1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatioL1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures.SimilarityMeasure</span></code></a></p>
+<p>Use a nonlinear regression model with Laplace distributed errors
+as a distribution model</p>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationRatioL1.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatioL1.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationRatioL1.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatioL1.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.CorrelationRatioL1.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.CorrelationRatioL1.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="discreteparzenmutualinformation">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation" title="nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">DiscreteParzenMutualInformation</span></code></a><a class="headerlink" href="#discreteparzenmutualinformation" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">DiscreteParzenMutualInformation</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#DiscreteParzenMutualInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures.SimilarityMeasure</span></code></a></p>
+<p>Use Parzen windowing in the discrete case to estimate the
+distribution model</p>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#DiscreteParzenMutualInformation.loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.DiscreteParzenMutualInformation.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mutualinformation">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.MutualInformation" title="nipy.algorithms.registration.similarity_measures.MutualInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">MutualInformation</span></code></a><a class="headerlink" href="#mutualinformation" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.MutualInformation">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">MutualInformation</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#MutualInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.MutualInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures.SimilarityMeasure</span></code></a></p>
+<p>Use the normalized joint histogram as a distribution model</p>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.MutualInformation.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.MutualInformation.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.MutualInformation.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#MutualInformation.loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.MutualInformation.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.MutualInformation.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.MutualInformation.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="normalizedmutualinformation">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation" title="nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormalizedMutualInformation</span></code></a><a class="headerlink" href="#normalizedmutualinformation" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">NormalizedMutualInformation</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#NormalizedMutualInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures.SimilarityMeasure</span></code></a></p>
+<dl class="simple">
+<dt>NMI = 2*(1 - H(I,J)/[H(I)+H(J)])</dt><dd><p>= 2*MI/[H(I)+H(J)])</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.NormalizedMutualInformation.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="parzenmutualinformation">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.ParzenMutualInformation" title="nipy.algorithms.registration.similarity_measures.ParzenMutualInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParzenMutualInformation</span></code></a><a class="headerlink" href="#parzenmutualinformation" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.ParzenMutualInformation">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">ParzenMutualInformation</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#ParzenMutualInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.ParzenMutualInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures.SimilarityMeasure</span></code></a></p>
+<p>Use Parzen windowing to estimate the distribution model</p>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.ParzenMutualInformation.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.ParzenMutualInformation.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.ParzenMutualInformation.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#ParzenMutualInformation.loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.ParzenMutualInformation.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.ParzenMutualInformation.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.ParzenMutualInformation.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="similaritymeasure">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">SimilarityMeasure</span></code></a><a class="headerlink" href="#similaritymeasure" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.SimilarityMeasure">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">SimilarityMeasure</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#SimilarityMeasure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Template class</p>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.SimilarityMeasure.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#SimilarityMeasure.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.SimilarityMeasure.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#SimilarityMeasure.loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.SimilarityMeasure.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#SimilarityMeasure.npoints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="supervisedlikelihoodratio">
+<h3><a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio" title="nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio"><code class="xref py py-class docutils literal notranslate"><span class="pre">SupervisedLikelihoodRatio</span></code></a><a class="headerlink" href="#supervisedlikelihoodratio" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">SupervisedLikelihoodRatio</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#SupervisedLikelihoodRatio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nipy.algorithms.registration.similarity_measures.SimilarityMeasure" title="nipy.algorithms.registration.similarity_measures.SimilarityMeasure"><code class="xref py py-class docutils literal notranslate"><span class="pre">nipy.algorithms.registration.similarity_measures.SimilarityMeasure</span></code></a></p>
+<p>Assume a joint intensity distribution model is given by self.dist</p>
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">renormalize=False</em>, <em class="sig-param">dist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio.loss">
+<code class="sig-name descname">loss</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#SupervisedLikelihoodRatio.loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio.loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio.npoints">
+<code class="sig-name descname">npoints</code><span class="sig-paren">(</span><em class="sig-param">H</em><span class="sig-paren">)</span><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.SupervisedLikelihoodRatio.npoints" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.registration.similarity_measures.correlation2loglikelihood">
+<code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">correlation2loglikelihood</code><span class="sig-paren">(</span><em class="sig-param">rho2</em>, <em class="sig-param">npts</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#correlation2loglikelihood"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.correlation2loglikelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>Re-normalize correlation.</p>
+<p>Convert a squared normalized correlation to a proper
+log-likelihood associated with a registration problem. The result
+is a function of both the input correlation and the number of
+points in the image overlap.</p>
+<p>See: Roche, medical image registration through statistical
+inference, 2001.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>rho2: float</strong></p>
+<blockquote>
+<div><p>Squared correlation measure</p>
+</div></blockquote>
+<p><strong>npts: int</strong></p>
+<blockquote>
+<div><p>Number of points involved in computing <cite>rho2</cite></p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ll: float</p>
+<blockquote>
+<div><p>Log-likelihood re-normalized <cite>rho2</cite></p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.registration.similarity_measures.dist2loss">
+<code class="sig-prename descclassname">nipy.algorithms.registration.similarity_measures.</code><code class="sig-name descname">dist2loss</code><span class="sig-paren">(</span><em class="sig-param">q</em>, <em class="sig-param">qI=None</em>, <em class="sig-param">qJ=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/registration/similarity_measures.html#dist2loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.registration.similarity_measures.dist2loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a joint distribution model q(i,j) into a pointwise loss:</p>
+<p>L(i,j) = - log q(i,j)/(q(i)q(j))</p>
+<p>where q(i) = sum_j q(i,j) and q(j) = sum_i q(i,j)</p>
+<p>See: Roche, medical image registration through statistical
+inference, 2001.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,401 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.diagnostics.timediff.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-diagnostics-timediff">
+<h1>algorithms.diagnostics.timediff<a class="headerlink" href="#algorithms-diagnostics-timediff" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.algorithms.diagnostics.timediff">
+<span id="module-algorithms-diagnostics-timediff"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.diagnostics.timediff</span></code><a class="headerlink" href="#module-nipy.algorithms.diagnostics.timediff" title="Permalink to this headline">¶</a></h2>
+<p>Time series diagnostics</p>
+<p>These started life as <code class="docutils literal notranslate"><span class="pre">tsdiffana.m</span></code> - see
+<a class="reference external" href="http://imaging.mrc-cbu.cam.ac.uk/imaging/DataDiagnostics">http://imaging.mrc-cbu.cam.ac.uk/imaging/DataDiagnostics</a></p>
+<p>Oliver Josephs (FIL) gave me (MB) the idea of time-point to time-point
+subtraction as a diagnostic for motion and other sudden image changes.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.diagnostics.timediff.time_slice_diffs">
+<code class="sig-prename descclassname">nipy.algorithms.diagnostics.timediff.</code><code class="sig-name descname">time_slice_diffs</code><span class="sig-paren">(</span><em class="sig-param">arr</em>, <em class="sig-param">time_axis=-1</em>, <em class="sig-param">slice_axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/diagnostics/timediff.html#time_slice_diffs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.diagnostics.timediff.time_slice_diffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time-point to time-point differences over volumes and slices</p>
+<p>We think of the passed array as an image.  The image has a “time”
+dimension given by <cite>time_axis</cite> and a “slice” dimension, given by
+<cite>slice_axis</cite>, and one or more other dimensions.  In the case of imaging
+there will usually be two more dimensions (the dimensions defining the size
+of an image slice). A single slice in the time dimension we call a “volume”.
+A single entry in <cite>arr</cite> is a “voxel”.  For example, if <cite>time_axis</cite> == 0,
+then <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">arr[0]</span></code> would be the first volume in the series.  The volume
+<code class="docutils literal notranslate"><span class="pre">v</span></code> above has <code class="docutils literal notranslate"><span class="pre">v.size</span></code> voxels.  If, in addition, <cite>slice_axis</cite> == 1, then
+for the volume <code class="docutils literal notranslate"><span class="pre">v</span></code> (above) <code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">=</span> <span class="pre">v[0]</span></code> would be a “slice”, with
+<code class="docutils literal notranslate"><span class="pre">s.size</span></code> voxels. These are obviously terms from neuroimaging.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>arr</strong> : array_like</p>
+<blockquote>
+<div><p>Array over which to calculate time and slice differences.  We’ll
+call this array an ‘image’ in this doc.</p>
+</div></blockquote>
+<p><strong>time_axis</strong> : int, optional</p>
+<blockquote>
+<div><p>axis of <cite>arr</cite> that varies over time. Default is last</p>
+</div></blockquote>
+<p><strong>slice_axis</strong> : None or int, optional</p>
+<blockquote>
+<div><p>axis of <cite>arr</cite> that varies over image slice.  None gives last non-time
+axis.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>results</strong> : dict</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">T</span></code> is the number of time points (<code class="docutils literal notranslate"><span class="pre">arr.shape[time_axis]</span></code>)</p>
+<p><code class="docutils literal notranslate"><span class="pre">S</span></code> is the number of slices (<code class="docutils literal notranslate"><span class="pre">arr.shape[slice_axis]</span></code>)</p>
+<p><code class="docutils literal notranslate"><span class="pre">v</span></code> is the shape of a volume (<code class="docutils literal notranslate"><span class="pre">rollimg(arr,</span> <span class="pre">time_axis)[0].shape</span></code>)</p>
+<p><code class="docutils literal notranslate"><span class="pre">d2[t]</span></code> is the volume of squared differences between voxels at
+time point <code class="docutils literal notranslate"><span class="pre">t</span></code> and time point <code class="docutils literal notranslate"><span class="pre">t+1</span></code></p>
+<p><cite>results</cite> has keys:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>‘volume_mean_diff2’<span class="classifier">(T-1,) array</span></dt><dd><p>array containing the mean (over voxels in volume) of the
+squared difference from one time point to the next</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>‘slice_mean_diff2’<span class="classifier">(T-1, S) array</span></dt><dd><p>giving the mean (over voxels in slice) of the difference from
+one time point to the next, one value per slice, per
+timepoint</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>‘volume_means’<span class="classifier">(T,) array</span></dt><dd><p>mean over voxels for each volume <code class="docutils literal notranslate"><span class="pre">vol[t]</span> <span class="pre">for</span> <span class="pre">t</span> <span class="pre">in</span> <span class="pre">0:T</span></code></p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>‘slice_diff2_max_vol’<span class="classifier">v[:] array</span></dt><dd><p>volume, of same shape as input time point volumes, where each slice
+is is the slice from <code class="docutils literal notranslate"><span class="pre">d2[t]</span></code> for t in 0:T-1, that has the largest
+variance across <code class="docutils literal notranslate"><span class="pre">t</span></code>.  Thus each slice in the volume may well result
+from a different difference time point.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>‘diff2_mean_vol``<span class="classifier">v[:] array</span></dt><dd><p>volume with the mean of <code class="docutils literal notranslate"><span class="pre">d2[t]</span></code> across t for t in 0:T-1.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> : if <cite>time_axis</cite> refers to same axis as <cite>slice_axis</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.diagnostics.timediff.time_slice_diffs_image">
+<code class="sig-prename descclassname">nipy.algorithms.diagnostics.timediff.</code><code class="sig-name descname">time_slice_diffs_image</code><span class="sig-paren">(</span><em class="sig-param">img</em>, <em class="sig-param">time_axis='t'</em>, <em class="sig-param">slice_axis='slice'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/diagnostics/timediff.html#time_slice_diffs_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.diagnostics.timediff.time_slice_diffs_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time-point to time-point differences over volumes and slices of image</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>img</strong> : Image</p>
+<blockquote>
+<div><p>The image on which to perform time-point differences</p>
+</div></blockquote>
+<p><strong>time_axis</strong> : str or int, optional</p>
+<blockquote>
+<div><p>Axis indexing time-points. Default is ‘t’. If <cite>time_axis</cite> is an integer,
+gives the index of the input (domain) axis of <cite>img</cite>. If <cite>time_axis</cite> is a str,
+can be an input (domain) name, or an output (range) name, that maps to
+an input (domain) name.</p>
+</div></blockquote>
+<p><strong>slice_axis</strong> : str or int, optional</p>
+<blockquote>
+<div><p>Axis indexing MRI slices. If <cite>slice_axis</cite> is an integer, gives the
+index of the input (domain) axis of <cite>img</cite>. If <cite>slice_axis</cite> is a str,
+can be an input (domain) name, or an output (range) name, that maps to
+an input (domain) name.</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>results</strong> : dict</p>
+<blockquote>
+<div><p><cite>arr</cite> refers to the array as loaded from <cite>img</cite></p>
+<p><code class="docutils literal notranslate"><span class="pre">T</span></code> is the number of time points (<code class="docutils literal notranslate"><span class="pre">img.shape[time_axis]</span></code>)</p>
+<p><code class="docutils literal notranslate"><span class="pre">S</span></code> is the number of slices (<code class="docutils literal notranslate"><span class="pre">img.shape[slice_axis]</span></code>)</p>
+<p><code class="docutils literal notranslate"><span class="pre">v</span></code> is the shape of a volume (<code class="docutils literal notranslate"><span class="pre">rollimg(img,</span> <span class="pre">time_axis)[0].shape</span></code>)</p>
+<p><code class="docutils literal notranslate"><span class="pre">d2[t]</span></code> is the volume of squared differences between voxels at
+time point <code class="docutils literal notranslate"><span class="pre">t</span></code> and time point <code class="docutils literal notranslate"><span class="pre">t+1</span></code></p>
+<p><cite>results</cite> has keys:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>‘volume_mean_diff2’<span class="classifier">(T-1,) array</span></dt><dd><p>array containing the mean (over voxels in volume) of the
+squared difference from one time point to the next</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>‘slice_mean_diff2’<span class="classifier">(T-1, S) array</span></dt><dd><p>giving the mean (over voxels in slice) of the difference from
+one time point to the next, one value per slice, per
+timepoint</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>‘volume_means’<span class="classifier">(T,) array</span></dt><dd><p>mean over voxels for each volume <code class="docutils literal notranslate"><span class="pre">vol[t]</span> <span class="pre">for</span> <span class="pre">t</span> <span class="pre">in</span> <span class="pre">0:T</span></code></p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>‘slice_diff2_max_vol’<span class="classifier">v[:] image</span></dt><dd><p>image volume, of same shape as input time point volumes, where each
+slice is is the slice from <code class="docutils literal notranslate"><span class="pre">d2[t]</span></code> for t in 0:T-1, that has the
+largest variance across <code class="docutils literal notranslate"><span class="pre">t</span></code>.  Thus each slice in the volume may
+well result from a different difference time point.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>‘diff2_mean_vol``<span class="classifier">v[:] image</span></dt><dd><p>image volume with the mean of <code class="docutils literal notranslate"><span class="pre">d2[t]</span></code> across t for t in 0:T-1.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,664 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.registration.affine</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.linalg</span> <span class="k">as</span> <span class="nn">spl</span>
+
+<span class="kn">from</span> <span class="nn">nibabel.affines</span> <span class="k">import</span> <span class="n">apply_affine</span>
+
+<span class="kn">from</span> <span class="nn">...externals.transforms3d.quaternions</span> <span class="k">import</span> <span class="n">mat2quat</span><span class="p">,</span> <span class="n">quat2axangle</span>
+<span class="kn">from</span> <span class="nn">.transform</span> <span class="k">import</span> <span class="n">Transform</span>
+
+<span class="c1"># Legacy repr printing from numpy.</span>
+<span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">legacy_printing</span> <span class="k">as</span> <span class="n">setup_module</span>  <span class="c1"># noqa</span>
+
+<span class="c1"># Globals</span>
+<span class="n">RADIUS</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">MAX_ANGLE</span> <span class="o">=</span> <span class="mf">1e10</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">SMALL_ANGLE</span> <span class="o">=</span> <span class="mf">1e-30</span>
+<span class="n">MAX_DIST</span> <span class="o">=</span> <span class="mf">1e10</span>
+<span class="n">LOG_MAX_DIST</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">MAX_DIST</span><span class="p">)</span>
+<span class="n">TINY</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">)</span><span class="o">.</span><span class="n">tiny</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="threshold"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.threshold">[docs]</a><span class="k">def</span> <span class="nf">threshold</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">th</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">th</span><span class="p">),</span> <span class="o">-</span><span class="n">th</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="rotation_mat2vec"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.rotation_mat2vec">[docs]</a><span class="k">def</span> <span class="nf">rotation_mat2vec</span><span class="p">(</span><span class="n">R</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Rotation vector from rotation matrix `R`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    R : (3,3) array-like</span>
+<span class="sd">        Rotation matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    vec : (3,) array</span>
+<span class="sd">        Rotation vector, where norm of `vec` is the angle ``theta``, and the</span>
+<span class="sd">        axis of rotation is given by ``vec / theta``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ax</span><span class="p">,</span> <span class="n">angle</span> <span class="o">=</span> <span class="n">quat2axangle</span><span class="p">(</span><span class="n">mat2quat</span><span class="p">(</span><span class="n">R</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ax</span> <span class="o">*</span> <span class="n">angle</span></div>
+
+
+<div class="viewcode-block" id="rotation_vec2mat"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.rotation_vec2mat">[docs]</a><span class="k">def</span> <span class="nf">rotation_vec2mat</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    R = rotation_vec2mat(r)</span>
+
+<span class="sd">    The rotation matrix is given by the Rodrigues formula:</span>
+
+<span class="sd">    R = Id + sin(theta)*Sn + (1-cos(theta))*Sn^2</span>
+
+<span class="sd">    with:</span>
+
+<span class="sd">           0  -nz  ny</span>
+<span class="sd">    Sn =   nz   0 -nx</span>
+<span class="sd">          -ny  nx   0</span>
+
+<span class="sd">    where n = r / ||r||</span>
+
+<span class="sd">    In case the angle ||r|| is very small, the above formula may lead</span>
+<span class="sd">    to numerical instabilities. We instead use a Taylor expansion</span>
+<span class="sd">    around theta=0:</span>
+
+<span class="sd">    R = I + sin(theta)/tetha Sr + (1-cos(theta))/teta2 Sr^2</span>
+
+<span class="sd">    leading to:</span>
+
+<span class="sd">    R = I + (1-theta2/6)*Sr + (1/2-theta2/24)*Sr^2</span>
+
+<span class="sd">    To avoid numerical instabilities, an upper threshold is applied to</span>
+<span class="sd">    the angle. It is chosen to be a multiple of 2*pi, hence the</span>
+<span class="sd">    resulting rotation is then the identity matrix. This strategy warrants</span>
+<span class="sd">    that the output matrix is a continuous function of the input vector.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">theta</span> <span class="o">&gt;</span> <span class="n">MAX_ANGLE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">theta</span> <span class="o">&gt;</span> <span class="n">SMALL_ANGLE</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">theta</span>
+        <span class="n">Sn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">n</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">]])</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">Sn</span>\
+            <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Sn</span><span class="p">,</span> <span class="n">Sn</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Sr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="o">-</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">]])</span>
+        <span class="n">theta2</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">theta</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">theta2</span> <span class="o">/</span> <span class="mf">6.</span><span class="p">)</span> <span class="o">*</span> <span class="n">Sr</span>\
+            <span class="o">+</span> <span class="p">(</span><span class="o">.</span><span class="mi">5</span> <span class="o">-</span> <span class="n">theta2</span> <span class="o">/</span> <span class="mf">24.</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Sr</span><span class="p">,</span> <span class="n">Sr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">R</span></div>
+
+
+<div class="viewcode-block" id="to_matrix44"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.to_matrix44">[docs]</a><span class="k">def</span> <span class="nf">to_matrix44</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    T = to_matrix44(t)</span>
+
+<span class="sd">    t is a vector of affine transformation parameters with size at</span>
+<span class="sd">    least 6.</span>
+
+<span class="sd">    size &lt; 6 ==&gt; error</span>
+<span class="sd">    size == 6 ==&gt; t is interpreted as translation + rotation</span>
+<span class="sd">    size == 7 ==&gt; t is interpreted as translation + rotation +</span>
+<span class="sd">    isotropic scaling</span>
+<span class="sd">    7 &lt; size &lt; 12 ==&gt; error</span>
+<span class="sd">    size &gt;= 12 ==&gt; t is interpreted as translation + rotation +</span>
+<span class="sd">    scaling + pre-rotation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">rotation_vec2mat</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">size</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+        <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span>
+    <span class="k">elif</span> <span class="n">size</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">*</span> <span class="n">R</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">threshold</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">9</span><span class="p">],</span> <span class="n">LOG_MAX_DIST</span><span class="p">)))</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">rotation_vec2mat</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">12</span><span class="p">])</span>
+        <span class="c1"># Beware: R*s*Q</span>
+        <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">Q</span><span class="p">))</span>
+    <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">threshold</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="n">MAX_DIST</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">T</span></div>
+
+
+<div class="viewcode-block" id="preconditioner"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.preconditioner">[docs]</a><span class="k">def</span> <span class="nf">preconditioner</span><span class="p">(</span><span class="n">radius</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes a scaling vector pc such that, if p=(u,r,s,q) represents</span>
+<span class="sd">    affine transformation parameters, where u is a translation, r and</span>
+<span class="sd">    q are rotation vectors, and s is the vector of log-scales, then</span>
+<span class="sd">    all components of (p/pc) are roughly comparable to the translation</span>
+<span class="sd">    component.</span>
+
+<span class="sd">    To that end, we use a `radius` parameter which represents the</span>
+<span class="sd">    &#39;typical size&#39; of the object being registered. This is used to</span>
+<span class="sd">    reformat the parameter vector</span>
+<span class="sd">    (translation+rotation+scaling+pre-rotation) so that each element</span>
+<span class="sd">    roughly represents a variation in mm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rad</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">radius</span>
+    <span class="n">sca</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">radius</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">sca</span><span class="p">,</span> <span class="n">sca</span><span class="p">,</span> <span class="n">sca</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">rad</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="inverse_affine"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.inverse_affine">[docs]</a><span class="k">def</span> <span class="nf">inverse_affine</span><span class="p">(</span><span class="n">affine</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">spl</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">affine</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="slices2aff"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.slices2aff">[docs]</a><span class="k">def</span> <span class="nf">slices2aff</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return affine from start, step of sequence `slices` of slice objects</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    slices : sequence of slice objects</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    aff : ndarray</span>
+<span class="sd">        If ``N = len(slices)`` then affine is shape (N+1, N+1) with diagonal</span>
+<span class="sd">        given by the ``step`` attribute of the slice objects (where None</span>
+<span class="sd">        corresponds to 1), and the `:N` elements in the last column are given by</span>
+<span class="sd">        the ``start`` attribute of the slice objects</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; slices2aff([slice(None), slice(None)])</span>
+<span class="sd">    array([[ 1.,  0.,  0.],</span>
+<span class="sd">           [ 0.,  1.,  0.],</span>
+<span class="sd">           [ 0.,  0.,  1.]])</span>
+<span class="sd">    &gt;&gt;&gt; slices2aff([slice(2, 3, 4), slice(3, 4, 5), slice(4, 5, 6)])</span>
+<span class="sd">    array([[ 4.,  0.,  0.,  2.],</span>
+<span class="sd">           [ 0.,  5.,  0.,  3.],</span>
+<span class="sd">           [ 0.,  0.,  6.,  4.],</span>
+<span class="sd">           [ 0.,  0.,  0.,  1.]])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">starts</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">start</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">slices</span><span class="p">]</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">step</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">slices</span><span class="p">]</span>
+    <span class="n">aff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">steps</span> <span class="o">+</span> <span class="p">[</span><span class="mf">1.</span><span class="p">])</span>
+    <span class="n">aff</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">starts</span>
+    <span class="k">return</span> <span class="n">aff</span></div>
+
+
+<div class="viewcode-block" id="subgrid_affine"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.subgrid_affine">[docs]</a><span class="k">def</span> <span class="nf">subgrid_affine</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">slices</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return dot prodoct of `affine` and affine resulting from `slices`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    affine : array-like</span>
+<span class="sd">        Affine to apply on right of affine resulting from `slices`</span>
+<span class="sd">    slices : sequence of slice objects</span>
+<span class="sd">        Slices generating (N+1, N+1) affine from ``slices2aff``, where ``N =</span>
+<span class="sd">        len(slices)``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    aff : ndarray</span>
+<span class="sd">        result of ``np.dot(affine, slice_affine)`` where ``slice_affine`` is</span>
+<span class="sd">        affine resulting from ``slices2aff(slices)``.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError : if the ``slice_affine`` contains non-integer values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">slices_aff</span> <span class="o">=</span> <span class="n">slices2aff</span><span class="p">(</span><span class="n">slices</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">slices_aff</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">slices_aff</span><span class="p">)):</span>
+           <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Need integer slice start, step&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">slices_aff</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Affine"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine">[docs]</a><span class="k">class</span> <span class="nc">Affine</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+    <span class="n">param_inds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Affine.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">RADIUS</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_direct</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span> <span class="o">=</span> <span class="n">preconditioner</span><span class="p">(</span><span class="n">radius</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">12</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">from_matrix44</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid array&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Affine.copy"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">()</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">_direct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_direct</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">_precond</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span><span class="p">[:]</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">_vec12</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">new</span></div>
+
+<div class="viewcode-block" id="Affine.from_matrix44"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine.from_matrix44">[docs]</a>    <span class="k">def</span> <span class="nf">from_matrix44</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aff</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a 4x4 matrix describing an affine transform into a</span>
+<span class="sd">        12-sized vector of natural affine parameters: translation,</span>
+<span class="sd">        rotation, log-scale, pre-rotation (to allow for shearing when</span>
+<span class="sd">        combined with non-unitary scales). In case the transform has a</span>
+<span class="sd">        negative determinant, set the `_direct` attribute to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vec12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">12</span><span class="p">,))</span>
+        <span class="n">vec12</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">aff</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="c1"># Use SVD to find orthogonal and diagonal matrices such that</span>
+        <span class="c1"># aff[0:3,0:3] == R*S*Q</span>
+        <span class="n">R</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">spl</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">aff</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">])</span> 
+        <span class="k">if</span> <span class="n">spl</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="o">-</span><span class="n">R</span>
+            <span class="n">Q</span> <span class="o">=</span> <span class="o">-</span><span class="n">Q</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">rotation_mat2vec</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">spl</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">Q</span> <span class="o">=</span> <span class="o">-</span><span class="n">Q</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_direct</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">rotation_mat2vec</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+        <span class="n">vec12</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+        <span class="n">vec12</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">TINY</span><span class="p">))</span>
+        <span class="n">vec12</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">12</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span> <span class="o">=</span> <span class="n">vec12</span></div>
+
+<div class="viewcode-block" id="Affine.apply"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xyz</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">apply_affine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_affine</span><span class="p">(),</span> <span class="n">xyz</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_param</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">param</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span>
+        <span class="k">return</span> <span class="n">param</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">param_inds</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_set_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">inds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_inds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_translation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_set_translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">def</span> <span class="nf">_get_rotation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_set_rotation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">def</span> <span class="nf">_get_scaling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">9</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_set_scaling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_pre_rotation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">12</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_set_pre_rotation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">12</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="k">def</span> <span class="nf">_get_direct</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_direct</span>
+
+    <span class="k">def</span> <span class="nf">_get_precond</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span>
+
+    <span class="n">translation</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_translation</span><span class="p">,</span> <span class="n">_set_translation</span><span class="p">)</span>
+    <span class="n">rotation</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_rotation</span><span class="p">,</span> <span class="n">_set_rotation</span><span class="p">)</span>
+    <span class="n">scaling</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_scaling</span><span class="p">,</span> <span class="n">_set_scaling</span><span class="p">)</span>
+    <span class="n">pre_rotation</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_pre_rotation</span><span class="p">,</span> <span class="n">_set_pre_rotation</span><span class="p">)</span>
+    <span class="n">is_direct</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_direct</span><span class="p">)</span>
+    <span class="n">precond</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_precond</span><span class="p">)</span>
+    <span class="n">param</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_param</span><span class="p">,</span> <span class="n">_set_param</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Affine.as_affine"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine.as_affine">[docs]</a>    <span class="k">def</span> <span class="nf">as_affine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">):</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">to_matrix44</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_direct</span><span class="p">:</span>
+            <span class="n">T</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="n">T</span></div>
+
+<div class="viewcode-block" id="Affine.compose"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine.compose">[docs]</a>    <span class="k">def</span> <span class="nf">compose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Compose this transform onto another</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : Transform</span>
+<span class="sd">            transform that we compose onto</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        composed_transform : Transform</span>
+<span class="sd">            a transform implementing the composition of self on `other`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If other is not an Affine, use either its left compose</span>
+        <span class="c1"># method, if available, or the generic compose method</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s1">&#39;as_affine&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s1">&#39;left_compose&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="n">left_compose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">)</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+        <span class="c1"># Affine case: choose more capable of input types as output</span>
+        <span class="c1"># type</span>
+        <span class="n">other_aff</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">as_affine</span><span class="p">()</span>
+        <span class="n">self_inds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_inds</span><span class="p">)</span>
+        <span class="n">other_inds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">param_inds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">self_inds</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">other_inds</span><span class="p">):</span>
+            <span class="n">klass</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="vm">__class__</span>
+        <span class="k">elif</span> <span class="n">other_inds</span><span class="o">.</span><span class="n">isssubset</span><span class="p">(</span><span class="n">self_inds</span><span class="p">):</span>
+            <span class="n">klass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># neither one contains capabilities of the other</span>
+            <span class="n">klass</span> <span class="o">=</span> <span class="n">Affine</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">klass</span><span class="p">()</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">_precond</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span><span class="p">[:]</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">from_matrix44</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_affine</span><span class="p">(),</span> <span class="n">other_aff</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">a</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;translation : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s1">&#39;rotation    : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s1">&#39;scaling     : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scaling</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s1">&#39;pre-rotation: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_rotation</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">string</span>
+
+<div class="viewcode-block" id="Affine.inv"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine.inv">[docs]</a>    <span class="k">def</span> <span class="nf">inv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the inverse affine transform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">()</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">_precond</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span><span class="p">[:]</span>
+        <span class="n">a</span><span class="o">.</span><span class="n">from_matrix44</span><span class="p">(</span><span class="n">spl</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_affine</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="n">a</span></div></div>
+
+
+<div class="viewcode-block" id="Affine2D"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Affine2D">[docs]</a><span class="k">class</span> <span class="nc">Affine2D</span><span class="p">(</span><span class="n">Affine</span><span class="p">):</span>
+    <span class="n">param_inds</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Rigid"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Rigid">[docs]</a><span class="k">class</span> <span class="nc">Rigid</span><span class="p">(</span><span class="n">Affine</span><span class="p">):</span>
+    <span class="n">param_inds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Rigid.from_matrix44"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Rigid.from_matrix44">[docs]</a>    <span class="k">def</span> <span class="nf">from_matrix44</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aff</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a 4x4 matrix describing a rigid transform into a</span>
+<span class="sd">        12-sized vector of natural affine parameters: translation,</span>
+<span class="sd">        rotation, log-scale, pre-rotation (to allow for pre-rotation</span>
+<span class="sd">        when combined with non-unitary scales). In case the transform</span>
+<span class="sd">        has a negative determinant, set the `_direct` attribute to</span>
+<span class="sd">        False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vec12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">12</span><span class="p">,))</span>
+        <span class="n">vec12</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">aff</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">aff</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">spl</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="o">-</span><span class="n">R</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_direct</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">vec12</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">rotation_mat2vec</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+        <span class="n">vec12</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span> <span class="o">=</span> <span class="n">vec12</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;translation : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s1">&#39;rotation    : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">string</span></div>
+
+
+<div class="viewcode-block" id="Rigid2D"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Rigid2D">[docs]</a><span class="k">class</span> <span class="nc">Rigid2D</span><span class="p">(</span><span class="n">Rigid</span><span class="p">):</span>
+    <span class="n">param_inds</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Similarity"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Similarity">[docs]</a><span class="k">class</span> <span class="nc">Similarity</span><span class="p">(</span><span class="n">Affine</span><span class="p">):</span>
+    <span class="n">param_inds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Similarity.from_matrix44"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Similarity.from_matrix44">[docs]</a>    <span class="k">def</span> <span class="nf">from_matrix44</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aff</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a 4x4 matrix describing a similarity transform into a</span>
+<span class="sd">        12-sized vector of natural affine parameters: translation,</span>
+<span class="sd">        rotation, log-scale, pre-rotation (to allow for pre-rotation</span>
+<span class="sd">        when combined with non-unitary scales). In case the transform</span>
+<span class="sd">        has a negative determinant, set the `_direct` attribute to</span>
+<span class="sd">        False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vec12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">12</span><span class="p">,))</span>
+        <span class="n">vec12</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">aff</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="c1">## A = s R ==&gt; det A = (s)**3 ==&gt; s = (det A)**(1/3)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">aff</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">detA</span> <span class="o">=</span> <span class="n">spl</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">detA</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">),</span> <span class="n">TINY</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">detA</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="o">-</span><span class="n">A</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_direct</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">vec12</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">rotation_mat2vec</span><span class="p">(</span><span class="n">A</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span>
+        <span class="n">vec12</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span> <span class="o">=</span> <span class="n">vec12</span></div>
+
+    <span class="k">def</span> <span class="nf">_set_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">))]</span> <span class="o">=</span>\
+            <span class="p">(</span><span class="n">p</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">]]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">))])</span>
+
+    <span class="n">param</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">Affine</span><span class="o">.</span><span class="n">_get_param</span><span class="p">,</span> <span class="n">_set_param</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;translation : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s1">&#39;rotation    : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s1">&#39;scaling     : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scaling</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">string</span></div>
+
+
+<div class="viewcode-block" id="Similarity2D"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.registration.affine.html#nipy.algorithms.registration.affine.Similarity2D">[docs]</a><span class="k">class</span> <span class="nc">Similarity2D</span><span class="p">(</span><span class="n">Similarity</span><span class="p">):</span>
+    <span class="n">param_inds</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_set_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec12</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">]]</span> <span class="o">=</span>\
+            <span class="p">(</span><span class="n">p</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precond</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">]])</span>
+
+    <span class="n">param</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">Similarity</span><span class="o">.</span><span class="n">_get_param</span><span class="p">,</span> <span class="n">_set_param</span><span class="p">)</span></div>
+
+
+<span class="n">affine_transforms</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;affine&#39;</span><span class="p">:</span> <span class="n">Affine</span><span class="p">,</span>
+                     <span class="s1">&#39;affine2d&#39;</span><span class="p">:</span> <span class="n">Affine2D</span><span class="p">,</span>
+                     <span class="s1">&#39;similarity&#39;</span><span class="p">:</span> <span class="n">Similarity</span><span class="p">,</span>
+                     <span class="s1">&#39;similarity2d&#39;</span><span class="p">:</span> <span class="n">Similarity2D</span><span class="p">,</span>
+                     <span class="s1">&#39;rigid&#39;</span><span class="p">:</span> <span class="n">Rigid</span><span class="p">,</span>
+                     <span class="s1">&#39;rigid2d&#39;</span><span class="p">:</span> <span class="n">Rigid2D</span><span class="p">}</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

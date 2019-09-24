@@ -1,0 +1,571 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.algorithms.utils.pca</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides a class for principal components analysis (PCA).</span>
+
+<span class="sd">PCA is an orthonormal, linear transform (i.e., a rotation) that maps the</span>
+<span class="sd">data to a new coordinate system such that the maximal variability of the</span>
+<span class="sd">data lies on the first coordinate (or the first principal component), the</span>
+<span class="sd">second greatest variability is projected onto the second coordinate, and</span>
+<span class="sd">so on.  The resulting data has unit covariance (i.e., it is decorrelated).</span>
+<span class="sd">This technique can be used to reduce the dimensionality of the data.</span>
+
+<span class="sd">More specifically, the data is projected onto the eigenvectors of the</span>
+<span class="sd">covariance matrix.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="k">as</span> <span class="nn">npl</span>
+
+<span class="kn">from</span> <span class="nn">...core.image.image</span> <span class="k">import</span> <span class="n">rollimg</span>
+<span class="kn">from</span> <span class="nn">...core.reference.coordinate_map</span> <span class="k">import</span> <span class="p">(</span><span class="n">io_axis_indices</span><span class="p">,</span> <span class="n">orth_axes</span><span class="p">,</span>
+                                              <span class="n">drop_io_dim</span><span class="p">,</span> <span class="n">AxisError</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="pca"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.utils.pca.html#nipy.algorithms.utils.pca.pca">[docs]</a><span class="k">def</span> <span class="nf">pca</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ncomp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">standardize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">design_keep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">design_resid</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">tol_ratio</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the SVD PCA of an array-like thing over `axis`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : ndarray-like (np.float)</span>
+<span class="sd">       The array on which to perform PCA over axis `axis` (below)</span>
+<span class="sd">    axis : int, optional</span>
+<span class="sd">       The axis over which to perform PCA (axis identifying</span>
+<span class="sd">       observations).  Default is 0 (first)</span>
+<span class="sd">    mask : ndarray-like (np.bool), optional</span>
+<span class="sd">       An optional mask, should have shape given by data axes, with</span>
+<span class="sd">       `axis` removed, i.e.: ``s = data.shape; s.pop(axis);</span>
+<span class="sd">       msk_shape=s``</span>
+<span class="sd">    ncomp : {None, int}, optional</span>
+<span class="sd">       How many component basis projections to return. If ncomp is None</span>
+<span class="sd">       (the default) then the number of components is given by the</span>
+<span class="sd">       calculated rank of the data, after applying `design_keep`,</span>
+<span class="sd">       `design_resid` and `tol_ratio` below.  We always return all the</span>
+<span class="sd">       basis vectors and percent variance for each component; `ncomp`</span>
+<span class="sd">       refers only to the number of basis_projections returned.</span>
+<span class="sd">    standardize : bool, optional</span>
+<span class="sd">       If True, standardize so each time series (after application of</span>
+<span class="sd">       `design_keep` and `design_resid`) has the same standard</span>
+<span class="sd">       deviation, as calculated by the ``np.std`` function.</span>
+<span class="sd">    design_keep : None or ndarray, optional</span>
+<span class="sd">       Data is projected onto the column span of design_keep.</span>
+<span class="sd">       None (default) equivalent to ``np.identity(data.shape[axis])``</span>
+<span class="sd">    design_resid : str or None or ndarray, optional</span>
+<span class="sd">       After projecting onto the column span of design_keep, data is</span>
+<span class="sd">       projected perpendicular to the column span of this matrix.  If</span>
+<span class="sd">       None, we do no such second projection.  If a string &#39;mean&#39;, then</span>
+<span class="sd">       the mean of the data is removed, equivalent to passing a column</span>
+<span class="sd">       vector matrix of 1s.</span>
+<span class="sd">    tol_ratio : float, optional</span>
+<span class="sd">       If ``XZ`` is the vector of singular values of the projection</span>
+<span class="sd">       matrix from `design_keep` and `design_resid`, and S are the</span>
+<span class="sd">       singular values of ``XZ``, then `tol_ratio` is the value used to</span>
+<span class="sd">       calculate the effective rank of the projection of the design, as</span>
+<span class="sd">       in ``rank = ((S / S.max) &gt; tol_ratio).sum()``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    results : dict</span>
+<span class="sd">        $G$ is the number of non-trivial components found after applying</span>
+<span class="sd">       `tol_ratio` to the projections of `design_keep` and</span>
+<span class="sd">       `design_resid`.</span>
+
+<span class="sd">       `results` has keys:</span>
+
+<span class="sd">       * ``basis_vectors``: series over `axis`, shape (data.shape[axis], G) -</span>
+<span class="sd">          the eigenvectors of the PCA</span>
+<span class="sd">       * ``pcnt_var``: percent variance explained by component, shape</span>
+<span class="sd">          (G,)</span>
+<span class="sd">       * ``basis_projections``: PCA components, with components varying</span>
+<span class="sd">          over axis `axis`; thus shape given by: ``s = list(data.shape);</span>
+<span class="sd">          s[axis] = ncomp``</span>
+<span class="sd">       * ``axis``: axis over which PCA has been performed.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    See ``pca_image.m`` from ``fmristat`` for Keith Worsley&#39;s code on</span>
+<span class="sd">    which some of this is based.</span>
+
+<span class="sd">    See: http://en.wikipedia.org/wiki/Principal_component_analysis for</span>
+<span class="sd">    some inspiration for naming - particularly &#39;basis_vectors&#39; and</span>
+<span class="sd">    &#39;basis_projections&#39;</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; arr = np.random.normal(size=(17, 10, 12, 14))</span>
+<span class="sd">    &gt;&gt;&gt; msk = np.all(arr &gt; -2, axis=0)</span>
+<span class="sd">    &gt;&gt;&gt; res = pca(arr, mask=msk, ncomp=9)</span>
+
+<span class="sd">    Basis vectors are columns.  There is one column for each component.  The</span>
+<span class="sd">    number of components is the calculated rank of the data matrix after</span>
+<span class="sd">    applying the various projections listed in the parameters.  In this case we</span>
+<span class="sd">    are only removing the mean, so the number of components is one less than the</span>
+<span class="sd">    axis over which we do the PCA (here axis=0 by default).</span>
+
+<span class="sd">    &gt;&gt;&gt; res[&#39;basis_vectors&#39;].shape</span>
+<span class="sd">    (17, 16)</span>
+
+<span class="sd">    Basis projections are arrays with components in the dimension over which we</span>
+<span class="sd">    have done the PCA (axis=0 by default).  Because we set `ncomp` above, we</span>
+<span class="sd">    only retain `ncomp` components.</span>
+
+<span class="sd">    &gt;&gt;&gt; res[&#39;basis_projections&#39;].shape</span>
+<span class="sd">    (9, 10, 12, 14)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="c1"># We roll the PCA axis to be first, for convenience</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;axis cannot be None&#39;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Mask should match dimensions of data other than &#39;</span>
+                             <span class="s1">&#39;the axis over which to do the PCA&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">design_resid</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">:</span>
+        <span class="c1"># equivalent to: design_resid = np.ones((data.shape[0], 1))</span>
+        <span class="k">def</span> <span class="nf">project_resid</span><span class="p">(</span><span class="n">Y</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Y</span> <span class="o">-</span> <span class="n">Y</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span><span class="o">...</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">design_resid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">project_resid</span><span class="p">(</span><span class="n">Y</span><span class="p">):</span> <span class="k">return</span> <span class="n">Y</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># matrix passed, we hope</span>
+        <span class="n">projector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">design_resid</span><span class="p">,</span> <span class="n">npl</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">design_resid</span><span class="p">))</span>
+        <span class="k">def</span> <span class="nf">project_resid</span><span class="p">(</span><span class="n">Y</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Y</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">projector</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">standardize</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">rmse_scales_func</span><span class="p">(</span><span class="n">std_source</span><span class="p">):</span>
+            <span class="c1"># modifies array in place</span>
+            <span class="n">resid</span> <span class="o">=</span> <span class="n">project_resid</span><span class="p">(</span><span class="n">std_source</span><span class="p">)</span>
+            <span class="c1"># root mean square of the residual</span>
+            <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">resid</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">resid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># positive 1/rmse</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rmse</span><span class="o">&lt;=</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">rmse</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rmse_scales_func</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform the computations needed for the PCA.  This stores the</span>
+<span class="sd">    covariance/correlation matrix of the data in the attribute &#39;C&#39;.  The</span>
+<span class="sd">    components are stored as the attributes &#39;components&#39;, for an fMRI</span>
+<span class="sd">    image these are the time series explaining the most variance.</span>
+
+<span class="sd">    Now, we compute projection matrices. First, data is projected onto</span>
+<span class="sd">    the columnspace of design_keep, then it is projected perpendicular</span>
+<span class="sd">    to column space of design_resid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">design_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">design_keep</span><span class="p">,</span> <span class="n">npl</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">design_keep</span><span class="p">))</span>
+    <span class="n">XZ</span> <span class="o">=</span> <span class="n">project_resid</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">UX</span><span class="p">,</span> <span class="n">SX</span><span class="p">,</span> <span class="n">VX</span> <span class="o">=</span> <span class="n">npl</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">XZ</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># The matrix UX has orthonormal columns and represents the</span>
+    <span class="c1"># final &quot;column space&quot; that the data will be projected onto.</span>
+    <span class="n">rank</span> <span class="o">=</span> <span class="p">(</span><span class="n">SX</span><span class="o">/</span><span class="n">SX</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">tol_ratio</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">UX</span> <span class="o">=</span> <span class="n">UX</span><span class="p">[:,:</span><span class="n">rank</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># calculate covariance matrix in full-rank column space.  The returned</span>
+    <span class="c1"># array is roughly: YX = dot(UX, data); C = dot(YX, YX.T), perhaps where the</span>
+    <span class="c1"># data has been standarized, perhaps summed over slices</span>
+    <span class="n">C_full_rank</span>  <span class="o">=</span> <span class="n">_get_covariance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">UX</span><span class="p">,</span> <span class="n">rmse_scales_func</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
+    <span class="c1"># find the eigenvalues D and eigenvectors Vs of the covariance</span>
+    <span class="c1"># matrix</span>
+    <span class="n">D</span><span class="p">,</span> <span class="n">Vs</span> <span class="o">=</span> <span class="n">npl</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">C_full_rank</span><span class="p">)</span>
+    <span class="c1"># Compute basis vectors in original column space</span>
+    <span class="n">basis_vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">UX</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">Vs</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="c1"># sort both in descending order of eigenvalues</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">D</span><span class="p">)</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="n">basis_vectors</span> <span class="o">=</span> <span class="n">basis_vectors</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="n">pcntvar</span> <span class="o">=</span> <span class="n">D</span> <span class="o">*</span> <span class="mi">100</span> <span class="o">/</span> <span class="n">D</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Output the component basis_projections</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ncomp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ncomp</span> <span class="o">=</span> <span class="n">rank</span>
+    <span class="n">subVX</span> <span class="o">=</span> <span class="n">basis_vectors</span><span class="p">[:</span><span class="n">ncomp</span><span class="p">]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">_get_basis_projections</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">subVX</span><span class="p">,</span> <span class="n">rmse_scales_func</span><span class="p">)</span>
+    <span class="c1"># Roll PCA image axis back to original position in data array</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">axis</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;basis_vectors&#39;</span><span class="p">:</span> <span class="n">basis_vectors</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="s1">&#39;pcnt_var&#39;</span><span class="p">:</span> <span class="n">pcntvar</span><span class="p">,</span>
+            <span class="s1">&#39;basis_projections&#39;</span><span class="p">:</span> <span class="n">out</span><span class="p">,</span>
+            <span class="s1">&#39;axis&#39;</span><span class="p">:</span> <span class="n">axis</span><span class="p">}</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_covariance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">UX</span><span class="p">,</span> <span class="n">rmse_scales_func</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
+    <span class="c1"># number of points in PCA dimension</span>
+    <span class="n">rank</span><span class="p">,</span> <span class="n">n_pts</span> <span class="o">=</span> <span class="n">UX</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rank</span><span class="p">,</span> <span class="n">rank</span><span class="p">))</span>
+    <span class="c1"># nan_to_num only for floating point masks</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">nan_to_num</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sctypes</span><span class="p">[</span><span class="s1">&#39;float&#39;</span><span class="p">]</span> <span class="o">+</span>
+                                         <span class="n">np</span><span class="o">.</span><span class="n">sctypes</span><span class="p">[</span><span class="s1">&#39;complex&#39;</span><span class="p">])</span>
+    <span class="c1"># loop over next dimension to save memory</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># If we have 2D data, just do the covariance all in one shot, by using</span>
+        <span class="c1"># a slice that is the equivalent of the &#39;:&#39; slice syntax</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If we have more then 2D, then we iterate over slices in the second</span>
+        <span class="c1"># dimension, in order to save memory</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s_slice</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="n">s_slice</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">n_pts</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># project data into required space</span>
+        <span class="n">YX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">UX</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rmse_scales_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">YX</span> <span class="o">*=</span> <span class="n">rmse_scales_func</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># weight data with mask.  Usually the weights will be 0,1</span>
+            <span class="n">msk_slice</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[</span><span class="n">s_slice</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">nan_to_num</span><span class="p">:</span> <span class="c1"># but if floats, check for NaNs too.</span>
+                <span class="n">msk_slice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">msk_slice</span><span class="p">)</span>
+            <span class="n">YX</span> <span class="o">=</span> <span class="n">YX</span> <span class="o">*</span> <span class="n">msk_slice</span>
+        <span class="n">C</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">YX</span><span class="p">,</span> <span class="n">YX</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">C</span>
+
+
+<span class="k">def</span> <span class="nf">_get_basis_projections</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">subVX</span><span class="p">,</span> <span class="n">rmse_scales_func</span><span class="p">):</span>
+    <span class="n">ncomp</span> <span class="o">=</span> <span class="n">subVX</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">ncomp</span><span class="p">,)</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">subVX</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rmse_scales_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">U</span> <span class="o">*=</span> <span class="n">rmse_scales_func</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+        <span class="n">U</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="n">out</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<div class="viewcode-block" id="pca_image"><a class="viewcode-back" href="../../../../api/generated/nipy.algorithms.utils.pca.html#nipy.algorithms.utils.pca.pca_image">[docs]</a><span class="k">def</span> <span class="nf">pca_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ncomp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">standardize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">design_keep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">design_resid</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">tol_ratio</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute the PCA of an image over a specified axis</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : Image</span>
+<span class="sd">        The image on which to perform PCA over the given `axis`</span>
+<span class="sd">    axis : str or int, optional</span>
+<span class="sd">        Axis over which to perform PCA. Default is &#39;t&#39;. If `axis` is an integer,</span>
+<span class="sd">        gives the index of the input (domain) axis of `img`. If `axis` is a str, can be</span>
+<span class="sd">        an input (domain) name, or an output (range) name, that maps to an input</span>
+<span class="sd">        (domain) name.</span>
+<span class="sd">    mask : Image, optional</span>
+<span class="sd">        An optional mask, should have shape == image.shape[:3] and the same</span>
+<span class="sd">        coordinate map as `img` but with `axis` dropped</span>
+<span class="sd">    ncomp : {None, int}, optional</span>
+<span class="sd">       How many component basis projections to return. If ncomp is None</span>
+<span class="sd">       (the default) then the number of components is given by the</span>
+<span class="sd">       calculated rank of the data, after applying `design_keep`,</span>
+<span class="sd">       `design_resid` and `tol_ratio` below.  We always return all the</span>
+<span class="sd">       basis vectors and percent variance for each component; `ncomp`</span>
+<span class="sd">       refers only to the number of basis_projections returned.</span>
+<span class="sd">    standardize : bool, optional</span>
+<span class="sd">       If True, standardize so each time series (after application of</span>
+<span class="sd">       `design_keep` and `design_resid`) has the same standard</span>
+<span class="sd">       deviation, as calculated by the ``np.std`` function.</span>
+<span class="sd">    design_keep : None or ndarray, optional</span>
+<span class="sd">       Data is projected onto the column span of design_keep.</span>
+<span class="sd">       None (default) equivalent to ``np.identity(data.shape[axis])``</span>
+<span class="sd">    design_resid : str or None or ndarray, optional</span>
+<span class="sd">       After projecting onto the column span of design_keep, data is</span>
+<span class="sd">       projected perpendicular to the column span of this matrix.  If</span>
+<span class="sd">       None, we do no such second projection.  If a string &#39;mean&#39;, then</span>
+<span class="sd">       the mean of the data is removed, equivalent to passing a column</span>
+<span class="sd">       vector matrix of 1s.</span>
+<span class="sd">    tol_ratio : float, optional</span>
+<span class="sd">       If ``XZ`` is the vector of singular values of the projection</span>
+<span class="sd">       matrix from `design_keep` and `design_resid`, and S are the</span>
+<span class="sd">       singular values of ``XZ``, then `tol_ratio` is the value used to</span>
+<span class="sd">       calculate the effective rank of the projection of the design, as</span>
+<span class="sd">       in ``rank = ((S / S.max) &gt; tol_ratio).sum()``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    results : dict</span>
+<span class="sd">        $L$ is the number of non-trivial components found after applying</span>
+<span class="sd">       `tol_ratio` to the projections of `design_keep` and</span>
+<span class="sd">       `design_resid`.</span>
+
+<span class="sd">       `results` has keys:</span>
+<span class="sd">       * ``basis_vectors``: series over `axis`, shape (data.shape[axis], L) -</span>
+<span class="sd">          the eigenvectors of the PCA</span>
+<span class="sd">       * ``pcnt_var``: percent variance explained by component, shape</span>
+<span class="sd">          (L,)</span>
+<span class="sd">       * ``basis_projections``: PCA components, with components varying</span>
+<span class="sd">          over axis `axis`; thus shape given by: ``s = list(data.shape);</span>
+<span class="sd">          s[axis] = ncomp``</span>
+<span class="sd">       * ``axis``: axis over which PCA has been performed.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from nipy.testing import funcfile</span>
+<span class="sd">    &gt;&gt;&gt; from nipy import load_image</span>
+<span class="sd">    &gt;&gt;&gt; func_img = load_image(funcfile)</span>
+
+<span class="sd">    Time is the fourth axis</span>
+
+<span class="sd">    &gt;&gt;&gt; func_img.coordmap.function_range</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;aligned-x=L-&gt;R&#39;, &#39;aligned-y=P-&gt;A&#39;, &#39;aligned-z=I-&gt;S&#39;, &#39;t&#39;), name=&#39;aligned&#39;, coord_dtype=float64)</span>
+<span class="sd">    &gt;&gt;&gt; func_img.shape</span>
+<span class="sd">    (17, 21, 3, 20)</span>
+
+<span class="sd">    Calculate the PCA over time, by default</span>
+
+<span class="sd">    &gt;&gt;&gt; res = pca_image(func_img)</span>
+<span class="sd">    &gt;&gt;&gt; res[&#39;basis_projections&#39;].coordmap.function_range</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;aligned-x=L-&gt;R&#39;, &#39;aligned-y=P-&gt;A&#39;, &#39;aligned-z=I-&gt;S&#39;, &#39;PCA components&#39;), name=&#39;aligned&#39;, coord_dtype=float64)</span>
+
+<span class="sd">    The number of components is one less than the number of time points</span>
+
+<span class="sd">    &gt;&gt;&gt; res[&#39;basis_projections&#39;].shape</span>
+<span class="sd">    (17, 21, 3, 19)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">img_klass</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="vm">__class__</span>
+    <span class="c1"># Which axes are we operating over?</span>
+    <span class="n">in_ax</span><span class="p">,</span> <span class="n">out_ax</span> <span class="o">=</span> <span class="n">io_axis_indices</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="p">(</span><span class="n">in_ax</span><span class="p">,</span> <span class="n">out_ax</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">AxisError</span><span class="p">(</span><span class="s1">&#39;Cannot identify matching input output axes with &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+                        <span class="o">%</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">orth_axes</span><span class="p">(</span><span class="n">in_ax</span><span class="p">,</span> <span class="n">out_ax</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">affine</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">AxisError</span><span class="p">(</span><span class="s1">&#39;Input and output axes found from &quot;</span><span class="si">%s</span><span class="s1">&quot; not othogonal &#39;</span>
+                        <span class="s1">&#39;to rest of affine&#39;</span> <span class="o">%</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="c1"># Roll the chosen axis to input position zero</span>
+    <span class="n">work_img</span> <span class="o">=</span> <span class="n">rollimg</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">similar_to</span><span class="p">(</span><span class="n">drop_io_dim</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">axis</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mask should have matching coordmap to `img` &quot;</span>
+                             <span class="s2">&quot;coordmap with dropped axis </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">axis</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">work_img</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mask_data</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mask_data</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># do the PCA</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">pca</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">mask_data</span><span class="p">,</span> <span class="n">ncomp</span><span class="p">,</span> <span class="n">standardize</span><span class="p">,</span>
+              <span class="n">design_keep</span><span class="p">,</span> <span class="n">design_resid</span><span class="p">,</span> <span class="n">tol_ratio</span><span class="p">)</span>
+    <span class="c1"># Clean up images after PCA</span>
+    <span class="c1"># Rename the axis we dropped, at position 0 after rollimg</span>
+    <span class="n">output_coordmap</span> <span class="o">=</span> <span class="n">work_img</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">renamed_domain</span><span class="p">(</span>
+        <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;PCA components&#39;</span><span class="p">})</span>
+    <span class="c1"># And the matching output axis - which has not moved position</span>
+    <span class="n">output_coordmap</span> <span class="o">=</span> <span class="n">output_coordmap</span><span class="o">.</span><span class="n">renamed_range</span><span class="p">(</span>
+        <span class="p">{</span><span class="n">out_ax</span><span class="p">:</span> <span class="s1">&#39;PCA components&#39;</span><span class="p">})</span>
+    <span class="n">output_img</span> <span class="o">=</span> <span class="n">img_klass</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s1">&#39;basis_projections&#39;</span><span class="p">],</span> <span class="n">output_coordmap</span><span class="p">)</span>
+    <span class="c1"># We have to roll the axis back to the original position</span>
+    <span class="n">output_img</span> <span class="o">=</span> <span class="n">rollimg</span><span class="p">(</span><span class="n">output_img</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">in_ax</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;basis_vectors over </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">axis</span>
+    <span class="n">res</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">&#39;basis_vectors&#39;</span><span class="p">]</span>
+    <span class="n">res</span><span class="p">[</span><span class="s1">&#39;basis_projections&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_img</span>
+    <span class="c1"># Signal the roll in results</span>
+    <span class="n">res</span><span class="p">[</span><span class="s1">&#39;axis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_ax</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

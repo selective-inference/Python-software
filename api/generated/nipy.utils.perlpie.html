@@ -1,0 +1,315 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.utils.perlpie.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="utils-perlpie">
+<h1>utils.perlpie<a class="headerlink" href="#utils-perlpie" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.utils.perlpie">
+<span id="module-utils-perlpie"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.perlpie</span></code><a class="headerlink" href="#module-nipy.utils.perlpie" title="Permalink to this headline">¶</a></h2>
+<p>Perform a global search and replace on the current directory <em>recursively</em>.</p>
+<p>This a small python wrapper around the <cite>perl -p -i -e</cite> functionality.
+I <strong>strongly recommend</strong> running <cite>perlpie</cite> on files under source
+control.  In this way it’s easy to track your changes and if you
+discover your regular expression was wrong you can easily revert.  I
+also recommend using <cite>grin</cite> to test your regular expressions before
+running <cite>perlpie</cite>.</p>
+<div class="section" id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h3>
+<dl class="simple">
+<dt>regex<span class="classifier">regular expression</span></dt><dd><p>Regular expression matching the string you want to replace</p>
+</dd>
+<dt>newstring<span class="classifier">string</span></dt><dd><p>The string you would like to replace the oldstring with.  Note
+this is not a regular expression but the exact string. One
+exception to this rule is the at symbol <cite>&#64;</cite>.  This has special
+meaning in perl, so you need an escape character for this.  See
+Examples below.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="requires">
+<h3>Requires<a class="headerlink" href="#requires" title="Permalink to this headline">¶</a></h3>
+<p>perl : The underlying language we’re using to perform the search and replace.</p>
+<p><a class="reference external" href="http://pypi.python.org/pypi/grin/">grin</a> : Grin is a tool written
+by Robert Kern to wrap <cite>grep</cite> and <cite>find</cite> with python and easier
+command line options.</p>
+</div>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<p>Replace all occurences of foo with bar:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">perlpie</span> <span class="n">foo</span> <span class="n">bar</span>
+</pre></div>
+</div>
+<p>Replace numpy.testing with nipy’s testing framework:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">perlpie</span> <span class="s1">&#39;from\s+numpy\.testing.*&#39;</span> <span class="s1">&#39;from nipy.testing import *&#39;</span>
+</pre></div>
+</div>
+<p>Replace all &#64;slow decorators in my code with &#64;dec.super_slow.  Here we
+have to escape the &#64; symbol which has special meaning in perl:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">perlpie</span> <span class="s1">&#39;\@slow&#39;</span> <span class="s1">&#39;\@dec.super_slow&#39;</span>
+</pre></div>
+</div>
+<p>Remove all occurences of importing make_doctest_suite:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">perlpie</span> <span class="s1">&#39;from\snipy\.utils\.testutils.*make_doctest_suite&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.utils.perlpie.check_deps">
+<code class="sig-prename descclassname">nipy.utils.perlpie.</code><code class="sig-name descname">check_deps</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/utils/perlpie.html#check_deps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.utils.perlpie.check_deps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.utils.perlpie.main">
+<code class="sig-prename descclassname">nipy.utils.perlpie.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/utils/perlpie.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.utils.perlpie.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nipy.utils.perlpie.perl_dash_pie">
+<code class="sig-prename descclassname">nipy.utils.perlpie.</code><code class="sig-name descname">perl_dash_pie</code><span class="sig-paren">(</span><em class="sig-param">oldstr</em>, <em class="sig-param">newstr</em>, <em class="sig-param">dry_run=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/utils/perlpie.html#perl_dash_pie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.utils.perlpie.perl_dash_pie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use perl to replace the oldstr with the newstr.</p>
+<p class="rubric">Examples</p>
+<p># To replace all occurences of ‘import numpy as N’ with ‘import numpy as np’
+from nipy.utils import perlpie
+perlpie.perl_dash_pie(‘imports+numpys+ass+N’, ‘import numpy as np’)
+grind | xargs perl -pi -e ‘s/imports+numpys+ass+N/import numpy as np/g’</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.utils.perlpie.print_extended_help">
+<code class="sig-prename descclassname">nipy.utils.perlpie.</code><code class="sig-name descname">print_extended_help</code><span class="sig-paren">(</span><em class="sig-param">option</em>, <em class="sig-param">opt_str</em>, <em class="sig-param">value</em>, <em class="sig-param">parser</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/utils/perlpie.html#print_extended_help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.utils.perlpie.print_extended_help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,450 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.core.reference.slices.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="core-reference-slices">
+<h1>core.reference.slices<a class="headerlink" href="#core-reference-slices" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.core.reference.slices">
+<span id="module-core-reference-slices"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">core.reference.slices</span></code><a class="headerlink" href="#module-nipy.core.reference.slices" title="Permalink to this headline">¶</a></h2>
+<p>A set of methods to get coordinate maps which represent slices in space.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.core.reference.slices.bounding_box">
+<code class="sig-prename descclassname">nipy.core.reference.slices.</code><code class="sig-name descname">bounding_box</code><span class="sig-paren">(</span><em class="sig-param">coordmap</em>, <em class="sig-param">shape</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/slices.html#bounding_box"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.slices.bounding_box" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine a valid bounding box from a CoordinateMap
+and a shape.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coordmap</strong> : CoordinateMap or AffineTransform</p>
+<blockquote>
+<div><p>Containing mapping between voxel coordinates implied by <cite>shape</cite> and
+physical coordinates.</p>
+</div></blockquote>
+<p><strong>shape</strong> : sequence of int</p>
+<blockquote>
+<div><p>shape implying array</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>limits</strong> : (N,) tuple of (2,) tuples of float</p>
+<blockquote>
+<div><p>minimum and maximum coordinate values in output space (range) of
+<cite>coordmap</cite>. N is given by coordmap.ndim[1].</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Make a 3D voxel to mni coordmap</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">nipy.core.api</span> <span class="k">import</span> <span class="n">vox2mni</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">vox2mni</span><span class="p">(</span><span class="n">affine</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bounding_box</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+<span class="go">((2.0, 31.0), (4.0, 121.0), (6.0, 101.0))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.core.reference.slices.xslice">
+<code class="sig-prename descclassname">nipy.core.reference.slices.</code><code class="sig-name descname">xslice</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y_spec</em>, <em class="sig-param">z_spec</em>, <em class="sig-param">world</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/slices.html#xslice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.slices.xslice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an LPS slice through a 3d box with x fixed.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> : float</p>
+<blockquote>
+<div><p>The value at which x is fixed.</p>
+</div></blockquote>
+<p><strong>y_spec</strong> : sequence</p>
+<blockquote>
+<div><p>A sequence with 2 values of form ((float, float), int). The
+(float, float) components are the min and max y values; the int
+is the number of points.</p>
+</div></blockquote>
+<p><strong>z_spec</strong> : sequence</p>
+<blockquote>
+<div><p>As for <cite>y_spec</cite> but for z</p>
+</div></blockquote>
+<p><strong>world</strong> : str or CoordinateSystem CoordSysMaker or XYZSpace</p>
+<blockquote>
+<div><p>World 3D space to which resulting coordmap refers</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>affine_transform</strong> : AffineTransform</p>
+<blockquote>
+<div><p>An affine transform that describes an plane in
+LPS coordinates with x fixed.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y_spec</span> <span class="o">=</span> <span class="p">([</span><span class="o">-</span><span class="mi">114</span><span class="p">,</span><span class="mi">114</span><span class="p">],</span> <span class="mi">115</span><span class="p">)</span> <span class="c1"># voxels of size 2 in y, starting at -114, ending at 114</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z_spec</span> <span class="o">=</span> <span class="p">([</span><span class="o">-</span><span class="mi">70</span><span class="p">,</span><span class="mi">100</span><span class="p">],</span> <span class="mi">86</span><span class="p">)</span> <span class="c1"># voxels of size 2 in z, starting at -70, ending at 100</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x30</span> <span class="o">=</span> <span class="n">xslice</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">y_spec</span><span class="p">,</span> <span class="n">z_spec</span><span class="p">,</span> <span class="s1">&#39;scanner&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x30</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">array([  30., -114.,  -70.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x30</span><span class="p">([</span><span class="mi">114</span><span class="p">,</span><span class="mi">85</span><span class="p">])</span>
+<span class="go">array([  30.,  114.,  100.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x30</span>
+<span class="go">AffineTransform(</span>
+<span class="go">   function_domain=CoordinateSystem(coord_names=(&#39;i_y&#39;, &#39;i_z&#39;), name=&#39;slice&#39;, coord_dtype=float64),</span>
+<span class="go">   function_range=CoordinateSystem(coord_names=(&#39;scanner-x=L-&gt;R&#39;, &#39;scanner-y=P-&gt;A&#39;, &#39;scanner-z=I-&gt;S&#39;), name=&#39;scanner&#39;, coord_dtype=float64),</span>
+<span class="go">   affine=array([[   0.,    0.,   30.],</span>
+<span class="go">                 [   2.,    0., -114.],</span>
+<span class="go">                 [   0.,    2.,  -70.],</span>
+<span class="go">                 [   0.,    0.,    1.]])</span>
+<span class="go">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bounding_box</span><span class="p">(</span><span class="n">x30</span><span class="p">,</span> <span class="p">(</span><span class="n">y_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">z_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="go">((30.0, 30.0), (-114.0, 114.0), (-70.0, 100.0))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.core.reference.slices.yslice">
+<code class="sig-prename descclassname">nipy.core.reference.slices.</code><code class="sig-name descname">yslice</code><span class="sig-paren">(</span><em class="sig-param">y</em>, <em class="sig-param">x_spec</em>, <em class="sig-param">z_spec</em>, <em class="sig-param">world</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/slices.html#yslice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.slices.yslice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a slice through a 3d box with y fixed.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>y</strong> : float</p>
+<blockquote>
+<div><p>The value at which y is fixed.</p>
+</div></blockquote>
+<p><strong>x_spec</strong> : sequence</p>
+<blockquote>
+<div><p>A sequence with 2 values of form ((float, float), int). The
+(float, float) components are the min and max x values; the int
+is the number of points.</p>
+</div></blockquote>
+<p><strong>z_spec</strong> : sequence</p>
+<blockquote>
+<div><p>As for <cite>x_spec</cite> but for z</p>
+</div></blockquote>
+<p><strong>world</strong> : str or CoordinateSystem CoordSysMaker or XYZSpace</p>
+<blockquote>
+<div><p>World 3D space to which resulting coordmap refers</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>affine_transform</strong> : AffineTransform</p>
+<blockquote>
+<div><p>An affine transform that describes an plane in
+LPS coordinates with y fixed.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_spec</span> <span class="o">=</span> <span class="p">([</span><span class="o">-</span><span class="mi">92</span><span class="p">,</span><span class="mi">92</span><span class="p">],</span> <span class="mi">93</span><span class="p">)</span> <span class="c1"># voxels of size 2 in x, starting at -92, ending at 92</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z_spec</span> <span class="o">=</span> <span class="p">([</span><span class="o">-</span><span class="mi">70</span><span class="p">,</span><span class="mi">100</span><span class="p">],</span> <span class="mi">86</span><span class="p">)</span> <span class="c1"># voxels of size 2 in z, starting at -70, ending at 100</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y70</span> <span class="o">=</span> <span class="n">yslice</span><span class="p">(</span><span class="mi">70</span><span class="p">,</span> <span class="n">x_spec</span><span class="p">,</span> <span class="n">z_spec</span><span class="p">,</span> <span class="s1">&#39;mni&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y70</span>
+<span class="go">AffineTransform(</span>
+<span class="go">   function_domain=CoordinateSystem(coord_names=(&#39;i_x&#39;, &#39;i_z&#39;), name=&#39;slice&#39;, coord_dtype=float64),</span>
+<span class="go">   function_range=CoordinateSystem(coord_names=(&#39;mni-x=L-&gt;R&#39;, &#39;mni-y=P-&gt;A&#39;, &#39;mni-z=I-&gt;S&#39;), name=&#39;mni&#39;, coord_dtype=float64),</span>
+<span class="go">   affine=array([[  2.,   0., -92.],</span>
+<span class="go">                 [  0.,   0.,  70.],</span>
+<span class="go">                 [  0.,   2., -70.],</span>
+<span class="go">                 [  0.,   0.,   1.]])</span>
+<span class="go">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y70</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">array([-92.,  70., -70.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y70</span><span class="p">([</span><span class="mi">92</span><span class="p">,</span><span class="mi">85</span><span class="p">])</span>
+<span class="go">array([  92.,   70.,  100.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bounding_box</span><span class="p">(</span><span class="n">y70</span><span class="p">,</span> <span class="p">(</span><span class="n">x_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">z_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="go">((-92.0, 92.0), (70.0, 70.0), (-70.0, 100.0))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.core.reference.slices.zslice">
+<code class="sig-prename descclassname">nipy.core.reference.slices.</code><code class="sig-name descname">zslice</code><span class="sig-paren">(</span><em class="sig-param">z</em>, <em class="sig-param">x_spec</em>, <em class="sig-param">y_spec</em>, <em class="sig-param">world</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/core/reference/slices.html#zslice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.core.reference.slices.zslice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a slice through a 3d box with z fixed.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>z</strong> : float</p>
+<blockquote>
+<div><p>The value at which z is fixed.</p>
+</div></blockquote>
+<p><strong>x_spec</strong> : sequence</p>
+<blockquote>
+<div><p>A sequence with 2 values of form ((float, float), int). The
+(float, float) components are the min and max x values; the int
+is the number of points.</p>
+</div></blockquote>
+<p><strong>y_spec</strong> : sequence</p>
+<blockquote>
+<div><p>As for <cite>x_spec</cite> but for y</p>
+</div></blockquote>
+<p><strong>world</strong> : str or CoordinateSystem CoordSysMaker or XYZSpace</p>
+<blockquote>
+<div><p>World 3D space to which resulting coordmap refers</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>affine_transform</strong> : AffineTransform</p>
+<blockquote>
+<div><p>An affine transform that describes a plane in LPS coordinates with z
+fixed.</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_spec</span> <span class="o">=</span> <span class="p">([</span><span class="o">-</span><span class="mi">92</span><span class="p">,</span><span class="mi">92</span><span class="p">],</span> <span class="mi">93</span><span class="p">)</span> <span class="c1"># voxels of size 2 in x, starting at -92, ending at 92</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_spec</span> <span class="o">=</span> <span class="p">([</span><span class="o">-</span><span class="mi">114</span><span class="p">,</span><span class="mi">114</span><span class="p">],</span> <span class="mi">115</span><span class="p">)</span> <span class="c1"># voxels of size 2 in y, starting at -114, ending at 114</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z40</span> <span class="o">=</span> <span class="n">zslice</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="n">x_spec</span><span class="p">,</span> <span class="n">y_spec</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z40</span>
+<span class="go">AffineTransform(</span>
+<span class="go">   function_domain=CoordinateSystem(coord_names=(&#39;i_x&#39;, &#39;i_y&#39;), name=&#39;slice&#39;, coord_dtype=float64),</span>
+<span class="go">   function_range=CoordinateSystem(coord_names=(&#39;unknown-x=L-&gt;R&#39;, &#39;unknown-y=P-&gt;A&#39;, &#39;unknown-z=I-&gt;S&#39;), name=&#39;unknown&#39;, coord_dtype=float64),</span>
+<span class="go">   affine=array([[   2.,    0.,  -92.],</span>
+<span class="go">                 [   0.,    2., -114.],</span>
+<span class="go">                 [   0.,    0.,   40.],</span>
+<span class="go">                 [   0.,    0.,    1.]])</span>
+<span class="go">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z40</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">array([ -92., -114.,   40.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z40</span><span class="p">([</span><span class="mi">92</span><span class="p">,</span><span class="mi">114</span><span class="p">])</span>
+<span class="go">array([  92.,  114.,   40.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bounding_box</span><span class="p">(</span><span class="n">z40</span><span class="p">,</span> <span class="p">(</span><span class="n">x_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">y_spec</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="go">((-92.0, 92.0), (-114.0, 114.0), (40.0, 40.0))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

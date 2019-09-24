@@ -1,0 +1,679 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.clustering.ggmixture.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-clustering-ggmixture">
+<h1>algorithms.clustering.ggmixture<a class="headerlink" href="#algorithms-clustering-ggmixture" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-algorithms-clustering-ggmixture">
+<h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.clustering.ggmixture</span></code><a class="headerlink" href="#module-algorithms-clustering-ggmixture" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal notranslate"><span class="pre">nipy.algorithms.clustering.ggmixture</span></code>:</p>
+digraph inheritanced40e7b7630 {
+rankdir=LR;
+size=&quot;8.0, 12.0&quot;;
+  &quot;clustering.ggmixture.GGGM&quot; [URL=&quot;#nipy.algorithms.clustering.ggmixture.GGGM&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;The basic one dimensional Gamma-Gaussian-Gamma Mixture estimation&quot;];
+  &quot;clustering.ggmixture.GGM&quot; [URL=&quot;#nipy.algorithms.clustering.ggmixture.GGM&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;This is the basic one dimensional Gaussian-Gamma Mixture estimation class&quot;];
+  &quot;clustering.ggmixture.Gamma&quot; [URL=&quot;#nipy.algorithms.clustering.ggmixture.Gamma&quot;,fontname=&quot;Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans&quot;,fontsize=10,height=0.25,shape=box,style=&quot;setlinewidth(0.5)&quot;,target=&quot;_top&quot;,tooltip=&quot;Basic one dimensional Gaussian-Gamma Mixture estimation class&quot;];
+}
+<span class="target" id="module-nipy.algorithms.clustering.ggmixture"></span><p>One-dimensional Gamma-Gaussian mixture density classes : Given a set
+of points the algo provides approcumate maximum likelihood estimates
+of the mixture distribution using an EM algorithm.</p>
+<p>Author: Bertrand Thirion and Merlin Keller 2005-2008</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="gggm">
+<h3><a class="reference internal" href="#nipy.algorithms.clustering.ggmixture.GGGM" title="nipy.algorithms.clustering.ggmixture.GGGM"><code class="xref py py-class docutils literal notranslate"><span class="pre">GGGM</span></code></a><a class="headerlink" href="#gggm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.clustering.ggmixture.</code><code class="sig-name descname">GGGM</code><span class="sig-paren">(</span><em class="sig-param">shape_n=1</em>, <em class="sig-param">scale_n=1</em>, <em class="sig-param">mean=0</em>, <em class="sig-param">var=1</em>, <em class="sig-param">shape_p=1</em>, <em class="sig-param">scale_p=1</em>, <em class="sig-param">mixt=array([0.33333333</em>, <em class="sig-param">0.33333333</em>, <em class="sig-param">0.33333333])</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The basic one dimensional Gamma-Gaussian-Gamma Mixture estimation
+class, where the first gamma has a negative sign, while the second
+one has a positive sign.</p>
+<p>7 parameters are used:
+- shape_n: negative gamma shape
+- scale_n: negative gamma scale
+- mean: gaussian mean
+- var: gaussian variance
+- shape_p: positive gamma shape
+- scale_p: positive gamma scale
+- mixt: array of mixture parameter
+(weights of the n-gamma,gaussian and p-gamma)</p>
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape_n=1</em>, <em class="sig-param">scale_n=1</em>, <em class="sig-param">mean=0</em>, <em class="sig-param">var=1</em>, <em class="sig-param">shape_p=1</em>, <em class="sig-param">scale_p=1</em>, <em class="sig-param">mixt=array([0.33333333</em>, <em class="sig-param">0.33333333</em>, <em class="sig-param">0.33333333])</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape_n</strong> : float, optional</p>
+<p><strong>scale_n: float, optional</strong></p>
+<blockquote>
+<div><p>parameters of the nehative gamma; must be positive</p>
+</div></blockquote>
+<p><strong>mean</strong> : float, optional</p>
+<p><strong>var</strong> : float, optional</p>
+<blockquote>
+<div><p>parameters of the gaussian ; var must be positive</p>
+</div></blockquote>
+<p><strong>shape_p</strong> : float, optional</p>
+<p><strong>scale_p</strong> : float, optional</p>
+<blockquote>
+<div><p>parameters of the positive gamma; must be positive</p>
+</div></blockquote>
+<p><strong>mixt</strong> : array of shape (3,), optional</p>
+<blockquote>
+<div><p>the mixing proportions; they should be positive and sum to 1</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.parameters">
+<code class="sig-name descname">parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.init">
+<code class="sig-name descname">init</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">mixt=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>initialization of the differnt parameters</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(nbitems)</strong></p>
+<blockquote>
+<div><p>the data to be processed</p>
+</div></blockquote>
+<p><strong>mixt</strong> : None or array of shape(3), optional</p>
+<blockquote>
+<div><p>prior mixing proportions. If None, the classes have equal weight</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.init_fdr">
+<code class="sig-name descname">init_fdr</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">dof=-1</em>, <em class="sig-param">copy=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.init_fdr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.init_fdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initilization of the class based on a fdr heuristic: the
+probability to be in the positive component is proportional to
+the ‘positive fdr’ of the data.  The same holds for the
+negative part.  The point is that the gamma parts should model
+nothing more that the tails of the distribution.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape(nbitem)</strong></p>
+<blockquote>
+<div><p>the data under consideration</p>
+</div></blockquote>
+<p><strong>dof: integer, optional</strong></p>
+<blockquote>
+<div><p>number of degrees of freedom if x is thought to be a student
+variate. By default, it is handeled as a normal</p>
+</div></blockquote>
+<p><strong>copy: boolean, optional</strong></p>
+<blockquote>
+<div><p>If True, copy the data.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.Mstep">
+<code class="sig-name descname">Mstep</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.Mstep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.Mstep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mstep of the estimation:
+Maximum likelihood update the parameters of the three components</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nbitem,)</strong></p>
+<blockquote>
+<div><p>input data</p>
+</div></blockquote>
+<p><strong>z: array of shape (nbitems,3)</strong></p>
+<blockquote>
+<div><p>probabilistic membership</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.Estep">
+<code class="sig-name descname">Estep</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.Estep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.Estep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update probabilistic memberships of the three components</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nbitems,)</strong></p>
+<blockquote>
+<div><p>the input data</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: ndarray of shape (nbitems, 3)</p>
+<blockquote>
+<div><p>probabilistic membership</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>z[0,:] is the membership the negative gamma
+z[1,:] is the membership of  the gaussian
+z[2,:] is the membership of the positive gamma</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.estimate">
+<code class="sig-name descname">estimate</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">niter=100</em>, <em class="sig-param">delta=0.0001</em>, <em class="sig-param">bias=0</em>, <em class="sig-param">verbose=0</em>, <em class="sig-param">gaussian_mix=0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whole EM estimation procedure:</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nbitem)</strong></p>
+<blockquote>
+<div><p>input data</p>
+</div></blockquote>
+<p><strong>niter: integer, optional</strong></p>
+<blockquote>
+<div><p>max number of iterations</p>
+</div></blockquote>
+<p><strong>delta: float, optional</strong></p>
+<blockquote>
+<div><p>increment in LL at which convergence is declared</p>
+</div></blockquote>
+<p><strong>bias: float, optional</strong></p>
+<blockquote>
+<div><p>lower bound on the gaussian variance (to avoid shrinkage)</p>
+</div></blockquote>
+<p><strong>gaussian_mix: float, optional</strong></p>
+<blockquote>
+<div><p>if nonzero, lower bound on the gaussian mixing weight
+(to avoid shrinkage)</p>
+</div></blockquote>
+<p><strong>verbose: 0, 1 or 2</strong></p>
+<blockquote>
+<div><p>verbosity level</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: array of shape (nbitem, 3)</p>
+<blockquote>
+<div><p>the membership matrix</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.posterior">
+<code class="sig-name descname">posterior</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.posterior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the posterior probability of the three components
+given the data</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nbitem,)</strong></p>
+<blockquote>
+<div><p>the data under evaluation</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ng,y,pg: three arrays of shape(nbitem)</p>
+<blockquote>
+<div><p>the posteriori of the 3 components given the data</p>
+</div></blockquote>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>ng + y + pg = np.ones(nbitem)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.component_likelihood">
+<code class="sig-name descname">component_likelihood</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.component_likelihood"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.component_likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the likelihood of the data x under
+the three components negative gamma, gaussina, positive gaussian</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nbitem,)</strong></p>
+<blockquote>
+<div><p>the data under evaluation</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ng,y,pg: three arrays of shape(nbitem)</p>
+<blockquote>
+<div><p>The likelihood of the data under the 3 components</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGGM.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">mpaxes=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGGM.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGGM.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualization of mixture shown on the empirical histogram of x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: ndarray of shape (nditem,)</strong></p>
+<blockquote>
+<div><p>data</p>
+</div></blockquote>
+<p><strong>mpaxes: matplotlib axes, optional</strong></p>
+<blockquote>
+<div><p>axes handle used for the plot if None, new axes are created.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="ggm">
+<h3><a class="reference internal" href="#nipy.algorithms.clustering.ggmixture.GGM" title="nipy.algorithms.clustering.ggmixture.GGM"><code class="xref py py-class docutils literal notranslate"><span class="pre">GGM</span></code></a><a class="headerlink" href="#ggm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.clustering.ggmixture.GGM">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.clustering.ggmixture.</code><code class="sig-name descname">GGM</code><span class="sig-paren">(</span><em class="sig-param">shape=1</em>, <em class="sig-param">scale=1</em>, <em class="sig-param">mean=0</em>, <em class="sig-param">var=1</em>, <em class="sig-param">mixt=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This is the basic one dimensional Gaussian-Gamma Mixture estimation class
+Note that it can work with positive or negative values,
+as long as there is at least one positive value.
+NB : The gamma distribution is defined only on positive values.</p>
+<p>5 scalar members
+- mean: gaussian mean
+- var: gaussian variance (non-negative)
+- shape: gamma shape (non-negative)
+- scale: gamma scale (non-negative)
+- mixt: mixture parameter (non-negative, weight of the gamma)</p>
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGM.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape=1</em>, <em class="sig-param">scale=1</em>, <em class="sig-param">mean=0</em>, <em class="sig-param">var=1</em>, <em class="sig-param">mixt=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGM.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGM.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGM.parameters">
+<code class="sig-name descname">parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGM.parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGM.parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>print the paramteres of self</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGM.Mstep">
+<code class="sig-name descname">Mstep</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">z</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGM.Mstep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGM.Mstep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mstep of the model: maximum likelihood
+estimation of the parameters of the model</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> : array of shape (nbitems,)</p>
+<blockquote>
+<div><p>input data</p>
+</div></blockquote>
+<p><strong>z array of shape(nbitrems, 2)</strong></p>
+<blockquote>
+<div><p>the membership matrix</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGM.Estep">
+<code class="sig-name descname">Estep</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGM.Estep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGM.Estep" title="Permalink to this definition">¶</a></dt>
+<dd><p>E step of the estimation:
+Estimation of ata membsership</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nbitems,)</strong></p>
+<blockquote>
+<div><p>input data</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>z: array of shape (nbitems, 2)</p>
+<blockquote>
+<div><p>the membership matrix</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGM.estimate">
+<code class="sig-name descname">estimate</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">niter=10</em>, <em class="sig-param">delta=0.0001</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGM.estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGM.estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Complete EM estimation procedure</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> : array of shape (nbitems,)</p>
+<blockquote>
+<div><p>the data to be processed</p>
+</div></blockquote>
+<p><strong>niter</strong> : int, optional</p>
+<blockquote>
+<div><p>max nb of iterations</p>
+</div></blockquote>
+<p><strong>delta</strong> : float, optional</p>
+<blockquote>
+<div><p>criterion for convergence</p>
+</div></blockquote>
+<p><strong>verbose</strong> : bool, optional</p>
+<blockquote>
+<div><p>If True, print values during iterations</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>LL, float</p>
+<blockquote>
+<div><p>average final log-likelihood</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGM.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGM.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGM.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualization of the mm based on the empirical histogram of x</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> : array of shape (nbitems,)</p>
+<blockquote>
+<div><p>the data to be processed</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.GGM.posterior">
+<code class="sig-name descname">posterior</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#GGM.posterior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.GGM.posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Posterior probability of observing the data x for each component</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x: array of shape (nbitems,)</strong></p>
+<blockquote>
+<div><p>the data to be processed</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>y, pg</strong> : arrays of shape (nbitem)</p>
+<blockquote>
+<div><p>the posterior probability</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="gamma">
+<h3><a class="reference internal" href="#nipy.algorithms.clustering.ggmixture.Gamma" title="nipy.algorithms.clustering.ggmixture.Gamma"><code class="xref py py-class docutils literal notranslate"><span class="pre">Gamma</span></code></a><a class="headerlink" href="#gamma" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nipy.algorithms.clustering.ggmixture.Gamma">
+<em class="property">class </em><code class="sig-prename descclassname">nipy.algorithms.clustering.ggmixture.</code><code class="sig-name descname">Gamma</code><span class="sig-paren">(</span><em class="sig-param">shape=1</em>, <em class="sig-param">scale=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#Gamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.Gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Basic one dimensional Gaussian-Gamma Mixture estimation class</p>
+<p>Note that it can work with positive or negative values,
+as long as there is at least one positive value.
+NB : The gamma distribution is defined only on positive values.
+5 parameters are used:
+- mean: gaussian mean
+- var: gaussian variance
+- shape: gamma shape
+- scale: gamma scale
+- mixt: mixture parameter (weight of the gamma)</p>
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.Gamma.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">shape=1</em>, <em class="sig-param">scale=1</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#Gamma.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.Gamma.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.Gamma.parameters">
+<code class="sig-name descname">parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#Gamma.parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.Gamma.parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.Gamma.check">
+<code class="sig-name descname">check</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#Gamma.check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.Gamma.check" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nipy.algorithms.clustering.ggmixture.Gamma.estimate">
+<code class="sig-name descname">estimate</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">eps=1e-07</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/clustering/ggmixture.html#Gamma.estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.clustering.ggmixture.Gamma.estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>ML estimation of the Gamma parameters</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

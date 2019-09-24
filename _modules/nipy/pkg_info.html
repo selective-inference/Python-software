@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.pkg_info</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="kn">from</span> <span class="nn">.externals.six.moves</span> <span class="k">import</span> <span class="n">configparser</span>
+
+<span class="n">COMMIT_INFO_FNAME</span> <span class="o">=</span> <span class="s1">&#39;COMMIT_INFO.txt&#39;</span>
+
+<div class="viewcode-block" id="pkg_commit_hash"><a class="viewcode-back" href="../../api/generated/nipy.pkg_info.html#nipy.pkg_info.pkg_commit_hash">[docs]</a><span class="k">def</span> <span class="nf">pkg_commit_hash</span><span class="p">(</span><span class="n">pkg_path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Get short form of commit hash given directory `pkg_path`</span>
+
+<span class="sd">    There should be a file called &#39;COMMIT_INFO.txt&#39; in `pkg_path`.  This is a</span>
+<span class="sd">    file in INI file format, with at least one section: ``commit hash``, and</span>
+<span class="sd">    two variables ``archive_subst_hash`` and ``install_hash``.  The first has a</span>
+<span class="sd">    substitution pattern in it which may have been filled by the execution of</span>
+<span class="sd">    ``git archive`` if this is an archive generated that way.  The second is</span>
+<span class="sd">    filled in by the installation, if the installation is from a git archive.</span>
+
+<span class="sd">    We get the commit hash from (in order of preference):</span>
+
+<span class="sd">    * A substituted value in ``archive_subst_hash``;</span>
+<span class="sd">    * A written commit hash value in ``install_hash``;</span>
+<span class="sd">    * git&#39;s output, if we are in a git repository</span>
+
+<span class="sd">    If all these fail, we return a not-found placeholder tuple.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -------------</span>
+<span class="sd">    pkg_path : str</span>
+<span class="sd">       directory containing package</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ---------</span>
+<span class="sd">    hash_from : str</span>
+<span class="sd">       Where we got the hash from - description</span>
+<span class="sd">    hash_str : str</span>
+<span class="sd">       short form of hash</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># Try and get commit from written commit text file</span>
+    <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pkg_path</span><span class="p">,</span> <span class="n">COMMIT_INFO_FNAME</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pth</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;Missing commit info file </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">pth</span><span class="p">)</span>
+    <span class="n">cfg_parser</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">RawConfigParser</span><span class="p">()</span>
+    <span class="n">cfg_parser</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">pth</span><span class="p">)</span>
+    <span class="n">archive_subst</span> <span class="o">=</span> <span class="n">cfg_parser</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;commit hash&#39;</span><span class="p">,</span> <span class="s1">&#39;archive_subst_hash&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">archive_subst</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;$Format&#39;</span><span class="p">):</span> <span class="c1"># it has been substituted</span>
+        <span class="k">return</span> <span class="s1">&#39;archive substitution&#39;</span><span class="p">,</span> <span class="n">archive_subst</span>
+    <span class="n">install_subst</span> <span class="o">=</span> <span class="n">cfg_parser</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;commit hash&#39;</span><span class="p">,</span> <span class="s1">&#39;install_hash&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">install_subst</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;installation&#39;</span><span class="p">,</span> <span class="n">install_subst</span>
+    <span class="c1"># maybe we are in a repository</span>
+    <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="s1">&#39;git rev-parse --short HEAD&#39;</span><span class="p">,</span>
+                            <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                            <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                            <span class="n">cwd</span><span class="o">=</span><span class="n">pkg_path</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">repo_commit</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">repo_commit</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;repository&#39;</span><span class="p">,</span> <span class="n">repo_commit</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">return</span> <span class="s1">&#39;(none found)&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;not found&gt;&#39;</span></div>
+
+
+<div class="viewcode-block" id="get_pkg_info"><a class="viewcode-back" href="../../api/generated/nipy.pkg_info.html#nipy.pkg_info.get_pkg_info">[docs]</a><span class="k">def</span> <span class="nf">get_pkg_info</span><span class="p">(</span><span class="n">pkg_path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Return dict describing the context of this package</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ------------</span>
+<span class="sd">    pkg_path : str</span>
+<span class="sd">       path containing __init__.py for package</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    context : dict</span>
+<span class="sd">       with named parameters of interest</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">src</span><span class="p">,</span> <span class="n">hsh</span> <span class="o">=</span> <span class="n">pkg_commit_hash</span><span class="p">(</span><span class="n">pkg_path</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">numpy</span>
+    <span class="kn">import</span> <span class="nn">nipy</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">pkg_path</span><span class="o">=</span><span class="n">pkg_path</span><span class="p">,</span>
+        <span class="n">commit_source</span><span class="o">=</span><span class="n">src</span><span class="p">,</span>
+        <span class="n">commit_hash</span><span class="o">=</span><span class="n">hsh</span><span class="p">,</span>
+        <span class="n">sys_version</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+        <span class="n">sys_executable</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span>
+        <span class="n">sys_platform</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="p">,</span>
+        <span class="n">np_version</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
+        <span class="n">nipy_version</span><span class="o">=</span><span class="n">nipy</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

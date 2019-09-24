@@ -1,0 +1,494 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.glm.glm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">sps</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">kalman</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">mahalanobis</span>
+<span class="kn">from</span> <span class="nn">nipy.algorithms.statistics.utils</span> <span class="k">import</span> <span class="n">z_score</span> <span class="k">as</span> <span class="n">zscore</span>
+
+
+<span class="n">DEF_TINY</span> <span class="o">=</span> <span class="mf">1e-50</span>
+<span class="n">DEF_DOFMAX</span> <span class="o">=</span> <span class="mf">1e10</span>
+<span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;spherical&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;ols&#39;</span><span class="p">,</span> <span class="s1">&#39;kalman&#39;</span><span class="p">],</span> <span class="s1">&#39;ar1&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;kalman&#39;</span><span class="p">]}</span>
+
+
+<div class="viewcode-block" id="glm"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.glm">[docs]</a><span class="k">class</span> <span class="nc">glm</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="glm.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.glm.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+             <span class="n">model</span><span class="o">=</span><span class="s1">&#39;spherical&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+
+        <span class="c1"># Check dimensions</span>
+        <span class="k">if</span> <span class="n">Y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">formula</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">niter</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="glm.fit"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.glm.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">formula</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">&#39;spherical&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">niter</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">!=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Response and predictors are inconsistent&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Find model type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_axis</span> <span class="o">=</span> <span class="n">axis</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;mfx&#39;</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">model</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">models</span><span class="p">[</span><span class="n">model</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown method&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown model&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize fields</span>
+        <span class="n">constants</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Switch on models / methods</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s1">&#39;spherical&#39;</span><span class="p">:</span>
+            <span class="n">constants</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nvbeta&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;ols&#39;</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">ols</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;kalman&#39;</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">kalman</span><span class="o">.</span><span class="n">ols</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s1">&#39;ar1&#39;</span><span class="p">:</span>
+            <span class="n">constants</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">kalman</span><span class="o">.</span><span class="n">ar1</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="n">niter</span><span class="p">)</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span> <span class="mi">4</span><span class="p">]</span>
+
+        <span class="c1"># Finalize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nvbeta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_constants</span> <span class="o">=</span> <span class="n">constants</span></div>
+
+<div class="viewcode-block" id="glm.save"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.glm.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Save fit into a .npz file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">file</span><span class="p">,</span>
+             <span class="n">beta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
+             <span class="n">nvbeta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nvbeta</span><span class="p">,</span>
+             <span class="n">s2</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="p">,</span>
+             <span class="n">dof</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">,</span>
+             <span class="n">a</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span>
+             <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+             <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+             <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis</span><span class="p">,</span>
+             <span class="n">constants</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_constants</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="glm.contrast"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.glm.contrast">[docs]</a>    <span class="k">def</span> <span class="nf">contrast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">tiny</span><span class="o">=</span><span class="n">DEF_TINY</span><span class="p">,</span> <span class="n">dofmax</span><span class="o">=</span><span class="n">DEF_DOFMAX</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Specify and estimate a constrast</span>
+
+<span class="sd">        c must be a numpy.ndarray (or anything that numpy.asarray</span>
+<span class="sd">        can cast to a ndarray).</span>
+<span class="sd">        For a F contrast, c must be q x p</span>
+<span class="sd">        where q is the number of contrast vectors and</span>
+<span class="sd">        p is the total number of regressors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+        <span class="c1">#dim = len(c.shape)</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axis</span>
+        <span class="n">ndims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="c1"># Compute the contrast estimate: c*B</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">ndims</span><span class="p">)</span>
+        <span class="n">con</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span> <span class="c1"># shape = q, X</span>
+
+        <span class="c1"># Compute the variance of the contrast estimate: s2 * (c&#39; * nvbeta * c)</span>
+        <span class="c1"># Two cases are considered: either the input effect variance</span>
+        <span class="c1"># is position-dependent (output by RKF_fit), or it is a global</span>
+        <span class="c1"># one (output by KF_fit)</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="n">nvbeta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nvbeta</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;nvbeta&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constants</span><span class="p">:</span>
+            <span class="n">nvbeta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">nvbeta</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">ndims</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">nvbeta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">nvbeta</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">ndims</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># shape = X, p, p</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">vcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">nvbeta</span><span class="p">))</span>
+            <span class="n">vcon</span> <span class="o">=</span> <span class="n">vcon</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span> <span class="o">*</span> <span class="n">s2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">nvbeta</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span> <span class="c1"># q, X, q or q, q</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;nvbeta&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constants</span><span class="p">:</span>
+                <span class="n">vcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">vcon</span><span class="p">,</span> <span class="n">ndims</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">s2</span> <span class="c1"># q, q, X</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">aux</span> <span class="o">=</span> <span class="n">vcon</span><span class="o">.</span><span class="n">shape</span> <span class="c1"># q, q</span>
+                <span class="n">vcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">vcon</span><span class="p">,</span> <span class="n">s2</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="n">aux</span><span class="p">)</span> <span class="c1"># X, q, q</span>
+                <span class="n">vcon</span> <span class="o">=</span> <span class="n">vcon</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">aux</span> <span class="o">+</span> <span class="p">(</span><span class="n">s2</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span> <span class="o">*</span> \
+                    <span class="n">s2</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">s2</span><span class="o">.</span><span class="n">size</span><span class="p">,))</span> <span class="c1"># q, q, Xflat</span>
+                <span class="n">vcon</span> <span class="o">=</span> <span class="n">vcon</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">aux</span> <span class="o">+</span> <span class="n">s2</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="c1"># q, q, X</span>
+
+        <span class="c1"># Create contrast instance</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">contrast</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">tiny</span><span class="p">,</span> <span class="n">dofmax</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">effect</span> <span class="o">=</span> <span class="n">con</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">vcon</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof</span>
+        <span class="k">return</span> <span class="n">c</span></div></div>
+
+
+<div class="viewcode-block" id="contrast"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.contrast">[docs]</a><span class="k">class</span> <span class="nc">contrast</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="contrast.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.contrast.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">tiny</span><span class="o">=</span><span class="n">DEF_TINY</span><span class="p">,</span> <span class="n">dofmax</span><span class="o">=</span><span class="n">DEF_DOFMAX</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;tiny is a numerical constant for computations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effect</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span> <span class="ow">is</span> <span class="s1">&#39;t&#39;</span><span class="p">:</span>
+                <span class="nb">type</span> <span class="o">=</span> <span class="s1">&#39;F&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pvalue</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_baseline</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tiny</span> <span class="o">=</span> <span class="n">tiny</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dofmax</span> <span class="o">=</span> <span class="n">dofmax</span></div>
+
+<div class="viewcode-block" id="contrast.summary"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.contrast.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a dictionary containing the estimated contrast effect,</span>
+<span class="sd">        the associated ReML-based estimation variance, and the estimated</span>
+<span class="sd">        degrees of freedom (variance of the variance).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;effect&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">effect</span><span class="p">,</span>
+                <span class="s1">&#39;variance&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">,</span>
+                <span class="s1">&#39;dof&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="contrast.stat"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.contrast.stat">[docs]</a>    <span class="k">def</span> <span class="nf">stat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">baseline</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the decision statistic associated with the test of the</span>
+<span class="sd">        null hypothesis: (H0) &#39;contrast equals baseline&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_baseline</span> <span class="o">=</span> <span class="n">baseline</span>
+
+        <span class="c1"># Case: one-dimensional contrast ==&gt; t or t**2</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># avoids division by zero</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">effect</span> <span class="o">-</span> <span class="n">baseline</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tiny</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">:</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">t</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="c1"># Case: F contrast</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">:</span>
+            <span class="c1"># F = |t|^2/q ,  |t|^2 = e^t v-1 e</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">mahalanobis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">effect</span> <span class="o">-</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tiny</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span>
+        <span class="c1"># Case: tmin (conjunctions)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;tmin&#39;</span><span class="p">:</span>
+            <span class="n">vdiag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">**</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:]))[::</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">effect</span> <span class="o">-</span> <span class="n">baseline</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">vdiag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tiny</span><span class="p">))</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Unknwon stat</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown statistic type&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="k">return</span> <span class="n">t</span></div>
+
+<div class="viewcode-block" id="contrast.pvalue"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.contrast.pvalue">[docs]</a>    <span class="k">def</span> <span class="nf">pvalue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">baseline</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a parametric approximation of the p-value associated</span>
+<span class="sd">        with the null hypothesis: (H0) &#39;contrast equals baseline&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stat</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_baseline</span> <span class="o">==</span> <span class="n">baseline</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">baseline</span><span class="p">)</span>
+        <span class="c1"># Valid conjunction as in Nichols et al, Neuroimage 25, 2005.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;tmin&#39;</span><span class="p">]:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">sps</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stat</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dofmax</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">sps</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dofmax</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown statistic type&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pvalue</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="k">return</span> <span class="n">p</span></div>
+
+<div class="viewcode-block" id="contrast.zscore"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.contrast.zscore">[docs]</a>    <span class="k">def</span> <span class="nf">zscore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">baseline</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a parametric approximation of the z-score associated</span>
+<span class="sd">        with the null hypothesis: (H0) &#39;contrast equals baseline&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pvalue</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_baseline</span> <span class="o">==</span> <span class="n">baseline</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pvalue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pvalue</span><span class="p">(</span><span class="n">baseline</span><span class="p">)</span>
+
+        <span class="c1"># Avoid inf values kindly supplied by scipy.</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">zscore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pvalue</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">z</span></div>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">dim</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">con</span> <span class="o">=</span> <span class="n">contrast</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">con</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span>
+        <span class="n">con</span><span class="o">.</span><span class="n">effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">effect</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">effect</span>
+        <span class="n">con</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">variance</span>
+        <span class="n">con</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">dof</span>
+        <span class="k">return</span> <span class="n">con</span>
+
+    <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="n">con</span> <span class="o">=</span> <span class="n">contrast</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">con</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span>
+        <span class="n">con</span><span class="o">.</span><span class="n">effect</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">effect</span>
+        <span class="n">con</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">k</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span>
+        <span class="n">con</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof</span>
+        <span class="k">return</span> <span class="n">con</span>
+
+    <span class="fm">__mul__</span> <span class="o">=</span> <span class="fm">__rmul__</span>
+
+    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__rmul__</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">other</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ols"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.ols">[docs]</a><span class="k">def</span> <span class="nf">ols</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Essentially, compute pinv(X)*Y</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ndims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">pX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">pX</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">ndims</span><span class="p">)),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">nvbeta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">pX</span><span class="p">,</span> <span class="n">pX</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">ndims</span><span class="p">)),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="p">(</span><span class="n">res</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">beta</span><span class="p">,</span> <span class="n">nvbeta</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">dof</span></div>
+
+
+<div class="viewcode-block" id="load"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.glm.glm.html#nipy.labs.glm.glm.load">[docs]</a><span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load a fitted glm</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">splitext</span>
+    <span class="k">if</span> <span class="n">splitext</span><span class="p">(</span><span class="n">file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">file</span> <span class="o">+</span> <span class="s1">&#39;.npz&#39;</span>
+    <span class="n">fmod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">mod</span> <span class="o">=</span> <span class="n">glm</span><span class="p">()</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;beta&#39;</span><span class="p">]</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">nvbeta</span> <span class="o">=</span> <span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;nvbeta&#39;</span><span class="p">]</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">s2</span> <span class="o">=</span> <span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;s2&#39;</span><span class="p">]</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;dof&#39;</span><span class="p">]</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">])</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">])</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">_axis</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;axis&#39;</span><span class="p">])</span>
+    <span class="n">mod</span><span class="o">.</span><span class="n">_constants</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fmod</span><span class="p">[</span><span class="s1">&#39;constants&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">mod</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,559 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.core.reference.array_coords</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Some CoordinateMaps have a domain that are &#39;array&#39; coordinates,</span>
+<span class="sd">hence the function of the CoordinateMap can be evaluated at these</span>
+<span class="sd">&#39;array&#39; points.</span>
+
+<span class="sd">This module tries to make these operations easier by defining a class</span>
+<span class="sd">ArrayCoordMap that is essentially a CoordinateMap and a shape.</span>
+
+<span class="sd">This class has two properties: values, transposed_values the</span>
+<span class="sd">CoordinateMap at np.indices(shape).</span>
+
+<span class="sd">The class Grid is meant to take a CoordinateMap and an np.mgrid-like</span>
+<span class="sd">notation to create an ArrayCoordMap.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.coordinate_map</span> <span class="k">import</span> <span class="n">CoordinateMap</span><span class="p">,</span> <span class="n">AffineTransform</span><span class="p">,</span> <span class="n">compose</span>
+<span class="kn">from</span> <span class="nn">.coordinate_map</span> <span class="k">import</span> <span class="n">product</span> <span class="k">as</span> <span class="n">cmap_product</span>
+<span class="kn">from</span> <span class="nn">.coordinate_map</span> <span class="k">import</span> <span class="n">shifted_range_origin</span>
+<span class="kn">from</span> <span class="nn">.coordinate_system</span> <span class="k">import</span> <span class="n">CoordinateSystem</span>
+
+<span class="c1"># Legacy repr printing from numpy.</span>
+<span class="kn">from</span> <span class="nn">nipy.testing</span> <span class="k">import</span> <span class="n">legacy_printing</span> <span class="k">as</span> <span class="n">setup_module</span>  <span class="c1"># noqa</span>
+
+
+<div class="viewcode-block" id="ArrayCoordMap"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.array_coords.html#nipy.core.reference.array_coords.ArrayCoordMap">[docs]</a><span class="k">class</span> <span class="nc">ArrayCoordMap</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Class combining coordinate map and array shape</span>
+<span class="sd">    </span>
+<span class="sd">    When the function_domain of a CoordinateMap can be thought of as</span>
+<span class="sd">    &#39;array&#39; coordinates, i.e. an &#39;input_shape&#39; makes sense. We can</span>
+<span class="sd">    than evaluate the CoordinateMap at np.indices(input_shape)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ArrayCoordMap.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.array_coords.html#nipy.core.reference.array_coords.ArrayCoordMap.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordmap</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coordmap : ``CoordinateMap``</span>
+<span class="sd">           A CoordinateMap with function_domain that are &#39;array&#39;</span>
+<span class="sd">           coordinates.</span>
+<span class="sd">        shape : sequence of int</span>
+<span class="sd">           The size of the (implied) underlying array.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; aff = np.diag([0.6,1.1,2.3,1])</span>
+<span class="sd">        &gt;&gt;&gt; aff[:3,3] = (0.1, 0.2, 0.3)</span>
+<span class="sd">        &gt;&gt;&gt; cmap = AffineTransform.from_params(&#39;ijk&#39;, &#39;xyz&#39;, aff)</span>
+<span class="sd">        &gt;&gt;&gt; cmap.ndims # number of (input, output) dimensions</span>
+<span class="sd">        (3, 3)</span>
+<span class="sd">        &gt;&gt;&gt; acmap = ArrayCoordMap(cmap, (1, 2, 3))</span>
+<span class="sd">        </span>
+<span class="sd">        Real world values at each array coordinate, one row per array</span>
+<span class="sd">        coordinate (6 in this case), one column for each output</span>
+<span class="sd">        dimension (3 in this case)</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; acmap.values</span>
+<span class="sd">        array([[ 0.1,  0.2,  0.3],</span>
+<span class="sd">               [ 0.1,  0.2,  2.6],</span>
+<span class="sd">               [ 0.1,  0.2,  4.9],</span>
+<span class="sd">               [ 0.1,  1.3,  0.3],</span>
+<span class="sd">               [ 0.1,  1.3,  2.6],</span>
+<span class="sd">               [ 0.1,  1.3,  4.9]])</span>
+
+<span class="sd">        Same values, but arranged in np.indices / np.mgrid format, first</span>
+<span class="sd">        axis is for number of output coordinates (3 in our case), the</span>
+<span class="sd">        rest are for the input shape (1, 2, 3)</span>
+
+<span class="sd">        &gt;&gt;&gt; acmap.transposed_values.shape</span>
+<span class="sd">        (3, 1, 2, 3)</span>
+<span class="sd">        &gt;&gt;&gt; acmap.transposed_values</span>
+<span class="sd">        array([[[[ 0.1,  0.1,  0.1],</span>
+<span class="sd">                 [ 0.1,  0.1,  0.1]]],</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">               [[[ 0.2,  0.2,  0.2],</span>
+<span class="sd">                 [ 1.3,  1.3,  1.3]]],</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">               [[[ 0.3,  2.6,  4.9],</span>
+<span class="sd">                 [ 0.3,  2.6,  4.9]]]])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span> <span class="o">=</span> <span class="n">coordmap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transpose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If the coordmap has a shape (so that it can be thought of as a</span>
+<span class="sd">        map from voxels to some output space), return the range of the</span>
+<span class="sd">        coordmap, i.e. the value at all the voxels.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coordmap : `CoordinateMap`</span>
+<span class="sd">        transpose : bool, optional</span>
+<span class="sd">           If False (the default), the result is a 2-dimensional</span>
+<span class="sd">           ndarray with shape[1] == coordmap.ndims[1]. That is, the</span>
+<span class="sd">           result is a list of output values.  Otherwise, the shape is</span>
+<span class="sd">           (coordmap.ndims[1],) + coordmap.shape.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        values : array</span>
+<span class="sd">           Values of self.coordmap evaluated at np.indices(self.shape).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_dtype</span><span class="p">)</span>
+        <span class="n">tmp_shape</span> <span class="o">=</span> <span class="n">indices</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># reshape indices to be a sequence of coordinates</span>
+        <span class="n">indices</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="c1"># evaluate using coordinate map mapping</span>
+        <span class="n">_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">(</span><span class="n">indices</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">transpose</span><span class="p">:</span>
+            <span class="c1"># reconstruct np.indices format for output</span>
+            <span class="n">_range</span> <span class="o">=</span> <span class="n">_range</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">_range</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">_range</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span> <span class="o">+</span> <span class="n">tmp_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="n">_range</span> 
+
+    <span class="k">def</span> <span class="nf">_getvalues</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate</span><span class="p">(</span><span class="n">transpose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getvalues</span><span class="p">,</span> 
+                      <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Get values of ArrayCoordMap in a &#39;</span>
+                      <span class="s1">&#39;2-dimensional array of shape &#39;</span>
+                      <span class="s1">&#39;(product(self.shape), self.coordmap.ndims[1]))&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getindices_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate</span><span class="p">(</span><span class="n">transpose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">transposed_values</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_getindices_values</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Get values of ArrayCoordMap in an array of shape (self.coordmap.ndims[1],) + self.shape)&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slicers</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a slice through the coordmap.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        slicers : int or tuple</span>
+<span class="sd">           int, or sequence of any combination of integers, slices.  The</span>
+<span class="sd">           sequence can also contain one Ellipsis. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># slicers might just be just one thing, so convert to tuple</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">slicers</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(()):</span>
+            <span class="n">slicers</span> <span class="o">=</span> <span class="p">(</span><span class="n">slicers</span><span class="p">,)</span>
+        <span class="c1"># raise error for anything other than slice, int, Ellipsis</span>
+        <span class="n">have_ellipsis</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># check for &gt;1 Ellipsis</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">slicers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Sorry, we do not support &#39;</span>
+                                 <span class="s1">&#39;ndarrays (fancy indexing)&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="bp">Ellipsis</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">have_ellipsis</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;only one Ellipsis (...) allowed in slice&quot;</span><span class="p">)</span>
+                <span class="n">have_ellipsis</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;start&#39;</span><span class="p">):</span> <span class="c1"># probably slice</span>
+                    <span class="k">continue</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting int, slice or Ellipsis&#39;</span><span class="p">)</span>
+        <span class="c1"># allow slicing of form [...,1]</span>
+        <span class="k">if</span> <span class="n">have_ellipsis</span><span class="p">:</span>
+            <span class="c1"># convert ellipsis to series of slice(None) objects.  For</span>
+            <span class="c1"># example, if the coordmap is length 3, we convert (...,1)</span>
+            <span class="c1"># to (slice(None), slice(None), 1) - equivalent to [:,:,1]</span>
+            <span class="n">ellipsis_start</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">slicers</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">Ellipsis</span><span class="p">)</span>
+            <span class="n">inds_after_ellipsis</span> <span class="o">=</span> <span class="n">slicers</span><span class="p">[(</span><span class="n">ellipsis_start</span><span class="o">+</span><span class="mi">1</span><span class="p">):]</span>
+            <span class="c1"># the ellipsis continues until any remaining slice specification</span>
+            <span class="n">n_ellipses</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="n">ellipsis_start</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">inds_after_ellipsis</span><span class="p">)</span>
+            <span class="n">slicers</span> <span class="o">=</span> <span class="p">(</span><span class="n">slicers</span><span class="p">[:</span><span class="n">ellipsis_start</span><span class="p">]</span>
+                     <span class="o">+</span> <span class="n">n_ellipses</span> <span class="o">*</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span>
+                     <span class="o">+</span> <span class="n">inds_after_ellipsis</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="o">*</span><span class="n">slicers</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ArrayCoordMap.from_shape"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.array_coords.html#nipy.core.reference.array_coords.ArrayCoordMap.from_shape">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_shape</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create an evaluator assuming that coordmap.function_domain</span>
+<span class="sd">        are &#39;array&#39; coordinates.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Grid</span><span class="p">(</span><span class="n">coordmap</span><span class="p">)[</span><span class="n">slices</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;ArrayCoordMap(</span><span class="se">\n</span><span class="s2">  coordmap=&quot;</span> <span class="o">+</span> \
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,</span><span class="se">\n</span><span class="s1">  shape=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">)&#39;</span></div>
+
+
+<span class="k">def</span> <span class="nf">_slice</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="o">*</span><span class="n">slices</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Slice a &#39;voxel&#39; CoordinateMap&#39;s function_domain with slices. A</span>
+<span class="sd">    &#39;voxel&#39; CoordinateMap is interpreted as a coordmap having a shape.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">slices</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">slices</span><span class="p">)</span> <span class="o">+</span>
+                  <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">coordmap</span><span class="o">.</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">slices</span><span class="p">)))</span>
+
+    <span class="n">ranges</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">]</span>
+    <span class="n">cmaps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">keep_in_output</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_dtype</span>
+    <span class="n">newshape</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">__slice</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+        <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">__slice</span><span class="p">]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;empty slice for dimension </span><span class="si">%d</span><span class="s1">, &#39;</span>
+                                 <span class="s1">&#39;coordinate </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> 
+                                 <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">keep_in_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">ranges</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">keep_in_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;-slice&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">cmaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">AffineTransform</span><span class="p">(</span>
+                <span class="n">CoordinateSystem</span><span class="p">([</span><span class="n">name</span><span class="p">],</span> <span class="n">coord_dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">),</span>
+                <span class="n">CoordinateSystem</span><span class="p">([</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[</span><span class="n">i</span><span class="p">]]),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">step</span><span class="p">,</span> <span class="n">start</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)))</span> 
+
+        <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">keep_in_output</span><span class="p">:</span>
+            <span class="n">newshape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+    <span class="n">slice_cmap</span> <span class="o">=</span> <span class="n">cmap_product</span><span class="p">(</span><span class="o">*</span><span class="n">cmaps</span><span class="p">)</span>
+
+    <span class="c1"># Identify the origin in the range of cmap</span>
+    <span class="c1"># with the origin in the domain of coordmap</span>
+
+    <span class="n">slice_cmap</span> <span class="o">=</span> <span class="n">shifted_range_origin</span><span class="p">(</span><span class="n">slice_cmap</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">slice_cmap</span><span class="o">.</span><span class="n">ndims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                                      <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># Reduce the size of the matrix</span>
+    <span class="n">innames</span> <span class="o">=</span> <span class="n">slice_cmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span>
+    <span class="n">inmat</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">function_domain</span> <span class="o">=</span> <span class="n">CoordinateSystem</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">innames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">keep_in_output</span><span class="p">],</span>
+        <span class="s1">&#39;input-slice&#39;</span><span class="p">,</span>
+        <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_dtype</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">coordmap</span><span class="o">.</span><span class="n">ndims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">keep_in_output</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">keep_in_output</span><span class="p">):</span>
+        <span class="n">A</span><span class="p">[:,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice_cmap</span><span class="o">.</span><span class="n">affine</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">A</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice_cmap</span><span class="o">.</span><span class="n">affine</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_dtype</span><span class="p">)</span>
+    <span class="n">slice_cmap</span> <span class="o">=</span> <span class="n">AffineTransform</span><span class="p">(</span><span class="n">function_domain</span><span class="p">,</span> <span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ArrayCoordMap</span><span class="p">(</span><span class="n">compose</span><span class="p">(</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">slice_cmap</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">newshape</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="Grid"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.array_coords.html#nipy.core.reference.array_coords.Grid">[docs]</a><span class="k">class</span> <span class="nc">Grid</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple class to construct AffineTransform instances with slice notation</span>
+<span class="sd">    like np.ogrid/np.mgrid.</span>
+
+<span class="sd">    &gt;&gt;&gt; c = CoordinateSystem(&#39;xy&#39;, &#39;input&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; g = Grid(c)</span>
+<span class="sd">    &gt;&gt;&gt; points = g[-1:1:21j,-2:4:31j]</span>
+<span class="sd">    &gt;&gt;&gt; points.coordmap.affine</span>
+<span class="sd">    array([[ 0.1,  0. , -1. ],</span>
+<span class="sd">           [ 0. ,  0.2, -2. ],</span>
+<span class="sd">           [ 0. ,  0. ,  1. ]])</span>
+
+<span class="sd">    &gt;&gt;&gt; print(points.coordmap.function_domain)</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;i0&#39;, &#39;i1&#39;), name=&#39;product&#39;, coord_dtype=float64)</span>
+<span class="sd">    &gt;&gt;&gt; print(points.coordmap.function_range)</span>
+<span class="sd">    CoordinateSystem(coord_names=(&#39;x&#39;, &#39;y&#39;), name=&#39;input&#39;, coord_dtype=float64)</span>
+
+<span class="sd">    &gt;&gt;&gt; points.shape</span>
+<span class="sd">    (21, 31)</span>
+<span class="sd">    &gt;&gt;&gt; print(points.transposed_values.shape)</span>
+<span class="sd">    (2, 21, 31)</span>
+<span class="sd">    &gt;&gt;&gt; print(points.values.shape)</span>
+<span class="sd">    (651, 2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Grid.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.core.reference.array_coords.html#nipy.core.reference.array_coords.Grid.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize Grid object</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coords: ``CoordinateMap`` or ``CoordinateSystem``</span>
+<span class="sd">           A coordinate map to be &#39;sliced&#39; into. If</span>
+<span class="sd">           coords is a CoordinateSystem, then an</span>
+<span class="sd">           AffineTransform instance is created with coords</span>
+<span class="sd">           with identity transformation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">CoordinateSystem</span><span class="p">):</span>
+            <span class="n">coordmap</span> <span class="o">=</span> <span class="n">AffineTransform</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">coord_names</span><span class="p">,</span>
+                                                <span class="n">coords</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">CoordinateMap</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">AffineTransform</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expecting either a CoordinateMap, CoordinateSystem or AffineTransform for Grid&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coordmap</span> <span class="o">=</span> <span class="n">coords</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span> <span class="o">=</span> <span class="n">coordmap</span></div>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create an AffineTransform coordinate map with into self.coords with</span>
+<span class="sd">        slices created as in np.mgrid/np.ogrid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_dtype</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ogrid</span><span class="p">[</span><span class="n">index</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;the number of slice objects must match &#39;</span> 
+                             <span class="s1">&#39;the number of input dimensions&#39;</span><span class="p">)</span>
+        <span class="n">cmaps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">cmaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">AffineTransform</span><span class="p">(</span>
+                    <span class="n">CoordinateSystem</span><span class="p">([</span><span class="s1">&#39;i</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span><span class="p">],</span> <span class="n">coord_dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">),</span>
+                    <span class="n">CoordinateSystem</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">coord_names</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span>
+                                     <span class="n">coord_dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">),</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">step</span><span class="p">,</span> <span class="n">start</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)))</span>
+
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">cmap_product</span><span class="p">(</span><span class="o">*</span><span class="n">cmaps</span><span class="p">)</span>
+
+        <span class="c1"># Identify the origin in the range of cmap</span>
+        <span class="c1"># with the origin in the domain of self.coordmap</span>
+
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">shifted_range_origin</span><span class="p">(</span><span class="n">cmap</span><span class="p">,</span> 
+                                    <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cmap</span><span class="o">.</span><span class="n">ndims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="o">.</span><span class="n">function_domain</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ArrayCoordMap</span><span class="p">(</span><span class="n">compose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordmap</span><span class="p">,</span> <span class="n">cmap</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

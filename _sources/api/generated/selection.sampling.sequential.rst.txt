@@ -1,0 +1,13 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+sampling.sequential
+===================
+
+Module: :mod:`sampling.sequential`
+----------------------------------
+.. automodule:: selection.sampling.sequential
+
+.. currentmodule:: selection.sampling.sequential
+
+.. autofunction:: selection.sampling.sequential.sample
+

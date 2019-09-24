@@ -1,0 +1,1023 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.spatial_models.mroi</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">nibabel</span> <span class="k">import</span> <span class="n">load</span><span class="p">,</span> <span class="n">Nifti1Image</span>
+
+<span class="kn">from</span> <span class="nn">nipy.io.nibcompat</span> <span class="k">import</span> <span class="n">get_header</span><span class="p">,</span> <span class="n">get_affine</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">discrete_domain</span> <span class="k">as</span> <span class="n">ddom</span>
+
+<span class="kn">from</span> <span class="nn">nipy.externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<span class="c1">##############################################################################</span>
+<span class="c1"># class SubDomains</span>
+<span class="c1">##############################################################################</span>
+<div class="viewcode-block" id="SubDomains"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains">[docs]</a><span class="k">class</span> <span class="nc">SubDomains</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a class to represent multiple ROI objects, where the</span>
+<span class="sd">    reference to a given domain is explicit.</span>
+
+<span class="sd">    A mutliple ROI object is a set of ROI defined on a given domain,</span>
+<span class="sd">    each having its own &#39;region-level&#39; characteristics (ROI features).</span>
+
+<span class="sd">    Every voxel of the domain can have its own characteristics yet,</span>
+<span class="sd">    defined at the &#39;voxel-level&#39;, but those features can only be accessed</span>
+<span class="sd">    familywise (i.e. the values are grouped by ROI).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k : int</span>
+<span class="sd">      Number of ROI in the SubDomains object</span>
+<span class="sd">    label : array of shape (domain.size), dtype=np.int</span>
+<span class="sd">      An array use to define which voxel belongs to which ROI.</span>
+<span class="sd">      The label values greater than -1 correspond to subregions</span>
+<span class="sd">      labelling. The labels are recomputed so as to be consecutive</span>
+<span class="sd">      integers.</span>
+<span class="sd">      The labels should not be accessed outside this class. One has to</span>
+<span class="sd">      use the API mapping methods instead.</span>
+<span class="sd">    features : dict {str: list of object, length=self.k}</span>
+<span class="sd">      Describe the voxels features, grouped by ROI</span>
+<span class="sd">    roi_features : dict {str: array-like, shape=(self.k, roi_feature_dim)</span>
+<span class="sd">      Describe the ROI features. A special feature, `id`, is read-only and</span>
+<span class="sd">      is used to give an unique identifier for region, which is persistent</span>
+<span class="sd">      through the MROI objects manipulations. On should access the different</span>
+<span class="sd">      ROI&#39;s features using ids.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SubDomains.__init__"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize subdomains instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        domain: ROI instance</span>
+<span class="sd">          defines the spatial context of the SubDomains</span>
+<span class="sd">        label: array of shape (domain.size), dtype=np.int,</span>
+<span class="sd">          An array use to define which voxel belongs to which ROI.</span>
+<span class="sd">          The label values greater than -1 correspond to subregions</span>
+<span class="sd">          labelling. The labels are recomputed so as to be consecutive</span>
+<span class="sd">          integers.</span>
+<span class="sd">          The labels should not be accessed outside this class. One has to</span>
+<span class="sd">          use the select_id() mapping method instead.</span>
+<span class="sd">        id: array of shape (n_roi)</span>
+<span class="sd">          Define the ROI identifiers. Once an id has been associated to a ROI</span>
+<span class="sd">          it becomes impossible to change it using the API. Hence, one</span>
+<span class="sd">          should access ROI through their id to avoid hazardous manipulations.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># check that label size is consistent with domain</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">!=</span> <span class="n">domain</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;inconsistent labels and domains specification&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">label</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="c1"># use continuous labels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recompute_labels</span><span class="p">()</span>
+
+        <span class="c1"># initialize empty feature/roi_feature dictionaries</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># set `id` feature: unique and persistent identifier for each roi</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># ids correspond to initial labels</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># use user-provided ids</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incorrect shape for `id`&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+
+    <span class="c1">###</span>
+    <span class="c1"># Methods for internal use: id and labels manipulations</span>
+    <span class="c1">###</span>
+<div class="viewcode-block" id="SubDomains.recompute_labels"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.recompute_labels">[docs]</a>    <span class="k">def</span> <span class="nf">recompute_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Redefine labels so that they are consecutive integers.</span>
+
+<span class="sd">        Labels are used as a map to associate voxels to a given ROI.</span>
+<span class="sd">        It is an inner object that should not be accessed outside this class.</span>
+<span class="sd">        The number of nodes is updated appropriately.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        This method must be called everytime the MROI structure is modified.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">&gt;</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lmap</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="c1"># number of ROIs: number of labels &gt; -1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="SubDomains.get_id"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.get_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return ROI&#39;s id list.</span>
+
+<span class="sd">        Users must access ROIs with the use of the identifiers of this list</span>
+<span class="sd">        and the methods that give access to their properties/features.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SubDomains.select_id"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.select_id">[docs]</a>    <span class="k">def</span> <span class="nf">select_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert a ROI id into an index to be used to index features safely.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id : any hashable type, must be in self.get_id()</span>
+<span class="sd">          The id of the region one wants to access.</span>
+<span class="sd">        roi : bool</span>
+<span class="sd">          If True (default), return the ROI index in the ROI list.</span>
+<span class="sd">          If False, return the indices of the voxels of the ROI with the given</span>
+<span class="sd">          id. That way, internal access to self.label can be made.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        index : int or np.array of shape (roi.size, )</span>
+<span class="sd">          Either the position of the ROI in the ROI list (if roi == True),</span>
+<span class="sd">          or the positions of the voxels of the ROI with id `id`</span>
+<span class="sd">          with respect to the self.label array.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unexisting `id` provided&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">roi</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()</span> <span class="o">==</span> <span class="nb">id</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()</span> <span class="o">==</span> <span class="nb">id</span><span class="p">)[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">index</span></div>
+
+    <span class="c1">###</span>
+    <span class="c1"># General purpose methods</span>
+    <span class="c1">###</span>
+<div class="viewcode-block" id="SubDomains.copy"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a copy of self.</span>
+
+<span class="sd">        Note that self.domain is not copied.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cp</span> <span class="o">=</span> <span class="n">SubDomains</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+            <span class="n">sf</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)]</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">sf</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">cp</span></div>
+
+    <span class="c1">###</span>
+    <span class="c1"># Getters for very basic features or roi features</span>
+    <span class="c1">###</span>
+<div class="viewcode-block" id="SubDomains.get_coord"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.get_coord">[docs]</a>    <span class="k">def</span> <span class="nf">get_coord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get coordinates of ROI&#39;s voxels</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id: any hashable type</span>
+<span class="sd">          Id of the ROI from which we want the voxels&#39; coordinates.</span>
+<span class="sd">          Can be None (default) if we want all ROIs&#39;s voxels coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        coords: array-like, shape=(roi_size, domain_dimension)</span>
+<span class="sd">          if an id is provided,</span>
+<span class="sd">             or list of arrays of shape(roi_size, domain_dimension)</span>
+<span class="sd">          if no id provided (default)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">coord</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">coord</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span>
+                      <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">coords</span></div>
+
+<div class="viewcode-block" id="SubDomains.get_size"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.get_size">[docs]</a>    <span class="k">def</span> <span class="nf">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get ROI size (counted in terms of voxels)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id: any hashable type</span>
+<span class="sd">          Id of the ROI from which we want to get the size.</span>
+<span class="sd">          Can be None (default) if we want all ROIs&#39;s sizes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        size: int</span>
+<span class="sd">          if an id is provided,</span>
+<span class="sd">             or list of int</span>
+<span class="sd">          if no id provided (default)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()])</span>
+        <span class="k">return</span> <span class="n">size</span></div>
+
+<div class="viewcode-block" id="SubDomains.get_local_volume"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.get_local_volume">[docs]</a>    <span class="k">def</span> <span class="nf">get_local_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get volume of ROI&#39;s voxels</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id: any hashable type</span>
+<span class="sd">          Id of the ROI from which we want the voxels&#39; volumes.</span>
+<span class="sd">          Can be None (default) if we want all ROIs&#39;s voxels volumes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        loc_volume: array-like, shape=(roi_size, ),</span>
+<span class="sd">          if an id is provided,</span>
+<span class="sd">             or list of arrays of shape(roi_size, )</span>
+<span class="sd">          if no id provided (default)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loc_volume</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">local_volume</span><span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loc_volume</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">local_volume</span><span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">loc_volume</span></div>
+
+<div class="viewcode-block" id="SubDomains.get_volume"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.get_volume">[docs]</a>    <span class="k">def</span> <span class="nf">get_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get ROI volume</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id: any hashable type</span>
+<span class="sd">          Id of the ROI from which we want to get the volume.</span>
+<span class="sd">          Can be None (default) if we want all ROIs&#39;s volumes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        volume : float</span>
+<span class="sd">          if an id is provided,</span>
+<span class="sd">             or list of float</span>
+<span class="sd">          if no id provided (default)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">volume</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_local_volume</span><span class="p">(</span><span class="nb">id</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">volume</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_local_volume</span><span class="p">()])</span>
+        <span class="k">return</span> <span class="n">volume</span></div>
+
+    <span class="c1">###</span>
+    <span class="c1"># Methods for features manipulation (user level)</span>
+    <span class="c1">###</span>
+<div class="viewcode-block" id="SubDomains.get_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.get_feature">[docs]</a>    <span class="k">def</span> <span class="nf">get_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a voxel-wise feature, grouped by ROI.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: str,</span>
+<span class="sd">          Feature to be returned</span>
+<span class="sd">        id: any hashable type</span>
+<span class="sd">          Id of the ROI from which we want to get the feature.</span>
+<span class="sd">          Can be None (default) if we want all ROIs&#39;s features.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        feature: array-like, shape=(roi_size, feature_dim)</span>
+<span class="sd">          if an id is provided,</span>
+<span class="sd">             or list of arrays, shape=(roi_size, feature_dim)</span>
+<span class="sd">          if no id provided (default)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;the `</span><span class="si">%s</span><span class="s2">` feature does not exist&quot;</span> <span class="o">%</span> <span class="n">fid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">fid</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">fid</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">feature</span></div>
+
+<div class="viewcode-block" id="SubDomains.set_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.set_feature">[docs]</a>    <span class="k">def</span> <span class="nf">set_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">override</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Append or modify a feature</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid : str</span>
+<span class="sd">          feature identifier</span>
+<span class="sd">        data: list or array</span>
+<span class="sd">          The feature data. Can be a list of self.k arrays of</span>
+<span class="sd">          shape(self.size[k], p) or array of shape(self.size[k])</span>
+<span class="sd">        id: any hashable type, optional</span>
+<span class="sd">          Id of the ROI from which we want to set the feature.</span>
+<span class="sd">          Can be None (default) if we want to set all ROIs&#39;s features.</span>
+<span class="sd">        override: bool, optional</span>
+<span class="sd">          Allow feature overriding</span>
+
+<span class="sd">        Note that we cannot create a feature having the same name than</span>
+<span class="sd">        a ROI feature.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># ensure that the `id` field will not be modified</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="o">==</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span>
+            <span class="n">override</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># check the feature is already present if setting a single roi</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`</span><span class="si">%s</span><span class="s2">` feature does not exist, create it first&quot;</span>
+                             <span class="o">%</span> <span class="n">fid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;a roi_feature called `</span><span class="si">%s</span><span class="s2">` already exists&quot;</span> <span class="o">%</span> <span class="n">fid</span><span class="p">)</span>
+        <span class="c1"># check we will not override anything</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">override</span><span class="p">:</span>
+            <span class="c1">#TODO: raise a warning</span>
+            <span class="k">return</span>
+        <span class="c1"># modify one particular region</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># check data size</span>
+            <span class="n">roi_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_size</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">roi_size</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;data for region `</span><span class="si">%i</span><span class="s2">` should have length </span><span class="si">%i</span><span class="s2">&quot;</span>
+                                 <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi_size</span><span class="p">))</span>
+            <span class="c1"># update feature</span>
+            <span class="n">the_feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+            <span class="n">the_feature</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="c1"># modify all regions</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># check data size</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;data should have length </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">k</span><span class="p">)])</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_size</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Wrong data size for region `</span><span class="si">%i</span><span class="s1">`&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">fid</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="SubDomains.representative_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.representative_feature">[docs]</a>    <span class="k">def</span> <span class="nf">representative_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">assess_quality</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute a ROI representative of a given feature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid : str</span>
+<span class="sd">          Feature id</span>
+<span class="sd">        method : str, optional</span>
+<span class="sd">          Method used to compute a representative.</span>
+<span class="sd">          Chosen among &#39;mean&#39; (default), &#39;max&#39;, &#39;median&#39;, &#39;min&#39;,</span>
+<span class="sd">          &#39;weighted mean&#39;.</span>
+<span class="sd">        id : any hashable type, optional</span>
+<span class="sd">          Id of the ROI from which we want to extract a representative feature.</span>
+<span class="sd">          Can be None (default) if we want to get all ROIs&#39;s representatives.</span>
+<span class="sd">        assess_quality: bool, optional</span>
+<span class="sd">          If True, a new roi feature is created, which represent the quality of</span>
+<span class="sd">          the feature representative (the number of non-nan value for the</span>
+<span class="sd">          feature over the ROI size).  Default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        summary_feature: np.ndarray, shape=(self.k, feature_dim)</span>
+<span class="sd">          Representative feature computed according to `method`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rf</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mf">1.e-15</span>
+        <span class="n">feature_quality</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+            <span class="c1"># NaN-resistant representative</span>
+            <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">nan</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nan</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="c1"># feature quality</span>
+            <span class="n">feature_quality</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">nan</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">nan</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+            <span class="c1"># compute representative</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;weighted mean&quot;</span><span class="p">:</span>
+                <span class="n">lvk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_local_volume</span><span class="p">(</span><span class="n">k</span><span class="p">)[</span><span class="o">~</span><span class="n">nan</span><span class="p">]</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">lvk</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">/</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">eps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">lvk</span><span class="p">))</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;median&quot;</span><span class="p">:</span>
+                <span class="n">rf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="o">~</span><span class="n">nan</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">summary_feature</span> <span class="o">=</span> <span class="n">rf</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">summary_feature</span> <span class="o">=</span> <span class="n">rf</span>
+
+        <span class="k">if</span> <span class="n">assess_quality</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_quality&#39;</span> <span class="o">%</span> <span class="n">fid</span><span class="p">,</span> <span class="n">feature_quality</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">summary_feature</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SubDomains.remove_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.remove_feature">[docs]</a>    <span class="k">def</span> <span class="nf">remove_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a certain feature</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: str</span>
+<span class="sd">          Feature id</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        f : object</span>
+<span class="sd">            The removed feature.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SubDomains.feature_to_voxel_map"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.feature_to_voxel_map">[docs]</a>    <span class="k">def</span> <span class="nf">feature_to_voxel_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert a feature to a flat voxel-mapping array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: str</span>
+<span class="sd">          Identifier of the feature to be mapped.</span>
+<span class="sd">        roi: bool, optional</span>
+<span class="sd">          If True, compute the map from a ROI feature.</span>
+<span class="sd">        method: str, optional</span>
+<span class="sd">          Representative feature computation method if `fid` is a feature</span>
+<span class="sd">          and `roi` is True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        res: array-like, shape=(domain.size, feature_dim)</span>
+<span class="sd">          A flat array, giving the correspondence between voxels</span>
+<span class="sd">          and the feature.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">roi</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+            <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                <span class="n">res</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+                <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                    <span class="n">res</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)]</span>
+            <span class="k">elif</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">representative_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+                <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                    <span class="n">res</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Wrong feature id provided&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="SubDomains.integrate"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.integrate">[docs]</a>    <span class="k">def</span> <span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Integrate  certain feature on each ROI and return the k results</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid : str</span>
+<span class="sd">          Feature identifier.</span>
+<span class="sd">          By default, the 1 function is integrated, yielding ROI volumes.</span>
+<span class="sd">        id: any hashable type</span>
+<span class="sd">          The ROI on which we want to integrate.</span>
+<span class="sd">          Can be None if we want the results for every region.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        lsum = array of shape (self.k, self.feature[fid].shape[1]),</span>
+<span class="sd">          The results</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># integrate the 1 function if no feature id provided</span>
+            <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">lsum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lsum</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">slvk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_local_volume</span><span class="p">(</span><span class="nb">id</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">sfk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                <span class="n">sfk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sfk</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">lsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sfk</span> <span class="o">*</span> <span class="n">slvk</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lsum</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                    <span class="n">slvk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_local_volume</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">sfk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                    <span class="n">sfk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sfk</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="n">sumk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sfk</span> <span class="o">*</span> <span class="n">slvk</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">lsum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sumk</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lsum</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SubDomains.plot_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.plot_feature">[docs]</a>    <span class="k">def</span> <span class="nf">plot_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Boxplot the distribution of features within ROIs.</span>
+<span class="sd">        Note that this assumes 1-d features.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: string</span>
+<span class="sd">             the feature identifier</span>
+<span class="sd">        ax: axis handle, optional</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="nn">mp</span>
+            <span class="n">mp</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;ROI-level distribution for feature </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">fid</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Region index&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ax</span></div>
+
+    <span class="c1">###</span>
+    <span class="c1"># Methods for ROI features manipulation (user level)</span>
+    <span class="c1">###</span>
+<div class="viewcode-block" id="SubDomains.get_roi_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.get_roi_feature">[docs]</a>    <span class="k">def</span> <span class="nf">get_roi_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">[</span><span class="n">fid</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">[</span><span class="n">fid</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">feature</span></div>
+
+<div class="viewcode-block" id="SubDomains.set_roi_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.set_roi_feature">[docs]</a>    <span class="k">def</span> <span class="nf">set_roi_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">override</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Append or modify a ROI feature</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: str,</span>
+<span class="sd">          feature identifier</span>
+<span class="sd">        data: list of self.k features or a single feature</span>
+<span class="sd">          The ROI feature data</span>
+<span class="sd">        id: any hashable type</span>
+<span class="sd">          Id of the ROI of which we want to set the ROI feature.</span>
+<span class="sd">          Can be None (default) if we want to set all ROIs&#39;s ROI features.</span>
+<span class="sd">        override: bool, optional,</span>
+<span class="sd">                  Allow feature overriding</span>
+
+<span class="sd">        Note that we cannot create a ROI feature having the same name than</span>
+<span class="sd">        a feature.</span>
+<span class="sd">        Note that the `id` feature cannot be modified as an internal</span>
+<span class="sd">        component.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check we do not modify the `id` feature</span>
+        <span class="k">if</span> <span class="s1">&#39;id&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span> <span class="ow">and</span> <span class="n">fid</span> <span class="o">==</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># check we will not override anything</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">override</span><span class="p">:</span>
+            <span class="c1">#TODO: raise a warning</span>
+            <span class="k">return</span>
+        <span class="c1"># check the feature is already present if setting a single roi</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`</span><span class="si">%s</span><span class="s2">` feature does not exist, create it first&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;a feature called `</span><span class="si">%s</span><span class="s2">` already exists&quot;</span> <span class="o">%</span> <span class="n">fid</span><span class="p">)</span>
+
+        <span class="c1"># modify one particular region</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># check data size</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;data for region `</span><span class="si">%i</span><span class="s2">` should have length 1&quot;</span><span class="p">)</span>
+            <span class="c1"># update feature</span>
+            <span class="n">the_feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+            <span class="n">the_feature</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># check data size</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;data should have length </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">fid</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="SubDomains.remove_roi_feature"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.remove_roi_feature">[docs]</a>    <span class="k">def</span> <span class="nf">remove_roi_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a certain ROI feature.</span>
+
+<span class="sd">        The `id` ROI feature cannot be removed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        f : object</span>
+<span class="sd">            The removed Roi feature.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">fid</span> <span class="o">!=</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">feature</span></div>
+        <span class="c1">#TODO: raise a warning otherwise</span>
+
+<div class="viewcode-block" id="SubDomains.to_image"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.to_image">[docs]</a>    <span class="k">def</span> <span class="nf">to_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="n">descrip</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generates a label image that represents self.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fid: str,</span>
+<span class="sd">          Feature to be represented. If None, a binary image of the MROI</span>
+<span class="sd">          domain will be we created.</span>
+<span class="sd">        roi: bool,</span>
+<span class="sd">          Whether or not to write the desired feature as a ROI one.</span>
+<span class="sd">          (i.e. a ROI feature corresponding to `fid` will be looked upon,</span>
+<span class="sd">          and if not found, a representative feature will be computed from</span>
+<span class="sd">          the `fid` feature).</span>
+<span class="sd">        method: str,</span>
+<span class="sd">          If a feature is written as a ROI feature, this keyword tweaks</span>
+<span class="sd">          the way the representative feature is computed.</span>
+<span class="sd">        descrip: str,</span>
+<span class="sd">          Description of the image, to be written in its header.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Requires that self.dom is an ddom.NDGridDomain</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nim : nibabel nifti image</span>
+<span class="sd">          Nifti image corresponding to the ROI feature to be written.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="n">ddom</span><span class="o">.</span><span class="n">NDGridDomain</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;self.domain is not an NDGridDomain; nothing was written.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">fid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># write a binary representation of the domain if no fid provided</span>
+            <span class="n">nim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">descrip</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">descrip</span> <span class="o">=</span> <span class="s1">&#39;binary representation of MROI&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">tmp_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">to_image</span><span class="p">()</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">tmp_image</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">roi</span><span class="p">:</span>
+                <span class="c1"># write a feature</span>
+                <span class="k">if</span> <span class="n">fid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`</span><span class="si">%s</span><span class="s2">` feature could not be found&quot;</span> <span class="o">%</span> <span class="n">fid</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                    <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># write a roi feature</span>
+                <span class="k">if</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">:</span>
+                    <span class="c1"># write from existing roi feature</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="o">=</span> \
+                            <span class="bp">self</span><span class="o">.</span><span class="n">get_roi_feature</span><span class="p">(</span>
+                            <span class="n">fid</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">fid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+                    <span class="c1"># write from representative feature</span>
+                    <span class="n">summary_feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">representative_feature</span><span class="p">(</span>
+                        <span class="n">fid</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+                        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="o">=</span> \
+                            <span class="n">summary_feature</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
+            <span class="c1"># MROI object was defined on a masked image: we square it back.</span>
+            <span class="n">wdata</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">wdata</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="n">nim</span> <span class="o">=</span> <span class="n">Nifti1Image</span><span class="p">(</span><span class="n">wdata</span><span class="p">,</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">tmp_image</span><span class="p">))</span>
+        <span class="c1"># set description of the image</span>
+        <span class="k">if</span> <span class="n">descrip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">get_header</span><span class="p">(</span><span class="n">nim</span><span class="p">)[</span><span class="s1">&#39;descrip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">descrip</span>
+        <span class="k">return</span> <span class="n">nim</span></div>
+
+    <span class="c1">###</span>
+    <span class="c1"># ROIs structure manipulation</span>
+    <span class="c1">###</span>
+<div class="viewcode-block" id="SubDomains.select_roi"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.SubDomains.select_roi">[docs]</a>    <span class="k">def</span> <span class="nf">select_roi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an instance of MROI with only the subset of chosen ROIs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        id_list: list of id (any hashable type)</span>
+<span class="sd">          The id of the ROI to be kept in the structure.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># handle the case of an empty selection</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">id_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+            <span class="k">return</span>
+        <span class="c1"># convert id to indices</span>
+        <span class="n">id_list_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">id_list</span><span class="p">])</span>
+        <span class="c1"># set new labels (= map between voxels and ROI)</span>
+        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_id</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">id_list</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">select_id</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">roi</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recompute_labels</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">([</span><span class="n">id_list</span><span class="p">])</span>
+
+        <span class="c1"># set new features</span>
+        <span class="c1"># (it&#39;s ok to do that after labels and id modification since we are</span>
+        <span class="c1"># popping out the former features and use the former id indices)</span>
+        <span class="k">for</span> <span class="n">feature_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">):</span>
+            <span class="n">current_feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_feature</span><span class="p">(</span><span class="n">feature_name</span><span class="p">)</span>
+            <span class="n">sf</span> <span class="o">=</span> <span class="p">[</span><span class="n">current_feature</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">id_list_pos</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_feature</span><span class="p">(</span><span class="n">feature_name</span><span class="p">,</span> <span class="n">sf</span><span class="p">)</span>
+        <span class="c1"># set new ROI features</span>
+        <span class="c1"># (it&#39;s ok to do that after labels and id modification since we are</span>
+        <span class="c1"># popping out the former features and use the former id indices)</span>
+        <span class="k">for</span> <span class="n">feature_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">roi_features</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">feature_name</span> <span class="o">!=</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span>
+                <span class="n">current_feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_roi_feature</span><span class="p">(</span><span class="n">feature_name</span><span class="p">)</span>
+                <span class="n">sf</span> <span class="o">=</span> <span class="p">[</span><span class="n">current_feature</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">id_list_pos</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_roi_feature</span><span class="p">(</span><span class="n">feature_name</span><span class="p">,</span> <span class="n">sf</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="subdomain_from_array"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.subdomain_from_array">[docs]</a><span class="k">def</span> <span class="nf">subdomain_from_array</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a SubDomain from an n-d int array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    label: np.array instance</span>
+<span class="sd">      A supposedly boolean array that yields the regions.</span>
+<span class="sd">    affine: np.array, optional</span>
+<span class="sd">      Affine transform that maps the array coordinates</span>
+<span class="sd">      to some embedding space by default, this is np.eye(dim+1, dim+1).</span>
+<span class="sd">    nn: int,</span>
+<span class="sd">      Neighboring system considered.</span>
+<span class="sd">      Unused at the moment.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Only labels &gt; -1 are considered.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dom</span> <span class="o">=</span> <span class="n">ddom</span><span class="o">.</span><span class="n">grid_domain_from_binary_array</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">affine</span><span class="o">=</span><span class="n">affine</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="n">nn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SubDomains</span><span class="p">(</span><span class="n">dom</span><span class="p">,</span> <span class="n">labels</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="subdomain_from_image"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.subdomain_from_image">[docs]</a><span class="k">def</span> <span class="nf">subdomain_from_image</span><span class="p">(</span><span class="n">mim</span><span class="p">,</span> <span class="n">nn</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a SubDomain instance from the input mask image.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mim: NiftiIImage instance, or string path toward such an image</span>
+<span class="sd">      supposedly a label image</span>
+<span class="sd">    nn: int, optional</span>
+<span class="sd">      Neighboring system considered from the image can be 6, 18 or 26.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    The MultipleROI instance</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Only labels &gt; -1 are considered</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mim</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="n">iim</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">mim</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">iim</span> <span class="o">=</span> <span class="n">mim</span>
+
+    <span class="k">return</span> <span class="n">subdomain_from_array</span><span class="p">(</span><span class="n">iim</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">iim</span><span class="p">),</span> <span class="n">nn</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="subdomain_from_position_and_image"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.subdomain_from_position_and_image">[docs]</a><span class="k">def</span> <span class="nf">subdomain_from_position_and_image</span><span class="p">(</span><span class="n">nim</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Keep the set of labels of the image corresponding to a certain index</span>
+<span class="sd">    so that their position is closest to the prescribed one.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mim: NiftiIImage instance, or string path toward such an image</span>
+<span class="sd">         supposedly a label image</span>
+<span class="sd">    pos: array of shape(3) or list of length 3,</span>
+<span class="sd">         the prescribed position</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">subdomain_from_image</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+    <span class="n">coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">tmp</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">coord</span><span class="p">[</span><span class="n">tmp</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                      <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">k</span><span class="p">)])</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">((</span><span class="n">coord</span> <span class="o">-</span> <span class="n">pos</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">subdomain_from_array</span><span class="p">(</span><span class="n">nim</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span> <span class="o">==</span> <span class="n">idx</span><span class="p">,</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">nim</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="subdomain_from_balls"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.spatial_models.mroi.html#nipy.labs.spatial_models.hroi.subdomain_from_balls">[docs]</a><span class="k">def</span> <span class="nf">subdomain_from_balls</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">radii</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create discrete ROIs as a set of balls within a certain</span>
+<span class="sd">    coordinate systems.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    domain: StructuredDomain instance,</span>
+<span class="sd">        the description of a discrete domain</span>
+<span class="sd">    positions: array of shape(k, dim):</span>
+<span class="sd">        the positions of the balls</span>
+<span class="sd">    radii: array of shape(k):</span>
+<span class="sd">        the sphere radii</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># checks</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span> <span class="o">==</span> <span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="p">(</span><span class="n">positions</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">domain</span><span class="o">.</span><span class="n">em_dim</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;incompatible dimensions for domain and positions&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">radii</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;incompatible positions and radii provided&#39;</span><span class="p">)</span>
+
+    <span class="n">label</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">domain</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">radii</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">supp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">domain</span><span class="o">.</span><span class="n">coord</span> <span class="o">-</span> <span class="n">positions</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">radii</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">label</span><span class="p">[</span><span class="n">supp</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+
+    <span class="k">return</span> <span class="n">SubDomains</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

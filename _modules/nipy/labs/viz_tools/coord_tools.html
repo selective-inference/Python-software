@@ -1,0 +1,462 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html">
+          
+
+          
+            
+            <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.viz_tools.coord_tools</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Misc tools to find activations and cut on maps</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="c1"># Author: Gael Varoquaux &lt;gael dot varoquaux at normalesup dot org&gt;</span>
+<span class="c1"># License: BSD</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="c1"># Standard scientific libraries imports (more specific imports are</span>
+<span class="c1"># delayed, so that the part module can be used without them).</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">stats</span><span class="p">,</span> <span class="n">ndimage</span>
+
+<span class="c1"># Local imports</span>
+<span class="kn">from</span> <span class="nn">..mask</span> <span class="k">import</span> <span class="n">largest_cc</span>
+<span class="kn">from</span> <span class="nn">..datasets.transforms.affine_utils</span> <span class="k">import</span> <span class="n">get_bounds</span>
+
+
+<span class="c1">################################################################################</span>
+<span class="c1"># Functions for automatic choice of cuts coordinates</span>
+<span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="coord_transform"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.coord_tools.html#nipy.labs.viz_tools.coord_tools.coord_transform">[docs]</a><span class="k">def</span> <span class="nf">coord_transform</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">affine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Convert x, y, z coordinates from one image space to another space.</span>
+
+<span class="sd">    Warning: x, y and z have Talairach ordering, not 3D numpy image ordering.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : number or ndarray</span>
+<span class="sd">        The x coordinates in the input space</span>
+<span class="sd">    y : number or ndarray</span>
+<span class="sd">        The y coordinates in the input space</span>
+<span class="sd">    z : number or ndarray</span>
+<span class="sd">        The z coordinates in the input space</span>
+<span class="sd">    affine : 2D 4x4 ndarray</span>
+<span class="sd">        affine that maps from input to output space.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x : number or ndarray</span>
+<span class="sd">        The x coordinates in the output space</span>
+<span class="sd">    y : number or ndarray</span>
+<span class="sd">        The y coordinates in the output space</span>
+<span class="sd">    z : number or ndarray</span>
+<span class="sd">        The z coordinates in the output space</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> 
+                   <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> 
+                   <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span>
+                   <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">flat</span><span class="p">)]</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">coords</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span> <span class="n">z</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="find_cut_coords"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.coord_tools.html#nipy.labs.viz_tools.coord_tools.find_cut_coords">[docs]</a><span class="k">def</span> <span class="nf">find_cut_coords</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">activation_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Find the center of the largest activation connect component.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        map : 3D ndarray</span>
+<span class="sd">            The activation map, as a 3D image.</span>
+<span class="sd">        mask : 3D ndarray, boolean, optional</span>
+<span class="sd">            An optional brain mask.</span>
+<span class="sd">        activation_threshold : float, optional</span>
+<span class="sd">            The lower threshold to the positive activation. If None, the </span>
+<span class="sd">            activation threshold is computed using find_activation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        x: float</span>
+<span class="sd">            the x coordinate in voxels.</span>
+<span class="sd">        y: float</span>
+<span class="sd">            the y coordinate in voxels.</span>
+<span class="sd">        z: float</span>
+<span class="sd">            the z coordinate in voxels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># To speed up computations, we work with partial views of the array,</span>
+    <span class="c1"># and keep track of the offset</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> 
+    <span class="c1"># Deal with masked arrays:</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="s1">&#39;mask&#39;</span><span class="p">):</span>
+        <span class="n">not_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">not_mask</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">*=</span> <span class="n">not_mask</span>
+        <span class="nb">map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">map</span><span class="p">)</span>
+    <span class="n">my_map</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">slice_x</span><span class="p">,</span> <span class="n">slice_y</span><span class="p">,</span> <span class="n">slice_z</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">find_objects</span><span class="p">(</span><span class="n">mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">my_map</span> <span class="o">=</span> <span class="n">my_map</span><span class="p">[</span><span class="n">slice_x</span><span class="p">,</span> <span class="n">slice_y</span><span class="p">,</span> <span class="n">slice_z</span><span class="p">]</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[</span><span class="n">slice_x</span><span class="p">,</span> <span class="n">slice_y</span><span class="p">,</span> <span class="n">slice_z</span><span class="p">]</span>
+        <span class="n">my_map</span> <span class="o">*=</span> <span class="n">mask</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="p">[</span><span class="n">slice_x</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">slice_y</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">slice_z</span><span class="o">.</span><span class="n">start</span><span class="p">]</span>
+    <span class="c1"># Testing min and max is faster than np.all(my_map == 0)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">my_map</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">my_map</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="o">.</span><span class="mi">5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">map</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">activation_threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">activation_threshold</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">scoreatpercentile</span><span class="p">(</span>
+                                    <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">my_map</span><span class="p">[</span><span class="n">my_map</span> <span class="o">!=</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="mi">80</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">my_map</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">activation_threshold</span><span class="o">-</span><span class="mf">1.e-15</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">largest_cc</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">slice_x</span><span class="p">,</span> <span class="n">slice_y</span><span class="p">,</span> <span class="n">slice_z</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">find_objects</span><span class="p">(</span><span class="n">mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">my_map</span> <span class="o">=</span> <span class="n">my_map</span><span class="p">[</span><span class="n">slice_x</span><span class="p">,</span> <span class="n">slice_y</span><span class="p">,</span> <span class="n">slice_z</span><span class="p">]</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[</span><span class="n">slice_x</span><span class="p">,</span> <span class="n">slice_y</span><span class="p">,</span> <span class="n">slice_z</span><span class="p">]</span>
+    <span class="n">my_map</span> <span class="o">*=</span> <span class="n">mask</span>
+    <span class="n">offset</span> <span class="o">+=</span> <span class="p">[</span><span class="n">slice_x</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">slice_y</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">slice_z</span><span class="o">.</span><span class="n">start</span><span class="p">]</span>
+    <span class="c1"># For the second threshold, we use a mean, as it is much faster,</span>
+    <span class="c1"># althought it is less robust</span>
+    <span class="n">second_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">my_map</span><span class="p">[</span><span class="n">mask</span><span class="p">]))</span>
+    <span class="n">second_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">my_map</span><span class="p">)</span><span class="o">&gt;</span><span class="n">second_threshold</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">second_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>
+        <span class="n">my_map</span> <span class="o">*=</span> <span class="n">largest_cc</span><span class="p">(</span><span class="n">second_mask</span><span class="p">)</span>
+    <span class="n">cut_coords</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">center_of_mass</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">my_map</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">cut_coords</span> <span class="o">+</span> <span class="n">offset</span></div>
+
+
+<span class="c1">################################################################################</span>
+
+<div class="viewcode-block" id="get_mask_bounds"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.coord_tools.html#nipy.labs.viz_tools.coord_tools.get_mask_bounds">[docs]</a><span class="k">def</span> <span class="nf">get_mask_bounds</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">affine</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return the world-space bounds occupied by a mask given an affine.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        The mask should have only one connect component.</span>
+
+<span class="sd">        The affine should be diagonal or diagonal-permuted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">),</span> <span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_bounds</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+    <span class="n">slices</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">find_objects</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">slices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;empty mask&quot;</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x_slice</span><span class="p">,</span> <span class="n">y_slice</span><span class="p">,</span> <span class="n">z_slice</span> <span class="o">=</span> <span class="n">slices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">x_width</span><span class="p">,</span> <span class="n">y_width</span><span class="p">,</span> <span class="n">z_width</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmin</span> <span class="o">+</span> <span class="n">x_slice</span><span class="o">.</span><span class="n">start</span><span class="o">*</span><span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span><span class="o">/</span><span class="n">x_width</span><span class="p">,</span>
+                    <span class="n">xmin</span> <span class="o">+</span> <span class="n">x_slice</span><span class="o">.</span><span class="n">stop</span> <span class="o">*</span><span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span><span class="o">/</span><span class="n">x_width</span><span class="p">)</span>
+        <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="p">(</span><span class="n">ymin</span> <span class="o">+</span> <span class="n">y_slice</span><span class="o">.</span><span class="n">start</span><span class="o">*</span><span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span><span class="o">/</span><span class="n">y_width</span><span class="p">,</span>
+                    <span class="n">ymin</span> <span class="o">+</span> <span class="n">y_slice</span><span class="o">.</span><span class="n">stop</span> <span class="o">*</span><span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span><span class="o">/</span><span class="n">y_width</span><span class="p">)</span>
+        <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span> <span class="o">=</span> <span class="p">(</span><span class="n">zmin</span> <span class="o">+</span> <span class="n">z_slice</span><span class="o">.</span><span class="n">start</span><span class="o">*</span><span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span><span class="o">/</span><span class="n">z_width</span><span class="p">,</span>
+                    <span class="n">zmin</span> <span class="o">+</span> <span class="n">z_slice</span><span class="o">.</span><span class="n">stop</span> <span class="o">*</span><span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span><span class="o">/</span><span class="n">z_width</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">zmax</span></div>
+
+
+<span class="k">def</span> <span class="nf">_maximally_separated_subset</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a set of n points x = {x_1, x_2, ..., x_n} and a positive integer</span>
+<span class="sd">    k &lt; n, this function returns a subset of k points which are maximally</span>
+<span class="sd">    spaced.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    msssk: 1D array of k floats</span>
+<span class="sd">        computed maximally-separated subset of k elements from x</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># base cases</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;k = </span><span class="si">%i</span><span class="s2"> &lt; 1 is senseless.&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]]</span>
+
+    <span class="c1"># would-be maximally separated subset of k (not showing the terminal nodes)</span>
+    <span class="n">msss</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># sorting is necessary for the heuristic to work</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="c1"># iteratively delete points x_j of msss, for which x_(j + 1) - x_(j - 1) is</span>
+    <span class="c1"># smallest, untill only k - 2 points survive</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">msss</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">&gt;</span> <span class="n">k</span><span class="p">:</span>
+        <span class="c1"># survivors</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">msss</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+
+        <span class="c1"># remove most troublesome point</span>
+        <span class="n">msss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">msss</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">-</span> <span class="n">y</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
+
+    <span class="c1"># return maximally separated subset of k elements</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">[[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">msss</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+
+
+<div class="viewcode-block" id="find_maxsep_cut_coords"><a class="viewcode-back" href="../../../../api/generated/nipy.labs.viz_tools.coord_tools.html#nipy.labs.viz_tools.coord_tools.find_maxsep_cut_coords">[docs]</a><span class="k">def</span> <span class="nf">find_maxsep_cut_coords</span><span class="p">(</span><span class="n">map3d</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">slicer</span><span class="o">=</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">n_cuts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Heuristic finds `n_cuts` with max separation along a given axis</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    map3d : 3D array</span>
+<span class="sd">        the data under consideration</span>
+<span class="sd">    affine : array shape (4, 4)</span>
+<span class="sd">        Affine mapping between array coordinates of `map3d` and real-world</span>
+<span class="sd">        coordinates.</span>
+<span class="sd">    slicer : string, optional</span>
+<span class="sd">        sectional slicer; possible values are &quot;x&quot;, &quot;y&quot;, or &quot;z&quot;</span>
+<span class="sd">    n_cuts : None or int &gt;= 1, optional</span>
+<span class="sd">        Number of cuts in the plot; if None, then a default value of 5 is</span>
+<span class="sd">        forced.</span>
+<span class="sd">    threshold : None or float, optional</span>
+<span class="sd">        Thresholding to be applied to the map.  Values less than `threshold`</span>
+<span class="sd">        set to 0.  If None, no thresholding applied.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cuts : 1D array of length `n_cuts`</span>
+<span class="sd">        the computed cuts</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError:</span>
+<span class="sd">        If `slicer` not in &#39;xyz&#39;</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If `ncuts` &lt; 1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n_cuts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_cuts</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="k">if</span> <span class="n">n_cuts</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_cuts = </span><span class="si">%i</span><span class="s2"> &lt; 1 is senseless.&quot;</span> <span class="o">%</span> <span class="n">n_cuts</span><span class="p">)</span>
+    <span class="c1"># sanitize slicer</span>
+    <span class="k">if</span> <span class="n">slicer</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">&#39;xyz&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;slicer must be one of &#39;x&#39;, &#39;y&#39;, and &#39;z&#39;, got &#39;</span><span class="si">%s</span><span class="s2">&#39;.&quot;</span> <span class="o">%</span> <span class="n">slicer</span><span class="p">)</span>
+    <span class="n">slicer</span> <span class="o">=</span> <span class="s2">&quot;xyz&quot;</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">slicer</span><span class="p">)</span>
+
+    <span class="c1"># load data</span>
+    <span class="k">if</span> <span class="n">map3d</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s2">&quot;map3d must be 3D array, got shape </span><span class="si">%i</span><span class="s2">D&quot;</span> <span class="o">%</span> <span class="n">map3d</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+
+    <span class="n">_map3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">map3d</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">slicer</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">_map3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_map3d</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_map3d</span><span class="p">[</span><span class="n">_map3d</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># count activated voxels per plane</span>
+    <span class="n">n_activated_voxels_per_plane</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">_map3d</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                                    <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_map3d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])])</span>
+    <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">n_activated_voxels_per_plane</span><span class="p">)</span>
+    <span class="n">n_activated_voxels_per_plane</span> <span class="o">=</span> <span class="n">n_activated_voxels_per_plane</span><span class="p">[</span><span class="n">perm</span><span class="p">]</span>
+    <span class="n">good_planes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">n_activated_voxels_per_plane</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">good_planes</span> <span class="o">=</span> <span class="n">perm</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="n">n_cuts</span> <span class="o">*</span> <span class="mi">4</span> <span class="k">if</span> <span class="n">n_cuts</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># cast into coord space</span>
+    <span class="n">good_planes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="c1"># map cut coord into native space</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span>
+                   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># origin</span>
+                            <span class="p">)</span> <span class="o">+</span> <span class="n">coord</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)[</span><span class="n">slicer</span><span class="p">])[</span><span class="n">slicer</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">good_planes</span><span class="p">])</span>
+
+    <span class="c1"># compute cut_coords maximally-separated planes</span>
+    <span class="k">return</span> <span class="n">_maximally_separated_subset</span><span class="p">(</span><span class="n">good_planes</span><span class="p">,</span> <span class="n">n_cuts</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

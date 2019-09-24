@@ -1,0 +1,356 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docattribute.html">Selection documentation attribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning/index.html">Learning selection</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Selection documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/nipy.algorithms.diagnostics.commands.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="algorithms-diagnostics-commands">
+<h1>algorithms.diagnostics.commands<a class="headerlink" href="#algorithms-diagnostics-commands" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-nipy.algorithms.diagnostics.commands">
+<span id="module-algorithms-diagnostics-commands"></span><h2>Module: <code class="xref py py-mod docutils literal notranslate"><span class="pre">algorithms.diagnostics.commands</span></code><a class="headerlink" href="#module-nipy.algorithms.diagnostics.commands" title="Permalink to this headline">¶</a></h2>
+<p>Implementation of diagnostic command line tools</p>
+<p>Tools are:</p>
+<ul class="simple">
+<li><p>nipy_diagnose</p></li>
+<li><p>nipy_tsdiffana</p></li>
+</ul>
+<p>This module has the logic for each command.</p>
+<p>The command script files deal with argument parsing and any custom imports.
+The implementation here accepts the <code class="docutils literal notranslate"><span class="pre">args</span></code> object from <code class="docutils literal notranslate"><span class="pre">argparse</span></code> and does
+the work.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nipy.algorithms.diagnostics.commands.diagnose">
+<code class="sig-prename descclassname">nipy.algorithms.diagnostics.commands.</code><code class="sig-name descname">diagnose</code><span class="sig-paren">(</span><em class="sig-param">args</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/diagnostics/commands.html#diagnose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.diagnostics.commands.diagnose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate, write results from diagnostic screen</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>args</strong> : object</p>
+<blockquote>
+<div><p>object with attributes:</p>
+<ul class="simple">
+<li><p>filename : str - 4D image filename</p></li>
+<li><p>time_axis : str - name or number of time axis in <cite>filename</cite></p></li>
+<li><p>slice_axis : str - name or number of slice axis in <cite>filename</cite></p></li>
+<li><p>out_path : None or str - path to which to write results</p></li>
+<li><p>out_fname_label : None or filename - suffix of output results files</p></li>
+<li><p>ncomponents : int - number of PCA components to write images for</p></li>
+</ul>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>res</strong> : dict</p>
+<blockquote>
+<div><p>Results of running <code class="xref py py-func docutils literal notranslate"><span class="pre">screen()</span></code> on <cite>filename</cite></p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.diagnostics.commands.parse_fname_axes">
+<code class="sig-prename descclassname">nipy.algorithms.diagnostics.commands.</code><code class="sig-name descname">parse_fname_axes</code><span class="sig-paren">(</span><em class="sig-param">img_fname</em>, <em class="sig-param">time_axis</em>, <em class="sig-param">slice_axis</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/diagnostics/commands.html#parse_fname_axes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.diagnostics.commands.parse_fname_axes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load <cite>img_fname</cite>, check <cite>time_axis</cite>, <cite>slice_axis</cite> or use default</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>img_fname</strong> : str</p>
+<blockquote>
+<div><p>filename of image on which to do diagnostics</p>
+</div></blockquote>
+<p><strong>time_axis</strong> : None or str or int, optional</p>
+<blockquote>
+<div><p>Axis indexing time-points. None is default, will be replaced by a value
+of ‘t’. If <cite>time_axis</cite> is an integer, gives the index of the input
+(domain) axis of <cite>img</cite>. If <cite>time_axis</cite> is a str, can be an input
+(domain) name, or an output (range) name, that maps to an input
+(domain) name.</p>
+</div></blockquote>
+<p><strong>slice_axis</strong> : None or str or int, optional</p>
+<blockquote>
+<div><p>Axis indexing MRI slices. If <cite>slice_axis</cite> is an integer, gives the
+index of the input (domain) axis of <cite>img</cite>. If <cite>slice_axis</cite> is a str,
+can be an input (domain) name, or an output (range) name, that maps to
+an input (domain) name.  If None (the default) then 1) try the name
+‘slice’ to select the axis - if this fails, and <cite>fname</cite> refers to an
+Analyze type image (such as Nifti), then 2) default to the third image
+axis, otherwise 3) raise a ValueError</p>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>img</strong> : <code class="docutils literal notranslate"><span class="pre">Image</span></code> instance</p>
+<blockquote>
+<div><p>Image as loaded from <cite>img_fname</cite></p>
+</div></blockquote>
+<p><strong>time_axis</strong> : int or str</p>
+<blockquote>
+<div><p>Time axis, possibly filled with default</p>
+</div></blockquote>
+<p><strong>slice_axis</strong> : int or str</p>
+<blockquote>
+<div><p>Slice axis, possibly filled with default</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nipy.algorithms.diagnostics.commands.tsdiffana">
+<code class="sig-prename descclassname">nipy.algorithms.diagnostics.commands.</code><code class="sig-name descname">tsdiffana</code><span class="sig-paren">(</span><em class="sig-param">args</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/nipy/algorithms/diagnostics/commands.html#tsdiffana"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nipy.algorithms.diagnostics.commands.tsdiffana" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate tsdiffana plots from command line params <cite>args</cite></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>args</strong> : object</p>
+<blockquote>
+<div><p>object with attributes</p>
+<ul class="simple">
+<li><p>filename : str - 4D image filename</p></li>
+<li><p>out_file : str - graphics file to write to instead of leaving
+graphics on screen</p></li>
+<li><p>time_axis : str - name or number of time axis in <cite>filename</cite></p></li>
+<li><p>slice_axis : str - name or number of slice axis in <cite>filename</cite></p></li>
+<li><p>write_results : bool - if True, write images and plots to files</p></li>
+<li><p>out_path : None or str - path to which to write results</p></li>
+<li><p>out_fname_label : None or filename - suffix of output results files</p></li>
+</ul>
+</div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>axes</strong> : Matplotlib axes</p>
+<blockquote>
+<div><p>Axes on which we have done the plots.</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

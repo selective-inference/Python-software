@@ -1,0 +1,38 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+learning.utils
+==============
+
+Module: :mod:`learning.utils`
+-----------------------------
+.. automodule:: selection.learning.utils
+
+.. currentmodule:: selection.learning.utils
+
+Functions
+---------
+
+
+.. autofunction:: selection.learning.utils.full_model_inference
+
+
+.. autofunction:: selection.learning.utils.lee_inference
+
+
+.. autofunction:: selection.learning.utils.liu_inference
+
+
+.. autofunction:: selection.learning.utils.naive_full_model_inference
+
+
+.. autofunction:: selection.learning.utils.naive_partial_model_inference
+
+
+.. autofunction:: selection.learning.utils.partial_model_inference
+
+
+.. autofunction:: selection.learning.utils.split_full_model_inference
+
+
+.. autofunction:: selection.learning.utils.split_partial_model_inference
+

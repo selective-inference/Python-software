@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for selectinf.algorithms.covtest</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module includes `covtest`_ that computes</span>
+<span class="sd">either the exponential approximation from `covTest`_</span>
+<span class="sd">the exact form of the covariance test described in </span>
+<span class="sd">`Spacings`_.</span>
+
+<span class="sd">The covariance test itself is asymptotically exponential</span>
+<span class="sd">(under certain conditions) and is  described in </span>
+<span class="sd">`covTest`_. </span>
+
+<span class="sd">Both tests mentioned above require knowledge </span>
+<span class="sd">(or a good estimate) of sigma, the noise variance.</span>
+
+<span class="sd">This module also includes a second exact test called `selected_covtest`_</span>
+<span class="sd">that can use sigma but does not need it.</span>
+
+<span class="sd">.. _covTest: http://arxiv.org/abs/1301.7161</span>
+<span class="sd">.. _Kac Rice: http://arxiv.org/abs/1308.3020</span>
+<span class="sd">.. _Spacings: http://arxiv.org/abs/1401.3889</span>
+<span class="sd">.. _post selection LASSO: http://arxiv.org/abs/1311.6238</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">ndtr</span><span class="p">,</span> <span class="n">ndtri</span>
+
+<span class="kn">from</span> <span class="nn">..constraints.affine</span> <span class="k">import</span> <span class="n">constraints</span><span class="p">,</span> <span class="n">sample_from_constraints</span><span class="p">,</span> <span class="n">gibbs_test</span>
+<span class="kn">from</span> <span class="nn">..distributions.discrete_family</span> <span class="k">import</span> <span class="n">discrete_family</span>
+
+<div class="viewcode-block" id="covtest"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.covtest.html#selectinf.algorithms.covtest.covtest">[docs]</a><span class="k">def</span> <span class="nf">covtest</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">covariance</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The exact and approximate</span>
+<span class="sd">    form of the covariance test, described</span>
+<span class="sd">    in the `covTest`_, `Kac Rice`_ and `Spacings`_ papers.</span>
+
+<span class="sd">    .. _covTest: http://arxiv.org/abs/1301.7161</span>
+<span class="sd">    .. _Kac Rice: http://arxiv.org/abs/1308.3020</span>
+<span class="sd">    .. _Spacings: http://arxiv.org/abs/1401.3889</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    X : np.float((n,p))</span>
+
+<span class="sd">    Y : np.float(n)</span>
+
+<span class="sd">    sigma : float (optional)</span>
+<span class="sd">        Defaults to 1, but Type I error will be off if incorrect</span>
+<span class="sd">        sigma is used.</span>
+
+<span class="sd">    exact : bool (optional)</span>
+<span class="sd">        If True, use the first spacings test, else use</span>
+<span class="sd">        the exponential approximation.</span>
+
+<span class="sd">    covariance : np.array (optional)</span>
+<span class="sd">        If None, defaults to identity.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    con : `selection.affine.constraints`_</span>
+<span class="sd">        The constraint based on conditioning</span>
+<span class="sd">        on the sign and location of the maximizer.</span>
+
+<span class="sd">    pvalue : float</span>
+<span class="sd">        Exact or approximate covariance test p-value.</span>
+
+<span class="sd">    idx : int</span>
+<span class="sd">        Variable achieving $\lambda_1$</span>
+
+<span class="sd">    sign : int</span>
+<span class="sd">        Sign of $X^Ty$ for variable achieving $\lambda_1$.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">if</span> <span class="n">covariance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">Z</span><span class="p">))[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+
+    <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">subset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="n">subset</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">selector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">subset</span><span class="p">],</span><span class="o">-</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">subset</span><span class="p">],</span><span class="o">-</span><span class="n">sign</span><span class="o">*</span><span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]])</span>
+    <span class="n">selector</span> <span class="o">-=</span> <span class="p">(</span><span class="n">sign</span> <span class="o">*</span> <span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">])[</span><span class="kc">None</span><span class="p">,:]</span>
+
+    <span class="n">con</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">selector</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                      <span class="n">covariance</span><span class="o">=</span><span class="n">covariance</span><span class="p">)</span>
+    <span class="n">con</span><span class="o">.</span><span class="n">covariance</span> <span class="o">*=</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">exact</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">con</span><span class="p">,</span> <span class="n">con</span><span class="o">.</span><span class="n">pivot</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">alternative</span><span class="o">=</span><span class="s1">&#39;greater&#39;</span><span class="p">),</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sign</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">L2</span><span class="p">,</span> <span class="n">L1</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">S</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="n">exp_pvalue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">L1</span> <span class="o">*</span> <span class="p">(</span><span class="n">L1</span><span class="o">-</span><span class="n">L2</span><span class="p">)</span> <span class="o">/</span> <span class="n">S</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># upper bound is ignored</span>
+        <span class="k">return</span> <span class="n">con</span><span class="p">,</span> <span class="n">exp_pvalue</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sign</span></div>
+
+<div class="viewcode-block" id="selected_covtest"><a class="viewcode-back" href="../../../api/generated/selectinf.algorithms.covtest.html#selectinf.algorithms.covtest.selected_covtest">[docs]</a><span class="k">def</span> <span class="nf">selected_covtest</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">ndraw</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">burnin</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">covariance</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An exact test that is more</span>
+<span class="sd">    powerful than `covtest`_ but that requires</span>
+<span class="sd">    sampling for the null distribution.</span>
+
+<span class="sd">    This test does not require knowledge of sigma.</span>
+<span class="sd">    </span>
+<span class="sd">    .. _covTest: http://arxiv.org/abs/1301.7161</span>
+<span class="sd">    .. _Kac Rice: http://arxiv.org/abs/1308.3020</span>
+<span class="sd">    .. _Spacings: http://arxiv.org/abs/1401.3889</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    X : np.float((n,p))</span>
+
+<span class="sd">    Y : np.float(n)</span>
+
+<span class="sd">    burnin : int</span>
+<span class="sd">        How many iterations until we start</span>
+<span class="sd">        recording samples?</span>
+
+<span class="sd">    ndraw : int</span>
+<span class="sd">        How many samples should we return?</span>
+
+<span class="sd">    sigma : float (optional)</span>
+<span class="sd">        If provided, this value is used for the</span>
+<span class="sd">        Gibbs sampler.</span>
+
+<span class="sd">    covariance : np.float (optional)</span>
+<span class="sd">        Optional covariance for cone constraint.</span>
+<span class="sd">        Will be scaled by sigma if it is not None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    con : `selection.affine.constraints`_</span>
+<span class="sd">        The constraint based on conditioning</span>
+<span class="sd">        on the sign and location of the maximizer.</span>
+
+<span class="sd">    pvalue : float</span>
+<span class="sd">        Exact p-value.</span>
+
+<span class="sd">    idx : int</span>
+<span class="sd">        Variable achieving $\lambda_1$</span>
+
+<span class="sd">    sign : int</span>
+<span class="sd">        Sign of $X^Ty$ for variable achieving $\lambda_1$.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cone</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sign</span> <span class="o">=</span> <span class="n">covtest</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">,</span>
+                                 <span class="n">covariance</span><span class="o">=</span><span class="n">covariance</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sigma</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pvalue</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">gibbs_test</span><span class="p">(</span><span class="n">cone</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span><span class="p">,</span>
+                                  <span class="n">ndraw</span><span class="o">=</span><span class="n">ndraw</span><span class="p">,</span>
+                                  <span class="n">burnin</span><span class="o">=</span><span class="n">burnin</span><span class="p">,</span>
+                                  <span class="n">sigma_known</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                                  <span class="n">alternative</span><span class="o">=</span><span class="s1">&#39;greater&#39;</span><span class="p">)[:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">Y</span><span class="p">)</span> <span class="o">*</span> <span class="n">sign</span><span class="p">)</span>
+        <span class="n">family</span> <span class="o">=</span> <span class="n">_covtest_sampler</span><span class="p">(</span><span class="n">cone</span><span class="p">,</span> <span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span><span class="p">,</span>
+                                  <span class="n">sigma</span><span class="p">,</span> <span class="n">ndraw</span><span class="o">=</span><span class="n">ndraw</span><span class="p">,</span> 
+                                  <span class="n">mu</span> <span class="o">=</span> <span class="n">val</span> <span class="o">*</span> <span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span> 
+                                  <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span><span class="n">idx</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">pvalue</span> <span class="o">=</span> <span class="n">family</span><span class="o">.</span><span class="n">ccdf</span><span class="p">(</span><span class="o">-</span><span class="n">val</span> <span class="o">/</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cone</span><span class="p">,</span> <span class="n">pvalue</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sign</span></div>
+
+<span class="k">def</span> <span class="nf">_covtest_sampler</span><span class="p">(</span><span class="n">cone</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">ndraw</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Due to special strucutre of covtest cone constraint, sampling</span>
+<span class="sd">    is easy with importance weights.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">eta</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">eta_n</span> <span class="o">=</span> <span class="n">eta</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">eta</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">mu</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndraw</span><span class="p">):</span>
+        <span class="n">Y0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">+</span> <span class="n">mu</span>
+        <span class="n">mu_eta</span> <span class="o">=</span> <span class="p">(</span><span class="n">mu</span> <span class="o">*</span> <span class="n">eta_n</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">Y0</span> <span class="o">-=</span> <span class="p">(</span><span class="n">Y0</span> <span class="o">*</span> <span class="n">eta_n</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">eta_n</span>
+        <span class="n">L</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">U</span> <span class="o">=</span> <span class="n">cone</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">eta_n</span><span class="p">,</span> <span class="n">Y0</span><span class="p">)[:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">cdfL</span> <span class="o">=</span> <span class="n">ndtr</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="n">mu_eta</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="n">cdfU</span> <span class="o">=</span> <span class="n">ndtr</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">U</span> <span class="o">-</span> <span class="n">mu_eta</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="n">unif</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span> <span class="o">*</span> <span class="p">(</span><span class="n">cdfU</span> <span class="o">-</span> <span class="n">cdfL</span><span class="p">)</span> <span class="o">+</span> <span class="n">cdfL</span>
+        <span class="k">if</span> <span class="n">unif</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">tnorm</span> <span class="o">=</span> <span class="n">ndtri</span><span class="p">(</span><span class="n">unif</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tnorm</span> <span class="o">=</span> <span class="o">-</span><span class="n">ndtri</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">unif</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">tnorm</span> <span class="o">=</span> <span class="o">-</span><span class="n">tnorm</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">eta</span> <span class="o">*</span> <span class="p">(</span><span class="n">Y0</span> <span class="o">+</span> <span class="p">(</span><span class="n">tnorm</span> <span class="o">+</span> <span class="n">mu_eta</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta_n</span><span class="p">)))</span>
+        <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">cdfL</span> <span class="o">-</span> <span class="n">cdfU</span><span class="p">))</span>
+                           
+    <span class="n">family</span> <span class="o">=</span> <span class="n">discrete_family</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">family</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

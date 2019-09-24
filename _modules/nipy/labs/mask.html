@@ -1,0 +1,696 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Selection &mdash; Selection Documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms/index.html">Non-randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../randomized/index.html">Randomized algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning/index.html">Learning selection</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">selection</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>Selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nipy.labs.mask</h1><div class="highlight"><pre>
+<span></span><span class="c1"># emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-</span>
+<span class="c1"># vi: set ft=python sts=4 ts=4 sw=4 et:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Utilities for extracting masks from EPI images and applying them to time</span>
+<span class="sd">series.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="c1"># Major scientific libraries imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">ndimage</span>
+
+<span class="c1"># Neuroimaging libraries imports</span>
+<span class="kn">from</span> <span class="nn">nibabel</span> <span class="k">import</span> <span class="n">load</span><span class="p">,</span> <span class="n">nifti1</span><span class="p">,</span> <span class="n">save</span>
+
+<span class="kn">from</span> <span class="nn">..io.nibcompat</span> <span class="k">import</span> <span class="n">get_header</span><span class="p">,</span> <span class="n">get_affine</span><span class="p">,</span> <span class="n">get_unscaled_data</span>
+<span class="kn">from</span> <span class="nn">..externals.six</span> <span class="k">import</span> <span class="n">string_types</span>
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># Operating on connect component</span>
+<span class="c1">###############################################################################</span>
+
+<div class="viewcode-block" id="largest_cc"><a class="viewcode-back" href="../../../api/generated/nipy.labs.mask.html#nipy.labs.mask.largest_cc">[docs]</a><span class="k">def</span> <span class="nf">largest_cc</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return the largest connected component of a 3D mask array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    mask: 3D boolean array</span>
+<span class="sd">          3D array indicating a mask.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    mask: 3D boolean array</span>
+<span class="sd">          3D array indicating a mask, with only one connected component.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># We use asarray to be able to work with masked arrays.</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">labels</span><span class="p">,</span> <span class="n">label_nb</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">label_nb</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No non-zero values: no connected components&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">label_nb</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="n">label_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span>
+    <span class="c1"># discard 0 the 0 label</span>
+    <span class="n">label_count</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">labels</span> <span class="o">==</span> <span class="n">label_count</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="threshold_connect_components"><a class="viewcode-back" href="../../../api/generated/nipy.labs.mask.html#nipy.labs.mask.threshold_connect_components">[docs]</a><span class="k">def</span> <span class="nf">threshold_connect_components</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Given a map with some coefficients set to zero, segment the</span>
+<span class="sd">        connect components with number of voxels smaller than the</span>
+<span class="sd">        threshold and set them to 0.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    map: ndarray,</span>
+<span class="sd">         The spatial map to segment</span>
+<span class="sd">    threshold: scalar,</span>
+<span class="sd">               The minimum number of voxels to keep a cluster.</span>
+<span class="sd">    copy: bool, optional</span>
+<span class="sd">          If copy is false, the input array is modified inplace</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    map: ndarray,</span>
+<span class="sd">         the map with connected components removed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labels</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="nb">map</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+        <span class="nb">map</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">weight</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="nb">map</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="nb">map</span></div>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># Utilities to calculate masks</span>
+<span class="c1">###############################################################################</span>
+
+<div class="viewcode-block" id="compute_mask_files"><a class="viewcode-back" href="../../../api/generated/nipy.labs.mask.html#nipy.labs.mask.compute_mask_files">[docs]</a><span class="k">def</span> <span class="nf">compute_mask_files</span><span class="p">(</span><span class="n">input_filename</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">return_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">exclude_zeros</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">opening</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a mask file from fMRI nifti file(s)</span>
+
+<span class="sd">    Compute and write the mask of an image based on the grey level</span>
+<span class="sd">    This is based on an heuristic proposed by T.Nichols:</span>
+<span class="sd">    find the least dense point of the histogram, between fractions</span>
+<span class="sd">    m and M of the total image histogram.</span>
+
+<span class="sd">    In case of failure, it is usually advisable to increase m.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_filename : string</span>
+<span class="sd">        nifti filename (4D) or list of filenames (3D).</span>
+<span class="sd">    output_filename : string or None, optional</span>
+<span class="sd">        path to save the output nifti image (if not None).</span>
+<span class="sd">    return_mean : boolean, optional</span>
+<span class="sd">        if True, and output_filename is None, return the mean image also, as</span>
+<span class="sd">        a 3D array (2nd return argument).</span>
+<span class="sd">    m : float, optional</span>
+<span class="sd">        lower fraction of the histogram to be discarded.</span>
+<span class="sd">    M: float, optional</span>
+<span class="sd">        upper fraction of the histogram to be discarded.</span>
+<span class="sd">    cc: boolean, optional</span>
+<span class="sd">        if cc is True, only the largest connect component is kept.</span>
+<span class="sd">    exclude_zeros: boolean, optional</span>
+<span class="sd">        Consider zeros as missing values for the computation of the</span>
+<span class="sd">        threshold. This option is useful if the images have been</span>
+<span class="sd">        resliced with a large padding of zeros.</span>
+<span class="sd">    opening: int, optional</span>
+<span class="sd">        Size of the morphological opening performed as post-processing</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mask : 3D boolean array</span>
+<span class="sd">        The brain mask</span>
+<span class="sd">    mean_image : 3d ndarray, optional</span>
+<span class="sd">        The main of all the images used to estimate the mask. Only</span>
+<span class="sd">        provided if `return_mean` is True.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_filename</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="c1"># One single filename or image</span>
+        <span class="n">nim</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">input_filename</span><span class="p">)</span>  <span class="c1"># load the image from the path</span>
+        <span class="n">vol_arr</span> <span class="o">=</span> <span class="n">get_unscaled_data</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">get_header</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vol_arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vol_arr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">):</span>
+                <span class="c1"># Get rid of memmapping: it is faster.</span>
+                <span class="n">mean_volume</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vol_arr</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mean_volume</span> <span class="o">=</span> <span class="n">vol_arr</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># Make a copy, to avoid holding a reference on the full array,</span>
+            <span class="c1"># and thus polluting the memory.</span>
+            <span class="n">first_volume</span> <span class="o">=</span> <span class="n">vol_arr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">vol_arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">mean_volume</span> <span class="o">=</span> <span class="n">first_volume</span> <span class="o">=</span> <span class="n">vol_arr</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Need 4D file for mask&#39;</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">vol_arr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># List of filenames</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">input_filename</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;input_filename should be a non-empty &#39;</span>
+                <span class="s1">&#39;list of file names&#39;</span><span class="p">)</span>
+        <span class="c1"># We have several images, we do mean on the fly,</span>
+        <span class="c1"># to avoid loading all the data in the memory</span>
+        <span class="c1"># We do not use the unscaled data here?:</span>
+        <span class="c1"># if the scalefactor is being used to record real</span>
+        <span class="c1"># differences in intensity over the run this would break</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">filename</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">input_filename</span><span class="p">):</span>
+            <span class="n">nim</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">first_volume</span> <span class="o">=</span> <span class="n">nim</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+                <span class="n">mean_volume</span> <span class="o">=</span> <span class="n">first_volume</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="n">header</span> <span class="o">=</span> <span class="n">get_header</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+                <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mean_volume</span> <span class="o">+=</span> <span class="n">nim</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="n">mean_volume</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">input_filename</span><span class="p">)))</span>
+    <span class="k">del</span> <span class="n">nim</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">mean_volume</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">mean_volume</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">tmp</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tmp</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">mean_volume</span> <span class="o">=</span> <span class="n">tmp</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">compute_mask</span><span class="p">(</span><span class="n">mean_volume</span><span class="p">,</span> <span class="n">first_volume</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span>
+                        <span class="n">opening</span><span class="o">=</span><span class="n">opening</span><span class="p">,</span> <span class="n">exclude_zeros</span><span class="o">=</span><span class="n">exclude_zeros</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">output_filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">header</span><span class="p">[</span><span class="s1">&#39;descrip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;mask&#39;</span>
+        <span class="n">output_image</span> <span class="o">=</span> <span class="n">nifti1</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
+                                            <span class="n">affine</span><span class="o">=</span><span class="n">affine</span><span class="p">,</span>
+                                            <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">save</span><span class="p">(</span><span class="n">output_image</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">return_mean</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mask</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mask</span><span class="p">,</span> <span class="n">mean_volume</span></div>
+
+
+<div class="viewcode-block" id="compute_mask"><a class="viewcode-back" href="../../../api/generated/nipy.labs.mask.html#nipy.labs.mask.compute_mask">[docs]</a><span class="k">def</span> <span class="nf">compute_mask</span><span class="p">(</span><span class="n">mean_volume</span><span class="p">,</span> <span class="n">reference_volume</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                        <span class="n">cc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">opening</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">exclude_zeros</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a mask file from fMRI data in 3D or 4D ndarrays.</span>
+
+<span class="sd">    Compute and write the mask of an image based on the grey level</span>
+<span class="sd">    This is based on an heuristic proposed by T.Nichols:</span>
+<span class="sd">    find the least dense point of the histogram, between fractions</span>
+<span class="sd">    m and M of the total image histogram.</span>
+
+<span class="sd">    In case of failure, it is usually advisable to increase m.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mean_volume : 3D ndarray</span>
+<span class="sd">        mean EPI image, used to compute the threshold for the mask.</span>
+<span class="sd">    reference_volume: 3D ndarray, optional</span>
+<span class="sd">        reference volume used to compute the mask. If none is give, the</span>
+<span class="sd">        mean volume is used.</span>
+<span class="sd">    m : float, optional</span>
+<span class="sd">        lower fraction of the histogram to be discarded.</span>
+<span class="sd">    M: float, optional</span>
+<span class="sd">        upper fraction of the histogram to be discarded.</span>
+<span class="sd">    cc: boolean, optional</span>
+<span class="sd">        if cc is True, only the largest connect component is kept.</span>
+<span class="sd">    opening: int, optional</span>
+<span class="sd">        if opening is larger than 0, an morphological opening is performed,</span>
+<span class="sd">        to keep only large structures. This step is useful to remove parts of</span>
+<span class="sd">        the skull that might have been included.</span>
+<span class="sd">    exclude_zeros: boolean, optional</span>
+<span class="sd">        Consider zeros as missing values for the computation of the</span>
+<span class="sd">        threshold. This option is useful if the images have been</span>
+<span class="sd">        resliced with a large padding of zeros.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mask : 3D boolean ndarray</span>
+<span class="sd">        The brain mask</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">reference_volume</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">reference_volume</span> <span class="o">=</span> <span class="n">mean_volume</span>
+    <span class="n">sorted_input</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">mean_volume</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">exclude_zeros</span><span class="p">:</span>
+        <span class="n">sorted_input</span> <span class="o">=</span> <span class="n">sorted_input</span><span class="p">[</span><span class="n">sorted_input</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">limiteinf</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">m</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_input</span><span class="p">)))</span>
+    <span class="n">limitesup</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">M</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_input</span><span class="p">)))</span>
+
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">sorted_input</span><span class="p">[</span><span class="n">limiteinf</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">limitesup</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> \
+            <span class="o">-</span> <span class="n">sorted_input</span><span class="p">[</span><span class="n">limiteinf</span><span class="p">:</span><span class="n">limitesup</span><span class="p">]</span>
+    <span class="n">ia</span> <span class="o">=</span> <span class="n">delta</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">sorted_input</span><span class="p">[</span><span class="n">ia</span> <span class="o">+</span> <span class="n">limiteinf</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="n">sorted_input</span><span class="p">[</span><span class="n">ia</span> <span class="o">+</span> <span class="n">limiteinf</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">reference_volume</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cc</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">largest_cc</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">opening</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">binary_opening</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">),</span>
+                                        <span class="n">iterations</span><span class="o">=</span><span class="n">opening</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compute_mask_sessions"><a class="viewcode-back" href="../../../api/generated/nipy.labs.mask.html#nipy.labs.mask.compute_mask_sessions">[docs]</a><span class="k">def</span> <span class="nf">compute_mask_sessions</span><span class="p">(</span><span class="n">session_images</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                          <span class="n">exclude_zeros</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">opening</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute a common mask for several sessions of fMRI data.</span>
+
+<span class="sd">        Uses the mask-finding algorithmes to extract masks for each</span>
+<span class="sd">        session, and then keep only the main connected component of the</span>
+<span class="sd">        a given fraction of the intersection of all the masks.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    session_images : list of (list of strings) or nipy image objects</span>
+<span class="sd">        A list of images/list of nifti filenames. Each inner list/image</span>
+<span class="sd">        represents a session.</span>
+<span class="sd">    m : float, optional</span>
+<span class="sd">        lower fraction of the histogram to be discarded.</span>
+<span class="sd">    M: float, optional</span>
+<span class="sd">        upper fraction of the histogram to be discarded.</span>
+<span class="sd">    cc: boolean, optional</span>
+<span class="sd">        if cc is True, only the largest connect component is kept.</span>
+<span class="sd">    threshold : float, optional</span>
+<span class="sd">        the inter-session threshold: the fraction of the</span>
+<span class="sd">        total number of session in for which a voxel must be in the</span>
+<span class="sd">        mask to be kept in the common mask.</span>
+<span class="sd">        threshold=1 corresponds to keeping the intersection of all</span>
+<span class="sd">        masks, whereas threshold=0 is the union of all masks.</span>
+<span class="sd">    exclude_zeros: boolean, optional</span>
+<span class="sd">        Consider zeros as missing values for the computation of the</span>
+<span class="sd">        threshold. This option is useful if the images have been</span>
+<span class="sd">        resliced with a large padding of zeros.</span>
+<span class="sd">    return_mean: boolean, optional</span>
+<span class="sd">        if return_mean is True, the mean image accross subjects is</span>
+<span class="sd">        returned.</span>
+<span class="sd">    opening: int, optional,</span>
+<span class="sd">             size of  the morphological opening</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mask : 3D boolean ndarray</span>
+<span class="sd">        The brain mask</span>
+<span class="sd">    mean : 3D float array</span>
+<span class="sd">        The mean image</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mask</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">session</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">session_images</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s1">&#39;get_data&#39;</span><span class="p">):</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">mean</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">mean</span> <span class="o">=</span> <span class="n">mean</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">this_mask</span> <span class="o">=</span> <span class="n">compute_mask</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="n">M</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="n">cc</span><span class="p">,</span>
+                        <span class="n">opening</span><span class="o">=</span><span class="n">opening</span><span class="p">,</span> <span class="n">exclude_zeros</span><span class="o">=</span><span class="n">exclude_zeros</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">return_mean</span><span class="p">:</span>
+                <span class="n">this_mask</span> <span class="o">=</span> <span class="n">this_mask</span><span class="p">,</span> <span class="n">mean</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">this_mask</span> <span class="o">=</span> <span class="n">compute_mask_files</span><span class="p">(</span>
+                <span class="n">session</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="n">M</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="n">cc</span><span class="p">,</span> <span class="n">exclude_zeros</span><span class="o">=</span><span class="n">exclude_zeros</span><span class="p">,</span>
+                <span class="n">return_mean</span><span class="o">=</span><span class="n">return_mean</span><span class="p">,</span> <span class="n">opening</span><span class="o">=</span><span class="n">opening</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_mean</span><span class="p">:</span>
+            <span class="n">this_mask</span><span class="p">,</span> <span class="n">this_mean</span> <span class="o">=</span> <span class="n">this_mask</span>
+            <span class="k">if</span> <span class="n">mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mean</span> <span class="o">=</span> <span class="n">this_mean</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mean</span> <span class="o">+=</span> <span class="n">this_mean</span>
+        <span class="n">this_mask</span> <span class="o">=</span> <span class="n">this_mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">this_mask</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">+=</span> <span class="n">this_mask</span>
+        <span class="c1"># Free memory early</span>
+        <span class="k">del</span> <span class="n">this_mask</span>
+
+    <span class="c1"># Take the &quot;half-intersection&quot;, i.e. all the voxels that fall within</span>
+    <span class="c1"># 50% of the individual masks.</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">mask</span> <span class="o">&gt;</span> <span class="n">threshold</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">session_images</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">cc</span><span class="p">:</span>
+        <span class="c1"># Select the largest connected component (each mask is</span>
+        <span class="c1"># connect, but the half-interesection may not be):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">largest_cc</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_mean</span><span class="p">:</span>
+        <span class="c1"># Divide by the number of sessions</span>
+        <span class="n">mean</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">session_images</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mask</span><span class="p">,</span> <span class="n">mean</span>
+
+    <span class="k">return</span> <span class="n">mask</span></div>
+
+
+<div class="viewcode-block" id="intersect_masks"><a class="viewcode-back" href="../../../api/generated/nipy.labs.mask.html#nipy.labs.mask.intersect_masks">[docs]</a><span class="k">def</span> <span class="nf">intersect_masks</span><span class="p">(</span><span class="n">input_masks</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of input mask images, generate the output image which</span>
+<span class="sd">    is the the threshold-level intersection of the inputs</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_masks: list of strings or ndarrays</span>
+<span class="sd">        paths of the input images nsubj set as len(input_mask_files), or</span>
+<span class="sd">        individual masks.</span>
+<span class="sd">    output_filename, string:</span>
+<span class="sd">        Path of the output image, if None no file is saved.</span>
+<span class="sd">    threshold: float within [0, 1[, optional</span>
+<span class="sd">        gives the level of the intersection.</span>
+<span class="sd">        threshold=1 corresponds to keeping the intersection of all</span>
+<span class="sd">        masks, whereas threshold=0 is the union of all masks.</span>
+<span class="sd">    cc: bool, optional</span>
+<span class="sd">        If true, extract the main connected component</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grp_mask, boolean array of shape the image shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">grp_mask</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The threshold should be &lt; 1&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The threshold should be &gt; 0&#39;</span><span class="p">)</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1.e-7</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">this_mask</span> <span class="ow">in</span> <span class="n">input_masks</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">this_mask</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="c1"># We have a filename</span>
+            <span class="n">this_mask</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">this_mask</span><span class="p">)</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">grp_mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">grp_mask</span> <span class="o">=</span> <span class="n">this_mask</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If this_mask is floating point and grp_mask is integer, numpy 2</span>
+            <span class="c1"># casting rules raise an error for in-place addition.</span>
+            <span class="c1"># Hence we do it long-hand.</span>
+            <span class="c1"># XXX should the masks be coerced to int before addition?</span>
+            <span class="n">grp_mask</span> <span class="o">=</span> <span class="n">grp_mask</span> <span class="o">+</span> <span class="n">this_mask</span>
+
+    <span class="n">grp_mask</span> <span class="o">=</span> <span class="n">grp_mask</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">threshold</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">input_masks</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">grp_mask</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">cc</span><span class="p">:</span>
+        <span class="n">grp_mask</span> <span class="o">=</span> <span class="n">largest_cc</span><span class="p">(</span><span class="n">grp_mask</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">output_filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">string_types</span><span class="p">):</span>
+            <span class="n">nim</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">input_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">get_header</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+            <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">nim</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">header</span><span class="p">[</span><span class="s1">&#39;descrip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;mask image&#39;</span>
+        <span class="n">output_image</span> <span class="o">=</span> <span class="n">nifti1</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">grp_mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
+                                            <span class="n">affine</span><span class="o">=</span><span class="n">affine</span><span class="p">,</span>
+                                            <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span>
+                                         <span class="p">)</span>
+        <span class="n">save</span><span class="p">(</span><span class="n">output_image</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">grp_mask</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<span class="c1">###############################################################################</span>
+<span class="c1"># Time series extraction</span>
+<span class="c1">###############################################################################</span>
+
+<div class="viewcode-block" id="series_from_mask"><a class="viewcode-back" href="../../../api/generated/nipy.labs.mask.html#nipy.labs.mask.series_from_mask">[docs]</a><span class="k">def</span> <span class="nf">series_from_mask</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+                     <span class="n">smooth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ensure_finite</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Read the time series from the given sessions filenames, using the mask.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    filenames: list of 3D nifti file names, or 4D nifti filename.</span>
+<span class="sd">               Files are grouped by session.</span>
+<span class="sd">    mask: 3d ndarray</span>
+<span class="sd">          3D mask array: true where a voxel should be used.</span>
+<span class="sd">    smooth: False or float, optional</span>
+<span class="sd">            If smooth is not False, it gives the size, in voxel of the</span>
+<span class="sd">            spatial smoothing to apply to the signal.</span>
+<span class="sd">    ensure_finite: boolean, optional</span>
+<span class="sd">            If ensure_finite is True, the non-finite values (NaNs and infs)</span>
+<span class="sd">            found in the images will be replaced by zeros</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    session_series: ndarray</span>
+<span class="sd">            3D array of time course: (session, voxel, time)</span>
+<span class="sd">    header: header object</span>
+<span class="sd">            The header of the first file.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    When using smoothing, ensure_finite should be True: as elsewhere non</span>
+<span class="sd">    finite values will spread accross the image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">filenames</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s1">&#39;filenames should be a file name or a list of file names, &#39;</span>
+        <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> (type </span><span class="si">%s</span><span class="s1">) was passed&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">filenames</span><span class="p">)))</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
+        <span class="c1"># Convert from a sigma to a FWHM:</span>
+        <span class="n">smooth</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="c1"># We have a 4D nifti file</span>
+        <span class="n">data_file</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">filenames</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">get_header</span><span class="p">(</span><span class="n">data_file</span><span class="p">)</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">data_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ensure_finite</span><span class="p">:</span>
+            <span class="c1"># SPM tends to put NaNs in the data outside the brain</span>
+            <span class="n">series</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">series</span><span class="p">))]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">data_file</span><span class="p">)[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">data_file</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">):</span>
+            <span class="n">series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">series</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
+            <span class="n">vox_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">affine</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+            <span class="n">smooth_sigma</span> <span class="o">=</span> <span class="n">smooth</span> <span class="o">/</span> <span class="n">vox_size</span>
+            <span class="k">for</span> <span class="n">this_volume</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">rollaxis</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">this_volume</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">this_volume</span><span class="p">,</span>
+                                                        <span class="n">smooth_sigma</span><span class="p">)</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nb_time_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">filenames</span><span class="p">))</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">nb_time_points</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">filename</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
+            <span class="n">data_file</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data_file</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">ensure_finite</span><span class="p">:</span>
+                <span class="c1"># SPM tends to put NaNs in the data outside the brain</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">data</span><span class="p">))]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">smooth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">affine</span> <span class="o">=</span> <span class="n">get_affine</span><span class="p">(</span><span class="n">data_file</span><span class="p">)[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">vox_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">affine</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">smooth_sigma</span> <span class="o">=</span> <span class="n">smooth</span> <span class="o">/</span> <span class="n">vox_size</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">smooth_sigma</span><span class="p">)</span>
+
+            <span class="n">series</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+            <span class="c1"># Free memory early</span>
+            <span class="k">del</span> <span class="n">data</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">header</span> <span class="o">=</span> <span class="n">get_header</span><span class="p">(</span><span class="n">data_file</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">series</span><span class="p">,</span> <span class="n">header</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright J. Taylor and others
+      <span class="lastupdated">
+        Last updated on Sep 24, 2019.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
