@@ -47,9 +47,9 @@ def debiasing_matrix(X,
         bound = orig_bound
         soln = np.zeros(p)
         soln_old = np.zeros(p)
-        ever_active = np.zeros(p, np.int)
+        ever_active = np.zeros(p, np.intp)
         ever_active[0] = row + 1  # C code is 1-based
-        nactive = np.array([1], np.int)
+        nactive = np.array([1], np.intp)
 
         linear_func = np.zeros(p)
         linear_func[row] = -1
@@ -64,7 +64,7 @@ def debiasing_matrix(X,
 
         ridge_term = 0
 
-        need_update = np.zeros(p, np.int)
+        need_update = np.zeros(p, np.intp)
 
         while (counter_idx < max_try):
             bound_vec = np.ones(p) * bound
@@ -155,15 +155,15 @@ def _find_row_approx_inverse_X(X,
     linear_func = np.zeros(p)
     linear_func[j] = -1
     gradient = linear_func.copy()
-    ever_active = np.zeros(p, np.int)
+    ever_active = np.zeros(p, np.intp)
     ever_active[0] = j + 1  # C code has ever_active as 1-based
-    nactive = np.array([1], np.int)
+    nactive = np.array([1], np.intp)
     bound = np.ones(p) * delta
 
     ridge_term = 0
 
     nndef_diag = (X ** 2).sum(0) / n
-    need_update = np.zeros(p, np.int)
+    need_update = np.zeros(p, np.intp)
 
     if max_active is None:
         max_active = max(50, 0.3 * n)
