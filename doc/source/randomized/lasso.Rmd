@@ -1,0 +1,127 @@
+---
+jupyter:
+  jupytext:
+    cell_metadata_filter: all,-slideshow
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.1.1
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+# Randomized LASSO
+
+This selection algorithm allows the researcher to form a model 
+after observing the *subgradient* of this optimization problem
+
+$$
+\text{minimize}_{\beta} \frac{1}{2} \|y-X\beta\|^2_2 +  \sum_j \lambda_j |\beta_j| - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2
+$$
+
+where $\omega \sim N(0,\Sigma)$ is Gaussian randomization with a covariance specified by the user. Data splitting
+is (asymptotically) a special case of this randomization mechanism.
+
+```{python}
+import numpy as np
+from selectinf.randomized.api import lasso
+from selectinf.tests.instance import gaussian_instance
+
+np.random.seed(0) # for reproducibility
+
+X, y = gaussian_instance(n=100,
+                         p=20, 
+                         s=5, 
+                         signal=3,
+                         equicorrelated=False, 
+                         rho=0.4,
+                         random_signs=True)[:2]
+n, p = X.shape
+n, p
+```
+
+## Randomization mechanism
+
+By default, isotropic Gaussian randomization is chosen with variance chosen based on 
+mean diagonal of $X^TX$ and the standard deviation of $y$.
+
+```{python}
+L = lasso.gaussian(X, y, 2 * np.diag(X.T.dot(X)) * np.std(y)) 
+signs = L.fit()
+active_set = np.nonzero(signs != 0)[0]
+active_set
+```
+
+We see that variables `[1,6,17,18]` are chosen here. 
+
+
+## Inference
+
+For inference, the user can in principle choose any target jointly normal with $\nabla \ell(\beta^*;X,y) = 
+X^T(X\beta^*-y)$ where $\beta^*$ is the population minimizer under the model $(X_i,y_i) \overset{IID}{\sim} F$.
+
+For convenience, we have provided some targets, though our functions expect boolean representation of the active set.
+
+```{python}
+from selectinf.randomized.lasso import selected_targets
+active_bool = np.zeros(p, np.bool)
+active_bool[active_set] = True
+
+(observed_target,
+ cov_target,
+ cov_target_score,
+ alternatives) = selected_targets(L.loglike, np.ones(n), active_bool)
+```
+
+Given our target $\widehat{\theta}$ and its estimated covariance $\Sigma$
+as well as its joint covariance $\tilde{\Gamma}$ with $\nabla \ell(\beta^*; X,y)$ we use th linear
+decomposition 
+$$
+\begin{aligned}
+\nabla \ell(\beta^*; X,y) &= \nabla \ell(\beta^*; X,y) - \tilde{\Gamma} \Sigma^{-1} \widehat{\theta} + \tilde{\Gamma} \Sigma^{-1} \widehat{\theta} \\
+&= N + \Gamma \widehat{\theta}.
+\end{aligned}
+$$
+
+We have arranged things so that (pre-selection) $N$ is uncorrelated (and asympotically independent of) $\widehat{\theta}$.
+
+We can then form univariate tests of $H_{0,j}:\theta_j=0$ based on this conditional distribution.
+As the form is unknown, we approximate it using MCMC with `ndraw` steps after a burnin of `burnin` steps.
+
+
+```{python}
+observed_target.shape
+```
+
+```{python}
+Xsel_inv = np.linalg.pinv(X[:, active_set])
+np.testing.assert_allclose(observed_target, Xsel_inv.dot(y))
+```
+
+```{python}
+dispersion = np.linalg.norm(y - X[:, active_set].dot(Xsel_inv.dot(y)))**2 / (n - len(active_set))
+np.testing.assert_allclose(cov_target, dispersion * Xsel_inv.dot(Xsel_inv.T))
+np.testing.assert_allclose(cov_target_score, - X.T.dot(X)[:,active_set].dot(cov_target).T, rtol=np.inf, atol=1.e-10) # some zeros so relative
+```
+
+```{python}
+pivots, pvals, intervals = L.summary(observed_target,
+                                     cov_target,          # \Sigma
+                                     cov_target_score,    # \tilde{\Gamma}
+                                     alternatives,
+                                     ndraw=10000,
+                                     burnin=2000,
+                                     compute_intervals=True)
+```
+
+```{python}
+pvals
+```
+
+```{python}
+intervals
+```

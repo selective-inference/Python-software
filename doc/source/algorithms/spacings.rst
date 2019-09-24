@@ -1,6 +1,6 @@
-
+=================
 The spacings test
------------------
+=================
 
 The `covariance test <covtest.html>`__ describes the distribution of
 spacings at points on the LARS path for the LASSO (see `the
@@ -172,6 +172,7 @@ The steps taken above should match ``R``'s output. We first load the
 .. code:: python
 
     %load_ext rmagic
+
 Recall that ``R`` uses 1-based indexing so there will be a difference of
 1 in the indexes of selected variables.
 
@@ -331,6 +332,7 @@ for several steps of forward stepwise.
                     ax.legend(loc='lower right', fontsize=10)
     
         return np.array(covtest_P), np.array(spacings_P)
+
 Null behavior
 ~~~~~~~~~~~~~
 

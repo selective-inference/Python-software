@@ -39,4 +39,5 @@ build
 */*pyc
 *.pdf
 *.csv
-docs/api/generated/*
+doc/source/api/generated/*
+docs/source/api/generated/*

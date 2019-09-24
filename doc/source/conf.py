@@ -35,14 +35,15 @@ exec(open(_info_fname, 'rt').read(), {}, rel)
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.autosummary',
               'sphinx.ext.doctest',
               'sphinx.ext.mathjax',
+              'sphinx.ext.autosummary',
               'sphinx.ext.viewcode',
               'sphinx.ext.intersphinx',
-              'numpydoc.numpydoc',
+              'sphinx.ext.inheritance_diagram',
               'sphinx_rtd_theme',
               'texext.math_dollar',
+              'numpydoc',
               'nbsphinx'
               ]
 

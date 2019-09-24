@@ -1,27 +1,25 @@
 .. _documentation-main:
 
-=======================
-Selection documentation
-=======================
+=============
+Documentation
+=============
 
-.. htmlonly::
+.. only:: html
 
    :Release: |version|
    :Date: |today|
 
-   Download `PDF <selection.pdf>`_
+   Download `PDF <selectinf.pdf>`_
 
    Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
+   :glob:
 
    download.rst
-   license
+   license.rst
+   api/index.rst
+   docattribute.rst
 
-.. htmlonly::
-
-  * :ref:`genindex`
-  * :ref:`modindex`
-  * :ref:`search`
 

@@ -70,6 +70,7 @@ htmlonly:
 api:
 	-mkdir -p source/api/generated
 	python ../tools/build_modref_templates.py
+	-mv source/api/generated/gen.rst source/api
 	@echo "Build API docs finished."
 
 html: api htmlonly

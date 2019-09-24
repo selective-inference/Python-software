@@ -1,0 +1,26 @@
+---
+jupyter:
+  jupytext:
+    cell_metadata_filter: all,-slideshow
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.1.1
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+# Learning 1
+
+```{python}
+import numpy as np
+print('notebook 1')
+```
+
+```{python collapsed=TRUE}
+
+```
