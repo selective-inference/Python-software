@@ -128,8 +128,9 @@ def main(**extra_args):
           ext_modules = EXTS,
           package_data = {},
           data_files=[],
-          scripts= [],
-          long_description = open('README.rst', 'rt').read(),
+          scripts=[],
+          long_description=open('README.md', 'rt').read(),
+          long_description_content_type='text/markdown',
           cmdclass = cmdclass,
           **extra_args
          )

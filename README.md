@@ -1,11 +1,10 @@
-The selection project
-#####################
+# The selection project
+
 
 This project contains software for selective inference, with
 emphasis on selective inference in regression. 
 
-Some key references:
-********************
+## Some key references
 
 - `A significance test for the lasso`: http://arxiv.org/abs/1301.7161
 - `Tests in adaptive regression via the Kac-Rice formula`: http://arxiv.org/abs/1308.3020
@@ -13,20 +12,16 @@ Some key references:
 - `Exact post-selection inference with the lasso`:  http://arxiv.org/abs/1311.6238
 - `Exact Post Model Selection Inference for Marginal Screening`: http://arxiv.org/abs/1402.5596
 
-Install
-*******
+## Install
 
+```python
+git submodule init # travis_tools and C-software
+git submodule update
+pip install -r requirements.txt
+python setup.py install
+```
 
-.. code-block::
-
-   git submodule init # travis_tools and C-software
-   git submodule update
-   pip install -r requirements.txt
-   python setup.py install
-
-
-Potential speedups
-******************
+## Potential speedups
 
 - We can condition on "parts" of each draw of the sampler, in particular if we condition on the
 projection of the rejection `sample - center` onto direction then resampling on the ray can be sped up for
