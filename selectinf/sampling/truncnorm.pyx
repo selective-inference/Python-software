@@ -1,6 +1,6 @@
 import warnings
 import numpy as np, cython
-cimport numpy as np
+cimport numpy as cnp
 
 from libc.math cimport pow, sqrt, log, exp # sin, cos, acos, asin, sqrt, fabs
 from scipy.special import ndtr, ndtri
@@ -16,16 +16,17 @@ specified by a set of affine constraints.
 """
 
 DTYPE_float = np.float
-ctypedef np.float_t DTYPE_float_t
+ctypedef cnp.float_t DTYPE_float_t
 DTYPE_int = np.int
-ctypedef np.int_t DTYPE_int_t
+ctypedef cnp.int_t DTYPE_int_t
+ctypedef cnp.intp_t DTYPE_intp_t
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A, 
-                           np.ndarray[DTYPE_float_t, ndim=1] b, 
-                           np.ndarray[DTYPE_float_t, ndim=1] initial, 
-                           np.ndarray[DTYPE_float_t, ndim=1] bias_direction, #eta
+def sample_truncnorm_white(cnp.ndarray[DTYPE_float_t, ndim=2] A, 
+                           cnp.ndarray[DTYPE_float_t, ndim=1] b, 
+                           cnp.ndarray[DTYPE_float_t, ndim=1] initial, 
+                           cnp.ndarray[DTYPE_float_t, ndim=1] bias_direction, #eta
                            DTYPE_int_t how_often=1000,
                            DTYPE_float_t sigma=1.,
                            DTYPE_int_t burnin=500,
@@ -90,18 +91,18 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int nvar = A.shape[1]
     cdef int nconstraint = A.shape[0]
-    cdef np.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
             np.empty((ndraw, nvar), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double cdfL, cdfU, unif, tnorm, val, alpha
 
     cdef double tol = 1.e-7
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] U = np.dot(A, state) - b
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] U = np.dot(A, state) - b
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] usample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] usample = \
         np.random.sample(burnin + ndraw)
 
     # directions not parallel to coordinate axes
@@ -114,31 +115,31 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
         _dirs.append(np.random.standard_normal((int(nvar/5),nvar)))
     _dirs.append(bias_direction.reshape((-1, nvar)))
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack(_dirs)
         
     directions /= np.sqrt((directions**2).sum(1))[:,None]
 
     cdef int ndir = directions.shape[0]
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
         np.dot(A, directions.T)
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
         
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
         np.fabs(alphas_dir).max(0) * tol    
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
         np.fabs(alphas_coord).max(0) * tol 
 
     # choose the order of sampling (randomly)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_dir = \
-        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_dir = \
+        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,)).astype(np.intp)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_coord = \
-        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_coord = \
+        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,)).astype(np.intp)
 
     # for switching between coordinate updates and
     # other directions
@@ -282,10 +283,10 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] b, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] initial, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
+def sample_truncnorm_white_sphere(cnp.ndarray[DTYPE_float_t, ndim=2] A, 
+                                  cnp.ndarray[DTYPE_float_t, ndim=1] b, 
+                                  cnp.ndarray[DTYPE_float_t, ndim=1] initial, 
+                                  cnp.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
                                   DTYPE_int_t how_often=1000,
                                   DTYPE_int_t burnin=500,
                                   DTYPE_int_t ndraw=1000,
@@ -339,11 +340,11 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int nvar = A.shape[1]
     cdef int nconstraint = A.shape[0]
-    cdef np.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
             np.empty((ndraw, nvar), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] weight_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] weight_sample = \
             np.empty((ndraw,), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double tval, dval, val, alpha
@@ -352,9 +353,9 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef double tol = 1.e-7
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] usample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] usample = \
         np.random.sample(burnin + ndraw)
 
     # directions not parallel to coordinate axes
@@ -367,31 +368,31 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
         _dirs.append(np.random.standard_normal((int(nvar/5),nvar)))
     _dirs.append(bias_direction.reshape((-1, nvar)))
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack(_dirs)
 
     directions /= np.sqrt((directions**2).sum(1))[:,None]
 
     cdef int ndir = directions.shape[0]
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
         np.dot(A, directions.T)
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
         
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
         np.fabs(alphas_dir).max(0) * tol    
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
         np.fabs(alphas_coord).max(0) * tol 
 
     # choose the order of sampling (randomly)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_dir = \
-        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_dir = \
+        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,)).astype(np.intp)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_coord = \
-        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_coord = \
+        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,)).astype(np.intp)
 
     # for switching between coordinate updates and
     # other directions
@@ -604,10 +605,10 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] b, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] initial, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
+def sample_truncnorm_white_ball(cnp.ndarray[DTYPE_float_t, ndim=2] A, 
+                                  cnp.ndarray[DTYPE_float_t, ndim=1] b, 
+                                  cnp.ndarray[DTYPE_float_t, ndim=1] initial, 
+                                  cnp.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
                                   sample_radius_squared, 
                                   DTYPE_int_t how_often=1000,
                                   DTYPE_int_t burnin=500,
@@ -661,9 +662,9 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int nvar = A.shape[1]
     cdef int nconstraint = A.shape[0]
-    cdef np.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
             np.empty((ndraw, nvar), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double tval, val, alpha
@@ -673,14 +674,14 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef double tol = 1.e-7
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] usample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] usample = \
         np.random.sample(burnin + ndraw)
 
     # directions not parallel to coordinate axes
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack([A, 
                    np.random.standard_normal((int(nvar/5),nvar))])
     directions[-1][:] = bias_direction
@@ -689,24 +690,24 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int ndir = directions.shape[0]
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
         np.dot(A, directions.T)
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
         
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
         np.fabs(alphas_dir).max(0) * tol    
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
         np.fabs(alphas_coord).max(0) * tol 
 
     # choose the order of sampling (randomly)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_dir = \
-        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_dir = \
+        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,)).astype(np.intp)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_coord = \
-        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_coord = \
+        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,)).astype(np.intp)
 
     # for switching between coordinate updates and
     # other directions
@@ -836,10 +837,10 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def sample_truncnorm_white_ball_normal(np.ndarray[DTYPE_float_t, ndim=2] A, 
-                                      np.ndarray[DTYPE_float_t, ndim=1] b, 
-                                      np.ndarray[DTYPE_float_t, ndim=1] initial, 
-                                      np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
+def sample_truncnorm_white_ball_normal(cnp.ndarray[DTYPE_float_t, ndim=2] A, 
+                                      cnp.ndarray[DTYPE_float_t, ndim=1] b, 
+                                      cnp.ndarray[DTYPE_float_t, ndim=1] initial, 
+                                      cnp.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
                                       DTYPE_float_t radius,
                                       DTYPE_float_t sigma,
                                       DTYPE_int_t how_often=1000,
@@ -897,9 +898,9 @@ def sample_truncnorm_white_ball_normal(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int nvar = A.shape[1]
     cdef int nconstraint = A.shape[0]
-    cdef np.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
             np.empty((ndraw, nvar), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double cdfL, cdfU, unif, tval, val, alpha, tnorm
@@ -909,14 +910,14 @@ def sample_truncnorm_white_ball_normal(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef double tol = 1.e-7
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] usample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] usample = \
         np.random.sample(burnin + ndraw)
 
     # directions not parallel to coordinate axes
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack([A, 
                    np.random.standard_normal((int(nvar/5),nvar))])
     directions[-1][:] = bias_direction
@@ -925,24 +926,24 @@ def sample_truncnorm_white_ball_normal(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int ndir = directions.shape[0]
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
         np.dot(A, directions.T)
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
         
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
         np.fabs(alphas_dir).max(0) * tol    
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
         np.fabs(alphas_coord).max(0) * tol 
 
     # choose the order of sampling (randomly)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_dir = \
-        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_dir = \
+        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,)).astype(np.intp)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_coord = \
-        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_coord = \
+        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,)).astype(np.intp)
 
     # for switching between coordinate updates and
     # other directions

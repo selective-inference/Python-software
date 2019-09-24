@@ -1,11 +1,12 @@
 import warnings
 import numpy as np, cython
-cimport numpy as np
+cimport numpy as cnp
 
 DTYPE_float = np.float
-ctypedef np.float_t DTYPE_float_t
+ctypedef cnp.float_t DTYPE_float_t
 DTYPE_int = np.int
-ctypedef np.int_t DTYPE_int_t
+ctypedef cnp.int_t DTYPE_int_t
+ctypedef cnp.intp_t DTYPE_intp_t
 
 cdef extern from "debias.h":
 
@@ -52,18 +53,18 @@ cdef extern from "debias.h":
                              int nfeature,             # how many columns in X #
                              int ncase)                # how many rows in X #
    
-def solve_wide_(np.ndarray[DTYPE_float_t, ndim=2] X,            # Sqrt of non-neg def matrix -- X^TX/ncase = nndef 
-                np.ndarray[DTYPE_float_t, ndim=1] X_theta,      # Fitted values   #
-                np.ndarray[DTYPE_float_t, ndim=1] linear_func,  # Linear term in objective #
-                np.ndarray[DTYPE_float_t, ndim=1] nndef_diag,   # Diagonal entries of non-neg def matrix #
-                np.ndarray[DTYPE_float_t, ndim=1] gradient,     # X^TX/ncase times theta + linear_func#
-                np.ndarray[DTYPE_int_t, ndim=1] need_update,    # Keeps track of updated gradient coords #
-                np.ndarray[DTYPE_int_t, ndim=1] ever_active,    # Ever active set: 1-based # 
-                np.ndarray[DTYPE_int_t, ndim=1] nactive,        # Size of ever active set #
-                np.ndarray[DTYPE_float_t, ndim=1] bound,        # Lagrange multipliers #
+def solve_wide_(cnp.ndarray[DTYPE_float_t, ndim=2] X,            # Sqrt of non-neg def matrix -- X^TX/ncase = nndef 
+                cnp.ndarray[DTYPE_float_t, ndim=1] X_theta,      # Fitted values   #
+                cnp.ndarray[DTYPE_float_t, ndim=1] linear_func,  # Linear term in objective #
+                cnp.ndarray[DTYPE_float_t, ndim=1] nndef_diag,   # Diagonal entries of non-neg def matrix #
+                cnp.ndarray[DTYPE_float_t, ndim=1] gradient,     # X^TX/ncase times theta + linear_func#
+                cnp.ndarray[DTYPE_intp_t, ndim=1] need_update,    # Keeps track of updated gradient coords #
+                cnp.ndarray[DTYPE_intp_t, ndim=1] ever_active,    # Ever active set: 1-based # 
+                cnp.ndarray[DTYPE_intp_t, ndim=1] nactive,        # Size of ever active set #
+                cnp.ndarray[DTYPE_float_t, ndim=1] bound,        # Lagrange multipliers #
                 double ridge_term,                              # Ridge / ENet term #
-                np.ndarray[DTYPE_float_t, ndim=1] theta,        # current value #
-                np.ndarray[DTYPE_float_t, ndim=1] theta_old,    # previous value #
+                cnp.ndarray[DTYPE_float_t, ndim=1] theta,        # current value #
+                cnp.ndarray[DTYPE_float_t, ndim=1] theta_old,    # previous value #
                 int maxiter,                                    # max number of iterations #
                 double kkt_tol,                                 # precision for checking KKT conditions #
                 double objective_tol,                           # precision for checking relative 

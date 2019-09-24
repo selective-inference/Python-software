@@ -1,5 +1,5 @@
 import numpy as np, cython
-cimport numpy as np
+cimport numpy as cnp
 
 from libc.math cimport pow, sqrt, log, exp # sin, cos, acos, asin, sqrt, fabs
 from scipy.special import ndtr, ndtri
@@ -13,17 +13,18 @@ specified by a set of affine constraints.
 """
 
 DTYPE_float = np.float
-ctypedef np.float_t DTYPE_float_t
+ctypedef cnp.float_t DTYPE_float_t
 DTYPE_int = np.int
-ctypedef np.int_t DTYPE_int_t
+ctypedef cnp.int_t DTYPE_int_t
+ctypedef cnp.intp_t DTYPE_intp_t
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A, 
-                      np.ndarray[DTYPE_float_t, ndim=1] LHS_offset, 
-                      np.ndarray[DTYPE_float_t, ndim=1] RHS_offset, 
-                      np.ndarray[DTYPE_float_t, ndim=1] initial, 
-                      np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
+def sample_sqrt_lasso(cnp.ndarray[DTYPE_float_t, ndim=2] A, 
+                      cnp.ndarray[DTYPE_float_t, ndim=1] LHS_offset, 
+                      cnp.ndarray[DTYPE_float_t, ndim=1] RHS_offset, 
+                      cnp.ndarray[DTYPE_float_t, ndim=1] initial, 
+                      cnp.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
                       DTYPE_float_t RSS_max, 
                       DTYPE_int_t df_max, 
                       DTYPE_float_t RSS_1, 
@@ -98,17 +99,17 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int nvar = A.shape[1]
     cdef int nconstraint = A.shape[0]
-    cdef np.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
             np.empty((ndraw, nvar + 1), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] weight_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] weight_sample = \
             np.empty((ndraw,), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double tval, dval, val, alpha
     cdef double norm_state_bound_sq = RSS_max - RSS_1
     cdef double norm_state_sq = norm_state_bound_sq
-    cdef np.ndarray[DTYPE_float_t, ndim=1] effective_offset = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] effective_offset = \
             (-LHS_offset + sqrt(RSS_1) * RHS_offset)
 
     # we are looking at projection of uniform on sphere
@@ -116,14 +117,14 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
     
     cdef double tol = 1.e-7
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] usample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] usample = \
         np.random.sample(burnin + ndraw)
 
     # directions not parallel to coordinate axes
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack([A, 
                    np.random.standard_normal((int(nvar/5),nvar))])
     directions[-1][:] = bias_direction
@@ -132,24 +133,24 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int ndir = directions.shape[0]
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
         np.dot(A, directions.T)
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
         
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
         np.fabs(alphas_dir).max(0) * tol    
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
         np.fabs(alphas_coord).max(0) * tol 
 
     # choose the order of sampling (randomly)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_dir = \
-        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_dir = \
+        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,)).astype(np.intp)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_coord = \
-        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_coord = \
+        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,)).astype(np.intp)
 
     # for switching between coordinate updates and
     # other directions
@@ -377,11 +378,11 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def sample_sqrt_lasso_segment(np.ndarray[DTYPE_float_t, ndim=2] A, 
-                              np.ndarray[DTYPE_float_t, ndim=1] LHS_offset, 
-                              np.ndarray[DTYPE_float_t, ndim=1] RHS_offset, 
-                              np.ndarray[DTYPE_float_t, ndim=1] initial, 
-                              np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
+def sample_sqrt_lasso_segment(cnp.ndarray[DTYPE_float_t, ndim=2] A, 
+                              cnp.ndarray[DTYPE_float_t, ndim=1] LHS_offset, 
+                              cnp.ndarray[DTYPE_float_t, ndim=1] RHS_offset, 
+                              cnp.ndarray[DTYPE_float_t, ndim=1] initial, 
+                              cnp.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
                               DTYPE_float_t RSS_max, 
                               DTYPE_int_t df_max, 
                               DTYPE_float_t RSS_1, 
@@ -456,17 +457,17 @@ def sample_sqrt_lasso_segment(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int nvar = A.shape[1]
     cdef int nconstraint = A.shape[0]
-    cdef np.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
             np.empty((ndraw, nvar + 1), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] weight_sample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] weight_sample = \
             np.empty((ndraw,), np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double tval, dval, val, alpha
     cdef double norm_state_bound_sq = RSS_max - RSS_1
     cdef double norm_state_sq = norm_state_bound_sq
-    cdef np.ndarray[DTYPE_float_t, ndim=1] effective_offset = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] effective_offset = \
             (-LHS_offset + sqrt(RSS_1) * RHS_offset)
 
     # we are looking at projection of uniform on sphere
@@ -474,14 +475,14 @@ def sample_sqrt_lasso_segment(np.ndarray[DTYPE_float_t, ndim=2] A,
     
     cdef double tol = 1.e-7
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state) 
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] usample = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] usample = \
         np.random.sample(burnin + ndraw)
 
     # directions not parallel to coordinate axes
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack([A, 
                    np.random.standard_normal((int(nvar/5),nvar))])
     directions[-1][:] = bias_direction
@@ -490,32 +491,32 @@ def sample_sqrt_lasso_segment(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int ndir = directions.shape[0]
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_dir = \
         np.dot(A, directions.T)
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
+    cdef cnp.ndarray[DTYPE_float_t, ndim=2] alphas_coord = A
         
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_dir = \
         np.fabs(alphas_dir).max(0) * tol    
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] alphas_max_coord = \
         np.fabs(alphas_coord).max(0) * tol 
 
     # choose the order of sampling (randomly)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_dir = \
-        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_dir = \
+        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,)).astype(np.intp)
 
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_coord = \
-        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,))
+    cdef cnp.ndarray[DTYPE_intp_t, ndim=1] random_idx_coord = \
+        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,)).astype(np.intp)
 
     # grid for evaluating density along
 
     cdef int ngrid = 501
-    cdef np.ndarray[DTYPE_float_t, ndim=1] grid = np.linspace(0, 1, ngrid)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] norm_along_segment_sq =  \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] grid = np.linspace(0, 1, ngrid)
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] norm_along_segment_sq =  \
         np.empty(ngrid, np.float)
-    cdef np.ndarray[DTYPE_float_t, ndim=1] density_along_segment =  \
+    cdef cnp.ndarray[DTYPE_float_t, ndim=1] density_along_segment =  \
         np.empty(ngrid, np.float)
     cdef int igrid = 0
     cdef double sum_density = 0.
