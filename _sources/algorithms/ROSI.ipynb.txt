@@ -4,7 +4,7 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "# Conditioning on less: ROSI\n",
+    "# LASSO when conditioning on less: ROSI\n",
     "\n",
     "Instead of conditioning on the active set and signs, \n",
     "one can work in the full model and for each feature $j$ selected\n",
