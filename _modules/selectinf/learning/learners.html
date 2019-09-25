@@ -351,7 +351,8 @@
               <span class="n">fit_probability</span><span class="p">,</span>
               <span class="n">fit_args</span> <span class="o">=</span> <span class="p">{},</span>
               <span class="n">B</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
-              <span class="n">check_selection</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+              <span class="n">check_selection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
                   
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        fit_probability : callable</span>
@@ -366,11 +367,14 @@
 <span class="sd">        check_selection : callable (optional)</span>
 <span class="sd">            Callable that determines selection variable.</span>
 
+<span class="sd">        verbose : bool</span>
+<span class="sd">            Print out probability of selection?</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">learning_selection</span><span class="p">,</span> <span class="n">learning_T</span><span class="p">,</span> <span class="n">random_algorithm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">B</span><span class="o">=</span><span class="n">B</span><span class="p">,</span>
                                                                       <span class="n">check_selection</span><span class="o">=</span><span class="n">check_selection</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;prob(select): &#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">learning_selection</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;prob(select): &#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">learning_selection</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">conditional_laws</span> <span class="o">=</span> <span class="n">fit_probability</span><span class="p">(</span><span class="n">learning_T</span><span class="p">,</span> <span class="n">learning_selection</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_args</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">conditional_laws</span><span class="p">,</span> <span class="p">(</span><span class="n">learning_T</span><span class="p">,</span> <span class="n">learning_selection</span><span class="p">)</span></div></div>
 
