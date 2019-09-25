@@ -14,7 +14,7 @@ jupyter:
     name: python3
 ---
 
-# Conditioning on less: ROSI
+# LASSO when conditioning on less: ROSI
 
 Instead of conditioning on the active set and signs, 
 one can work in the full model and for each feature $j$ selected

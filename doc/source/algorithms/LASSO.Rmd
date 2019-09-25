@@ -14,7 +14,7 @@ jupyter:
     name: python3
 ---
 
-# Conditioning on signs and active set
+# LASSO when conditioning on signs and active set
 
 One of the first works in this line of conditional inference
 is [Lee et al.](projecteuclid.org/euclid.aos/1460381681) which
