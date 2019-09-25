@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Selection documentation attribution" href="docattribute.html" />
-    <link rel="prev" title="Selection documentation" href="documentation.html" />
+    <link rel="next" title="Selective Inference License Information" href="license.html" />
+    <link rel="prev" title="Documentation" href="documentation.html" />
 
 
 </head>
@@ -93,26 +93,21 @@
             
             
               <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="documentation.html">Selection documentation</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Downloading and installing the code</a><ul>
+<li class="toctree-l1 current"><a class="reference internal" href="documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development">Development</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#testing-your-installation">Testing your installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-documentation">Building documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="license.html">Selective Inference License Information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/index.html">API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docattribute.html">Selection documentation attribution</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="docattribute.html">Selection documentation attribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algorithms/index.html">Non-randomized algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="randomized/index.html">Randomized algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="learning/index.html">Learning selection</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="documentation.html">Selection documentation</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Downloading and installing the code</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#testing-your-installation">Testing your installation</a></li>
-</ul>
-</li>
-</ul>
-</li>
 </ul>
 
             
@@ -158,7 +153,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-          <li><a href="documentation.html">Selection documentation</a> &raquo;</li>
+          <li><a href="documentation.html">Documentation</a> &raquo;</li>
         
       <li>Selection</li>
     
@@ -214,12 +209,19 @@
 <li><p><a class="reference external" href="http://www.cython.org">Cython</a></p></li>
 <li><p><a class="reference external" href="http://www.pandas.org">Pandas</a></p></li>
 </ul>
+<p>The package can be installed via pip</p>
+<blockquote>
+<div><p>pip install selectinf</p>
+</div></blockquote>
+</div>
+<div class="section" id="development">
+<h1>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h1>
 <p>You can clone the selection repo using:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">selective</span><span class="o">-</span><span class="n">inference</span><span class="o">/</span><span class="n">Python</span><span class="o">-</span><span class="n">software</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
 <p>Then installation is a simple call to python:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">selection</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">selectinf</span>
 <span class="n">git</span> <span class="n">submodule</span> <span class="n">update</span> <span class="o">--</span><span class="n">init</span>
 <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
 <span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=</span><span class="n">MYDIR</span>
@@ -237,6 +239,14 @@ directory will need to be on your PYTHONPATH for you to import
 </pre></div>
 </div>
 </div>
+<div class="section" id="building-documentation">
+<h2>Building documentation<a class="headerlink" href="#building-documentation" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>cd doc
+make html</p>
+</div></blockquote>
+<p>To upload a fresh build of the documentation to your <code class="code docutils literal notranslate"><span class="pre">gh-pages</span></code> branch, use <code class="code docutils literal notranslate"><span class="pre">make</span> <span class="pre">github</span></code>.</p>
+</div>
 </div>
 
 
@@ -247,10 +257,10 @@ directory will need to be on your PYTHONPATH for you to import
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="docattribute.html" class="btn btn-neutral float-right" title="Selection documentation attribution" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="license.html" class="btn btn-neutral float-right" title="Selective Inference License Information" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="documentation.html" class="btn btn-neutral float-left" title="Selection documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="documentation.html" class="btn btn-neutral float-left" title="Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -261,7 +271,7 @@ directory will need to be on your PYTHONPATH for you to import
     <p>
         &copy; Copyright J. Taylor and others
       <span class="lastupdated">
-        Last updated on Sep 24, 2019.
+        Last updated on Sep 25, 2019.
       </span>
 
     </p>
