@@ -12,3 +12,4 @@ tensorflow
 keras
 nbsphinx
 jupytext
+sphinx_rtd_theme

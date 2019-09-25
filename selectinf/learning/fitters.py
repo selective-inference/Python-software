@@ -8,7 +8,6 @@ def gbm_fit_sk(T, Y, **params):
 
     fitfns = []
     for j in range(Y.shape[1]):
-        print('variable %d' % (j+1,))
         y = Y[:,j].astype(np.int)
         clf = ensemble.GradientBoostingClassifier(**params)
         clf.fit(T, y)
@@ -24,7 +23,6 @@ def random_forest_fit_sk(T, Y, **params):
 
     fitfns = []
     for j in range(Y.shape[1]):
-        print('variable %d' % (j+1,))
         y = Y[:,j].astype(np.int)
         clf = ensemble.RandomForestClassifier(**params)
         clf.fit(T, y)

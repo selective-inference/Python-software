@@ -3,6 +3,7 @@ dist: trusty
 python:
   - 2.7
   - 3.5
+  - 3.6
 notifications:
   email: false
 addons:
@@ -71,7 +72,6 @@ matrix:
         - DEPENDS=
     - python: 3.6
       sudo: true
-      dist: trusty
       env:
         - DOC_BUILD=1
 
@@ -90,14 +90,6 @@ before_install:
 
 install:
   # Install selectinf
-    - |
-      echo "backend : agg" > matplotlibrc
-      if [ "$DOC_BUILD" ]; then  # doc build
-        pip install -r doc-requirements.txt
-        cd doc
-	jupytext --sync source/*/*.ipynb
-        # Build without the API documentation, for the doctests
-        make html
   - if [ "$RUN_R_TESTS" ]; then
      sudo apt-get install -y r-base r-base-dev r-cran-devtools r-cran-rcpp;
      pip install rpy2 statsmodels -c constraints.txt ;   
@@ -121,11 +113,22 @@ script:
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
     - pip install -r requirements.txt -c constraints.txt; # older rpy2
     # Change into an innocuous directory and find tests from installation
+    - 'echo "backend : agg" > matplotlibrc'
+    - |
+      if [ "$DOC_BUILD" ]; then
+         pip install -r doc-requirements.txt;
+         cd doc;
+         jupytext --sync source/*/*.ipynb;
+         sudo apt-get install pandoc;
+         make html;
+      fi
+    #	
+    #        # Build the htmlwithout the API documentation, for the doctests
+    #        
+    #      fi
+    # Doctests only on platforms that have compatible fp output
     - mkdir for_testing
     - cd for_testing
-    - 'echo "backend : agg" > matplotlibrc'
-
-    # Doctests only on platforms that have compatible fp output
     - if [ `uname` == "Darwin" ] ||
       [ "${TRAVIS_PYTHON_VERSION:0:1}" == "3" ]; then
       DOCTEST_ARGS="--with-doctest";
