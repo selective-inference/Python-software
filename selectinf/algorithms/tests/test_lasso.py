@@ -30,6 +30,7 @@ try:
 except ImportError:
     statsmodels_available = False
 
+@set_seed_iftrue(True)
 def test_gaussian(n=100, p=20):
 
     y = np.random.standard_normal(n)
@@ -64,6 +65,7 @@ def test_gaussian(n=100, p=20):
                np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
 
+@set_seed_iftrue(True)
 def test_sqrt_lasso(n=100, p=20):
 
     y = np.random.standard_normal(n)
@@ -91,7 +93,7 @@ def test_sqrt_lasso(n=100, p=20):
                np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
 
-
+@set_seed_iftrue(True)
 def test_logistic():
 
     for Y, T in [(np.random.binomial(1,0.5,size=(10,)),
@@ -118,6 +120,7 @@ def test_logistic():
 
         return L, C, P
 
+@set_seed_iftrue(True)
 def test_poisson():
 
     X = np.random.standard_normal((10,5))
@@ -139,6 +142,7 @@ def test_poisson():
 
     return L, C, P
 
+@set_seed_iftrue(True)
 @dec.skipif(not statsmodels_available, "needs statsmodels")
 def test_coxph():
 
