@@ -122,3 +122,8 @@ doctest:
 	@echo
 	@echo "The overview file is in build/doctest."
 
+github: html
+	# Needs ghp-import (pip install ghp-import)
+	ghp-import -n -p $(BUILDROOT)/html/
+	@echo
+	@echo "Published to Github"

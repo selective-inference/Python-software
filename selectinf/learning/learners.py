@@ -191,7 +191,8 @@ class mixture_learner(object):
               fit_probability,
               fit_args = {},
               B=500,
-              check_selection=None):
+              check_selection=None,
+              verbose=False):
                   
         """
         fit_probability : callable
@@ -206,11 +207,14 @@ class mixture_learner(object):
         check_selection : callable (optional)
             Callable that determines selection variable.
 
+        verbose : bool
+            Print out probability of selection?
         """
 
         learning_selection, learning_T, random_algorithm = self.generate_data(B=B,
                                                                       check_selection=check_selection)
-        print('prob(select): ', np.mean(learning_selection, 0))
+        if verbose:
+            print('prob(select): ', np.mean(learning_selection, 0))
         conditional_laws = fit_probability(learning_T, learning_selection, **fit_args)
         return conditional_laws, (learning_T, learning_selection)
 

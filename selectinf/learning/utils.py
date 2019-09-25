@@ -441,14 +441,16 @@ def lee_inference(X,
 try:
     import matplotlib.pyplot as plt
 
-    def pivot_plot(df, 
-                   outbase,
-                   figsize=(8,8)):
+    def pivot_plot_old(df, 
+                       outbase=None,
+                       figsize=(8,8),
+                       verbose=False):
 
-        print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
-        print("naive:", np.mean(df['naive_pivot']), np.std(df['naive_pivot']), np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
+        if verbose:
+            print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
+            print("naive:", np.mean(df['naive_pivot']), np.std(df['naive_pivot']), np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
 
-        print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
+            print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
 
         f = plt.figure(num=1, figsize=figsize)
         plt.clf()
@@ -457,7 +459,8 @@ try:
         plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'r', label='Naive', linewidth=3)
         plt.legend(fontsize=15)
         plt.plot([0,1], [0,1], 'k--', linewidth=2)
-        plt.savefig(outbase + '.pdf')
+        if outbase is not None:
+            plt.savefig(outbase + '.pdf')
         pivot_ax = plt.gca()
         pivot_ax.set_ylabel(r'P(pivot < t)')
         pivot_ax.set_xlabel(r't')
@@ -514,25 +517,27 @@ try:
     import statsmodels.api as sm
 
     def pvalue_plot(df, 
-                    outbase,
+                    outbase=None,
                     figsize=(8, 8),
                     naive=True,
                     split=False,
-                    bonferroni=False):
+                    bonferroni=False,
+                    verbose=False):
 
-        print("selective:", np.mean(df['pvalue']), np.std(df['pvalue']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
+        if verbose:
+            print("selective:", np.mean(df['pvalue']), np.std(df['pvalue']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
 
-        if naive:
-            print("naive:", np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
-            print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
+            if naive:
+                print("naive:", np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
+                print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
 
-        if split:
-            print("split:", np.mean(df['split_length']), np.std(df['split_length']), np.mean(df['split_coverage']))
-            print("len ratio selective divided by split:", np.mean(np.array(df['length']) / np.array(df['split_length'])))
+            if split:
+                print("split:", np.mean(df['split_length']), np.std(df['split_length']), np.mean(df['split_coverage']))
+                print("len ratio selective divided by split:", np.mean(np.array(df['length']) / np.array(df['split_length'])))
 
-        if bonferroni:
-            print("bonferroni:", np.mean(df['bonferroni_length']), np.std(df['bonferroni_length']), np.mean(df['bonferroni_coverage']))
-            print("len ratio selective divided by bonferroni:", np.mean(np.array(df['length']) / np.array(df['bonferroni_length'])))
+            if bonferroni:
+                print("bonferroni:", np.mean(df['bonferroni_length']), np.std(df['bonferroni_length']), np.mean(df['bonferroni_coverage']))
+                print("len ratio selective divided by bonferroni:", np.mean(np.array(df['length']) / np.array(df['bonferroni_length'])))
 
         f = plt.figure(figsize=figsize)
         plt.clf()
@@ -569,21 +574,29 @@ try:
         pvalue_ax.set_ylabel(r'ECDF(pvalue)', fontsize=20)
         pvalue_ax.set_xlabel(r'pvalue', fontsize=20)
 
-        plt.savefig(outbase + '_pvalues.pdf')
-        plt.savefig(outbase + '_pvalues.png', dpi=300)
+        if outbase is not None:
+            plt.savefig(outbase + '_pvalues.pdf')
+            plt.savefig(outbase + '_pvalues.png', dpi=300)
 
         return pvalue_ax
 
-    def pivot_plot_new(df,
-                       outbase,
-                       palette = {'Learned': 'b',
-                                  'Naive': 'r',
-                                  'Bonferroni': 'gray',
-                                  'Lee':'gray',
-                                  'Strawman':'gray'},
-                       figsize=(8, 8), straw=False):
+    def pivot_plot(df,
+                   outbase=None,
+                   palette = {'Learned': 'b',
+                              'Naive': 'r',
+                              'Bonferroni': 'gray',
+                              'Lee':'gray',
+                              'Strawman':'gray'},
+                   fig=None,
+                   figsize=(8, 8), 
+                   straw=False,
+                   verbose=False):
 
-        f = plt.figure(figsize=figsize)
+        if fig is None:
+            f = plt.figure(figsize=figsize)
+        else:
+            f = fig
+        f.clf()
         new_df = pd.DataFrame({'Learned': df['pivot'],
                                'Naive': df['naive_pivot']})
         if straw:
@@ -598,8 +611,11 @@ try:
         ax.set_ylabel('ECDF(pivot)', fontsize=20)
         ax.legend(fontsize=15)
 
-        pngfile = outbase + '_pivot.png'
-        plt.savefig(pngfile, dpi=300)
+        if outbase is not None:
+            pngfile = outbase + '_pivot.png'
+            plt.savefig(pngfile, dpi=300)
+        else:
+            pngfile = None
 
         return ax, f, pngfile, df, new_df
 
