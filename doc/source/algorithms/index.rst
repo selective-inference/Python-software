@@ -10,3 +10,5 @@ post-selection inference.
 
    covtest.ipynb
    spacings
+   LASSO.ipynb
+   ROSI.ipynb
