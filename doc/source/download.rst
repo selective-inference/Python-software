@@ -17,13 +17,20 @@ Selection depends on the following Python tools
 
 * `Pandas <http://www.pandas.org>`_
 
+The package can be installed via pip
+
+     pip install selectinf
+
+Development
+~~~~~~~~~~~
+
 You can clone the selection repo using::
 
      git clone https://github.com/selective-inference/Python-software.git
 
 Then installation is a simple call to python::
 
-     cd selection
+     cd selectinf
      git submodule update --init
      pip install -r requirements.txt
      python setup.py install --prefix=MYDIR
@@ -41,3 +48,10 @@ There is a small but growing suite of tests that be easily checked using `nose <
      cd tmp
      nosetests -v selectinf
 
+Building documentation
+----------------------
+
+     cd doc
+     make html
+
+To upload a fresh build of the documentation to your :code:`gh-pages` branch, use :code:`make github`.
