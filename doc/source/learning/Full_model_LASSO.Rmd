@@ -36,7 +36,7 @@ from selectinf.tests.instance import gaussian_instance # to generate the data
 from selectinf.learning.core import normal_sampler     # our representation of the (limiting) Gaussian data
 
 from selectinf.learning.utils import full_model_inference, pivot_plot
-from selectinf.learning.Rfitters import logit_fit
+from selectinf.learning.fitters import gbm_fit_sk
 ```
 
 We will know generate some data from an OLS regression model and fit the LASSO
@@ -45,16 +45,16 @@ true parameters, hence we can then return
 pivots for each variable selected by the LASSO. These pivots should look
 (marginally) like a draw from `np.random.sample`. This is the plot below.
 
-```{python}
+```{python collapsed=TRUE}
 np.random.seed(0) # for replicability
 
-def simulate(n=100, 
+def simulate(n=200, 
              p=20, 
              s=5, 
              signal=(0.5, 1), 
              sigma=2, 
              alpha=0.1, 
-             B=4000,
+             B=6000,
              verbose=False):
 
     # description of statistical problem
@@ -69,7 +69,11 @@ def simulate(n=100,
                                     random_signs=True,
                                     scale=False)[:3]
 
-    dispersion = sigma**2
+
+    XTX = X.T.dot(X)
+    XTXi = np.linalg.inv(XTX)
+    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
+    dispersion = np.linalg.norm(resid)**2 / (n-p)
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
@@ -89,16 +93,12 @@ def simulate(n=100,
         noisy_S = sampler(scale=scale)
         loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
         problem = rr.simple_problem(loss, pen)
-        soln = problem.solve(max_its=50, tol=1.e-6)
+        soln = problem.solve(max_its=100, tol=1.e-10)
         success += soln != 0
         
         return set(np.nonzero(success)[0])
 
-    XTX = X.T.dot(X)
-    XTXi = np.linalg.inv(XTX)
-    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
-    dispersion = np.linalg.norm(resid)**2 / (n-p)
-                         
+    
     lam = 3.5 * np.sqrt(n)
     selection_algorithm = functools.partial(base_algorithm, XTX, lam)
     if verbose:
@@ -112,8 +112,8 @@ def simulate(n=100,
                                 sampler,
                                 success_params=(1, 1),
                                 B=B,
-                                fit_probability=logit_fit,
-                                fit_args={'df':20})
+                                fit_probability=gbm_fit_sk,
+                                fit_args={'n_estimators':500})
 ```
 
 Let's take a look at what we get as a return value:
@@ -128,7 +128,7 @@ df.columns
 
 ```{python}
 dfs = []
-for i in range(10):
+for i in range(30):
     df = simulate()
     if df is not None:
         dfs.append(df)
@@ -138,8 +138,4 @@ for i in range(10):
 fig = plt.figure(figsize=(8, 8))
 results = pd.concat(dfs)
 pivot_plot(results, fig=fig);
-```
-
-```{python collapsed=TRUE}
-
 ```
