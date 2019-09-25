@@ -95,6 +95,7 @@
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../download.html">Downloading and installing the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../download.html#development">Development</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../license.html">Selective Inference License Information</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html">API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="selectinf.algorithms.change_point.html">algorithms.change_point</a></li>
@@ -371,7 +372,7 @@ returns something of shape (Y.shape[1],).</p>
 
 <dl class="method">
 <dt id="selectinf.learning.learners.mixture_learner.learn">
-<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param">fit_probability</em>, <em class="sig-param">fit_args={}</em>, <em class="sig-param">B=500</em>, <em class="sig-param">check_selection=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/learners.html#mixture_learner.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.learners.mixture_learner.learn" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param">fit_probability</em>, <em class="sig-param">fit_args={}</em>, <em class="sig-param">B=500</em>, <em class="sig-param">check_selection=None</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/selectinf/learning/learners.html#mixture_learner.learn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#selectinf.learning.learners.mixture_learner.learn" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>fit_probability<span class="classifier">callable</span></dt><dd><p>Function to learn a probability model P(Y=1|T) based on [T, Y].</p>
 </dd>
@@ -380,6 +381,8 @@ returns something of shape (Y.shape[1],).</p>
 <dt>B<span class="classifier">int</span></dt><dd><p>How many queries?</p>
 </dd>
 <dt>check_selection<span class="classifier">callable (optional)</span></dt><dd><p>Callable that determines selection variable.</p>
+</dd>
+<dt>verbose<span class="classifier">bool</span></dt><dd><p>Print out probability of selection?</p>
 </dd>
 </dl>
 </dd></dl>
@@ -489,7 +492,7 @@ returns something of shape (Y.shape[1],).</p>
 
 <dl class="method">
 <dt id="selectinf.learning.learners.sparse_mixture_learner.learn">
-<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param">fit_probability</em>, <em class="sig-param">fit_args={}</em>, <em class="sig-param">B=500</em>, <em class="sig-param">check_selection=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.learners.sparse_mixture_learner.learn" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param">fit_probability</em>, <em class="sig-param">fit_args={}</em>, <em class="sig-param">B=500</em>, <em class="sig-param">check_selection=None</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selectinf.learning.learners.sparse_mixture_learner.learn" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>fit_probability<span class="classifier">callable</span></dt><dd><p>Function to learn a probability model P(Y=1|T) based on [T, Y].</p>
 </dd>
@@ -498,6 +501,8 @@ returns something of shape (Y.shape[1],).</p>
 <dt>B<span class="classifier">int</span></dt><dd><p>How many queries?</p>
 </dd>
 <dt>check_selection<span class="classifier">callable (optional)</span></dt><dd><p>Callable that determines selection variable.</p>
+</dd>
+<dt>verbose<span class="classifier">bool</span></dt><dd><p>Print out probability of selection?</p>
 </dd>
 </dl>
 </dd></dl>
@@ -535,7 +540,7 @@ returns something of shape (Y.shape[1],).</p>
     <p>
         &copy; Copyright J. Taylor and others
       <span class="lastupdated">
-        Last updated on Sep 24, 2019.
+        Last updated on Sep 25, 2019.
       </span>
 
     </p>
