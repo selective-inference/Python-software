@@ -8,7 +8,8 @@ import regreg.api as rr
 from selectinf.tests.instance import gaussian_instance
 
 from selectinf.learning.utils import full_model_inference, pivot_plot
-from selectinf.learning.core import normal_sampler, keras_fit
+from selectinf.learning.core import normal_sampler, keras_fit, gbm_fit_sk
+from selectinf.learning.Rutils import lasso_glmnet
 
 def generate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, **ignored):
 
@@ -24,7 +25,7 @@ def generate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, **ignored):
 
     return X, y, truth
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
+def simulate(n=2000, p=1000, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=4000):
 
     # description of statistical problem
 
@@ -38,52 +39,72 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
                            random_signs=True,
                            scale=False)[:3]
 
+
+    # description of statistical problem
+
+    X, y, truth = gaussian_instance(n=n,
+                                    p=p, 
+                                    s=s,
+                                    equicorrelated=False,
+                                    rho=0.5, 
+                                    sigma=sigma,
+                                    signal=signal,
+                                    random_signs=True,
+                                    scale=False)[:3]
+
     dispersion = sigma**2
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
 
-    def meta_algorithm(X, XTXi, resid, sampler):
+    def meta_algorithm(X, XTXi, resid, lam, sampler):
+        p = XTX.shape[0]
+        success = np.zeros(p)
 
-        n, p = X.shape
+        loss = rr.quadratic_loss((p,), Q=XTX)
+        pen = rr.l1norm(p, lagrange=lam)
 
-        rho = 0.8
-        S = sampler(scale=0.) # deterministic with scale=0
-        ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
-        Xnew = rho * X + np.sqrt(1 - rho**2) * np.random.standard_normal(X.shape)
-
-        X_full = np.hstack([X, Xnew])
-        beta_full = np.linalg.pinv(X_full).dot(ynew)
-        winners = np.fabs(beta_full)[:p] > np.fabs(beta_full)[p:]
-        return set(np.nonzero(winners)[0])
-
+        scale = 0.
+        noisy_S = sampler(scale=scale)
+        loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
+        problem = rr.simple_problem(loss, pen)
+        soln = problem.solve(max_its=100, tol=1.e-10)
+        success += soln != 0
+        return set(np.nonzero(success)[0])
+        
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
     dispersion = np.linalg.norm(resid)**2 / (n-p)
                          
-    selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid)
-
+    lam = 5. * np.sqrt(n)
+    selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid, lam)
 
     # run selection algorithm
 
+    print('SNR', np.linalg.norm(X.dot(truth)) / np.linalg.norm(y-X.dot(truth)))
+    print('R2', 1 - np.linalg.norm(y-X.dot(truth))**2 / np.linalg.norm(y)**2)
     return full_model_inference(X,
                                 y,
                                 truth,
                                 selection_algorithm,
                                 smooth_sampler,
-                                success_params=(8, 10),
+                                success_params=(1, 1),
                                 B=B,
                                 fit_probability=keras_fit,
-                                fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
+                                fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
+
 
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    opts = dict(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000)
+    U = np.linspace(0, 1, 101)
+    plt.clf()
+
+    opts = dict(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000)
 
     R2 = []
     for _ in range(100):
@@ -95,16 +116,14 @@ if __name__ == "__main__":
     R2mean = 1 - np.mean(R2[:,0]) / np.mean(R2[:,1])
     print('R2', R2mean)
 
-
-    iseed = int(np.fabs(np.random.standard_normal() * 50000))
-    for i in range(2000):
+    for i in range(5000):
         df = simulate(**opts)
-        csvfile = __file__[:-3] + '_200.csv'
+        csvfile = __file__[:-3] + '.csv'
         outbase = csvfile[:-4]
 
-        if df is not None and i > 0:
+        if df is not None:
 
-            try: # concatenate to disk
+            try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
             except FileNotFoundError:
                 pass

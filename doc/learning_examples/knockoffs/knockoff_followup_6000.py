@@ -7,10 +7,14 @@ import regreg.api as rr
 
 from selectinf.tests.instance import gaussian_instance
 
-from selectinf.learning.utils import full_model_inference, pivot_plot
+from selectinf.learning.Rutils import lasso_glmnet
+from selectinf.learning.utils import (full_model_inference, 
+                                      pivot_plot,
+                                      split_full_model_inference)
 from selectinf.learning.core import normal_sampler, keras_fit
+from selectinf.learning.fitters import gbm_fit_sk
 
-def generate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, **ignored):
+def generate(n=2000, p=100, s=10, signal=(np.sqrt(2)*0.5, np.sqrt(2)*1), sigma=2, **ignored):
 
     X, y, truth = gaussian_instance(n=n,
                                     p=p, 
@@ -24,7 +28,8 @@ def generate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, **ignored):
 
     return X, y, truth
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
+def simulate(n=2000, p=100, s=10, signal=(np.sqrt(2)*0.5, np.sqrt(2)*1), 
+             sigma=2, alpha=0.1,B=3000):
 
     # description of statistical problem
 
@@ -44,17 +49,21 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
 
+
     def meta_algorithm(X, XTXi, resid, sampler):
 
         n, p = X.shape
+        idx = np.random.choice(np.arange(n), int(n/2), replace=False)
 
-        rho = 0.8
         S = sampler(scale=0.) # deterministic with scale=0
         ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
-        Xnew = rho * X + np.sqrt(1 - rho**2) * np.random.standard_normal(X.shape)
+        Xidx, yidx = X[idx], y[idx]
+        rho = 0.8
 
-        X_full = np.hstack([X, Xnew])
-        beta_full = np.linalg.pinv(X_full).dot(ynew)
+        Xnew = rho * Xidx + np.sqrt(1 - rho**2) * np.random.standard_normal(Xidx.shape)
+
+        X_full = np.hstack([Xidx, Xnew])
+        beta_full = np.linalg.pinv(X_full).dot(yidx)
         winners = np.fabs(beta_full)[:p] > np.fabs(beta_full)[p:]
         return set(np.nonzero(winners)[0])
 
@@ -65,25 +74,42 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
                          
     selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid)
 
-
     # run selection algorithm
 
-    return full_model_inference(X,
-                                y,
-                                truth,
-                                selection_algorithm,
-                                smooth_sampler,
-                                success_params=(8, 10),
-                                B=B,
-                                fit_probability=keras_fit,
-                                fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
+    df = full_model_inference(X,
+                              y,
+                              truth,
+                              selection_algorithm,
+                              smooth_sampler,
+                              success_params=(8, 10),
+                              B=B,
+                              fit_probability=gbm_fit_sk,
+                              fit_args={'n_estimators':1000}
+                              )
+
+    if df is not None:
+
+        observed_set = list(df['variable'])
+        idx2 = np.random.choice(np.arange(n), int(n/2), replace=False)
+        split_df = split_full_model_inference(X,
+                                              y,
+                                              idx2,
+                                              None, # ignored dispersion
+                                              truth,
+                                              observed_set,
+                                              alpha=alpha)
+
+        df = pd.merge(df, split_df, on='variable')
+        return df
 
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    opts = dict(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000)
+    opts = dict(n=2000, p=100, s=10, 
+                signal=(np.sqrt(2)*0.5, np.sqrt(2)*1), sigma=2, 
+                alpha=0.1, B=6000)
 
     R2 = []
     for _ in range(100):
@@ -96,15 +122,14 @@ if __name__ == "__main__":
     print('R2', R2mean)
 
 
-    iseed = int(np.fabs(np.random.standard_normal() * 50000))
-    for i in range(2000):
+    for i in range(5000):
         df = simulate(**opts)
-        csvfile = __file__[:-3] + '_200.csv'
+        csvfile = __file__[:-3] + '_gbm.csv'
         outbase = csvfile[:-4]
 
-        if df is not None and i > 0:
+        if df is not None:
 
-            try: # concatenate to disk
+            try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
             except FileNotFoundError:
                 pass

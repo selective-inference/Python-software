@@ -5,11 +5,11 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.instance import gaussian_instance
+from selectinf.tests.instance import gaussian_instance
 
 
-from selection.learning.utils import full_model_inference, pivot_plot
-from selection.learning.core import split_sampler, keras_fit
+from selectinf.learning.utils import full_model_inference, pivot_plot
+from selectinf.learning.core import split_sampler, keras_fit
 
 from sklearn.linear_model import lasso_path
 
@@ -83,9 +83,9 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    for i in range(500):
+    for i in range(2000):
         df = simulate(B=3000)
-        csvfile = 'stability_selection_harder.csv'
+        csvfile = __file__[:-3] + '.csv'
         outbase = csvfile[:-4]
 
         if df is not None and i > 0:
@@ -97,6 +97,6 @@ if __name__ == "__main__":
             df.to_csv(csvfile, index=False)
 
             if len(df['pivot']) > 0:
-                pivot_ax, length_ax = pivot_plot(df, outbase)
+                pivot_plot(df, outbase)
 
 

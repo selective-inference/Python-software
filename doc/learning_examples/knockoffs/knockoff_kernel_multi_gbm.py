@@ -8,9 +8,11 @@ import regreg.api as rr
 from selectinf.tests.instance import gaussian_instance
 
 from selectinf.learning.utils import full_model_inference, pivot_plot
-from selectinf.learning.core import normal_sampler, keras_fit
+from selectinf.learning.core import normal_sampler, keras_fit, gbm_fit_sk
 
-def generate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, **ignored):
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0, B=3000):
+
+    # description of statistical problem
 
     X, y, truth = gaussian_instance(n=n,
                                     p=p, 
@@ -20,23 +22,8 @@ def generate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, **ignored):
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=False)[:3]
-
-    return X, y, truth
-
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
-
-    # description of statistical problem
-
-    X, y, truth = generate(n=n,
-                           p=p, 
-                           s=s,
-                           equicorrelated=False,
-                           rho=0.5, 
-                           sigma=sigma,
-                           signal=signal,
-                           random_signs=True,
-                           scale=False)[:3]
+                                    scale=False,
+                                    center=False)[:3]
 
     dispersion = sigma**2
 
@@ -75,31 +62,18 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
                                 smooth_sampler,
                                 success_params=(8, 10),
                                 B=B,
-                                fit_probability=keras_fit,
-                                fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
+                                fit_probability=gbm_fit_sk,
+                                fit_args={'n_estimators':1000})
 
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    opts = dict(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000)
-
-    R2 = []
-    for _ in range(100):
-
-        X, y, truth = generate(**opts)
-        R2.append((np.linalg.norm(y-X.dot(truth))**2, np.linalg.norm(y)**2))
-
-    R2 = np.array(R2)
-    R2mean = 1 - np.mean(R2[:,0]) / np.mean(R2[:,1])
-    print('R2', R2mean)
-
-
     iseed = int(np.fabs(np.random.standard_normal() * 50000))
     for i in range(2000):
-        df = simulate(**opts)
-        csvfile = __file__[:-3] + '_200.csv'
+        df = simulate(seed=i + iseed, B=3000)
+        csvfile = 'knockoff_kernel_multi_gbm.csv'
         outbase = csvfile[:-4]
 
         if df is not None and i > 0:
@@ -111,6 +85,6 @@ if __name__ == "__main__":
             df.to_csv(csvfile, index=False)
 
             if len(df['pivot']) > 0:
-                f = pivot_plot(df, outbase)[1]
-                plt.close(f)
+                pivot_plot(df, outbase)
+
 

@@ -13,7 +13,7 @@ from selectinf.learning.core import split_sampler, keras_fit
 
 from sklearn.linear_model import lasso_path
 
-def simulate(n=2000, p=1000, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
 
     # description of statistical problem
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     import pandas as pd
 
     for i in range(2000):
-        df = simulate(B=3000)
+        df = simulate(B=5000)
         csvfile = __file__[:-3] + '.csv'
         outbase = csvfile[:-4]
 
