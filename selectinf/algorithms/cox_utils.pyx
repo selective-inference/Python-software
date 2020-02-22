@@ -11,6 +11,7 @@ ctypedef cnp.intp_t DTYPE_intp_t
 cdef extern from "cox_fns.h":
 
     void _update_cox_exp(double *linear_pred_ptr, # Linear term in objective 
+                         double *exp_ptr,         # stores exp(eta) 
                          double *exp_accum_ptr,   # inner accumulation vector 
                          long *censoring_ptr,     # censoring indicator 
                          long *ordering_ptr,      # 0-based ordering of times 
@@ -20,6 +21,7 @@ cdef extern from "cox_fns.h":
 
     void _update_cox_expZ(double *linear_pred_ptr,  # Linear term in objective 
                           double *right_vector_ptr, # Linear term in objective 
+                          double *exp_ptr,         # stores exp(eta) 
                           double *expZ_accum_ptr,   # inner accumulation vector 
                           long *censoring_ptr,      # censoring indicator 
                           long *ordering_ptr,       # 0-based ordering of times 
@@ -57,7 +59,7 @@ cdef extern from "cox_fns.h":
                           );       
 
     void _cox_gradient(double *gradient_ptr,        # Where gradient is stored 
-                       double *linear_pred_ptr,     # Linear term in objective 
+                       double *exp_ptr,             # stores exp(eta) 
                        double *outer_accum_1st_ptr, # outer accumulation vector 
                        long *censoring_ptr,         # censoring indicator 
                        long *ordering_ptr,          # 0-based ordering of times 
@@ -67,7 +69,8 @@ cdef extern from "cox_fns.h":
                        );
 
     void _cox_hessian(double *hessian_ptr,          # Where hessian is stored 
-                      double *linear_pred_ptr,      # Linear term in objective 
+                      double *exp_ptr,              # stores exp(eta) 
+                      double *right_vector_ptr,     # Right vector in Hessian
                       double *outer_accum_1st_ptr,  # outer accumulation vector used in outer prod "mean"
                       double *outer_accum_2nd_ptr,  # outer accumulation vector used in "2nd" moment
                       long *censoring_ptr,          # censoring indicator 
@@ -77,6 +80,7 @@ cdef extern from "cox_fns.h":
                       );
    
 def cox_objective(cnp.ndarray[DTYPE_float_t, ndim=1] linear_pred,
+                  cnp.ndarray[DTYPE_float_t, ndim=1] exp_buffer,
                   cnp.ndarray[DTYPE_float_t, ndim=1] exp_accum,
                   cnp.ndarray[DTYPE_float_t, ndim=1] outer_1st_accum,
                   cnp.ndarray[DTYPE_int_t, ndim=1] censoring,
@@ -86,6 +90,7 @@ def cox_objective(cnp.ndarray[DTYPE_float_t, ndim=1] linear_pred,
                   long ncase):
 
     _update_cox_exp(<double *>linear_pred.data,
+                    <double *>exp_buffer.data,
                     <double *>exp_accum.data,
                     <long *>censoring.data,
                     <long *>ordering.data,
@@ -111,6 +116,7 @@ def cox_objective(cnp.ndarray[DTYPE_float_t, ndim=1] linear_pred,
 
 def cox_gradient(cnp.ndarray[DTYPE_float_t, ndim=1] gradient,
                  cnp.ndarray[DTYPE_float_t, ndim=1] linear_pred,
+                 cnp.ndarray[DTYPE_float_t, ndim=1] exp_buffer,
                  cnp.ndarray[DTYPE_float_t, ndim=1] exp_accum,
                  cnp.ndarray[DTYPE_float_t, ndim=1] outer_1st_accum,
                  cnp.ndarray[DTYPE_int_t, ndim=1] censoring,
@@ -125,6 +131,7 @@ def cox_gradient(cnp.ndarray[DTYPE_float_t, ndim=1] gradient,
     # this computes e^{\eta} and stores cumsum at rankmin
 
     _update_cox_exp(<double *>linear_pred.data,
+                    <double *>exp_buffer.data,
                     <double *>exp_accum.data,
                     <long *>censoring.data,
                     <long *>ordering.data,
@@ -140,7 +147,7 @@ def cox_gradient(cnp.ndarray[DTYPE_float_t, ndim=1] gradient,
                       ncase)
 
     _cox_gradient(<double *>gradient.data,
-                  <double *>linear_pred.data,
+                  <double *>exp_buffer.data,
                   <double *>outer_1st_accum.data,
                   <long *>censoring.data,
                   <long *>ordering.data,
@@ -153,6 +160,7 @@ def cox_gradient(cnp.ndarray[DTYPE_float_t, ndim=1] gradient,
 def cox_hessian(cnp.ndarray[DTYPE_float_t, ndim=1] hessian,
                 cnp.ndarray[DTYPE_float_t, ndim=1] linear_pred,
                 cnp.ndarray[DTYPE_float_t, ndim=1] right_vector,
+                cnp.ndarray[DTYPE_float_t, ndim=1] exp_buffer,
                 cnp.ndarray[DTYPE_float_t, ndim=1] exp_accum,
                 cnp.ndarray[DTYPE_float_t, ndim=1] expZ_accum,
                 cnp.ndarray[DTYPE_float_t, ndim=1] outer_1st_accum,
@@ -169,6 +177,7 @@ def cox_hessian(cnp.ndarray[DTYPE_float_t, ndim=1] hessian,
     # this computes e^{\eta} and stores cumsum at rankmin, stored in outer_accum_1st
 
     _update_cox_exp(<double *>linear_pred.data,
+                    <double *>exp_buffer.data,
                     <double *>exp_accum.data,
                     <long *>censoring.data,
                     <long *>ordering.data,
@@ -185,7 +194,8 @@ def cox_hessian(cnp.ndarray[DTYPE_float_t, ndim=1] hessian,
 
     _update_cox_expZ(<double *>linear_pred.data,
                      <double *>right_vector.data,
-                     <double *>exp_accum.data,
+                     <double *>exp_buffer.data,
+                     <double *>expZ_accum.data,
                      <long *>censoring.data,
                      <long *>ordering.data,
                      <long *>rankmin.data,
@@ -201,7 +211,8 @@ def cox_hessian(cnp.ndarray[DTYPE_float_t, ndim=1] hessian,
                       ncase)
 
     _cox_hessian(<double *>hessian.data,
-                 <double *>linear_pred.data,
+                 <double *>exp_buffer.data,
+                 <double *>right_vector.data,
                  <double *>outer_1st_accum.data,
                  <double *>outer_2nd_accum.data,
                  <long *>censoring.data,
