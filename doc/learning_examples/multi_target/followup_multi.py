@@ -13,11 +13,10 @@ from selectinf.learning.utils import (full_model_inference,
 from selectinf.learning.core import normal_sampler, keras_fit
 from selectinf.learning.Rutils import lasso_glmnet
 
-def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0, B=2000):
+def simulate(n=1000, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
 
     # description of statistical problem
 
-    np.random.seed(seed)
     X, y, truth = gaussian_instance(n=n,
                                     p=p, 
                                     s=s,
@@ -35,7 +34,7 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0, B=
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
 
-    idx = np.random.choice(np.arange(n), int(n)/2, replace=False)
+    idx = np.random.choice(np.arange(n), int(n/2), replace=False)
 
     def meta_algorithm(X, XTXi, resid, idx, sampler):
 
@@ -87,9 +86,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    iseed = int(np.fabs(np.random.standard_normal() * 1000))
     for i in range(500):
-        df = simulate(seed=i+iseed, B=2000)
+        df = simulate(B=3000)
         csvfile = __file__[:-3] + '.csv'
         outbase = csvfile[:-4]
 
@@ -102,7 +100,7 @@ if __name__ == "__main__":
             df.to_csv(csvfile, index=False)
 
             if len(df['pivot']) > 0:
-                f = pivot_plot(df, outbase)
-                f.close()
+                f = pivot_plot(df, outbase)[1]
+                plt.close(f)
 
 

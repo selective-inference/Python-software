@@ -49,7 +49,7 @@ def full_model_inference(X,
 
         if how_many is None:
             how_many = len(observed_list)
-        observed_list = observed_list[:how_many]
+        observed_list = list(np.random.choice(observed_list, how_many, replace=False))
 
         # find the target, based on the observed outcome
 

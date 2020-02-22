@@ -5,15 +5,15 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.instance import gaussian_instance
+from selectinf.tests.instance import gaussian_instance
 
-from selection.learning.Rutils import lasso_glmnet
-from selection.learning.utils import (full_model_inference, 
-                                   pivot_plot,
-                                   naive_full_model_inference)
-from selection.learning.core import split_sampler, keras_fit
+from selectinf.learning.Rutils import lasso_glmnet
+from selectinf.learning.utils import (full_model_inference, 
+                                      pivot_plot,
+                                      split_full_model_inference)
+from selectinf.learning.core import normal_sampler, keras_fit
 
-def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
+def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0, B=2000):
 
     # description of statistical problem
 
@@ -39,7 +39,7 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
 
         n, p = X.shape
 
-        idx = np.random.choice(np.arange(n), 200, replace=False)
+        idx = np.random.choice(np.arange(n), int(n/2), replace=False)
 
         S = sampler(scale=0.) # deterministic with scale=0
         ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
@@ -66,12 +66,11 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
                               y,
                               truth,
                               selection_algorithm,
-                              splitting_sampler,
+                              smooth_sampler,
                               success_params=(8, 10),
                               B=B,
                               fit_probability=keras_fit,
-                              fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
-                              fit_args={'df':20})
+                              fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
 
     if df is not None:
 
@@ -89,7 +88,7 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
                                      random_signs=True,
                                      center=False,
                                      scale=False)[:3]
-        stage_1 = np.random.choice(np.arange(n), 200, replace=False)
+        stage_1 = np.random.choice(np.arange(n), int(n/2), replace=False)
         stage_2 = sorted(set(range(n)).difference(stage_1))
         X2 = X2[stage_2]
         y2 = X2.dot(truth) + sigma * np.random.standard_normal(X2.shape[0])
@@ -98,13 +97,15 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
         resid2 = y2 - X2.dot(XTXi_2.dot(X2.T.dot(y2)))
         dispersion_2 = np.linalg.norm(resid2)**2 / (X2.shape[0] - X2.shape[1])
 
-        naive_df = naive_full_model_inference(X2,
+        split_df = split_full_model_inference(X2,
                                               y2,
+                                              stage_1,
                                               dispersion_2,
+                                              truth,
                                               observed_set,
                                               alpha=alpha)
 
-        df = pd.merge(df, naive_df, on='variable')
+        df = pd.merge(df, split_df, on='variable')
         return df
 
 if __name__ == "__main__":
@@ -113,8 +114,8 @@ if __name__ == "__main__":
     import pandas as pd
 
     iseed = int(np.fabs(np.random.standard_normal() * 1000))
-    for i in range(500):
-        df = simulate(seed=i + iseed)
+    for i in range(5000):
+        df = simulate(seed=i + iseed, B=3000)
         csvfile = 'knockoff_followup.csv'
         outbase = csvfile[:-4]
 
