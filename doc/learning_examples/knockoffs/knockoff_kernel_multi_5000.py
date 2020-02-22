@@ -83,7 +83,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    opts = dict(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000)
+    opts = dict(n=200, p=100, s=10, signal=(0.5, 1), 
+                sigma=2, alpha=0.1, B=5000)
 
     R2 = []
     for _ in range(100):

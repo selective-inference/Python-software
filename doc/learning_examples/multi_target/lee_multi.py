@@ -5,12 +5,13 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.instance import gaussian_instance
+from selectinf.tests.instance import gaussian_instance
 
-from selection.learning.utils import (partial_model_inference, 
-                                   pivot_plot,
-                                   lee_inference)
-from selection.learning.core import normal_sampler, keras_fit
+from selectinf.learning.utils import (partial_model_inference, 
+                                      pivot_plot,
+                                      lee_inference)
+from selectinf.learning.core import normal_sampler, keras_fit, gbm_fit_sk
+from selectinf.learning.learners import sparse_mixture_learner
 
 def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
 
@@ -63,11 +64,12 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
                                  truth,
                                  selection_algorithm,
                                  smooth_sampler,
-                                 fit_probability=keras_fit,
-                                 fit_args={'epochs':30, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                                 fit_probability=gbm_fit_sk,
+                                 fit_args={'n_estimators':1000},
                                  success_params=(1, 1),
                                  B=B,
-                                 alpha=alpha)
+                                 alpha=alpha,
+                                 learner_klass=sparse_mixture_learner)
 
     lee_df = lee_inference(X,
                            y,
