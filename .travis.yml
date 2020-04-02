@@ -94,7 +94,7 @@ install:
      sudo apt-get install -y r-base r-base-dev r-cran-devtools r-cran-rcpp;
      pip install rpy2 statsmodels -c constraints.txt ;   
      sudo Rscript -e "install.packages(c('devtools', 'intervals', 'adaptMCMC', 'SLOPE'), repos='http://cloud.r-project.org')";
-     sudo Rscript -e "require(devtools); install_version('glmnet', version='2.0.18', repos='http://cloud.r-project.org')";
+     sudo Rscript -e "require(devtools); install_version('glmnet', version='2.0-18', repos='http://cloud.r-project.org')";
      sudo Rscript -e "install.packages('knockoff', repos='http://cloud.r-project.org')";
      git clone https://github.com/jonathan-taylor/R-selective.git;
      cd R-selective;
