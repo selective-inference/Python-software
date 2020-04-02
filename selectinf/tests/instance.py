@@ -364,7 +364,7 @@ def HIV_NRTI(drug='3TC',
     NRTI_specific = NRTI.from_records(np.array(NRTI_specific).T, columns=NRTI_muts)
 
     X_NRTI = np.array(NRTI_specific, np.float)
-    Y = NRTI[drug] # shorthand
+    Y = np.asarray(NRTI[drug]) # shorthand
     keep = ~np.isnan(Y).astype(np.bool)
     X_NRTI = X_NRTI[np.nonzero(keep)]; Y=Y[keep]
     Y = np.array(np.log(Y), np.float); 
