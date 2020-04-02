@@ -70,7 +70,7 @@ matrix:
       env:
         - INSTALL_TYPE=requirements
         - DEPENDS=
-    - python: 3.6
+    - python: 3.5
       sudo: true
       env:
         - DOC_BUILD=1
