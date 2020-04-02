@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 import nose
 import nose.tools as nt
 import numpy as np
-import numpy.testing.decorators as dec
+from numpy.testing import dec
 
 from scipy.stats import chi
 import nose.tools as nt
