@@ -28,9 +28,6 @@ environment:
     - PYTHON: C:\Python36-x64
       NP_BUILD_DEP: "1.13.3"
       NP_TEST_DEP: "1.13.3"
-    - PYTHON: C:\Python35-x64
-      NP_BUILD_DEP: "1.13.3"
-      NP_TEST_DEP: "1.13.3"
 
     - PYTHON: C:\Python37
       NP_BUILD_DEP: "1.14.5"
@@ -39,9 +36,14 @@ environment:
     - PYTHON: C:\Python36
       NP_BUILD_DEP: "1.13.3"
       NP_TEST_DEP: "1.13.3"
-    - PYTHON: C:\Python35
-      NP_BUILD_DEP: "1.13.3"
-      NP_TEST_DEP: "1.13.3"
+
+    # problem with pandas + cython for py35
+    # - PYTHON: C:\Python35-x64
+    #   NP_BUILD_DEP: "1.13.3"
+    #   NP_TEST_DEP: "1.13.3"
+    # - PYTHON: C:\Python35
+    #   NP_BUILD_DEP: "1.13.3"
+    #   NP_TEST_DEP: "1.13.3"
 
 install:
   - cmd: echo "Using cmd"
