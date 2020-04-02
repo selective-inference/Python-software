@@ -1,6 +1,5 @@
 import numpy as np, pandas as pd
 import nose.tools as nt
-import numpy.testing.decorators as dec
 from itertools import product
 
 from ...tests.flags import SMALL_SAMPLES
@@ -143,7 +142,7 @@ def test_poisson():
     return L, C, P
 
 @set_seed_iftrue(True)
-@dec.skipif(not statsmodels_available, "needs statsmodels")
+@np.testing.dec.skipif(not statsmodels_available, "needs statsmodels")
 def test_coxph():
 
     Q = rr.identity_quadratic(0.01, 0, np.ones(5), 0)
@@ -151,10 +150,10 @@ def test_coxph():
     T = np.random.standard_exponential(100)
     S = np.random.binomial(1, 0.5, size=(100,))
 
-    L = lasso.coxph(X, T, S, 0.1, quadratic=Q)
+    L = lasso.cox(X, T, S, 0.1, quadratic=Q)
     L.fit()
 
-    L = lasso.coxph(X, T, S, 0.1, quadratic=Q)
+    L = lasso.cox(X, T, S, 0.1, quadratic=Q)
     L.fit()
 
     C = L.constraints
@@ -450,7 +449,7 @@ def test_data_carving_poisson(n=500,
        
 @wait_for_return_value()
 @set_seed_iftrue(True)
-@dec.skipif(not statsmodels_available, "needs statsmodels")
+@np.testing.dec.skipif(not statsmodels_available, "needs statsmodels")
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_coxph(n=400,
                             p=20,
@@ -478,14 +477,14 @@ def test_data_carving_coxph(n=400,
 
     lam_theor = 10. * np.ones(p)
     lam_theor[0] = 0.
-    DC = data_carving.coxph(X, T, S, feature_weights=lam_theor,
-                            stage_one=stage_one)
+    DC = data_carving.cox(X, T, S, feature_weights=lam_theor,
+                          stage_one=stage_one)
 
     DC.fit()
 
     if len(DC.active) < n - int(n*split_frac):
-        DS = data_splitting.coxph(X, T, S, feature_weights=lam_theor,
-                                     stage_one=stage_one)
+        DS = data_splitting.cox(X, T, S, feature_weights=lam_theor,
+                                stage_one=stage_one)
         DS.fit(use_full_cov=True)
         data_split = True
     else:

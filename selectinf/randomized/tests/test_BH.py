@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.testing.decorators as dec
 
 from scipy.stats import norm as ndist
 
@@ -42,7 +41,7 @@ def test_BH_procedure():
         np.testing.assert_allclose(sorted(BHfilter(2 * ndist.sf(np.fabs(Z)), q=0.2)),
                                    sorted(stepup_selection(Z, BH_cutoffs)[1]))
 
-@dec.skipif(True, "independent estimator test not working")
+@np.testing.dec.skipif(True, "independent estimator test not working")
 def test_independent_estimator(n=100, n1=50, q=0.2, signal=3, p=100):
 
     Z = np.random.standard_normal((n, p))

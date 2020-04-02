@@ -21,7 +21,6 @@ from scipy.linalg import block_diag
 from regreg.api import (glm,
                         weighted_l1norm,
                         simple_problem,
-                        coxph as coxph_obj,
                         smooth_sum,
                         squared_error,
                         identity_quadratic,
@@ -470,13 +469,13 @@ class lasso(object):
                      covariance_estimator=covariance_estimator)
 
     @classmethod
-    def coxph(klass,
-              X,
-              times,
-              status,
-              feature_weights,
-              covariance_estimator=None,
-              quadratic=None):
+    def cox(klass,
+            X,
+            times,
+            status,
+            feature_weights,
+            covariance_estimator=None,
+            quadratic=None):
         r"""
         Cox proportional hazards LASSO with feature weights.
         Objective function is
@@ -521,7 +520,7 @@ class lasso(object):
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
         """
-        loglike = coxph_obj(X, times, status, quadratic=quadratic)
+        loglike = glm.cox(X, times, status, quadratic=quadratic)
         return klass(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
@@ -1003,14 +1002,14 @@ class data_carving(lasso):
         return klass(loglike1, loglike2, loglike, feature_weights)
 
     @classmethod
-    def coxph(klass,
-              X,
-              times,
-              status,
-              feature_weights,
-              split_frac=0.9,
-              sigma=1.,
-              stage_one=None):
+    def cox(klass,
+            X,
+            times,
+            status,
+            feature_weights,
+            split_frac=0.9,
+            sigma=1.,
+            stage_one=None):
 
         n, p = X.shape
         if stage_one is None:
@@ -1025,9 +1024,9 @@ class data_carving(lasso):
         times1, X1, status1 = times[stage_one], X[stage_one], status[stage_one]
         times2, X2, status2 = times[stage_two], X[stage_two], status[stage_two]
 
-        loglike = coxph_obj(X, times, status)
-        loglike1 = coxph_obj(X1, times1, status1)
-        loglike2 = coxph_obj(X2, times2, status2)
+        loglike = glm.cox(X, times, status)
+        loglike1 = glm.cox(X1, times1, status1)
+        loglike2 = glm.cox(X2, times2, status2)
 
         return klass(loglike1, loglike2, loglike, feature_weights)
 
@@ -1878,7 +1877,8 @@ class ROSI(lasso):
 
             # Needed for finding truncation intervals
 
-            self._Qbeta_bar = X.T.dot(W * X.dot(lasso_solution)) - self.loglike.smooth_objective(lasso_solution, 'grad')
+            self._Qbeta_bar = (X.T.dot(W * X.dot(lasso_solution)) - 
+                               self.loglike.smooth_objective(lasso_solution, 'grad'))
             self._W = W
 
             if n > p and self.approximate_inverse is None:

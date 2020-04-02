@@ -5,10 +5,7 @@ import numpy as np
 import nose
 import nose.tools
 
-try:
-    from numpy.testing.decorators import SkipTest
-except (ImportError, AttributeError):
-    from numpy.testing import SkipTest
+from numpy.testing import SkipTest
 
 def set_seed_iftrue(condition, seed=10):
     """
@@ -209,7 +206,7 @@ def rpy_test_safe(libraries=[], msg=None):
                 for x in f(*args, **kwargs_cp):
                     yield x
             else:
-                raise np.testing.decorators.SkipTest(get_msg(f, msg))
+                raise SkipTest(get_msg(f, msg))
 
         # Choose the right modified to use when building the actual decorator.
         if nose.util.isgenerator(f):
