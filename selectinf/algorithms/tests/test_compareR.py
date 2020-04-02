@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np, pandas as pd
 import regreg.api as rr
 import nose.tools as nt
+from numpy.testing import dec
 
 try:
     import rpy2.robjects as rpy
@@ -22,7 +23,7 @@ from ..forward_step import forward_step
 from ...randomized.lasso import lasso as rlasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance, logistic_instance
 
-@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
+@dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_fixed_lambda():
     """
     Check that Gaussian LASSO results agree with R
@@ -240,7 +241,7 @@ def test_coxph():
     beta_hat = np.asarray(rpy.r('beta_hat'))
     x = np.asarray(rpy.r('x'))
 
-    L = lasso.coxph(x, tim, status, 1.5)
+    L = lasso.cox(x, tim, status, 1.5)
     beta2 = L.fit()
 
     G1 = L.loglike.gradient(beta_hat)

@@ -10,6 +10,7 @@ from scipy.interpolate import interp1d
 # regreg http://github.com/regreg 
 
 import regreg.api as rr
+from regreg.atoms.mixed_lasso import NONNEGATIVE
 import regreg.affine as ra
 from regreg.smooth.glm import gaussian_loglike
 from regreg.affine import astransform
@@ -427,7 +428,7 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, so
         weights = lam * np.ones((p,))
     weight_dict = dict(zip(np.arange(p),
                            2 * weights))
-    penalty = rr.mixed_lasso(list(np.arange(p)) + [rr.NONNEGATIVE], lagrange=1.,
+    penalty = rr.mixed_lasso(list(np.arange(p)) + [NONNEGATIVE], lagrange=1.,
                              weights=weight_dict)
 
     loss = sqlasso_objective_skinny(X, Y)
