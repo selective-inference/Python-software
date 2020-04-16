@@ -5,13 +5,13 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-from ..lasso import lasso, selected_targets, full_targets, debiased_targets
-from ...tests.instance import gaussian_instance
-from ...tests.flags import SET_SEED
-from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
-from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
-from ..randomization import randomization
-from ...tests.decorators import rpy_test_safe
+from selectinf.randomized.lasso import lasso, selected_targets, full_targets, debiased_targets
+from selectinf.tests.instance import gaussian_instance
+from selectinf.tests.flags import SET_SEED
+from selectinf.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from selectinf.algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
+from selectinf.randomized.randomization import randomization
+from selectinf.tests.decorators import rpy_test_safe
 
 def test_highdim_lasso(n=500, 
                        p=200, 
