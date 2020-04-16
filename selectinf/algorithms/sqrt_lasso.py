@@ -15,10 +15,10 @@ import regreg.affine as ra
 from regreg.smooth.glm import gaussian_loglike
 from regreg.affine import astransform
 
-from selectinf.constraints.affine import (constraints as affine_constraints,
+from ..constraints.affine import (constraints as affine_constraints, 
                                   sample_from_sphere)
-from selectinf.distributions.discrete_multiparameter import multiparameter_family
-from selectinf.distributions.discrete_family import discrete_family
+from ..distributions.discrete_multiparameter import multiparameter_family
+from ..distributions.discrete_family import discrete_family
 
 class sqlasso_objective(rr.smooth_atom):
     """

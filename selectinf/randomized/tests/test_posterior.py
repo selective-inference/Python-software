@@ -47,15 +47,19 @@ def test_sampler(n=500,
                                       nonzero,
                                       dispersion=dispersion)
 
+    A_scaling = conv.sampler.affine_con.linear_part
+    b_scaling = conv.sampler.affine_con.offset
+    logdens_linear = conv.sampler.logdens_transform[0]
+
     posterior_inf = posterior_inference_lasso(observed_target,
                                               cov_target,
                                               cov_target_score,
                                               conv.observed_opt_state,
                                               conv.cond_mean,
                                               conv.cond_cov,
-                                              conv.logdens_linear,
-                                              conv.A_scaling,
-                                              conv.b_scaling,
+                                              logdens_linear,
+                                              A_scaling,
+                                              b_scaling,
                                               observed_target)
 
     samples = posterior_inf.posterior_sampler(nsample=2000, nburnin=200, step=1.)

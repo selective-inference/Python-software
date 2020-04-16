@@ -7,13 +7,13 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selectinf.algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
+from ..algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
 
-from selectinf.randomized.query import gaussian_query
+from .query import gaussian_query
 
-from selectinf.randomized.randomization import randomization
-from selectinf.base import restricted_estimator
-from selectinf.algorithms.debiased_lasso import (debiasing_matrix,
+from .randomization import randomization
+from ..base import restricted_estimator
+from ..algorithms.debiased_lasso import (debiasing_matrix,
                                          pseudoinverse_debiasing_matrix)
 
 #### High dimensional version
@@ -223,9 +223,6 @@ class lasso(gaussian_query):
                                     opt_offset)
         if num_opt_var > 0:
             self._setup_sampler(*self._setup_sampler_data)
-
-        self.A_scaling = A_scaling
-        self.b_scaling = b_scaling
 
         return active_signs
 

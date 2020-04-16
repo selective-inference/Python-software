@@ -291,7 +291,7 @@ class gaussian_query(query):
                                         opt_offset, 
                                         cond_precision)
 
-        self.cond_mean, self.cond_cov, self.logdens_linear = cond_mean, cond_cov, logdens_linear
+        self.cond_mean, self.cond_cov = cond_mean, cond_cov
 
         affine_con = constraints(A_scaling,
                                  b_scaling,
