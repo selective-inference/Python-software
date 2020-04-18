@@ -60,7 +60,7 @@ class posterior_inference_lasso():
     def prior(self, target_parameter, prior_var=100.):
 
         grad_prior = -target_parameter/prior_var
-        log_prior = -np.linalg.norm(target_parameter)/(2.*prior_var)
+        log_prior = -np.linalg.norm(target_parameter)**2 /(2.*prior_var)
         return grad_prior, log_prior
 
     def log_posterior(self, target_parameter, solve_args={'tol':1.e-12}):
@@ -83,7 +83,7 @@ class posterior_inference_lasso():
         log_lik = -((self.observed_target - target_parameter).T.dot(self.prec_target).dot(self.observed_target - target_parameter)) / 2.\
                   - log_normalizer
 
-        grad_lik = self.prec_target.dot(self.observed_target) - self.prec_target.dot(target_parameter) + \
+        grad_lik = self.prec_target.dot(self.observed_target) - self.prec_target.dot(target_parameter) \
                    -self.linear_coef.T.dot(prec_marginal.dot(soln)- conjugate_marginal)
 
         grad_prior, log_prior = self.prior(target_parameter)
