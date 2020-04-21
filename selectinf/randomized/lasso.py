@@ -310,7 +310,10 @@ class lasso(gaussian_query):
 
         """
 
-        loglike = rr.glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
+        loglike = rr.glm.gaussian(X, 
+                                  Y, 
+                                  coef=1. / sigma ** 2, 
+                                  quadratic=quadratic)
         n, p = X.shape
 
         mean_diag = np.mean((X ** 2).sum(0))
@@ -324,7 +327,8 @@ class lasso(gaussian_query):
 
         return lasso(loglike, 
                      np.asarray(feature_weights) / sigma ** 2,
-                     ridge_term, randomizer)
+                     ridge_term, 
+                     randomizer)
 
     @staticmethod
     def logistic(X,
@@ -1000,8 +1004,6 @@ class split_lasso(lasso):
                                   coef=1. / sigma ** 2, 
                                   quadratic=quadratic)
         n, p = X.shape
-
-        mean_diag = np.mean((X ** 2).sum(0))
 
         return split_lasso(loglike, 
                            np.asarray(feature_weights) / sigma ** 2,

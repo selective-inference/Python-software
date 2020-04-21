@@ -57,24 +57,27 @@ def test_topK(n=500,
                  alternatives) = topK_select.multivariate_targets(nonzero, dispersion=sigma**2)
                
             if use_MLE:
-                estimate, _, _, pval, intervals, _ = topK_select.selective_MLE(observed_target,
-                                                                               cov_target,
-                                                                               crosscov_target_score)
+                result = topK_select.selective_MLE(observed_target,
+                                                   cov_target,
+                                                   crosscov_target_score)[0]
             # run summary
             else:
-                _, pval, intervals = topK_select.summary(observed_target, 
-                                                         cov_target, 
-                                                         crosscov_target_score, 
-                                                         alternatives,
-                                                         compute_intervals=True)
-
+                result = topK_select.summary(observed_target, 
+                                             cov_target, 
+                                             crosscov_target_score, 
+                                             alternatives,
+                                             compute_intervals=True)
+            lower = np.asarray(result['lower'])
+            upper = np.asarray(result['upper'])
+            pval = result['pvalue']
+            intervals = np.asarray(result[['lower', 'upper']])
             print(pval)
             if marginal:
                 beta_target = true_mean[nonzero]
             else:
                 beta_target = beta[nonzero]
-            print("beta_target and intervals", beta_target, intervals)
-            coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+            print("beta_target and intervals", beta_target, lower, upper)
+            coverage = (beta_target > lower) * (beta_target < upper)
             print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 

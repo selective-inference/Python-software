@@ -39,7 +39,10 @@ class screening(gaussian_query):
         crosscov_target_score = -score_linear.dot(cov_target)
         alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+        return (observed_target, 
+                cov_target * dispersion, 
+                crosscov_target_score.T * dispersion, 
+                alternatives)
 
     def full_targets(self, features, dispersion=1.):
         """
@@ -104,7 +107,7 @@ class marginal_screening(screening):
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
-        opt_linear[self._selected,:] = np.diag(active_signs)
+        opt_linear[self._selected] = np.diag(active_signs)
         opt_offset = np.zeros(p)
         opt_offset[self._selected] = active_signs * self.threshold[self._selected]
         opt_offset[self._not_selected] = _randomized_score[self._not_selected]
@@ -324,7 +327,7 @@ class topK(screening):
             self.num_opt_var = self.observed_opt_state.shape[0]
 
             opt_linear = np.zeros((p, self.num_opt_var))
-            opt_linear[self._selected,:] = np.diag(topK_signs)
+            opt_linear[self._selected] = np.diag(topK_signs)
             opt_offset = np.zeros(p)  
 
         else:
@@ -342,7 +345,7 @@ class topK(screening):
             self.num_opt_var = self.observed_opt_state.shape[0]
 
             opt_linear = np.zeros((p, self.num_opt_var))
-            opt_linear[self._selected,:] = np.identity(self.num_opt_var)
+            opt_linear[self._selected] = np.identity(self.num_opt_var)
             opt_offset = np.zeros(p)  
 
         # in both cases, this conditioning means we just need to compute

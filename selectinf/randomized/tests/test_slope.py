@@ -1,12 +1,12 @@
 
 from ...tests.instance import gaussian_instance
 
-import numpy as np
+import numpy as np, pandas as pd
 from regreg.atoms.slope import slope as slope_atom
 import regreg.api as rr
 
 from ..slope import slope
-from ..lasso import full_targets
+from ..lasso import full_targets, selected_targets
 from ...tests.decorators import rpy_test_safe
 
 try:
@@ -34,7 +34,7 @@ if rpy_loaded:
           {
             if(choice_weights == "gaussian"){
             lambda = "gaussian"} else{
-            lambda = "bhq"}
+            lambda = "bh"}
             result = SLOPE(X, Y, fdr = fdr, lambda = lambda, normalize = normalize, sigma = sigma)
            } else{
             result = SLOPE(X, Y, fdr = fdr, lambda = W, normalize = normalize, sigma = sigma)
@@ -57,8 +57,8 @@ if rpy_loaded:
             r_W = robjects.NA_Logical
             if choice_weights is "gaussian":
                 r_choice_weights  = robjects.StrVector('gaussian')
-            elif choice_weights is "bhq":
-                r_choice_weights = robjects.StrVector('bhq')
+            elif choice_weights is "bh":
+                r_choice_weights = robjects.StrVector('bh')
         else:
             r_W = robjects.r.matrix(W, nrow=p, ncol=1)
 
@@ -69,12 +69,15 @@ if rpy_loaded:
 
         result = r_slope(r_X, r_Y, r_W, r_normalize, r_choice_weights, r_sigma)
 
-        result = np.asarray(result.rx2('beta')), np.asarray(result.rx2('E')), \
-            np.asarray(result.rx2('lambda_seq')), np.asscalar(np.array(result.rx2('sigma')))
+        result = (np.asarray(result.rx2('beta')), 
+                  np.asarray(result.rx2('E')), 
+                  np.asarray(result.rx2('lambda_seq')).reshape(-1), 
+                  np.asscalar(np.array(result.rx2('sigma'))))
         rpy2.robjects.numpy2ri.deactivate()
 
         return result
 
+@np.testing.dec.skipif(True, "extracting beta from SLOPE in R is troublesome here")
 @rpy_test_safe(libraries=['SLOPE'])
 def test_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35):
 
@@ -97,6 +100,7 @@ def test_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0
                                                  normalize = True,
                                                  choice_weights = "gaussian",
                                                  sigma = sigma_)
+    
     print("estimated sigma", sigma_, r_sigma)
     print("weights output by R", r_lambda_seq)
     print("output of est coefs R", r_beta)
@@ -108,11 +112,19 @@ def test_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0
     soln = problem.solve()
     print("output of est coefs python", soln)
 
+    print(r_beta, 'huh')
     print("relative difference in solns", np.linalg.norm(soln-r_beta)/np.linalg.norm(r_beta))
 
 @rpy_test_safe(libraries=['SLOPE'])
-def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35, randomizer_scale= np.sqrt(0.25),
-                          target = "full", use_MLE=True):
+def test_randomized_slope(n=2000, 
+                          p=100, 
+                          signal_fac=1.5, 
+                          s=10, 
+                          sigma=1., 
+                          rho=0.35, 
+                          randomizer_scale=0.7,
+                          target = "full", 
+                          use_MLE=True):
 
     while True:
         inst = gaussian_instance
@@ -127,16 +139,10 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35,
                           random_signs=True)[:3]
 
         sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
-        r_beta, r_E, r_lambda_seq, r_sigma = slope_R(X,
-                                                     Y,
-                                                     W=None,
-                                                     normalize=True,
-                                                     choice_weights="gaussian", #put gaussian
-                                                     sigma=sigma_)
 
         conv = slope.gaussian(X,
                               Y,
-                              r_sigma * r_lambda_seq,
+                              np.linspace(3, 1, p) * sigma_,
                               randomizer_scale=randomizer_scale * sigma_)
 
         signs = conv.fit()
@@ -166,27 +172,36 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35,
                 beta_target = beta[nonzero]
             if use_MLE:
 
-                estimate, _, _, pval, intervals, _ = conv.selective_MLE(observed_target, 
-                                                                        cov_target, 
-                                                                        cov_target_score)
+                result = conv.selective_MLE(observed_target, 
+                                            cov_target, 
+                                            cov_target_score)[0]
             else:
-                _, pval, intervals = conv.summary(observed_target, 
-                                                  cov_target, 
-                                                  cov_target_score, 
-                                                  alternatives, 
-                                                  compute_intervals=True)
-            coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+                result = conv.summary(observed_target, 
+                                      cov_target, 
+                                      cov_target_score, 
+                                      alternatives, 
+                                      compute_intervals=True,
+                                      ndraw=150000)
+            pval = np.asarray(result['pvalue'])
+            lower = np.asarray(result['lower'])
+            upper = np.asarray(result['upper'])
+
+            print(pd.DataFrame({'target':beta_target,
+                                'lower':lower,
+                                'upper':upper}))
+
+            coverage = (beta_target > lower) * (beta_target < upper)
             break
 
     if True:
-        return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
+        return pval[beta_target == 0], pval[beta_target != 0], coverage, lower, upper
 
-def main(nsim=100):
+def main(nsim=100, use_MLE=True):
 
     P0, PA, cover, length_int = [], [], [], []
     
     for i in range(nsim):
-        p0, pA, cover_, intervals = test_randomized_slope()
+        p0, pA, cover_, _, _ = test_randomized_slope(use_MLE=use_MLE)
 
         cover.extend(cover_)
         P0.extend(p0)

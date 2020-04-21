@@ -169,6 +169,44 @@ class randomization(rr.smooth_atom):
                              cov_prec=(covariance, precision))
 
     @staticmethod
+    def degenerate_gaussian(covariance, tol=1.e-6):
+        """
+        Gaussian noise with a given covariance.
+        Parameters
+        ----------
+        covariance : np.float((*,*))
+            Positive definite covariance matrix. Non-negative definite
+            will raise an error.
+        """
+        p = covariance.shape[0]
+        U, D, _ = np.linalg.svd(covariance)
+        keep = D > D.max() * tol
+        rank = keep.sum()
+        sqrt_cov = U[:,keep].dot(np.diag(np.sqrt(D[keep])))
+        sqrt_precision = U[:,keep].dot(np.diag(1./np.sqrt(D[keep])))
+        precision = sqrt_precision.dot(sqrt_precision.T)
+        _const = 1. 
+        density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
+        cdf = lambda x: None
+        pdf = lambda x: None
+        derivative_log_density = lambda x: None
+        grad_negative_log_density = lambda x: precision.dot(x)
+        sampler = lambda size: covariance.dot(sqrt_precision.dot(np.random.standard_normal((rank,) + size)))
+
+        return randomization((p,),
+                             density,
+                             cdf,
+                             pdf,
+                             derivative_log_density,
+                             grad_negative_log_density,
+                             sampler,
+                             lipschitz=(1/D[keep]).max(),
+                             log_density = lambda x: -np.sum(sqrt_precision.T.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const),
+                             cov_prec=(covariance, precision))
+
+
+
+    @staticmethod
     def laplace(shape, scale):
         """
         Standard Laplace noise multiplied by `scale`

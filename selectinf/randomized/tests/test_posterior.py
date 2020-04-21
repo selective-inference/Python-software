@@ -70,5 +70,3 @@ def test_sampler(n=500,
 
     print("check ", coverage, length)
 
-
-test_sampler()

@@ -69,10 +69,12 @@ def test_full_targets(n=200,
                                                   penalty=conv.penalty,
                                                   dispersion=dispersion)
 
-            estimate, _, _, pval, intervals, _ = conv.selective_MLE(observed_target,
-                                                                    cov_target,
-                                                                    cov_target_score)
-
+            result = conv.selective_MLE(observed_target,
+                                        cov_target,
+                                        cov_target_score)[0]
+            pval = result['pvalue']
+            estimate = result['MLE']
+            intervals = np.asarray(result[['lower', 'upper']])
             print("estimate, intervals", estimate, intervals)
 
             coverage = (beta[nonzero] > intervals[:, 0]) * (beta[nonzero] < intervals[:, 1])
@@ -134,9 +136,12 @@ def test_selected_targets(n=2000,
                                               nonzero, 
                                               dispersion=dispersion)
 
-            estimate, _, _, pval, intervals, _ = conv.selective_MLE(observed_target,
-                                                                    cov_target,
-                                                                    cov_target_score)
+            result = conv.selective_MLE(observed_target,
+                                        cov_target,
+                                        cov_target_score)[0]
+            pval = result['pvalue']
+            estimate = result['MLE']
+            intervals = np.asarray(result[['lower', 'upper']])
 
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 

@@ -57,17 +57,19 @@ def test_marginal(n=500,
                  alternatives) = marginal_select.multivariate_targets(nonzero, dispersion=sigma**2)
 
             if use_MLE:
-                estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
-                                                                                   cov_target,
-                                                                                   crosscov_target_score)
+                result = marginal_select.selective_MLE(observed_target,
+                                                       cov_target,
+                                                       crosscov_target_score)[0]
             # run summary
             else:
-                _, pval, intervals = marginal_select.summary(observed_target, 
-                                                             cov_target, 
-                                                             crosscov_target_score, 
-                                                             alternatives,
-                                                             compute_intervals=True)
+                result = marginal_select.summary(observed_target, 
+                                                 cov_target, 
+                                                 crosscov_target_score, 
+                                                 alternatives,
+                                                 compute_intervals=True)
 
+            intervals = np.asarray(result[['lower', 'upper']])
+            pval = result['pvalue']
             print(pval)
             if marginal:
                 beta_target = true_mean[nonzero]
@@ -138,17 +140,19 @@ def test_simple(n=100,
              alternatives) = marginal_select.marginal_targets(nonzero)
 
             if use_MLE:
-                estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
-                                                                                   cov_target,
-                                                                                   crosscov_target_score)
+                result = marginal_select.selective_MLE(observed_target,
+                                                       cov_target,
+                                                       crosscov_target_score)
             # run summary
             else:
-                _, pval, intervals = marginal_select.summary(observed_target, 
-                                                             cov_target, 
-                                                             crosscov_target_score, 
-                                                             alternatives,
-                                                             compute_intervals=True)
+                result = marginal_select.summary(observed_target, 
+                                                 cov_target, 
+                                                 crosscov_target_score, 
+                                                 alternatives,
+                                                 compute_intervals=True)
 
+            pval = result['pvalue']
+            intervals = np.asarray(result[['lower', 'upper']])
             print(pval)
             beta_target = cov_target.dot(true_mean[nonzero])
             print("beta_target and intervals", beta_target, intervals)

@@ -1,7 +1,8 @@
 from __future__ import division, print_function
-import numpy as np, sys
 
-from selectinf.randomized.selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
+import numpy as np
+
+from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 from scipy.stats import norm as ndist
 
 class posterior_inference_lasso():
@@ -99,7 +100,6 @@ class posterior_inference_lasso():
 
         for i in range(nsample):
             sampler.next()
-            sys.stderr.write("sample number: " + str(i) + "sample: " + str(sampler.state.copy())+ "\n")
             samples[i, :] = sampler.state.copy()
         return samples[nburnin:, :]
 

@@ -2,6 +2,7 @@ import functools
 from itertools import product
 
 import numpy as np
+import pandas as pd
 from scipy.stats import norm as ndist
 from scipy.optimize import bisect
 
@@ -75,7 +76,10 @@ class query(object):
         """
 
         if not self._randomized:
-            self.randomized_loss, self._initial_omega = self.randomization.randomize(self.loss, self.epsilon, perturb=perturb)
+            (self.randomized_loss, 
+             self._initial_omega) = self.randomization.randomize(self.loss, 
+                                                                 self.epsilon, 
+                                                                 perturb=perturb)
         self._randomized = True
 
     def get_sampler(self):
@@ -170,10 +174,6 @@ class query(object):
                                                   normal_sample=target_sample,
                                                   alternatives=alternatives)
 
-        MLE_intervals = self.selective_MLE(observed_target,
-                                           target_cov,
-                                           target_score_cov)[5]
-
         if not np.all(parameter == 0):
             pvalues = self.sampler.coefficient_pvalues(observed_target,
                                                        target_cov,
@@ -185,22 +185,34 @@ class query(object):
         else:
             pvalues = pivots
 
-        intervals = None
+        result = pd.DataFrame({'target':observed_target,
+                               'pvalue':pvalues})
+
         if compute_intervals:
 
-            MLE_intervals = self.selective_MLE(observed_target,
-                                               target_cov,
-                                               target_score_cov)[4]
+            MLE = query.selective_MLE(self,
+                                      observed_target,
+                                      target_cov,
+                                      target_score_cov)[0]
+            MLE_intervals = np.asarray(MLE[['lower', 'upper']])
 
-            intervals = self.sampler.confidence_intervals(observed_target,
-                                                          target_cov,
-                                                          target_score_cov,
-                                                          sample=(opt_sample, logW),
-                                                          normal_sample=target_sample,
-                                                          initial_guess=MLE_intervals,
-                                                          level=level)
+            intervals = self.sampler.confidence_intervals(  
+                observed_target,
+                target_cov,
+                target_score_cov,
+                sample=(opt_sample, logW),
+                normal_sample=target_sample,
+                initial_guess=MLE_intervals,
+                level=level)
 
-        return pivots, pvalues, intervals
+            result.insert(2, 'lower', intervals[:,0])
+            result.insert(3, 'upper', intervals[:,1])
+
+        if not np.all(parameter == 0):
+            result.insert(4, 'pivot', pivots)
+            result.insert(5, 'parameter', parameter)
+
+        return result
 
     def selective_MLE(self,
                       observed_target, 
@@ -260,15 +272,16 @@ class gaussian_query(query):
     # Private methods
 
     def _setup_sampler(self, 
-                       A_scaling,
-                       b_scaling,
+                       linear_part,
+                       offset,
                        opt_linear,
                        opt_offset,
                        # optional dispersion parameter
                        # for covariance of randomization
                        dispersion=1):
 
-        if not np.all(A_scaling.dot(self.observed_opt_state) - b_scaling <= 0):
+        A, b = linear_part, offset
+        if not np.all(A.dot(self.observed_opt_state) - b <= 0):
             raise ValueError('constraints not satisfied')
 
         (cond_mean, 
@@ -293,8 +306,8 @@ class gaussian_query(query):
 
         self.cond_mean, self.cond_cov = cond_mean, cond_cov
 
-        affine_con = constraints(A_scaling,
-                                 b_scaling,
+        affine_con = constraints(A,
+                                 b,
                                  mean=cond_mean,
                                  covariance=cond_cov)
 
@@ -441,7 +454,7 @@ class multiple_queries(object):
 
         if not np.all(parameter == 0):
             pvalues = self.coefficient_pvalues(observed_target,
-                                               parameter=parameter,
+                                               parameter=np.zeros_like(observed_target),
                                                alternatives=alternatives)
         else:
             pvalues = pivots
@@ -451,8 +464,16 @@ class multiple_queries(object):
             intervals = self.confidence_intervals(observed_target,
                                                   level)
 
-        return pivots, pvalues, intervals
-        
+        result = pd.DataFrame({'target':observed_target,
+                               'pvalue':pvalues,
+                               'lower':intervals[:,0],
+                               'upper':intervals[:,1]})
+
+        if not np.all(parameter == 0):
+            result.insert(4, 'pivot', pivots)
+            result.insert(5, 'parameter', parameter)
+
+        return result
 
     def coefficient_pvalues(self,
                             observed_target,
@@ -1275,7 +1296,6 @@ class optimization_intervals(object):
                 delta *= 2
                 count += 1
             lower = bisect(_rootL, Ll, Ul)
-
         return lower + observed_stat, upper + observed_stat
 
     # Private methods
@@ -1501,9 +1521,10 @@ def _solve_barrier_nonneg(conjugate_arg,
 def selective_MLE(observed_target, 
                   target_cov, 
                   target_score_cov, 
-                  init_soln, # initial (observed) value of optimization variables -- 
-                             # used as a feasible point.
-                             # precise value used only for independent estimator 
+                  init_soln, # initial (observed) value of
+                             # optimization variables -- used as a
+                             # feasible point.  precise value used
+                             # only for independent estimator
                   cond_mean,
                   cond_cov,
                   logdens_linear,
@@ -1601,11 +1622,19 @@ def selective_MLE(observed_target,
 
     alpha = 1 - level
     quantile = ndist.ppf(1 - alpha / 2.)
-    intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
-                           final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
+    intervals = np.vstack([final_estimator - 
+                           quantile * np.sqrt(np.diag(observed_info_mean)),
+                           final_estimator + 
+                           quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
-    return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
-
+    result = pd.DataFrame({'MLE':final_estimator,
+                           'SE':np.sqrt(np.diag(observed_info_mean)),
+                           'Zvalue':Z_scores,
+                           'pvalue':pvalues,
+                           'lower':intervals[:,0],
+                           'upper':intervals[:,1],
+                           'unbiased':ind_unbiased_estimator})
+    return result, observed_info_mean
 
 def normalizing_constant(target_parameter,
                          observed_target,
@@ -1717,3 +1746,25 @@ def normalizing_constant(target_parameter,
              soln[:ntarget], 
              hess[:ntarget][:,:ntarget])
 
+
+def _bisect(f, lb, ub, min_iter=20, max_iter=100, tol=1.e-3):
+
+    while True:
+        sign_l = np.sign(f(lb))
+        sign_u = np.sign(f(ub))
+        mid = 0.5 * (lb + ub)
+        f_mid = f(mid)
+        if sign_l == 1:
+            if f_mid > 0: # we should move closer to upper
+                lb = mid
+            else:
+                ub = mid
+        else:
+            if f_mid > 0: # we should move closer to lower
+                ub = mid
+            else:
+                lb = mid
+                
+        if np.fabs(f_mid) < tol:
+            break
+    return mid

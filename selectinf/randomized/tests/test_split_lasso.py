@@ -92,18 +92,21 @@ def test_split_lasso(n=100,
                                               penalty=conv.penalty,
                                               dispersion=sigma**2)
 
-        _, pval, intervals = conv.summary(observed_target, 
-                                          cov_target, 
-                                          cov_target_score, 
-                                          alternatives,
-                                          ndraw=ndraw,
-                                          burnin=burnin, 
-                                          compute_intervals=False)
+        result = conv.summary(observed_target, 
+                              cov_target, 
+                              cov_target_score, 
+                              alternatives,
+                              ndraw=ndraw,
+                              burnin=burnin, 
+                              compute_intervals=False)
 
-        final_estimator, observed_info_mean = conv.selective_MLE(
-                                                 observed_target,
-                                                 cov_target,
-                                                 cov_target_score)[:2]
+        MLE_result, observed_info_mean = conv.selective_MLE(
+            observed_target,
+            cov_target,
+            cov_target_score)
+
+        final_estimator = np.asarray(MLE_result['MLE'])
+        pval = np.asarray(result['pvalue'])
         
         if target == 'selected':
             true_target = np.linalg.pinv(X[:,nonzero]).dot(X.dot(beta))
