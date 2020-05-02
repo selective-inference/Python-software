@@ -1604,7 +1604,8 @@ def selective_MLE(observed_target,
     intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
                            final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
-    return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
+    return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator, \
+           val + conjugate_arg.T.dot(cond_cov).dot(conjugate_arg)/2.
 
 
 def normalizing_constant(target_parameter,

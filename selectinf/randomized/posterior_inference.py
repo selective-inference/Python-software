@@ -2,7 +2,8 @@ from __future__ import division, print_function
 import numpy as np, sys
 
 from selectinf.randomized.selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
-from scipy.stats import norm as ndist
+from scipy.stats import norm as ndist, invgamma
+from scipy.linalg import fractional_matrix_power
 
 class posterior_inference_lasso():
 
@@ -34,7 +35,6 @@ class posterior_inference_lasso():
         self.offset = offset
 
         self.initial_estimate = initial_estimate
-
         self.set_marginal_parameters()
 
     def set_marginal_parameters(self):
@@ -57,10 +57,11 @@ class posterior_inference_lasso():
 
         self.cov_marginal = implied_cov[self.ntarget:, self.ntarget:]
 
-    def prior(self, target_parameter, prior_var=100.):
+    def prior(self, target_parameter, scale=1., prior_var=100.):
 
-        grad_prior = -target_parameter/prior_var
-        log_prior = -np.linalg.norm(target_parameter)**2 /(2.*prior_var)
+        grad_prior = -target_parameter/(scale* prior_var)
+        log_prior = -np.linalg.norm(target_parameter)**2 /(2.* scale * prior_var)
+
         return grad_prior, log_prior
 
     def log_posterior(self, target_parameter, solve_args={'tol':1.e-12}):
@@ -87,14 +88,15 @@ class posterior_inference_lasso():
                    -self.linear_coef.T.dot(prec_marginal.dot(soln)- conjugate_marginal)
 
         grad_prior, log_prior = self.prior(target_parameter)
+
         return grad_lik + grad_prior, log_lik + log_prior
 
-    def posterior_sampler(self, nsample= 2000, nburnin=100, step=1.):
+    def posterior_sampler(self, nsample= 2000, nburnin=100, local_scale = np.identity, step=1.):
 
         state = self.initial_estimate
         stepsize = 1. / (step * self.ntarget)
 
-        sampler = langevin(state, self.log_posterior, stepsize)
+        sampler = langevin(state, self.log_posterior, local_scale, stepsize)
         samples = np.zeros((nsample, self.ntarget))
 
         for i in range(nsample):
@@ -108,6 +110,7 @@ class langevin(object):
     def __init__(self,
                  initial_condition,
                  gradient_map,
+                 local_scale,
                  stepsize):
 
         (self.state,
@@ -115,6 +118,7 @@ class langevin(object):
          self.stepsize) = (np.copy(initial_condition),
                            gradient_map,
                            stepsize)
+        self.local_scale = local_scale
         self._shape = self.state.shape[0]
         self._sqrt_step = np.sqrt(self.stepsize)
         self._noise = ndist(loc=0,scale=1)
@@ -126,8 +130,8 @@ class langevin(object):
     def next(self):
         while True:
             grad_posterior = self.gradient_map(self.state)
-            candidate = (self.state + self.stepsize * grad_posterior[0]
-                        + np.sqrt(2.)* self._noise.rvs(self._shape) * self._sqrt_step)
+            candidate = (self.state + self.stepsize * self.local_scale.dot(grad_posterior[0])
+                        + np.sqrt(2.)* (fractional_matrix_power(self.local_scale, 0.5).dot(self._noise.rvs(self._shape))) * self._sqrt_step)
 
             if not np.all(np.isfinite(self.gradient_map(candidate)[0])):
                 self.stepsize *= 0.5
