@@ -17,7 +17,8 @@ class posterior_inference_lasso():
                  logdens_linear,
                  linear_part,
                  offset,
-                 initial_estimate):
+                 initial_estimate,
+                 prior_var):
 
         self.ntarget = cov_target.shape[0]
         self.nopt = cond_cov.shape[0]
@@ -35,6 +36,7 @@ class posterior_inference_lasso():
         self.offset = offset
 
         self.initial_estimate = initial_estimate
+        self.prior_var = prior_var
         self.set_marginal_parameters()
 
     def set_marginal_parameters(self):
@@ -57,10 +59,10 @@ class posterior_inference_lasso():
 
         self.cov_marginal = implied_cov[self.ntarget:, self.ntarget:]
 
-    def prior(self, target_parameter, scale=1., prior_var=100.):
+    def prior(self, target_parameter, scale=1.):
 
-        grad_prior = -target_parameter/(scale* prior_var)
-        log_prior = -np.linalg.norm(target_parameter)**2 /(2.* scale * prior_var)
+        grad_prior = -target_parameter/(scale* self.prior_var)
+        log_prior = -np.linalg.norm(target_parameter)**2 /(2.* scale * self.prior_var)
 
         return grad_prior, log_prior
 

@@ -10,7 +10,8 @@ def test_sampler(n=500,
                  s=5,
                  sigma=3.,
                  rho=0.4,
-                 randomizer_scale=1.):
+                 randomizer_scale=1.,
+                 prior_var = 100.):
 
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
@@ -53,7 +54,7 @@ def test_sampler(n=500,
                                                cov_target,
                                                cov_target_score)
 
-    adaptive_ = np.linalg.inv(np.linalg.inv(inverse_info) + 1./100)
+    adaptive_ = np.linalg.inv(np.linalg.inv(inverse_info) + 1/prior_var)
 
     posterior_inf = posterior_inference_lasso(observed_target,
                                               cov_target,
@@ -64,7 +65,8 @@ def test_sampler(n=500,
                                               conv.logdens_linear,
                                               conv.A_scaling,
                                               conv.b_scaling,
-                                              observed_target)
+                                              observed_target,
+                                              prior_var)
 
     samples = posterior_inf.posterior_sampler(nsample=2000, nburnin=200, local_scale = adaptive_, step=1.)
     lci = np.percentile(samples, 5, axis=0)
@@ -86,7 +88,8 @@ def main(ndraw=10):
                                 s=5,
                                 sigma=2.,
                                 rho=0.4,
-                                randomizer_scale=1.)
+                                randomizer_scale=1.,
+                                prior_var =100)
 
         coverage_ += cov
         length_ += len
