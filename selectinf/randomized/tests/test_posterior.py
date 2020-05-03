@@ -4,7 +4,7 @@ from selectinf.randomized.lasso import lasso, selected_targets
 from selectinf.randomized.posterior_inference import posterior_inference_lasso
 
 
-def test_sampler(n=500,
+def test_Langevin(n=500,
                  p=100,
                  signal_fac=1.,
                  s=5,
@@ -66,9 +66,11 @@ def test_sampler(n=500,
                                               conv.A_scaling,
                                               conv.b_scaling,
                                               observed_target,
+                                              log_ref,
+                                              dispersion,
                                               prior_var)
 
-    samples = posterior_inf.posterior_sampler(nsample=2000, nburnin=200, local_scale = adaptive_, step=1.)
+    samples = posterior_inf.langevin_sampler(nsample=2000, nburnin=200, proposal_scale=adaptive_, step=1.)
     lci = np.percentile(samples, 5, axis=0)
     uci = np.percentile(samples, 95, axis=0)
     coverage = (lci < beta_target) * (uci > beta_target)
@@ -77,19 +79,20 @@ def test_sampler(n=500,
     return np.mean(coverage), np.mean(length)
 
 
+
 def main(ndraw=10):
 
     coverage_ = 0.
     length_ = 0.
     for n in range(ndraw):
-        cov, len = test_sampler(n=400,
-                                p=200,
-                                signal_fac=1.,
-                                s=5,
-                                sigma=2.,
-                                rho=0.4,
-                                randomizer_scale=1.,
-                                prior_var =100)
+        cov, len = test_Langevin(n=500,
+                                 p=200,
+                                 signal_fac=1.5,
+                                 s=5,
+                                 sigma=2.,
+                                 rho=0.2,
+                                 randomizer_scale=1.,
+                                 prior_var =100)
 
         coverage_ += cov
         length_ += len
