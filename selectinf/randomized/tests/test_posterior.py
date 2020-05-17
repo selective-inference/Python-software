@@ -70,14 +70,13 @@ def test_Langevin(n=500,
                                               dispersion,
                                               prior_var)
 
-    samples = posterior_inf.langevin_sampler(nsample=2000, nburnin=200, proposal_scale=adaptive_, step=1.)
+    samples = posterior_inf.langevin_sampler(nsample=2000, nburnin=200, proposal_scale=adaptive_, step=1)
     lci = np.percentile(samples, 5, axis=0)
     uci = np.percentile(samples, 95, axis=0)
     coverage = (lci < beta_target) * (uci > beta_target)
     length = uci - lci
 
     return np.mean(coverage), np.mean(length)
-
 
 
 def main(ndraw=10):

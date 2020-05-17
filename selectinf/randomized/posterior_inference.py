@@ -117,14 +117,14 @@ class posterior_inference_lasso():
 
         state = self.initial_estimate
         scale_state = self.dispersion
-        stepsize = 1. /step
+        stepsize = 1. /(step* self.ntarget)
 
         sampler = langevin(state, self.log_posterior, proposal_scale, stepsize)
         samples = np.zeros((nsample, self.ntarget))
 
         for i in range(nsample):
             sampler.next(scaling_=scale_state)
-            scale_update = invgamma.rvs(a=(0.001 + self.ntarget), scale=0.001 - (scale_state * sampler.grad_posterior[1]), size=1)
+            scale_update = invgamma.rvs(a=(0.1 + self.ntarget + self.ntarget/2), scale=0.1 - (scale_state * sampler.grad_posterior[1]), size=1)
 
             scale_state = scale_update
             samples[i, :] = sampler.state.copy()
