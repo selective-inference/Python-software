@@ -1,8 +1,8 @@
 import numpy as np
 import nose.tools as nt
 
-from ..lasso import lasso, full_targets, selected_targets, debiased_targets
-from ...tests.instance import gaussian_instance
+from selectinf.randomized.lasso import lasso, full_targets, selected_targets, debiased_targets
+from selectinf.tests.instance import gaussian_instance
 
 def test_full_targets(n=200, 
                       p=1000, 
@@ -81,7 +81,7 @@ def test_full_targets(n=200,
 
 def test_selected_targets(n=2000, 
                           p=200, 
-                          signal_fac=1., 
+                          signal_fac=10.,
                           s=5, 
                           sigma=3, 
                           rho=0.4, 
@@ -120,6 +120,7 @@ def test_selected_targets(n=2000,
 
         signs = conv.fit()
         nonzero = signs != 0
+        print("dimensions", n, p, nonzero.sum())
 
         if nonzero.sum() > 0:
             dispersion = None
@@ -134,7 +135,7 @@ def test_selected_targets(n=2000,
                                               nonzero, 
                                               dispersion=dispersion)
 
-            estimate, _, _, pval, intervals, _ = conv.selective_MLE(observed_target,
+            estimate, _, _, pval, intervals, _, _ = conv.selective_MLE(observed_target,
                                                                     cov_target,
                                                                     cov_target_score)
 
@@ -148,7 +149,7 @@ def main(nsim=500, full=False):
     P0, PA, cover, length_int = [], [], [], []
     from statsmodels.distributions import ECDF
 
-    n, p, s = 500, 100, 10
+    n, p, s = 500, 100, 5
 
     for i in range(nsim):
         if full:
@@ -171,3 +172,52 @@ def main(nsim=500, full=False):
             np.array(PA) < 0.1, np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
             np.mean(avg_length), 'null pvalue + power + length')
 
+
+def test_instance():
+
+    n, p, s = 500, 100, 5
+    X = np.random.standard_normal((n, p))
+    beta = np.zeros(p)
+    #beta[:s] = np.sqrt(2 * np.log(p) / n)
+    Y = X.dot(beta) + np.random.standard_normal(n)
+
+    scale_ = np.std(Y)
+    # uses noise of variance n * scale_ / 4 by default
+    L = lasso.gaussian(X, Y, 3 * scale_ * np.sqrt(2 * np.log(p) * np.sqrt(n)))
+    signs = L.fit()
+    E = (signs != 0)
+
+    M = E.copy()
+    M[-3:] = 1
+    dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
+    (observed_target,
+     cov_target,
+     cov_target_score,
+     alternatives) = selected_targets(L.loglike,
+                                      L._W,
+                                      M,
+                                      dispersion=dispersion)
+
+    print("check shapes", observed_target.shape, E.sum())
+
+    estimate, _, _, pval, intervals, _, _ = L.selective_MLE(observed_target,
+                                                            cov_target,
+                                                            cov_target_score)
+
+    beta_target = np.linalg.pinv(X[:, M]).dot(X.dot(beta))
+
+    coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+
+    return coverage
+
+def main(nsim=500):
+
+    cover = []
+    for i in range(nsim):
+
+        cover_ = test_instance()
+        cover.extend(cover_)
+        print(np.mean(cover), 'coverage so far ')
+
+
+main(nsim=500)

@@ -86,7 +86,7 @@ class posterior_inference_lasso():
                                  self.offset,
                                  **solve_args)
 
-        log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal)/2
+        log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal)/2.
 
         log_lik = -((self.observed_target - target_parameter).T.dot(self.prec_target).dot(self.observed_target - target_parameter)) / 2.\
                   - log_normalizer
@@ -96,7 +96,7 @@ class posterior_inference_lasso():
 
         grad_prior, log_prior = self.prior(target_parameter)
 
-        return self.dispersion * grad_lik/scale + grad_prior, self.dispersion * log_lik/scale + log_prior - (self.dispersion* self.log_ref / scale)
+        return self.dispersion * grad_lik/scale + grad_prior, self.dispersion * log_lik/scale + log_prior - (self.dispersion* self.log_ref/scale)
 
     def langevin_sampler(self, nsample= 2000, nburnin=100, proposal_scale = np.identity, step=1.):
 
@@ -123,7 +123,7 @@ class posterior_inference_lasso():
         samples = np.zeros((nsample, self.ntarget))
 
         for i in range(nsample):
-            sampler.next(scaling_=scale_state)
+            sampler.next(scaling_= scale_state)
             scale_update = invgamma.rvs(a=(0.1 + self.ntarget + self.ntarget/2), scale=0.1 - (scale_state * sampler.grad_posterior[1]), size=1)
 
             scale_state = scale_update

@@ -54,7 +54,11 @@ def test_Langevin(n=500,
                                                cov_target,
                                                cov_target_score)
 
-    adaptive_ = np.linalg.inv(np.linalg.inv(inverse_info) + 1/prior_var)
+    adaptive_ = np.linalg.inv(np.linalg.inv(inverse_info) + np.identity(observed_target.shape[0])/ prior_var)
+
+    A_scaling = conv.sampler.affine_con.linear_part
+    b_scaling = conv.sampler.affine_con.offset
+    logdens_linear = conv.sampler.logdens_transform[0]
 
     posterior_inf = posterior_inference_lasso(observed_target,
                                               cov_target,
@@ -62,9 +66,68 @@ def test_Langevin(n=500,
                                               conv.observed_opt_state,
                                               conv.cond_mean,
                                               conv.cond_cov,
-                                              conv.logdens_linear,
-                                              conv.A_scaling,
-                                              conv.b_scaling,
+                                              logdens_linear,
+                                              A_scaling,
+                                              b_scaling,
+                                              observed_target,
+                                              log_ref, ## extra argument introduced for Gibbs update of sigma
+                                              dispersion, ## scale back the likelihood if sigma is unknown
+                                              prior_var ## prior var for the Gaussian prior
+                                              )
+
+    samples = posterior_inf.langevin_sampler(nsample=2000, nburnin=200, proposal_scale=adaptive_, step=1)
+    lci = np.percentile(samples, 5, axis=0)
+    uci = np.percentile(samples, 95, axis=0)
+    coverage = (lci < beta_target) * (uci > beta_target)
+    length = uci - lci
+
+    return np.mean(coverage), np.mean(length)
+
+def test_instance():
+
+    n, p, s = 500, 100, 5
+    prior_var = 100.
+    X = np.random.standard_normal((n, p))
+    beta = np.zeros(p)
+    #beta[:s] = np.sqrt(2 * np.log(p) / n)
+    Y = X.dot(beta) + np.random.standard_normal(n)
+
+    scale_ = np.std(Y)
+    # uses noise of variance n * scale_ / 4 by default
+    L = lasso.gaussian(X, Y, 3 * scale_ * np.sqrt(2 * np.log(p) * np.sqrt(n)))
+    signs = L.fit()
+    E = (signs != 0)
+
+    M = E.copy()
+    M[-3:] = 1
+    dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
+    (observed_target,
+     cov_target,
+     cov_target_score,
+     alternatives) = selected_targets(L.loglike,
+                                      L._W,
+                                      M,
+                                      dispersion=dispersion)
+
+    print("check shapes", observed_target.shape, E.sum())
+    _, inverse_info, _, _, _, _, log_ref = L.selective_MLE(observed_target,
+                                                              cov_target,
+                                                              cov_target_score)
+
+    adaptive_ = np.linalg.inv(np.linalg.inv(inverse_info) + np.identity(observed_target.shape[0])/ prior_var)
+    A_scaling = L.sampler.affine_con.linear_part
+    b_scaling = L.sampler.affine_con.offset
+    logdens_linear = L.sampler.logdens_transform[0]
+
+    posterior_inf = posterior_inference_lasso(observed_target,
+                                              cov_target,
+                                              cov_target_score,
+                                              L.observed_opt_state,
+                                              L.cond_mean,
+                                              L.cond_cov,
+                                              logdens_linear,
+                                              A_scaling,
+                                              b_scaling,
                                               observed_target,
                                               log_ref,
                                               dispersion,
@@ -73,6 +136,8 @@ def test_Langevin(n=500,
     samples = posterior_inf.langevin_sampler(nsample=2000, nburnin=200, proposal_scale=adaptive_, step=1)
     lci = np.percentile(samples, 5, axis=0)
     uci = np.percentile(samples, 95, axis=0)
+
+    beta_target = np.linalg.pinv(X[:, M]).dot(X.dot(beta))
     coverage = (lci < beta_target) * (uci > beta_target)
     length = uci - lci
 
@@ -84,14 +149,16 @@ def main(ndraw=10):
     coverage_ = 0.
     length_ = 0.
     for n in range(ndraw):
-        cov, len = test_Langevin(n=500,
-                                 p=200,
-                                 signal_fac=1.5,
-                                 s=5,
-                                 sigma=2.,
-                                 rho=0.2,
-                                 randomizer_scale=1.,
-                                 prior_var =100)
+        # cov, len = test_Langevin(n=500,
+        #                          p=200,
+        #                          signal_fac=1.5,
+        #                          s=5,
+        #                          sigma=2.,
+        #                          rho=0.2,
+        #                          randomizer_scale=1.,
+        #                          prior_var =100)
+
+        cov, len = test_instance()
 
         coverage_ += cov
         length_ += len
