@@ -9,12 +9,12 @@ from scipy.optimize import bisect
 from regreg.affine import power_L
 import regreg.api as rr
 
-from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
-
 from ..distributions.api import discrete_family
 from ..constraints.affine import (sample_from_constraints,
                                   constraints)
-from ..algorithms.softmax import softmax_objective
+from .posterior_inference import posterior
+from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
+
 
 class query(object):
 
@@ -248,6 +248,58 @@ class query(object):
                                           self.observed_opt_state,
                                           level=level,
                                           solve_args=solve_args)
+
+    def posterior(self,
+                  observed_target, 
+                  target_cov, 
+                  target_score_cov, 
+                  prior=None,
+                  dispersion=None,
+                  solve_args={'tol':1.e-12}):
+        """
+
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        prior : callable
+            A callable object that takes a single argument
+            `parameter` of the same shape as `observed_target`
+            and returns (gradient of log prior, value of log prior)
+
+        dispersion : float, optional
+            Dispersion parameter for log-likelihood.
+
+        solve_args : dict, optional
+            Arguments passed to solver.
+
+        """
+        
+        if dispersion is None:
+            dispersion = 1
+            print('Using dispersion parameter 1...')
+            
+        if prior is None:
+            def prior(target_parameter):
+                grad_prior = -target_parameter / 100
+                log_prior = -np.linalg.norm(target_parameter)**2 /(2. * 100)
+                return grad_prior, log_prior
+        
+        return posterior(self,
+                         observed_target,
+                         target_cov,
+                         target_score_cov,
+                         prior,
+                         dispersion,
+                         solve_args=solve_args)
 
 
 class gaussian_query(query):
@@ -1627,6 +1679,7 @@ def selective_MLE(observed_target,
                            final_estimator + 
                            quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
+    log_ref = val + conjugate_arg.T.dot(cond_cov).dot(conjugate_arg)/2.
     result = pd.DataFrame({'MLE':final_estimator,
                            'SE':np.sqrt(np.diag(observed_info_mean)),
                            'Zvalue':Z_scores,
@@ -1634,7 +1687,7 @@ def selective_MLE(observed_target,
                            'lower':intervals[:,0],
                            'upper':intervals[:,1],
                            'unbiased':ind_unbiased_estimator})
-    return result, observed_info_mean
+    return result, observed_info_mean, log_ref
 
 def normalizing_constant(target_parameter,
                          observed_target,

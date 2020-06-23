@@ -929,15 +929,15 @@ class split_lasso(lasso):
         quad = rr.identity_quadratic(self.ridge_term,
                                      0,
                                      0,
-                                     0,)
+                                     0)
         
         randomized_loss = self.loglike.subsample(self._selection_idx)
         randomized_loss.coef *= inv_frac
 
         problem = rr.simple_problem(randomized_loss, self.penalty)
         initial_soln = problem.solve(quad, **solve_args) 
-        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 
-                                                          'grad') +
+        initial_subgrad = -(randomized_loss.smooth_objective(initial_soln,
+                                                             'grad') +
                             quad.objective(initial_soln, 'grad'))
 
         return initial_soln, initial_subgrad

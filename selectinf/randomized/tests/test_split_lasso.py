@@ -100,7 +100,7 @@ def test_split_lasso(n=100,
                               burnin=burnin, 
                               compute_intervals=False)
 
-        MLE_result, observed_info_mean = conv.selective_MLE(
+        MLE_result, observed_info_mean, _ = conv.selective_MLE(
             observed_target,
             cov_target,
             cov_target_score)
