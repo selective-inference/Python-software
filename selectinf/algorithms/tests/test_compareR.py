@@ -972,21 +972,45 @@ def test_rlasso_gaussian():
                                                   nonzero,
                                                   penalty=L.penalty)
 
-            _, pval, intervals = L.summary(observed_target, 
-                                           cov_target, 
-                                           cov_target_score, 
-                                           alternatives,
-                                           opt_sample=(np.asarray(R_opt_samples),),
-                                           target_sample=np.asarray(R_target_samples),
-                                           ndraw=8000,#ndraw,
-                                           burnin=burnin, 
-                                           compute_intervals=True)
+            result = L.summary(observed_target, 
+                               cov_target, 
+                               cov_target_score, 
+                               alternatives,
+                               opt_sample=(np.asarray(R_opt_samples),),
+                               target_sample=np.asarray(R_target_samples),
+                               ndraw=8000,#ndraw,
+                               burnin=burnin, 
+                               compute_intervals=True)
+            pval = np.asarray(result['pvalue'])
 
             tol = 1.e-5
-            yield np.testing.assert_allclose, initial_soln, R_soln, tol, tol, False, 'checking initial rlasso solution'
-            yield np.testing.assert_allclose, cond_mean, R_cond_mean, tol, tol, False, 'checking conditional mean'
-            yield np.testing.assert_allclose, cond_cov, R_cond_cov, tol, tol, False, 'checking conditional covariance'
-            yield np.testing.assert_allclose, pval, R_pvalues, tol, tol, False, 'checking pvalues'
+            yield (np.testing.assert_allclose, 
+                   initial_soln, 
+                   R_soln, 
+                   tol, 
+                   tol, 
+                   False, 'checking initial rlasso solution')
+            yield (np.testing.assert_allclose, 
+                   cond_mean, 
+                   R_cond_mean, 
+                   tol, 
+                   tol, 
+                   False, 
+                   'checking conditional mean')
+            yield (np.testing.assert_allclose, 
+                   cond_cov, 
+                   R_cond_cov, 
+                   tol, 
+                   tol, 
+                   False, 
+                   'checking conditional covariance')
+            yield (np.testing.assert_allclose, 
+                   pval, 
+                   R_pvalues, 
+                   tol, 
+                   tol, 
+                   False, 
+                   'checking pvalues')
 
             break
 
