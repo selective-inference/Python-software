@@ -35,17 +35,27 @@ def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=1, randomizer_scale=1):
                                           conv._W, 
                                           nonzero)
             
-            estimate_cur, I_cur, Z_cur, pv_cur = conv.selective_MLE(observed_target, 
-                                                                    cov_target, 
-                                                                    cov_target_score)[:4]
+            result = conv.selective_MLE(observed_target, 
+                                        cov_target, 
+                                        cov_target_score)
+            estimate_cur = float(result[0]['MLE'])
+            Z_cur = float(result[0]['Zvalue'])
+            pv_cur = float(result[0]['pvalue'])
+            I_cur = result[1]
 
             # this matches exactly with old code
 
             target_Z = X.T.dot(Y) / np.sqrt((X**2).sum(0))
 
-            estimate, I, Z, pv = conv.sampler.selective_MLE(target_Z, sigma**2 * np.ones((1,1)), 
-                                                            -sigma**2 * np.ones((1,1)), np.ones((1,)),
-                                                            solve_args={'tol':1.e-12})[:4]
+            result2 = conv.sampler.selective_MLE(target_Z, 
+                                                            sigma**2 * np.ones((1,1)), 
+                                                            -sigma**2 * np.ones((1,1)), 
+                                                            np.ones((1,)),
+                                                            solve_args={'tol':1.e-12})
+            estimate, I, Z, pv = (float(result2[0]['MLE']),
+                                  result2[1],
+                                  float(result2[0]['Zvalue']),
+                                  float(result2[0]['pvalue']))
 
             target_transform = (-np.identity(1), np.zeros(1))
             s = signs

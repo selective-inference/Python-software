@@ -53,31 +53,36 @@ def test_independent_estimator(n=100, n1=50, q=0.2, signal=3, p=100):
     perturb = Zbar1 - Zbar
     
     frac = n1 * 1. / n
-    BH_select = stepup.BH(Zbar, np.identity(p) / n, np.sqrt((1 - frac) / (n * frac)), q=q)
+    BH_select = stepup.BH(Zbar, np.identity(p) / n, 
+                          np.sqrt((1 - frac) / (n * frac)), q=q)
     selected = BH_select.fit(perturb=perturb)
     
     observed_target = Zbar[selected]
     cov_target = np.identity(selected.sum()) / n
     cross_cov = -np.identity(p)[selected] / n
 
-    observed_target1, cov_target1, cross_cov1, _ = BH_select.marginal_targets(selected)
+    (observed_target1, 
+     cov_target1, 
+     cross_cov1,
+     _) = BH_select.marginal_targets(selected)
 
-    assert(np.linalg.norm(observed_target - observed_target1) / np.linalg.norm(observed_target) < 1.e-7)
-    assert(np.linalg.norm(cov_target - cov_target1) / np.linalg.norm(cov_target) < 1.e-7)
-    assert(np.linalg.norm(cross_cov - cross_cov1) / np.linalg.norm(cross_cov) < 1.e-7)
+    assert(np.linalg.norm(observed_target - observed_target1) / 
+           np.linalg.norm(observed_target) < 1.e-7)
+    assert(np.linalg.norm(cov_target - cov_target1) / 
+           np.linalg.norm(cov_target) < 1.e-7)
+    assert(np.linalg.norm(cross_cov - cross_cov1) / np.linalg.norm(cross_cov) 
+           < 1.e-7)
 
-    (final_estimator, 
-     _, 
-     Z_scores, 
-     pvalues, 
-     intervals, 
-     ind_unbiased_estimator) = BH_select.selective_MLE(observed_target, cov_target, cross_cov)
-
+    result = BH_select.selective_MLE(observed_target, cov_target, cross_cov)[0]
+    Z = result['Zvalue']
+    ind_unbiased_estimator = result['unbiased']
     Zbar2 = Z[n1:].mean(0)[selected]
 
-    assert(np.linalg.norm(ind_unbiased_estimator - Zbar2) / np.linalg.norm(Zbar2) < 1.e-6)
+    assert(np.linalg.norm(ind_unbiased_estimator - Zbar2) 
+           / np.linalg.norm(Zbar2) < 1.e-6)
     np.testing.assert_allclose(sorted(np.nonzero(selected)[0]), 
-                               sorted(BHfilter(2 * ndist.sf(np.fabs(np.sqrt(n1) * Zbar1)))))
+                               sorted(BHfilter(2 * ndist.sf(np.fabs(
+                        np.sqrt(n1) * Zbar1)))))
 
 
 def test_BH(n=500, 
@@ -133,28 +138,33 @@ def test_BH(n=500,
 
             if use_MLE:
                 print('huh')
-                estimate, info, _, pval, intervals, _ = BH_select.selective_MLE(observed_target,
-                                                                                cov_target,
-                                                                                crosscov_target_score,
-                                                                                level=level)
-                pivots = ndist.cdf((estimate - beta_target) / np.sqrt(np.diag(info)))
+                result = BH_select.selective_MLE(observed_target,
+                                                 cov_target,
+                                                 crosscov_target_score,
+                                                 level=level)[0]
+                estimate = result['MLE']
+                pivots = ndist.cdf((estimate - beta_target) / result['SE'])
                 pivots = 2 * np.minimum(pivots, 1 - pivots)
                 # run summary
             else:
-                pivots, pval, intervals = BH_select.summary(observed_target, 
-                                                            cov_target, 
-                                                            crosscov_target_score, 
-                                                            alternatives,
-                                                            compute_intervals=True,
-                                                            level=level,
-                                                            ndraw=20000,
-                                                            burnin=2000,
-                                                            parameter=beta_target)
+                result = BH_select.summary(observed_target, 
+                                           cov_target, 
+                                           crosscov_target_score, 
+                                           alternatives,
+                                           compute_intervals=True,
+                                           level=level,
+                                           ndraw=20000,
+                                           burnin=2000,
+                                           parameter=beta_target)
+                pivots = np.asarray(result['pivot'])
+            pval = np.asarray(result['pvalue'])
+            lower = np.asarray(result['lower'])
+            upper = np.asarray(result['upper'])
             print(pval)
-            print("beta_target and intervals", beta_target, intervals)
-            coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+            print("beta_target and intervals", beta_target, result[['lower', 'upper']])
+            coverage = (beta_target > lower) * (beta_target < upper)
             print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
-            return pivots[beta_target == 0], pivots[beta_target != 0], coverage, intervals, pivots
+            return pivots[beta_target == 0], pivots[beta_target != 0], coverage, result[['lower', 'upper']], pivots
         else:
             return [], [], [], [], []
 
@@ -170,7 +180,8 @@ def main(nsim=500, use_MLE=True, marginal=False):
     P0, PA, cover, length_int = [], [], [], []
     Ps = []
     for i in range(nsim):
-        p0, pA, cover_, intervals, pivots = test_BH(use_MLE=use_MLE, marginal=marginal)
+        p0, pA, cover_, intervals, pivots = test_BH(use_MLE=use_MLE, 
+                                                    marginal=marginal)
         Ps.extend(pivots)
         cover.extend(cover_)
         P0.extend(p0)

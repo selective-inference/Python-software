@@ -12,7 +12,15 @@ from ...tests.instance import gaussian_instance
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
 
 # the test here is marginal_screening + lasso
-def test_multiple_queries(n=500, p=100, signal_fac=1.5, s=5, sigma=3, rho=0.4, randomizer_scale=1, ndraw=5000, burnin=1000):
+def test_multiple_queries(n=500, 
+                          p=100, 
+                          signal_fac=1.5, 
+                          s=5, 
+                          sigma=3, 
+                          rho=0.4, 
+                          randomizer_scale=1, 
+                          ndraw=5000, 
+                          burnin=1000):
 
     inst, const1, const2 = gaussian_instance, marginal_screening, lasso.gaussian
     signal = np.sqrt(signal_fac * np.log(p))
@@ -63,10 +71,11 @@ def test_multiple_queries(n=500, p=100, signal_fac=1.5, s=5, sigma=3, rho=0.4, r
 
     mq = multiple_queries([conv1, conv2])
 
-    _, pval, intervals = mq.summary(observed_target1, 
-                                   [(cov_target1, cov_target_score1), (cov_target2, cov_target_score2)],
-                                    compute_intervals=True)
-        
+    results = mq.summary(observed_target1, 
+                         [(cov_target1, cov_target_score1), 
+                          (cov_target2, cov_target_score2)],
+                         compute_intervals=True)
+    pval = np.asarray(results['pvalue'])
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
 

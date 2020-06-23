@@ -78,14 +78,15 @@ def test_highdim_lasso(n=500,
                                           nonzero,
                                           penalty=conv.penalty)
 
-    _, pval, intervals = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives,
-                                      ndraw=ndraw,
-                                      burnin=burnin, 
-                                      compute_intervals=True)
-        
+    result = conv.summary(observed_target, 
+                          cov_target, 
+                          cov_target_score, 
+                          alternatives,
+                          ndraw=ndraw,
+                          burnin=burnin, 
+                          compute_intervals=True)
+    pval = result['pvalue']
+
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
 def test_AR_randomization(n=300, 
@@ -165,14 +166,15 @@ def test_AR_randomization(n=300,
                                           nonzero,
                                           penalty=conv.penalty)
 
-    _, pval, intervals = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives,
-                                      ndraw=ndraw,
-                                      burnin=burnin, 
-                                      compute_intervals=True)
-        
+    result = conv.summary(observed_target, 
+                          cov_target, 
+                          cov_target_score, 
+                          alternatives,
+                          ndraw=ndraw,
+                          burnin=burnin, 
+                          compute_intervals=True)
+    pval = result['pvalue']
+
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
 def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
@@ -262,13 +264,14 @@ def test_sqrt_highdim_lasso(n=500,
                                           conv._W, 
                                           nonzero)
 
-    _, pval, intervals = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives,
-                                      ndraw=ndraw,
-                                      burnin=burnin, 
-                                      compute_intervals=False)
+    result = conv.summary(observed_target, 
+                          cov_target, 
+                          cov_target_score, 
+                          alternatives,
+                          ndraw=ndraw,
+                          burnin=burnin, 
+                          compute_intervals=False)
+    pval = result['pvalue']
 
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
