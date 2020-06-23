@@ -3,9 +3,10 @@ from __future__ import division, print_function
 import numpy as np
 
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
+from .query import _solve_barrier_affine_py
 from scipy.stats import norm as ndist
 
-class posterior_inference_lasso():
+class posterior_inference_lasso(object):
 
     def __init__(self,
                  observed_target,
@@ -17,7 +18,8 @@ class posterior_inference_lasso():
                  logdens_linear,
                  linear_part,
                  offset,
-                 initial_estimate):
+                 initial_estimate,
+                 prior_var=100.):
 
         self.ntarget = cov_target.shape[0]
         self.nopt = cond_cov.shape[0]
@@ -37,6 +39,8 @@ class posterior_inference_lasso():
         self.initial_estimate = initial_estimate
 
         self.set_marginal_parameters()
+
+        self.prior_var = prior_var
 
     def set_marginal_parameters(self):
 
@@ -58,8 +62,8 @@ class posterior_inference_lasso():
 
         self.cov_marginal = implied_cov[self.ntarget:, self.ntarget:]
 
-    def prior(self, target_parameter, prior_var=100.):
-
+    def prior(self, target_parameter):
+        prior_var = self.prior_var
         grad_prior = -target_parameter/prior_var
         log_prior = -np.linalg.norm(target_parameter)/(2.*prior_var)
         return grad_prior, log_prior
@@ -70,7 +74,11 @@ class posterior_inference_lasso():
         prec_marginal = np.linalg.inv(self.cov_marginal)
         conjugate_marginal = prec_marginal.dot(mean_marginal)
 
-        solver = solve_barrier_affine_C
+        useC = True
+        if useC:
+            solver = solve_barrier_affine_C
+        else:
+            solver = _solve_barrier_affine_py
 
         val, soln, hess = solver(conjugate_marginal,
                                  prec_marginal,

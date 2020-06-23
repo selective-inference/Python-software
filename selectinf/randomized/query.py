@@ -1600,7 +1600,7 @@ def selective_MLE(observed_target,
     if useC:
         solver = solve_barrier_affine_C
     else:
-        solver = solve_barrier_affine_py
+        solver = _solve_barrier_affine_py
 
     val, soln, hess = solver(conjugate_arg,
                              prec_opt,
@@ -1734,7 +1734,7 @@ def normalizing_constant(target_parameter,
     if useC:
         solver = solve_barrier_affine_C
     else:
-        solver = solve_barrier_affine_py
+        solver = _solve_barrier_affine_py
 
     value, soln, hess = solver(-linear_term,
                                 full_Q,

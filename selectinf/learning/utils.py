@@ -402,8 +402,10 @@ def naive_partial_model_inference(X,
         return pd.DataFrame({'naive_pivot':naive_pivots,
                              'naive_coverage':naive_covered,
                              'naive_length':naive_lengths,
+                             'naive_pvalue':naive_pvalues,
                              'nfeature':X.shape[1],
                              'naive_lower':naive_lower,
+                             'naive_upper':naive_upper,
                              'target':final_target,
                              'variable':observed_list
                              })
