@@ -73,7 +73,7 @@ def test_compare_topK(p=20,
     winners = list(stage1_means.index[:K])
 
     for winner in winners:
-        N = int(np.random.poisson(30, size=(1,)))
+        N = int(np.random.poisson(30, size=(1,))) + 5
         arm.extend([winner]*N)
         stage.extend([2]*N)
         data.extend(list(np.random.standard_normal(N)))
@@ -89,7 +89,7 @@ def test_compare_topK(p=20,
 
     for a in range(p):
         if a not in winners:
-            N = int(np.random.poisson(30, size=(1,)))
+            N = int(np.random.poisson(30, size=(1,))) + 5
             arm.extend([a]*N)
             stage.extend([2]*N)
             data.extend(list(np.random.standard_normal(N)))
