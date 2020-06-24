@@ -7,14 +7,107 @@ rpy.numpy2ri.activate()
 
 from scipy.stats import norm as ndist
 from selectinf.randomized.lasso import lasso, full_targets, selected_targets, debiased_targets
-#from selection.algorithms.lasso import lasso as lasso_full
+from selectinf.algorithms.lasso import ROSI
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
 
     rpy.r('''
-            source('~/best-subset/bestsubset/R/sim.R')
-            sim_xy = sim.xy
-            ''')
+
+    #' Predictors and responses generation.
+    #'
+    #' Generate a predictor matrix x, and response vector y, following a specified
+    #'   setup.  Actually, two pairs of predictors and responses are generated:
+    #'   one for training, and one for validation.
+    #'
+    #' @param n,p The number of training observations, and the number of predictors.
+    #' @param nval The number of validation observations.
+    #' @param rho Parameter that drives pairwise correlations of the predictor
+    #'   variables; specifically, predictors i and j have population correlation
+    #'   rho^abs(i-j). Default is 0.
+    #' @param s number of nonzero coefficients in the underlying regression model.
+    #'   Default is 5. (Ignored if beta.type is 4, in which case the number of
+    #'   nonzero coefficients is 6; and if beta.type is 5, it is interpreted as a
+    #'   the number of strongly nonzero coefficients in a weak sparsity model.)
+    #' @param beta.type Integer taking values in between 1 and 5, used to specify
+    #'   the pattern of nonzero coefficients in the underlying regression model; see
+    #'   details below. Default is 1.
+    #' @param snr Desired signal-to-noise ratio (SNR), i.e., var(mu)/sigma^2 where
+    #'   mu is mean and sigma^2 is the error variance. The error variance is set so
+    #'   that the given SNR is achieved. Default is 1.
+    #' @return A list with the following components: x, y, xval, yval, Sigma, beta,
+    #'   and sigma.
+    #'
+    #' @details The data model is: \eqn{Y \sim N(X\beta, \sigma^2 I)}.
+    #'   The predictor variables have covariance matrix Sigma, with (i,j)th entry
+    #'   rho^abs(i-j). The error variance sigma^2 is set according to the desired
+    #'   signal-to-noise ratio. The first 4 options for the nonzero pattern
+    #'   of the underlying regression coefficients beta follow the simulation setup
+    #'   in Bertsimas, King, and Mazumder (2016), and the 5th is a weak sparsity
+    #'   option:
+    #'   \itemize{
+    #'   \item 1: beta has s components of 1, occurring at (roughly) equally-spaced
+    #'      indices in between 1 and p
+    #'   \item 2: beta has its first s components equal to 1
+    #'   \item 3: beta has its first s components taking nonzero values, where the
+    #'       decay in a linear fashion from 10 to 0.5
+    #'   \item 4: beta has its first 6 components taking the nonzero values -10,-6,
+    #'       -2,2,6,10
+    #'   \item 5: beta has its first s components equal to 1, and the rest decaying
+    #'       to zero at an exponential rate
+    #'   }
+    #'
+    #' @author Trevor Hastie, Rob Tibshirani, Ryan Tibshirani
+    #' @references Simulation setup based on "Best subset selection via a modern
+    #'   optimization lens" by Dimitris Bertsimas, Angela King, and Rahul Mazumder,
+    #'   Annals of Statistics, 44(2), 813-852, 2016.
+    #' @example examples/ex.fs.R
+    #' @export sim.xy
+
+    sim.xy = function(n, p, nval, rho=0, s=5, beta.type=1, snr=1) {
+      # Generate predictors
+      x = matrix(rnorm(n*p),n,p)
+      xval = matrix(rnorm(nval*p),nval,p)
+
+      # Introduce autocorrelation, if needed
+      if (rho != 0) {
+        inds = 1:p
+        Sigma = rho^abs(outer(inds, inds, "-"))
+        obj = svd(Sigma)
+        Sigma.half = obj$u %*% (sqrt(diag(obj$d))) %*% t(obj$v)
+        x = x %*% Sigma.half
+        xval = xval %*% Sigma.half
+      }
+      else Sigma = diag(1,p)
+
+      # Generate underlying coefficients
+      s = min(s,p)
+      beta = rep(0,p)
+      if (beta.type==1) {
+        beta[round(seq(1,p,length=s))] = 1
+      } else if (beta.type==2) {
+        beta[1:s] = 1
+      } else if (beta.type==3) {
+        beta[1:s] = seq(10,0.5,length=s)
+      } else if (beta.type==4) {
+        beta[1:6] = c(-10,-6,-2,2,6,10)
+      } else {
+        beta[1:s] = 1
+        beta[(s+1):p] = 0.5^(1:(p-s))
+      }
+
+      # Set snr based on sample variance on infinitely large test set
+      vmu = as.numeric(t(beta) %*% Sigma %*% beta)
+      sigma = sqrt(vmu/snr)
+
+      # Generate responses
+      y = as.numeric(x %*% beta + rnorm(n)*sigma)
+      yval = as.numeric(xval %*% beta + rnorm(nval)*sigma)
+
+      list(x=x,y=y,xval=xval,yval=yval,Sigma=Sigma,beta=beta,sigma=sigma)
+    }
+
+    sim_xy = sim.xy
+    ''')
 
     r_simulate = rpy.globalenv['sim_xy']
     sim = r_simulate(n, p, nval, rho, s, beta_type, snr)
@@ -113,7 +206,7 @@ def BHfilter(pval, q=0.2):
 
 
 def relative_risk(est, truth, Sigma):
-    if (truth != 0).sum > 0:
+    if (truth != 0).sum() > 0:
         return (est - truth).T.dot(Sigma).dot(est - truth) / truth.T.dot(Sigma).dot(truth)
     else:
         return (est - truth).T.dot(Sigma).dot(est - truth)
@@ -337,8 +430,11 @@ def comparison_cvmetrics_selected(n=500, p=100, nval=500, rho=0.35, s=5, beta_ty
         post_LASSO_OLS = np.linalg.pinv(X[:, active_LASSO]).dot(y)
         rel_LASSO[active_LASSO] = post_LASSO_OLS
         Lee_target = np.linalg.pinv(X[:, active_LASSO]).dot(X.dot(beta))
-        Lee_intervals, Lee_pval = selInf_R(X, y, glm_LASSO, n * lam_LASSO, sigma_, Type=0, alpha=0.1)
-
+        try:
+            Lee_intervals, Lee_pval = selInf_R(X, y, glm_LASSO, n * lam_LASSO, sigma_, Type=0, alpha=0.1)
+        except:
+            Lee_intervals, Lee_pval = np.array([]), np.array([])
+            
         if (Lee_pval.shape[0] == Lee_target.shape[0]):
 
             cov_Lee, selective_Lee_power = coverage(Lee_intervals, Lee_pval, Lee_target, beta[active_LASSO])
@@ -580,7 +676,8 @@ def comparison_cvmetrics_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1
         Lee_discoveries = np.zeros(1)
         partial_Lasso_risk, partial_relLasso_risk = [0., 0.]
 
-    lasso_Liu = lasso_full.gaussian(X, y, n * lam_LASSO)
+    lasso_Liu = ROSI.gaussian(X, y, n * lam_LASSO)
+    print(type(lasso_Liu))
     Lasso_soln_Liu = lasso_Liu.fit()
     active_set_Liu = np.nonzero(Lasso_soln_Liu != 0)[0]
     nactive_Liu = active_set_Liu.shape[0]
@@ -705,7 +802,7 @@ def comparison_cvmetrics_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1
 
 def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.20, 0.31]),
          target="selected", tuning_nonrand="lambda.1se", tuning_rand="lambda.1se",
-         randomizing_scale = np.sqrt(0.50), ndraw = 50, outpath = None):
+         randomizing_scale = np.sqrt(0.50), ndraw=2, outpath = None):
 
     df_selective_inference = pd.DataFrame()
     df_risk = pd.DataFrame()
@@ -820,3 +917,4 @@ def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.
 
 if __name__ == "__main__":
     main()
+    main(target="full")
