@@ -194,7 +194,7 @@ class query(object):
                                       observed_target,
                                       target_cov,
                                       target_score_cov)[0]
-            MLE_intervals = np.asarray(MLE[['lower', 'upper']])
+            MLE_intervals = np.asarray(MLE[['lower_confidence', 'upper_confidence']])
 
             intervals = self.sampler.confidence_intervals(  
                 observed_target,
@@ -205,8 +205,8 @@ class query(object):
                 initial_guess=MLE_intervals,
                 level=level)
 
-            result.insert(2, 'lower', intervals[:,0])
-            result.insert(3, 'upper', intervals[:,1])
+            result.insert(2, 'lower_confidence', intervals[:,0])
+            result.insert(3, 'upper_confidence', intervals[:,1])
 
         if not np.all(parameter == 0):
             result.insert(4, 'pivot', pivots)
@@ -518,8 +518,8 @@ class multiple_queries(object):
 
         result = pd.DataFrame({'target':observed_target,
                                'pvalue':pvalues,
-                               'lower':intervals[:,0],
-                               'upper':intervals[:,1]})
+                               'lower_confidence':intervals[:,0],
+                               'upper_confidence':intervals[:,1]})
 
         if not np.all(parameter == 0):
             result.insert(4, 'pivot', pivots)
@@ -1684,8 +1684,8 @@ def selective_MLE(observed_target,
                            'SE':np.sqrt(np.diag(observed_info_mean)),
                            'Zvalue':Z_scores,
                            'pvalue':pvalues,
-                           'lower':intervals[:,0],
-                           'upper':intervals[:,1],
+                           'lower_confidence':intervals[:,0],
+                           'upper_confidence':intervals[:,1],
                            'unbiased':ind_unbiased_estimator})
     return result, observed_info_mean, log_ref
 

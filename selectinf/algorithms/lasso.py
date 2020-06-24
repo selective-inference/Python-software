@@ -323,7 +323,7 @@ class lasso(object):
 
         df = pd.DataFrame(index=self.active,
                           data=dict([(n, d) for n, d in zip(['variable',
-                                                             'pval',
+                                                             'pvalue',
                                                              'lasso',
                                                              'onestep',
                                                              'lower_confidence',
@@ -1487,7 +1487,7 @@ def _data_carving_deprec(X, y,
                        splitting_pvalues,
                        splitting_intervals), L
     else:
-        pvalues = [p for _, p in L.summary("twosided")['pval']]
+        pvalues = [p for _, p in L.summary("twosided")['pvalue']]
         intervals = np.array([L.intervals['lower'], L.intervals['upper']]).T
         if splitting:
             splitting_pvalues = np.random.sample(len(pvalues))
@@ -1957,14 +1957,14 @@ class ROSI(lasso):
             Estimate of dispersion. Defaults to a Pearson's X^2 estimate in the relaxed model.
 
         truth : np.array
-            True values of each beta for selected variables. If not None, a column 'pval' are p-values
+            True values of each beta for selected variables. If not None, a column 'pvalue' are p-values
             computed under these corresponding null hypotheses.
 
         Returns
         -------
         pval_summary : np.recarray
             Array with one entry per active variable.
-            Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
+            Columns are 'variable', 'pvalue', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
         """
 
         if len(self.active) > 0:
@@ -2009,7 +2009,7 @@ class ROSI(lasso):
 
             df = pd.DataFrame(index=self.active,
                               data=dict([(n, d) for n, d in zip(['variable',
-                                                                 'pval',
+                                                                 'pvalue',
                                                                  'lasso',
                                                                  'onestep',
                                                                  'sd',
@@ -2328,7 +2328,7 @@ class ROSI_modelQ(lasso):
         -------
         pval_summary : np.recarray
             Array with one entry per active variable.
-            Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
+            Columns are 'variable', 'pvalue', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
         """
 
         if len(self.active) > 0:
@@ -2366,7 +2366,7 @@ class ROSI_modelQ(lasso):
 
             df = pd.DataFrame(index=self.active,
                               data=dict([(n, d) for n, d in zip(['variable',
-                                                                 'pval',
+                                                                 'pvalue',
                                                                  'lasso',
                                                                  'onestep',
                                                                  'sd',
