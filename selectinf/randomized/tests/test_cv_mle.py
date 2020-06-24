@@ -1,9 +1,13 @@
+from __future__ import division
+
 import numpy as np, os, itertools
 import pandas as pd
 
 import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
 rpy.numpy2ri.activate()
+from rpy2.robjects import pandas2ri
+from rpy2.robjects.conversion import localconverter
 
 from scipy.stats import norm as ndist
 from selectinf.randomized.lasso import lasso, full_targets, selected_targets, debiased_targets
@@ -220,7 +224,7 @@ def plotRisk(df_risk):
                library("tidyr")
                library("dplyr")
 
-               plot_risk <- function(df_risk, outpath="/Users/psnigdha/adjusted_MLE/plots/", resolution=300, height= 7.5, width=15)
+               plot_risk <- function(df_risk, outpath="plots/", resolution=300, height= 7.5, width=15)
                 { 
                    date = 1:length(unique(df_risk$snr))
                    df_risk = filter(df_risk, metric == "Full")
@@ -244,8 +248,9 @@ def plotRisk(df_risk):
                    ggsave(outfile, plot = risk, dpi=resolution, dev='png', height=height, width=width, units="cm")}
                 """)
 
-    robjects.pandas2ri.activate()
-    r_df_risk = robjects.conversion.py2ri(df_risk)
+    #pandas2ri.activate()
+    with localconverter(robjects.default_converter + pandas2ri.converter):
+        r_df_risk = robjects.conversion.py2rpy(df_risk)
     R_plot = robjects.globalenv['plot_risk']
     R_plot(r_df_risk)
 
@@ -259,7 +264,7 @@ def plotCoveragePower(df_inference):
                library("cowplot")
                library("dplyr")
 
-               plot_coverage_lengths <- function(df_inference, outpath="/Users/psnigdha/adjusted_MLE/plots/", 
+               plot_coverage_lengths <- function(df_inference, outpath="plots/", 
                                                  resolution=200, height_plot1= 6.5, width_plot1=12, 
                                                  height_plot2=13, width_plot2=13)
                {
@@ -379,21 +384,41 @@ def plotCoveragePower(df_inference):
                ggsave(outfile, plot = p, dpi=resolution, dev='png', height=height_plot2, width=width_plot2, units="cm")}
                """)
 
-    robjects.pandas2ri.activate()
-    r_df_inference = robjects.conversion.py2ri(df_inference)
+    #pandas2ri.activate()
+    with localconverter(robjects.default_converter + pandas2ri.converter):
+        r_df_inference = robjects.conversion.py2rpy(df_inference)
     R_plot = robjects.globalenv['plot_coverage_lengths']
     R_plot(r_df_inference)
 
-def comparison_cvmetrics_selected(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1, snr=0.20,
-                                  randomizer_scale=np.sqrt(0.50), full_dispersion=True,
-                                  tuning_nonrand="lambda.min", tuning_rand="lambda.1se",
-                                  plot=False):
+def comparison_cvmetrics_selected(n=500,
+                                  p=100,
+                                  nval=500,
+                                  rho=0.35,
+                                  s=5,
+                                  beta_type=1,
+                                  snr=0.20,
+                                  randomizer_scale=np.sqrt(0.50),
+                                  full_dispersion=True,
+                                  tuning_nonrand="lambda.min",
+                                  tuning_rand="lambda.1se"):
 
-    X, y, _, _, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
+    (X,
+     y,
+     _,
+     _,
+     Sigma,
+     beta,
+     sigma) = sim_xy(n=n,
+                     p=p,
+                     nval=nval,
+                     rho=rho,
+                     s=s,
+                     beta_type=beta_type,
+                     snr=snr)
     true_mean = X.dot(beta)
-    print("snr", snr)
+
     X -= X.mean(0)[None, :]
-    X /= (X.std(0)[None, :] * np.sqrt(n / (n - 1.)))
+    X /= (X.std(0)[None, :] * np.sqrt(n / (n - 1)))
     y = y - y.mean()
     true_set = np.asarray([u for u in range(p) if beta[u] != 0])
 
@@ -405,8 +430,17 @@ def comparison_cvmetrics_selected(n=500, p=100, nval=500, rho=0.35, s=5, beta_ty
         sigma_ = np.std(y)
     print("estimated and true sigma", sigma, sigma_)
 
-    lam_theory = sigma_ * 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
-    glm_LASSO_theory, glm_LASSO_1se, glm_LASSO_min, lam_min, lam_1se = glmnet_lasso(X, y, lam_theory/float(n))
+    lam_theory = sigma_ * 1. * np.mean(np.fabs(np.dot(X.T,
+                                                      np.random.standard_normal((n,
+                                                                                 2000)))).max(0))
+    (glm_LASSO_theory,
+     glm_LASSO_1se,
+     glm_LASSO_min,
+     lam_min,
+     lam_1se) = glmnet_lasso(X,
+                             y,
+                             lam_theory/float(n))
+
     if tuning_nonrand == "lambda.min":
         lam_LASSO = lam_min
         glm_LASSO = glm_LASSO_min
@@ -416,6 +450,7 @@ def comparison_cvmetrics_selected(n=500, p=100, nval=500, rho=0.35, s=5, beta_ty
     else:
         lam_LASSO = lam_theory/float(n)
         glm_LASSO = glm_LASSO_theory
+
     active_LASSO = (glm_LASSO != 0)
     nactive_LASSO = active_LASSO.sum()
     active_set_LASSO = np.asarray([r for r in range(p) if active_LASSO[r]])
@@ -802,7 +837,7 @@ def comparison_cvmetrics_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1
 
 def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.20, 0.31]),
          target="selected", tuning_nonrand="lambda.1se", tuning_rand="lambda.1se",
-         randomizing_scale = np.sqrt(0.50), ndraw=2, outpath = None):
+         randomizing_scale = np.sqrt(0.50), ndraw=4, outpath = None, plot=True):
 
     df_selective_inference = pd.DataFrame()
     df_risk = pd.DataFrame()
@@ -820,14 +855,30 @@ def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.
         output_overall = np.zeros(55)
         if target == "selected":
             for i in range(ndraw):
-                output_overall += np.squeeze(comparison_cvmetrics_selected(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
-                                                                           randomizer_scale=randomizing_scale, full_dispersion=full_dispersion,
-                                                                           tuning_nonrand =tuning_nonrand, tuning_rand=tuning_rand))
+                output_overall += np.squeeze(comparison_cvmetrics_selected(n=n,
+                                                                           p=p,
+                                                                           nval=n,
+                                                                           rho=rho,
+                                                                           s=s,
+                                                                           beta_type=beta_type,
+                                                                           snr=snr,
+                                                                           randomizer_scale=randomizing_scale,
+                                                                           full_dispersion=full_dispersion,
+                                                                           tuning_nonrand =tuning_nonrand,
+                                                                           tuning_rand=tuning_rand))
         elif target == "full":
             for i in range(ndraw):
-                output_overall += np.squeeze(comparison_cvmetrics_full(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
-                                                                       randomizer_scale=randomizing_scale, full_dispersion=full_dispersion,
-                                                                       tuning_nonrand =tuning_nonrand, tuning_rand=tuning_rand))
+                output_overall += np.squeeze(comparison_cvmetrics_full(n=n,
+                                                                       p=p,
+                                                                       nval=n,
+                                                                       rho=rho,
+                                                                       s=s,
+                                                                       beta_type=beta_type,
+                                                                       snr=snr,
+                                                                       randomizer_scale=randomizing_scale,
+                                                                       full_dispersion=full_dispersion,
+                                                                       tuning_nonrand =tuning_nonrand,
+                                                                       tuning_rand=tuning_rand))
 
         nLee = output_overall[52]
         nLiu = output_overall[53]
@@ -852,24 +903,66 @@ def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.
             nonrandomized_Liu_inf[nonrandomized_Liu_inf == 0] = 'NaN'
             nonrandomized_Lee_inf[nonrandomized_Lee_inf == 0] = 'NaN'
 
-        df_naive = pd.DataFrame(data=nonrandomized_naive_inf,columns=['coverage', 'length', 'prop-infty', 'tot-active', 'bias', 'sel-power',
-                                                                      'power', 'power-BH', 'fdr-BH','tot-discoveries'])
+        df_naive = pd.DataFrame(data=nonrandomized_naive_inf,columns=['coverage',
+                                                                      'length',
+                                                                      'prop-infty',
+                                                                      'tot-active',
+                                                                      'bias',
+                                                                      'sel-power',
+                                                                      'power',
+                                                                      'power-BH',
+                                                                      'fdr-BH',
+                                                                      'tot-discoveries'])
         df_naive['method'] = "Naive"
-        df_Lee = pd.DataFrame(data=nonrandomized_Lee_inf, columns=['coverage', 'length', 'prop-infty','tot-active','bias', 'sel-power',
-                                                                   'power', 'power-BH', 'fdr-BH','tot-discoveries'])
+        df_Lee = pd.DataFrame(data=nonrandomized_Lee_inf, columns=['coverage',
+                                                                   'length',
+                                                                   'prop-infty',
+                                                                   'tot-active',
+                                                                   'bias',
+                                                                   'sel-power',
+                                                                   'power',
+                                                                   'power-BH',
+                                                                   'fdr-BH',
+                                                                   'tot-discoveries'])
         df_Lee['method'] = "Lee"
 
-        df_Liu = pd.DataFrame(data=nonrandomized_Liu_inf,columns=['coverage', 'length', 'prop-infty', 'tot-active','bias', 'sel-power',
-                                                                  'power', 'power-BH', 'fdr-BH', 'tot-discoveries'])
+        df_Liu = pd.DataFrame(data=nonrandomized_Liu_inf,columns=['coverage',
+                                                                  'length',
+                                                                  'prop-infty',
+                                                                  'tot-active',
+                                                                  'bias',
+                                                                  'sel-power',
+                                                                  'power',
+                                                                  'power-BH',
+                                                                  'fdr-BH',
+                                                                  'tot-discoveries'])
         df_Liu['method'] = "Liu"
 
-        df_MLE = pd.DataFrame(data=randomized_MLE_inf, columns=['coverage', 'length', 'prop-infty', 'tot-active','bias', 'sel-power',
-                                                                'power', 'power-BH', 'fdr-BH', 'tot-discoveries'])
+        df_MLE = pd.DataFrame(data=randomized_MLE_inf, columns=['coverage',
+                                                                'length',
+                                                                'prop-infty',
+                                                                'tot-active',
+                                                                'bias',
+                                                                'sel-power',
+                                                                'power',
+                                                                'power-BH',
+                                                                'fdr-BH',
+                                                                'tot-discoveries'])
         df_MLE['method'] = "MLE"
 
-        df_risk_metrics = pd.DataFrame(data=relative_risk, columns=['sel-MLE', 'ind-est', 'rand-LASSO','rel-rand-LASSO', 'rel-LASSO', 'LASSO'])
+        df_risk_metrics = pd.DataFrame(data=relative_risk, columns=['sel-MLE',
+                                                                    'ind-est',
+                                                                    'rand-LASSO',
+                                                                    'rel-rand-LASSO',
+                                                                    'rel-LASSO',
+                                                                    'LASSO'])
         df_risk_metrics['metric'] = "Full"
-        df_prisk_metrics = pd.DataFrame(data=partial_risk,columns=['sel-MLE', 'ind-est', 'rand-LASSO', 'rel-rand-LASSO', 'rel-LASSO','LASSO'])
+        df_prisk_metrics = pd.DataFrame(data=partial_risk,columns=['sel-MLE',
+                                                                   'ind-est',
+                                                                   'rand-LASSO',
+                                                                   'rel-rand-LASSO',
+                                                                   'rel-LASSO',
+                                                                   'LASSO'])
         df_prisk_metrics['metric'] = "Partial"
 
         df_selective_inference = df_selective_inference.append(df_naive, ignore_index=True)
@@ -910,6 +1003,7 @@ def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.
     df_selective_inference.to_html(outfile_inf_html)
     df_risk.to_html(outfile_risk_html)
 
+    stop
     if plot is True:
         plotRisk(df_risk)
         plotCoveragePower(df_selective_inference)
