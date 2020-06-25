@@ -242,6 +242,7 @@ class lasso(object):
                 alternative='twosided',
                 level=0.95,
                 compute_intervals=False,
+                dispersion=None,
                 truth=None):
         """
         Summary table for inference adjusted for selection.
@@ -257,6 +258,9 @@ class lasso(object):
 
         compute_intervals : bool
             Should we compute confidence intervals?
+
+        dispersion : float
+            Scalar to multiply `self.constraints.covaraince`
 
         truth : np.array
             True values of each beta for selected variables. If not None, a column 'pval' are p-values
@@ -275,9 +279,14 @@ class lasso(object):
         if truth is None:
             truth = np.zeros_like(self.active_signs)
 
+        if dispersion is None:
+            dispersion = 1.
+            
         result = []
-        C = self._constraints
+        C = self.constraints
         if C is not None:
+            _cov = C.covariance.copy()
+            C.covariance = _cov * dispersion
             one_step = self.onestep_estimator
             for i in range(one_step.shape[0]):
                 eta = np.zeros_like(one_step)
@@ -296,7 +305,8 @@ class lasso(object):
                 if compute_intervals:
                     if C.linear_part.shape[0] > 0:  # there were some constraints
                         try:
-                            _interval = C.interval(eta, one_step,
+                            _interval = C.interval(eta,
+                                                   one_step,
                                                    alpha=alpha)
                         except OverflowError:
                             _interval = (-np.inf, np.inf)
@@ -320,7 +330,8 @@ class lasso(object):
                                lower_trunc,
                                upper_trunc,
                                sd))
-
+            C.covariance = _cov
+            
         df = pd.DataFrame(index=self.active,
                           data=dict([(n, d) for n, d in zip(['variable',
                                                              'pvalue',
@@ -2311,7 +2322,8 @@ class ROSI_modelQ(lasso):
             self.inactive = np.arange(lasso_solution.shape[0])
         return self.lasso_solution
 
-    def summary(self, level=0.05,
+    def summary(self,
+                level=0.95,
                 compute_intervals=False,
                 dispersion=None):
         """
