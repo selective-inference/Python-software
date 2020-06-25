@@ -74,7 +74,7 @@ def test_full_targets(n=200,
                                         cov_target_score)[0]
             pval = result['pvalue']
             estimate = result['MLE']
-            intervals = np.asarray(result[['lower', 'upper']])
+            intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
             print("estimate, intervals", estimate, intervals)
 
             coverage = (beta[nonzero] > intervals[:, 0]) * (beta[nonzero] < intervals[:, 1])
@@ -142,7 +142,7 @@ def test_selected_targets(n=2000,
                                         cov_target_score)[0]
             estimate = result['MLE']
             pval = result['pvalue']
-            intervals = np.asarray(result[['lower', 'upper']])
+            intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
             
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
@@ -210,7 +210,7 @@ def test_instance():
                              cov_target_score)[0]
     estimate = result['MLE']
     pval = result['pvalue']
-    intervals = np.asarray(result[['lower', 'upper']])
+    intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
 
     beta_target = np.linalg.pinv(X[:, M]).dot(X.dot(beta))
 

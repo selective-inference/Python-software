@@ -67,10 +67,10 @@ def test_topK(n=500,
                                              crosscov_target_score, 
                                              alternatives,
                                              compute_intervals=True)
-            lower = np.asarray(result['lower'])
-            upper = np.asarray(result['upper'])
+            lower = np.asarray(result['lower_confidence'])
+            upper = np.asarray(result['upper_confidence'])
             pval = result['pvalue']
-            intervals = np.asarray(result[['lower', 'upper']])
+            intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
             print(pval)
             if marginal:
                 beta_target = true_mean[nonzero]

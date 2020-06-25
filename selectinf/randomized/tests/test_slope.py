@@ -183,8 +183,8 @@ def test_randomized_slope(n=2000,
                                       compute_intervals=True,
                                       ndraw=150000)
             pval = np.asarray(result['pvalue'])
-            lower = np.asarray(result['lower'])
-            upper = np.asarray(result['upper'])
+            lower = np.asarray(result['lower_confidence'])
+            upper = np.asarray(result['upper_confidence'])
 
             print(pd.DataFrame({'target':beta_target,
                                 'lower':lower,

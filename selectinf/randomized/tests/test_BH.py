@@ -158,13 +158,15 @@ def test_BH(n=500,
                                            parameter=beta_target)
                 pivots = np.asarray(result['pivot'])
             pval = np.asarray(result['pvalue'])
-            lower = np.asarray(result['lower'])
-            upper = np.asarray(result['upper'])
+            lower = np.asarray(result['lower_confidence'])
+            upper = np.asarray(result['upper_confidence'])
             print(pval)
-            print("beta_target and intervals", beta_target, result[['lower', 'upper']])
+            print("beta_target and intervals", beta_target, result[['lower_confidence',
+                                                                    'upper_confidence']])
             coverage = (beta_target > lower) * (beta_target < upper)
             print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
-            return pivots[beta_target == 0], pivots[beta_target != 0], coverage, result[['lower', 'upper']], pivots
+            return (pivots[beta_target == 0], pivots[beta_target != 0], coverage,
+                    result[['lower_confidence', 'upper_confidence']], pivots)
         else:
             return [], [], [], [], []
 

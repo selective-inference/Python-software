@@ -45,8 +45,8 @@ def test_drop_losers(p=50,
     else:
         result = dtl.selective_MLE()[0]
     pvalue = np.asarray(result['pvalue'])
-    lower = np.asarray(result['lower'])
-    upper = np.asarray(result['upper'])
+    lower = np.asarray(result['lower_confidence'])
+    upper = np.asarray(result['upper_confidence'])
     cover = (lower < 0) * (upper > 0)
 
     return pvalue, cover
@@ -155,8 +155,8 @@ def test_compare_topK(p=20,
 
     np.testing.assert_allclose(summary1['pvalue'], summary2['pvalue'], rtol=1.e-3)
     np.testing.assert_allclose(summary1['target'], summary2['target'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['lower'], summary2['lower'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['upper'], summary2['upper'], rtol=1.e-3)
+    np.testing.assert_allclose(summary1['lower_confidence'], summary2['lower_confidence'], rtol=1.e-3)
+    np.testing.assert_allclose(summary1['upper_confidence'], summary2['upper_confidence'], rtol=1.e-3)
 
     np.random.seed(0)
     degenerate_topK.fit(perturb=perturb2)
@@ -170,8 +170,8 @@ def test_compare_topK(p=20,
     
     np.testing.assert_allclose(summary1['pvalue'], summary3['pvalue'], rtol=1.e-3)
     np.testing.assert_allclose(summary1['target'], summary3['target'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['lower'], summary3['lower'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['upper'], summary3['upper'], rtol=1.e-3)
+    np.testing.assert_allclose(summary1['lower_confidence'], summary3['lower_confidence'], rtol=1.e-3)
+    np.testing.assert_allclose(summary1['upper_confidence'], summary3['upper_confidence'], rtol=1.e-3)
 
 
 def main(nsim=100, use_MLE=True):

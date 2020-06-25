@@ -68,7 +68,7 @@ def test_marginal(n=500,
                                                  alternatives,
                                                  compute_intervals=True)
 
-            intervals = np.asarray(result[['lower', 'upper']])
+            intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
             pval = result['pvalue']
             print(pval)
             if marginal:
@@ -152,7 +152,7 @@ def test_simple(n=100,
                                                  compute_intervals=True)
 
             pval = result['pvalue']
-            intervals = np.asarray(result[['lower', 'upper']])
+            intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
             print(pval)
             beta_target = cov_target.dot(true_mean[nonzero])
             print("beta_target and intervals", beta_target, intervals)
