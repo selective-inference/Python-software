@@ -1,6 +1,26 @@
+<<<<<<< HEAD:doc/adjusted_MLE/tests/comparison_metrics.py
 from __future__ import division, print_function
 import numpy as np, sys, time
 from scipy.stats import norm as ndist
+=======
+import numpy as np, os, itertools
+import pandas as pd
+
+import rpy2.robjects as rpy
+from rpy2.robjects import numpy2ri
+rpy.numpy2ri.activate()
+from scipy.stats import norm as ndist
+
+from ..lasso import lasso, full_targets, selected_targets, debiased_targets
+from ...algorithms.lasso import lasso as lasso_full
+
+def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
+
+    rpy.r('''
+            source('~/best-subset/bestsubset/R/sim.R')
+            sim_xy = sim.xy
+            ''')
+>>>>>>> commit changes to test_mle:selectinf/randomized/tests/test_cv_mle.py
 
 from rpy2 import robjects
 import rpy2.robjects.numpy2ri
