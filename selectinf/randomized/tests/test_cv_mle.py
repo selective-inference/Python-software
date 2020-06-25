@@ -167,11 +167,11 @@ def glmnet_lasso(X, y, lambda_val):
                 lam = as.matrix(lambda)[1,1]
                 n = nrow(X)
 
-                fit = glmnet(X, y, standardize=TRUE, intercept=FALSE, thresh=1.e-10)
+                fit = glmnet(X, y, standardize=FALSE, intercept=FALSE, thresh=1.e-10)
                 estimate = coef(fit, s=lam, exact=TRUE, x=X, y=y)[-1]
-                fit.cv = cv.glmnet(X, y, standardize=TRUE, intercept=FALSE, thresh=1.e-10)
-                estimate.1se = coef(fit.cv, s='lambda.1se', exact=TRUE, x=X, y=y)[-1]
-                estimate.min = coef(fit.cv, s='lambda.min', exact=TRUE, x=X, y=y)[-1]
+                fit.cv = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE, thresh=1.e-10)
+                estimate.1se = coef(fit, s=fit.cv$lambda.1se, exact=TRUE, x=X, y=y)[-1]
+                estimate.min = coef(fit, s=fit.cv$lambda.min, exact=TRUE, x=X, y=y)[-1]
                 return(list(estimate = estimate, estimate.1se = estimate.1se, estimate.min = estimate.min, lam.min = fit.cv$lambda.min, lam.1se = fit.cv$lambda.1se))
                 }''')
 
@@ -181,11 +181,12 @@ def glmnet_lasso(X, y, lambda_val):
     r_y = rpy.r.matrix(y, nrow=n, ncol=1)
     r_lam = rpy.r.matrix(lambda_val, nrow=1, ncol=1)
 
-    estimate = np.array(lambda_R(r_X, r_y, r_lam).rx2('estimate'))
-    estimate_1se = np.array(lambda_R(r_X, r_y, r_lam).rx2('estimate.1se'))
-    estimate_min = np.array(lambda_R(r_X, r_y, r_lam).rx2('estimate.min'))
-    lam_min = np.asscalar(np.array(lambda_R(r_X, r_y, r_lam).rx2('lam.min')))
-    lam_1se = np.asscalar(np.array(lambda_R(r_X, r_y, r_lam).rx2('lam.1se')))
+    val = lambda_R(r_X, r_y, r_lam)
+    estimate = np.array(val.rx2('estimate'))
+    estimate_1se = np.array(val.rx2('estimate.1se'))
+    estimate_min = np.array(val.rx2('estimate.min'))
+    lam_min = np.asscalar(np.array(val.rx2('lam.min')))
+    lam_1se = np.asscalar(np.array(val.rx2('lam.1se')))
     return estimate, estimate_1se, estimate_min, lam_min, lam_1se
 
 
@@ -563,7 +564,7 @@ def comparison_cvmetrics_selected(n=500,
 
         sel_MLE[nonzero] = MLE_estimate
         ind_est[nonzero] = ind_unbiased_estimator
-        MLE_intervals = np.asarray(result[['lower', 'upper']])
+        MLE_intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
         MLE_pval = np.asarray(result['pvalue'])
 
         randomized_lasso_est = randomized_lasso.initial_soln
@@ -724,7 +725,7 @@ def comparison_cvmetrics_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1
         df = lasso_Liu.summary(level=0.90, compute_intervals=True, dispersion=dispersion)
         Liu_lower, Liu_upper, Liu_pval = np.asarray(df['lower_confidence']), \
                                          np.asarray(df['upper_confidence']), \
-                                         np.asarray(df['pval'])
+                                         np.asarray(df['pvalue'])
         Liu_intervals = np.vstack((Liu_lower, Liu_upper)).T
         cov_Liu, selective_Liu_power = coverage(Liu_intervals, Liu_pval, Liu_target, beta[Lasso_soln_Liu != 0])
         length_Liu = np.mean(Liu_intervals[:, 1] - Liu_intervals[:, 0])
@@ -783,7 +784,7 @@ def comparison_cvmetrics_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1
 
         sel_MLE[nonzero] = MLE_estimate
         ind_est[nonzero] = ind_unbiased_estimator
-        MLE_intervals = np.asarray(result[['lower', 'upper']])
+        MLE_intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
         MLE_pval = np.asarray(result['pvalue'])
 
         randomized_lasso_est = randomized_lasso.initial_soln
@@ -837,7 +838,7 @@ def comparison_cvmetrics_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1
 
 def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.20, 0.31]),
          target="selected", tuning_nonrand="lambda.1se", tuning_rand="lambda.1se",
-         randomizing_scale = np.sqrt(0.50), ndraw=4, outpath = None, plot=True):
+         randomizing_scale = np.sqrt(0.50), ndraw=20, outpath = None, plot=True):
 
     df_selective_inference = pd.DataFrame()
     df_risk = pd.DataFrame()
@@ -1003,7 +1004,6 @@ def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.
     df_selective_inference.to_html(outfile_inf_html)
     df_risk.to_html(outfile_risk_html)
 
-    stop
     if plot is True:
         plotRisk(df_risk)
         plotCoveragePower(df_selective_inference)
@@ -1011,4 +1011,4 @@ def main(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.15, 0.
 
 if __name__ == "__main__":
     main()
-    main(target="full")
+
