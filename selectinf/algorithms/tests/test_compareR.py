@@ -87,7 +87,7 @@ def test_fixed_lambda():
 
         yield np.testing.assert_allclose, L.fit()[1:], beta_hat, 1.e-2, 1.e-2, False, 'fixed lambda, sigma=%f coef' % s
         yield np.testing.assert_equal, L.active, selected_vars
-        yield np.testing.assert_allclose, S['pval'], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
+        yield np.testing.assert_allclose, S['pvalue'], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
         yield np.testing.assert_allclose, S['sd'], sdvar, tol, tol, False, 'fixed lambda, sigma=%f sd ' % s
         yield np.testing.assert_allclose, S['onestep'], coef, tol, tol, False, 'fixed lambda, sigma=%f estimator' % s
 
@@ -252,7 +252,7 @@ def test_coxph():
 
     yield np.testing.assert_equal, np.array(L.active) + 1, selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'cox coeff'
-    yield np.testing.assert_allclose, L.summary('onesided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
+    yield np.testing.assert_allclose, L.summary('onesided')['pvalue'], R_pvals, tol, tol, False, 'cox pvalues'
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_logistic():
@@ -311,7 +311,7 @@ def test_logistic():
 
     yield np.testing.assert_equal, L.active[1:], selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'logistic coef'
-    yield np.testing.assert_allclose, L.summary('onesided')['pval'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
+    yield np.testing.assert_allclose, L.summary('onesided')['pvalue'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
 
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
@@ -554,8 +554,8 @@ def test_liu_gaussian():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(S['pval'])
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            print(S['pvalue'])
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
 
             numpy2ri.deactivate()
             break
@@ -610,8 +610,8 @@ def test_liu_logistic():
             pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
             print(pvalues)
-            print(S['pval'])
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            print(S['pvalue'])
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
 
             numpy2ri.deactivate()
             break 
@@ -669,9 +669,9 @@ def test_ROSI_gaussian_JM():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(np.asarray(S['pval']))
+            print(np.asarray(S['pvalue']))
 
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
 
@@ -724,9 +724,9 @@ def test_ROSI_logistic_JM():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(np.asarray(S['pval']))
+            print(np.asarray(S['pvalue']))
 
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
 
@@ -790,9 +790,9 @@ def test_ROSI_gaussian_BN():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(np.asarray(S['pval']))
+            print(np.asarray(S['pvalue']))
 
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
 
@@ -846,9 +846,9 @@ def test_ROSI_logistic_BN():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(np.asarray(S['pval']))
+            print(np.asarray(S['pvalue']))
 
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
 

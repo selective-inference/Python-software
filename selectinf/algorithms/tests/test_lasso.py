@@ -115,7 +115,7 @@ def test_logistic():
             np.dot(L.constraints.linear_part, L.onestep_estimator),
             L.constraints.offset)
 
-        P = L.summary()['pval']
+        P = L.summary()['pvalue']
 
         return L, C, P
 
@@ -137,7 +137,7 @@ def test_poisson():
         np.dot(L.constraints.linear_part, L.onestep_estimator),
         L.constraints.offset)
 
-    P = L.summary()['pval']
+    P = L.summary()['pvalue']
 
     return L, C, P
 
@@ -162,7 +162,7 @@ def test_coxph():
         np.dot(L.constraints.linear_part, L.onestep_estimator),
         L.constraints.offset)
 
-    P = L.summary()['pval']
+    P = L.summary()['pvalue']
 
     return L, C, P
 
@@ -543,7 +543,7 @@ def test_gaussian_pvals(n=100,
     if set(true_active).issubset(L.active):
         S = L.summary('onesided')
         S = L.summary('twosided')
-        return S['pval'], [v in true_active for v in S['variable']]
+        return S['pvalue'], [v in true_active for v in S['variable']]
 
 @wait_for_return_value()
 def test_sqrt_lasso_pvals(n=100,
@@ -572,7 +572,7 @@ def test_sqrt_lasso_pvals(n=100,
     if set(true_active).issubset(L.active):
         S = L.summary('onesided')
         S = L.summary('twosided')
-        return S['pval'], [v in true_active for v in S['variable']]
+        return S['pvalue'], [v in true_active for v in S['variable']]
 
 
 @wait_for_return_value()
@@ -604,7 +604,7 @@ def test_sqrt_lasso_sandwich_pvals(n=200,
 
     if set(true_active).issubset(L_SQ.active):
         S = L_SQ.summary('twosided')
-        return S['pval'], [v in true_active for v in S['variable']]
+        return S['pvalue'], [v in true_active for v in S['variable']]
 
 @wait_for_return_value()
 def test_gaussian_sandwich_pvals(n=200,
@@ -654,13 +654,13 @@ def test_gaussian_sandwich_pvals(n=200,
     if set(true_active).issubset(L_P.active):
 
         S = L_P.summary('twosided')
-        P_P = [p for p, v in zip(S['pval'], S['variable']) if v not in true_active]
+        P_P = [p for p, v in zip(S['pvalue'], S['variable']) if v not in true_active]
 
         L_S = lasso.gaussian(X, y, feature_weights, covariance_estimator=sandwich)
         L_S.fit()
 
         S = L_S.summary('twosided')
-        P_S = [p for p, v in zip(S['pval'], S['variable']) if v not in true_active]
+        P_S = [p for p, v in zip(S['pvalue'], S['variable']) if v not in true_active]
 
         return P_P, P_S, [v in true_active for v in S['variable']]
 
@@ -693,7 +693,7 @@ def test_logistic_pvals(n=500,
 
     print(true_active, L.active)
     if set(true_active).issubset(L.active):
-        return S['pval'], [v in true_active for v in S['variable']]
+        return S['pvalue'], [v in true_active for v in S['variable']]
 
 @set_seed_iftrue(True)
 def test_adding_quadratic_lasso():
