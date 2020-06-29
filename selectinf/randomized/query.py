@@ -14,7 +14,7 @@ from ..constraints.affine import (sample_from_constraints,
                                   constraints)
 from .posterior_inference import posterior
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
-
+from .approx_reference import approximate_grid_inference
 
 class query(object):
 
@@ -300,6 +300,25 @@ class query(object):
                          prior,
                          dispersion,
                          solve_args=solve_args)
+
+    def approximate_grid_inference(self,
+                                   observed_target,
+                                   target_cov,
+                                   target_score_cov,
+                                   dispersion=None,
+                                   solve_args={'tol': 1.e-12}):
+
+        if dispersion is None:
+            dispersion = 1
+            print('Using dispersion parameter 1...')
+
+
+        return approximate_grid_inference(self,
+                                          observed_target,
+                                          target_cov,
+                                          target_score_cov,
+                                          dispersion,
+                                          solve_args=solve_args)
 
 
 class gaussian_query(query):
@@ -1569,6 +1588,7 @@ def _solve_barrier_nonneg(conjugate_arg,
 
     hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
     return current_value, current, hess
+
 
 def selective_MLE(observed_target, 
                   target_cov, 
