@@ -305,6 +305,7 @@ class query(object):
                                    observed_target,
                                    target_cov,
                                    target_score_cov,
+                                   grid = None,
                                    dispersion=None,
                                    solve_args={'tol': 1.e-12}):
 
@@ -312,11 +313,14 @@ class query(object):
             dispersion = 1
             print('Using dispersion parameter 1...')
 
+        if grid is None:
+            grid = np.linspace(- 20., 20., num=401)
 
         return approximate_grid_inference(self,
                                           observed_target,
                                           target_cov,
                                           target_score_cov,
+                                          grid,
                                           dispersion,
                                           solve_args=solve_args)
 
