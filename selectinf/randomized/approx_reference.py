@@ -128,6 +128,35 @@ class approximate_grid_inference():
 
         return pivot
 
+    def approx_intervals(self,
+                         param_grid):
+
+        intervals_lci =[]
+        intervals_uci =[]
+
+        for m in range(self.ntarget):
+            p = self.cov_target_score.shape[1]
+            observed_target_uni = (self.observed_target[m]).reshape((1,))
+            cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
+            cov_target_score_uni = self.cov_target_score[m, :].reshape((1, p))
+            grid_indx_obs = np.argmin(np.abs(self.grid - observed_target_uni))
+
+            approx_log_ref = self.approx_log_reference(observed_target_uni,
+                                                       cov_target_uni,
+                                                       cov_target_score_uni)
+
+            approx_lci, approx_uci = self.approx_ci(param_grid[m,:],
+                                                    cov_target_uni,
+                                                    approx_log_ref,
+                                                    grid_indx_obs)
+
+            intervals_lci.append(approx_lci)
+            intervals_uci.append(approx_uci)
+
+            sys.stderr.write("variable completed " + str(m + 1) + "\n")
+
+        return np.asarray(intervals_lci), np.asarray(intervals_uci)
+
 
 
 
