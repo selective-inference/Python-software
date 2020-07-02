@@ -48,7 +48,7 @@ class posterior(object):
         offset = query.sampler.affine_con.offset
         logdens_linear = query.sampler.logdens_transform[0]
 
-        _, self.inverse_info, log_ref = query.selective_MLE(observed_target,
+        result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
                                                             cov_target,
                                                             cov_target_score)
             
@@ -69,7 +69,7 @@ class posterior(object):
         self.linear_part = linear_part
         self.offset = offset
 
-        self.initial_estimate = observed_target
+        self.initial_estimate = np.asarray(result['MLE'])
         self.dispersion = dispersion
         self.log_ref = log_ref
 
