@@ -280,7 +280,7 @@ class query(object):
         prior : callable
             A callable object that takes a single argument
             `parameter` of the same shape as `observed_target`
-            and returns (gradient of log prior, value of log prior)
+            and returns (value of log prior, gradient of log prior)
 
         dispersion : float, optional
             Dispersion parameter for log-likelihood.
@@ -299,7 +299,6 @@ class query(object):
             def prior(target_parameter):
                 grad_prior = -target_parameter * Di
                 log_prior = -0.5 * np.sum(target_parameter**2 * Di)
-                stop
                 return log_prior, grad_prior
         
         return posterior(self,
