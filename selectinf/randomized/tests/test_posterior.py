@@ -1,9 +1,11 @@
 import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+from scipy.stats import norm as ndist
 
-from ...tests.instance import gaussian_instance
-from ..lasso import lasso, selected_targets
-from ..posterior_inference import (posterior,
-                                   langevin_sampler,
+from ...tests.instance import gaussian_instance, HIV_NRTI
+from ..lasso import lasso, selected_targets, split_lasso
+from ..posterior_inference import (langevin_sampler,
                                    gibbs_sampler)
 
 def test_Langevin(n=500,
@@ -13,8 +15,8 @@ def test_Langevin(n=500,
                   sigma=3.,
                   rho=0.4,
                   randomizer_scale=1.,
-                  nsample=100,
-                  nburnin=50):
+                  nsample=1500,
+                  nburnin=100):
 
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
@@ -62,9 +64,9 @@ def test_Langevin(n=500,
                                nsample=nsample,
                                nburnin=nburnin)
 
-    gibbs_samples = gibbs_sampler(posterior_inf,
-                                  nsample=nsample,
-                                  nburnin=nburnin)
+    # gibbs_samples = gibbs_sampler(posterior_inf,
+    #                               nsample=nsample,
+    #                               nburnin=nburnin)
 
     lci = np.percentile(samples, 5, axis=0)
     uci = np.percentile(samples, 95, axis=0)
@@ -109,10 +111,11 @@ def test_instance(nsample=100, nburnin=50):
 
     gibbs_samples = gibbs_sampler(posterior_inf,
                                   nsample=nsample,
-                                  nburnin=nburnin)
+                                  nburnin=nburnin)[0]
 
     lci = np.percentile(samples, 5, axis=0)
     uci = np.percentile(samples, 95, axis=0)
+
 
     beta_target = np.linalg.pinv(X[:, M]).dot(X.dot(beta))
     coverage = (lci < beta_target) * (uci > beta_target)
@@ -147,10 +150,11 @@ def test_flexible_prior1(nsample=100, nburnin=50):
                                       M,
                                       dispersion=dispersion)
 
+    Di = 1. / (200 * np.diag(cov_target))
     def prior(target_parameter):
-        grad_prior = -target_parameter / 100
-        log_prior = -np.linalg.norm(target_parameter)**2 /(2. * 100)
-        return grad_prior, log_prior
+        grad_prior = -target_parameter * Di
+        log_prior = -np.sum(target_parameter**2 * Di)
+        return log_prior, grad_prior
 
     seed_state = np.random.get_state()
     np.random.set_state(seed_state)
@@ -209,7 +213,7 @@ def test_flexible_prior2(nsample=1000, nburnin=50):
     def prior(target_parameter):
         grad_prior = -target_parameter / prior_var
         log_prior = -np.linalg.norm(target_parameter)**2 /(2. * prior_var)
-        return grad_prior, log_prior
+        return log_prior, grad_prior
 
     posterior_inf = L.posterior(observed_target,
                                 cov_target,
@@ -224,32 +228,119 @@ def test_flexible_prior2(nsample=1000, nburnin=50):
                                nburnin=nburnin)
     return samples
     
+def test_hiv_data(nsample=10000,
+                  nburnin=500,
+                  level=0.90,
+                  split_proportion=0.50,
+                  seedn = 1):
 
-def main(ndraw=10):
+    np.random.seed(seedn)
 
-    coverage_ = 0.
-    length_ = 0.
-    for n in range(ndraw):
-        # cov, len = test_Langevin(n=500,
-        #                          p=200,
-        #                          signal_fac=1.5,
-        #                          s=5,
-        #                          sigma=2.,
-        #                          rho=0.2,
-        #                          randomizer_scale=1.
-        #                          )
+    alpha = (1 - level) / 2
+    Z_quantile = ndist.ppf(1 - alpha)
 
-        cov, len = test_instance(nsample=2000,
-                                 nburnin=100)
+    X, Y, _ = HIV_NRTI(standardize=True)
+    Y *= 15
+    n, p = X.shape
+    X /= np.sqrt(n)
+    
+    ols_fit = sm.OLS(Y, X).fit()
+    _sigma = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1)
 
-        coverage_ += cov
-        length_ += len
+    const = split_lasso.gaussian
 
-        print("coverage so far ", coverage_ / (n + 1.))
-        print("lengths so far ", length_ / (n + 1.))
-        print("iteration completed ", n + 1)
+    dispersion = _sigma ** 2
 
+    W = 1 * np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * _sigma
+
+    conv = const(X,
+                 Y,
+                 W,
+                 proportion=split_proportion)
+
+    signs = conv.fit()
+    nonzero = signs != 0
+
+    (observed_target,
+     cov_target,
+     cov_target_score,
+     alternatives) = selected_targets(conv.loglike,
+                                      conv._W,
+                                      nonzero,
+                                      dispersion=dispersion)
+
+    mle, inverse_info = conv.selective_MLE(observed_target,
+                                           cov_target,
+                                           cov_target_score,
+                                           level=level,
+                                           solve_args={'tol':1.e-12})[:2]
+
+    approx_inf = conv.approximate_grid_inference(observed_target,
+                                                 cov_target,
+                                                 cov_target_score)
+
+    posterior_inf = conv.posterior(observed_target,
+                                   cov_target,
+                                   cov_target_score,
+                                   dispersion=dispersion)
+
+    samples_langevin = langevin_sampler(posterior_inf,
+                                        nsample=nsample,
+                                        nburnin=nburnin,
+                                        step=1.)
+
+    lower_langevin = np.percentile(samples_langevin, int(alpha*100), axis=0)
+    upper_langevin = np.percentile(samples_langevin, int((1-alpha)*100), axis=0)
+
+    samples_gibbs, scale_gibbs = gibbs_sampler(posterior_inf,
+                                               nsample=nsample,
+                                               nburnin=nburnin)
+
+    lower_gibbs = np.percentile(samples_gibbs, int(alpha* 100), axis=0)
+    upper_gibbs = np.percentile(samples_gibbs, int((1-alpha)*100), axis=0)
+
+    naive_est = np.linalg.pinv(X[:, nonzero]).dot(Y)
+    naive_cov = dispersion * np.linalg.inv(X[:, nonzero].T.dot(X[:, nonzero]))
+    naive_intervals = np.vstack([naive_est - Z_quantile * np.sqrt(np.diag(naive_cov)),
+                                 naive_est + Z_quantile * np.sqrt(np.diag(naive_cov))]).T
+
+    X_split = X[~conv._selection_idx, :]
+    Y_split = Y[~conv._selection_idx]
+    split_est = np.linalg.pinv(X_split[:, nonzero]).dot(Y_split)
+    split_cov = dispersion * np.linalg.inv(X_split[:, nonzero].T.dot(X_split[:, nonzero]))
+    split_intervals = np.vstack([split_est - Z_quantile * np.sqrt(np.diag(split_cov)),
+                                 split_est + Z_quantile * np.sqrt(np.diag(split_cov))]).T
+
+    print("lengths: adjusted intervals Langevin, Gibbs, MLE1, MLE2, approx ",
+          np.mean(upper_langevin - lower_langevin),
+          np.mean(upper_gibbs - lower_gibbs),
+          np.mean((2*Z_quantile)*np.sqrt(np.diag(posterior_inf.inverse_info))),
+          np.mean(mle['upper_confidence'] - mle['lower_confidence']),
+          np.mean(approx_inf['upper_confidence'] - approx_inf['lower_confidence'])
+    )
+
+    print("lengths: naive intervals ", np.mean(naive_intervals[:,1]-naive_intervals[:,0]))
+
+    print("lengths: split intervals ", np.mean(split_intervals[:, 1] - split_intervals[:, 0]))
+
+    scale_interval = np.percentile(scale_gibbs, [alpha*100, (1-alpha)*100])
+    output = pd.DataFrame({'Langevin_lower_credible': lower_langevin,
+                           'Langevin_upper_credible': upper_langevin,
+                           'Gibbs_lower_credible': lower_gibbs,
+                           'Gibbs_upper_credible': upper_gibbs,
+                           'MLE_lower_confidence': mle['lower_confidence'],
+                           'MLE_upper_confidence': mle['upper_confidence'],
+                           'approx_lower_confidence': approx_inf['lower_confidence'],
+                           'approx_upper_confidence': approx_inf['upper_confidence'],
+                           'Split_lower_confidence': split_intervals[:,0],
+                           'Split_upper_confidence': split_intervals[:, 1],
+                           'Naive_lower_confidence': naive_intervals[:, 0],
+                           'Naive_upper_confidence': naive_intervals[:, 1]
+                           })
+
+    return output, scale_interval, _sigma
 
 if __name__ == "__main__":
-    main()
+    test_hiv_data(split_proportion=0.50)
+
 

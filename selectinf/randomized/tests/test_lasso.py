@@ -394,3 +394,5 @@ def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3, AR=True):
     plt.show()
 
 
+if __name__ == "__main__":
+    main()

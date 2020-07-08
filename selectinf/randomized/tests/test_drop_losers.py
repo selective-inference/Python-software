@@ -39,11 +39,11 @@ def test_drop_losers(p=50,
     dtl = drop_losers(df,
                       K=K)
 
-    dtl.selective_MLE() 
+    dtl.MLE_inference()
     if not use_MLE:
         result = dtl.summary(ndraw=20000, burnin=5000)
     else:
-        result = dtl.selective_MLE()[0]
+        result = dtl.MLE_inference()[0]
     pvalue = np.asarray(result['pvalue'])
     lower = np.asarray(result['lower_confidence'])
     upper = np.asarray(result['upper_confidence'])

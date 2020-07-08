@@ -83,7 +83,7 @@ class discrete_family(object):
         xw = np.array(sorted(zip(sufficient_stat, weights)), np.float)
         self._x = xw[:,0]
         self._w = xw[:,1]
-        self._lw = np.array([np.log(v) for v in xw[:,1]])
+        self._lw = np.log(xw[:,1])
         self._w /= self._w.sum() # make sure they are a pmf
         self.n = len(xw)
         self._theta = np.nan
@@ -479,7 +479,12 @@ class discrete_family(object):
             lower = self._inter2Lower(observed, 0., alpha, tol)
         return lower, upper
 
-    def equal_tailed_interval(self, observed, alpha=0.05, randomize=True, auxVar=None, tol=1e-6):
+    def equal_tailed_interval(self,
+                              observed,
+                              alpha=0.05,
+                              randomize=True,
+                              auxVar=None,
+                              tol=1e-6):
         """
         Form interval by inverting
         equal-tailed test with $\alpha/2$ in each tail.

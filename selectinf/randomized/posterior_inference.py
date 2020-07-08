@@ -24,7 +24,7 @@ class posterior(object):
     prior : callable
         A callable object that takes a single argument
         `parameter` of the same shape as `observed_target`
-        and returns (gradient of log prior, value of log prior)
+        and returns (value of log prior, gradient of log prior)
 
     dispersion : float, optional
         A dispersion parameter for likelihood. 
@@ -48,9 +48,9 @@ class posterior(object):
         offset = query.sampler.affine_con.offset
         logdens_linear = query.sampler.logdens_transform[0]
 
-        _, self.inverse_info, log_ref = query.selective_MLE(observed_target,
-                                                            cov_target,
-                                                            cov_target_score)
+        result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
+                                                                 cov_target,
+                                                                 cov_target_score)
             
         ### Note for an informative prior we might want to change this...
         
@@ -69,7 +69,7 @@ class posterior(object):
         self.linear_part = linear_part
         self.offset = offset
 
-        self.initial_estimate = observed_target
+        self.initial_estimate = np.asarray(result['MLE'])
         self.dispersion = dispersion
         self.log_ref = log_ref
 
@@ -97,7 +97,7 @@ class posterior(object):
 
         sigmasq = sigma**2
         mean_marginal = self.linear_coef.dot(target_parameter) + self.offset_coef
-        prec_marginal = np.linalg.inv(self.cov_marginal)
+        prec_marginal = self.prec_marginal
         conjugate_marginal = prec_marginal.dot(mean_marginal)
 
         useC = True
@@ -115,18 +115,17 @@ class posterior(object):
 
         log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal)/2.
 
-        log_lik = -((self.observed_target - target_parameter).T.dot(self.prec_target).dot(self.observed_target - target_parameter)) / 2.\
-                  - log_normalizer
+        log_lik = -(((self.observed_target - target_parameter).T.dot(self.prec_target).dot(self.observed_target - target_parameter)) / 2.
+                  - log_normalizer)
 
         grad_lik = (self.prec_target.dot(self.observed_target) -
                     self.prec_target.dot(target_parameter) \
                     - self.linear_coef.T.dot(prec_marginal.dot(soln)- conjugate_marginal))
 
-        grad_prior, log_prior = self.prior(target_parameter)
+        log_prior, grad_prior = self.prior(target_parameter)
 
-        return (self.dispersion * grad_lik/sigmasq + grad_prior,
-                self.dispersion * log_lik/sigmasq + log_prior -
-                (self.dispersion* self.log_ref/sigmasq))
+        return (self.dispersion * (log_lik - self.log_ref) / sigmasq + log_prior,
+                self.dispersion * grad_lik/sigmasq + grad_prior)
 
     ### Private method
 
@@ -140,21 +139,22 @@ class posterior(object):
         target_linear = -self.logdens_linear.dot(self.cov_target_score.T.dot(self.prec_target))
 
         implied_precision = np.zeros((self.ntarget + self.nopt, self.ntarget + self.nopt))
-        implied_precision[:self.ntarget, :self.ntarget] = (self.prec_target +
+        implied_precision[:self.ntarget][:,:self.ntarget] = (self.prec_target +
                                                            target_linear.T.dot(self.cond_precision.dot(target_linear)))
-        implied_precision[:self.ntarget, self.ntarget:] = -target_linear.T.dot(self.cond_precision)
-        implied_precision[self.ntarget:, :self.ntarget] = (-target_linear.T.dot(self.cond_precision)).T
-        implied_precision[self.ntarget:, self.ntarget:] = self.cond_precision
+        implied_precision[:self.ntarget][:,self.ntarget:] = -target_linear.T.dot(self.cond_precision)
+        implied_precision[self.ntarget:][:,:self.ntarget] = (-target_linear.T.dot(self.cond_precision)).T
+        implied_precision[self.ntarget:][:,self.ntarget:] = self.cond_precision
 
         implied_cov = np.linalg.inv(implied_precision)
-        self.linear_coef = implied_cov[self.ntarget:, :self.ntarget].dot(self.prec_target)
+        self.linear_coef = implied_cov[self.ntarget:][:,:self.ntarget].dot(self.prec_target)
 
         target_offset = self.cond_mean - target_linear.dot(self.observed_target)
-        M = implied_cov[self.ntarget:, self.ntarget:].dot(self.cond_precision.dot(target_offset))
+        M = implied_cov[self.ntarget:][:,self.ntarget:].dot(self.cond_precision.dot(target_offset))
         N = -target_linear.T.dot(self.cond_precision).dot(target_offset)
-        self.offset_coef = implied_cov[self.ntarget:, :self.ntarget].dot(N) + M
+        self.offset_coef = implied_cov[self.ntarget:][:,:self.ntarget].dot(N) + M
 
-        self.cov_marginal = implied_cov[self.ntarget:, self.ntarget:]
+        self.cov_marginal = implied_cov[self.ntarget:][:,self.ntarget:]
+        self.prec_marginal = np.linalg.inv(self.cov_marginal)
 
 ### sampling methods
 
@@ -174,12 +174,12 @@ def langevin_sampler(selective_posterior,
                        selective_posterior.log_posterior,
                        proposal_scale,
                        stepsize,
-                       selective_posterior.dispersion)
+                       np.sqrt(selective_posterior.dispersion))
 
     samples = np.zeros((nsample, selective_posterior.ntarget))
 
     for i, sample in enumerate(sampler):
-        sampler.scaling = selective_posterior.dispersion
+        sampler.scaling = np.sqrt(selective_posterior.dispersion)
         samples[i,:] = sample.copy()
         if i == nsample - 1:
             break
@@ -202,22 +202,22 @@ def gibbs_sampler(selective_posterior,
                        selective_posterior.log_posterior,
                        proposal_scale,
                        stepsize,
-                       selective_posterior.dispersion)
+                       np.sqrt(selective_posterior.dispersion))
     samples = np.zeros((nsample, selective_posterior.ntarget))
     scale_samples = np.zeros(nsample)
-    scale_update = selective_posterior.dispersion
+    scale_update = np.sqrt(selective_posterior.dispersion)
     for i in range(nsample):
 
         sample = sampler.__next__()
         samples[i, :] = sample
 
-        scale_update = invgamma.rvs(a=(0.1 +
+        scale_update_sq = invgamma.rvs(a=(0.1 +
                                        selective_posterior.ntarget +
                                        selective_posterior.ntarget/2),
-                                    scale=0.1-(scale_update * sampler.grad_posterior[1]),
-                                    size=1)
-        scale_samples[i] = scale_update
-        sampler.scaling = scale_update
+                                       scale=0.1-((scale_update**2)*sampler.posterior_[0]),
+                                       size=1)
+        scale_samples[i] = np.sqrt(scale_update_sq)
+        sampler.scaling = np.sqrt(scale_update_sq)
 
     return samples[nburnin:, :], scale_samples[nburnin:]
 
@@ -252,11 +252,11 @@ class langevin(object):
 
     def __next__(self):
         while True:
-            self.grad_posterior = self.gradient_map(self.state, self.scaling)
-            candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.grad_posterior[0])
+            self.posterior_ = self.gradient_map(self.state, self.scaling)
+            candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_[1])
                         + np.sqrt(2.)* (self.proposal_sqrt.dot(self._noise.rvs(self._shape))) * self._sqrt_step)
 
-            if not np.all(np.isfinite(self.gradient_map(candidate)[0])):
+            if not np.all(np.isfinite(self.gradient_map(candidate, self.scaling)[1])):
                 self.stepsize *= 0.5
                 self._sqrt_step = np.sqrt(self.stepsize)
             else:

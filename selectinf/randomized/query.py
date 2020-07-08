@@ -14,7 +14,7 @@ from ..constraints.affine import (sample_from_constraints,
                                   constraints)
 from .posterior_inference import posterior
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
-
+from .approx_reference import approximate_grid_inference
 
 class query(object):
 
@@ -96,211 +96,6 @@ class query(object):
     def solve(self):
 
         raise NotImplementedError('abstract method')
-
-    def setup_sampler(self):
-        """
-        Setup query to prepare for sampling.
-        Should set a few key attributes:
-
-            - observed_score_state
-            - observed_opt_state
-            - opt_transform
-
-        """
-        raise NotImplementedError('abstract method -- only keyword arguments')
-
-    def summary(self,
-                observed_target, 
-                target_cov, 
-                target_score_cov, 
-                alternatives,
-                opt_sample=None,
-                target_sample=None,
-                parameter=None,
-                level=0.9,
-                ndraw=10000,
-                burnin=2000,
-                compute_intervals=False):
-        """
-        Produce p-values and confidence intervals for targets
-        of model including selected features
-
-        Parameters
-        ----------
-
-        target : one of ['selected', 'full']
-
-        features : np.bool
-            Binary encoding of which features to use in final
-            model and targets.
-
-        parameter : np.array
-            Hypothesized value for parameter -- defaults to 0.
-
-        level : float
-            Confidence level.
-
-        ndraw : int (optional)
-            Defaults to 1000.
-
-        burnin : int (optional)
-            Defaults to 1000.
-
-        compute_intervals : bool
-            Compute confidence intervals?
-
-        dispersion : float (optional)
-            Use a known value for dispersion, or Pearson's X^2?
-        """
-
-        if parameter is None:
-            parameter = np.zeros_like(observed_target)
-
-        if opt_sample is None:
-            opt_sample, logW = self.sampler.sample(ndraw, burnin)
-        else:
-            if len(opt_sample) == 1: # only a sample, so weights are 1s
-                opt_sample = opt_sample[0]
-                logW = np.zeros(ndraw)
-            else:
-                opt_sample, logW = opt_sample
-            ndraw = opt_sample.shape[0]
-
-        pivots = self.sampler.coefficient_pvalues(observed_target,
-                                                  target_cov,
-                                                  target_score_cov,
-                                                  parameter=parameter,
-                                                  sample=(opt_sample, logW),
-                                                  normal_sample=target_sample,
-                                                  alternatives=alternatives)
-
-        if not np.all(parameter == 0):
-            pvalues = self.sampler.coefficient_pvalues(observed_target,
-                                                       target_cov,
-                                                       target_score_cov,
-                                                       parameter=np.zeros_like(parameter),
-                                                       sample=(opt_sample, logW),
-                                                       normal_sample=target_sample,
-                                                       alternatives=alternatives)
-        else:
-            pvalues = pivots
-
-        result = pd.DataFrame({'target':observed_target,
-                               'pvalue':pvalues})
-
-        if compute_intervals:
-
-            MLE = query.selective_MLE(self,
-                                      observed_target,
-                                      target_cov,
-                                      target_score_cov)[0]
-            MLE_intervals = np.asarray(MLE[['lower_confidence', 'upper_confidence']])
-
-            intervals = self.sampler.confidence_intervals(  
-                observed_target,
-                target_cov,
-                target_score_cov,
-                sample=(opt_sample, logW),
-                normal_sample=target_sample,
-                initial_guess=MLE_intervals,
-                level=level)
-
-            result.insert(2, 'lower_confidence', intervals[:,0])
-            result.insert(3, 'upper_confidence', intervals[:,1])
-
-        if not np.all(parameter == 0):
-            result.insert(4, 'pivot', pivots)
-            result.insert(5, 'parameter', parameter)
-
-        return result
-
-    def selective_MLE(self,
-                      observed_target, 
-                      target_cov, 
-                      target_score_cov, 
-                      level=0.9,
-                      solve_args={'tol':1.e-12}):
-        """
-
-        Parameters
-        ----------
-
-        observed_target : ndarray
-            Observed estimate of target.
-
-        target_cov : ndarray
-            Estimated covaraince of target.
-
-        target_score_cov : ndarray
-            Estimated covariance of target and score of randomized query.
-
-        level : float, optional
-            Confidence level.
-
-        solve_args : dict, optional
-            Arguments passed to solver.
-
-        """
-        
-        return self.sampler.selective_MLE(observed_target,
-                                          target_cov,
-                                          target_score_cov,
-                                          self.observed_opt_state,
-                                          level=level,
-                                          solve_args=solve_args)
-
-    def posterior(self,
-                  observed_target, 
-                  target_cov, 
-                  target_score_cov, 
-                  prior=None,
-                  dispersion=None,
-                  solve_args={'tol':1.e-12}):
-        """
-
-        Parameters
-        ----------
-
-        observed_target : ndarray
-            Observed estimate of target.
-
-        target_cov : ndarray
-            Estimated covaraince of target.
-
-        target_score_cov : ndarray
-            Estimated covariance of target and score of randomized query.
-
-        prior : callable
-            A callable object that takes a single argument
-            `parameter` of the same shape as `observed_target`
-            and returns (gradient of log prior, value of log prior)
-
-        dispersion : float, optional
-            Dispersion parameter for log-likelihood.
-
-        solve_args : dict, optional
-            Arguments passed to solver.
-
-        """
-        
-        if dispersion is None:
-            dispersion = 1
-            print('Using dispersion parameter 1...')
-            
-        if prior is None:
-            def prior(target_parameter):
-                grad_prior = -target_parameter / 100
-                log_prior = -np.linalg.norm(target_parameter)**2 /(2. * 100)
-                return grad_prior, log_prior
-        
-        return posterior(self,
-                         observed_target,
-                         target_cov,
-                         target_score_cov,
-                         prior,
-                         dispersion,
-                         solve_args=solve_args)
-
 
 class gaussian_query(query):
 
@@ -393,6 +188,242 @@ class gaussian_query(query):
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         return cond_mean, cond_cov, cond_precision, logdens_linear
+
+    def summary(self,
+                observed_target, 
+                target_cov, 
+                target_score_cov, 
+                alternatives,
+                opt_sample=None,
+                target_sample=None,
+                parameter=None,
+                level=0.9,
+                ndraw=10000,
+                burnin=2000,
+                compute_intervals=False):
+        """
+        Produce p-values and confidence intervals for targets
+        of model including selected features
+
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        alternatives : [str], optional
+            Sequence of strings describing the alternatives,
+            should be values of ['twosided', 'less', 'greater']
+
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
+
+        level : float
+            Confidence level.
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        compute_intervals : bool
+            Compute confidence intervals?
+
+        dispersion : float (optional)
+            Use a known value for dispersion, or Pearson's X^2?
+        """
+
+        if parameter is None:
+            parameter = np.zeros_like(observed_target)
+
+        if opt_sample is None:
+            opt_sample, logW = self.sampler.sample(ndraw, burnin)
+        else:
+            if len(opt_sample) == 1: # only a sample, so weights are 1s
+                opt_sample = opt_sample[0]
+                logW = np.zeros(ndraw)
+            else:
+                opt_sample, logW = opt_sample
+            ndraw = opt_sample.shape[0]
+
+        pivots = self.sampler.coefficient_pvalues(observed_target,
+                                                  target_cov,
+                                                  target_score_cov,
+                                                  parameter=parameter,
+                                                  sample=(opt_sample, logW),
+                                                  normal_sample=target_sample,
+                                                  alternatives=alternatives)
+
+        if not np.all(parameter == 0):
+            pvalues = self.sampler.coefficient_pvalues(observed_target,
+                                                       target_cov,
+                                                       target_score_cov,
+                                                       parameter=np.zeros_like(parameter),
+                                                       sample=(opt_sample, logW),
+                                                       normal_sample=target_sample,
+                                                       alternatives=alternatives)
+        else:
+            pvalues = pivots
+
+        result = pd.DataFrame({'target':observed_target,
+                               'pvalue':pvalues})
+
+        if compute_intervals:
+
+            MLE = self.selective_MLE(observed_target,
+                                     target_cov,
+                                     target_score_cov)[0]
+            MLE_intervals = np.asarray(MLE[['lower_confidence', 'upper_confidence']])
+
+            intervals = self.sampler.confidence_intervals(  
+                observed_target,
+                target_cov,
+                target_score_cov,
+                sample=(opt_sample, logW),
+                normal_sample=target_sample,
+                initial_guess=MLE_intervals,
+                level=level)
+
+            result.insert(2, 'lower_confidence', intervals[:,0])
+            result.insert(3, 'upper_confidence', intervals[:,1])
+
+        if not np.all(parameter == 0):
+            result.insert(4, 'pivot', pivots)
+            result.insert(5, 'parameter', parameter)
+
+        return result
+
+    def selective_MLE(self,
+                      observed_target, 
+                      target_cov, 
+                      target_score_cov, 
+                      level=0.9,
+                      solve_args={'tol':1.e-12}):
+        """
+
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        level : float, optional
+            Confidence level.
+
+        solve_args : dict, optional
+            Arguments passed to solver.
+
+        """
+        
+        return self.sampler.selective_MLE(observed_target,
+                                          target_cov,
+                                          target_score_cov,
+                                          self.observed_opt_state,
+                                          level=level,
+                                          solve_args=solve_args)
+
+    def posterior(self,
+                  observed_target, 
+                  target_cov, 
+                  target_score_cov, 
+                  prior=None,
+                  dispersion=None,
+                  solve_args={'tol':1.e-12}):
+        """
+
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        prior : callable
+            A callable object that takes a single argument
+            `parameter` of the same shape as `observed_target`
+            and returns (value of log prior, gradient of log prior)
+
+        dispersion : float, optional
+            Dispersion parameter for log-likelihood.
+
+        solve_args : dict, optional
+            Arguments passed to solver.
+
+        """
+        
+        if dispersion is None:
+            dispersion = 1
+            print('Using dispersion parameter 1...')
+            
+        if prior is None:
+            Di = 1. / (200 * np.diag(target_cov))
+            def prior(target_parameter):
+                grad_prior = -target_parameter * Di
+                log_prior = -0.5 * np.sum(target_parameter**2 * Di)
+                return log_prior, grad_prior
+        
+        return posterior(self,
+                         observed_target,
+                         target_cov,
+                         target_score_cov,
+                         prior,
+                         dispersion,
+                         solve_args=solve_args)
+
+    def approximate_grid_inference(self,
+                                   observed_target,
+                                   target_cov,
+                                   target_score_cov,
+                                   alternatives=None,
+                                   solve_args={'tol': 1.e-12}):
+
+        """
+
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        alternatives : [str], optional
+            Sequence of strings describing the alternatives,
+            should be values of ['twosided', 'less', 'greater']
+
+        solve_args : dict, optional
+            Arguments passed to solver.
+
+        """
+
+        G = approximate_grid_inference(self,
+                                       observed_target,
+                                       target_cov,
+                                       target_score_cov,
+                                       solve_args=solve_args)
+        return G.summary(alternatives=alternatives)
 
 class multiple_queries(object):
 
@@ -1569,6 +1600,7 @@ def _solve_barrier_nonneg(conjugate_arg,
 
     hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
     return current_value, current, hess
+
 
 def selective_MLE(observed_target, 
                   target_cov, 
