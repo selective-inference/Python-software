@@ -74,6 +74,49 @@ class approximate_grid_inference(object):
                                               observed_target[j] + 1.5*_scale[j],
                                               num=ngrid)
 
+    def summary(self,
+                alternatives=None,
+                parameter=None,
+                level=0.9):
+        """
+        Produce p-values and confidence intervals for targets
+        of model including selected features
+
+        Parameters
+        ----------
+
+        alternatives : [str], optional
+            Sequence of strings describing the alternatives,
+            should be values of ['twosided', 'less', 'greater']
+
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
+
+        level : float
+            Confidence level.
+
+        """
+
+        if parameter is not None:
+            pivots = self.approx_pivots(parameter,
+                                        alternatives=alternatives)
+        else:
+            pivots = None
+
+        pvalues = self._approx_pivots(np.zeros_like(self.observed_target),
+                                     alternatives=alternatives)
+        lower, upper = self._approx_intervals(level=level)
+
+        result = pd.DataFrame({'target':self.observed_target,
+                               'pvalue':pvalues,
+                               'lower_confidence':lower,
+                               'upper_confidence':upper})
+
+        if not np.all(parameter == 0):
+            result.insert(4, 'pivot', pivots)
+            result.insert(5, 'parameter', parameter)
+
+        return result
 
     def _approx_log_reference(self,
                              observed_target,
@@ -115,47 +158,6 @@ class approximate_grid_inference(object):
 
         return np.asarray(ref_hat)
 
-    def approx_CDF(self,
-                   mean_parameter,
-                   target_cov,
-                   approx_log_ref,
-                   grid):
-
-        _approx_density = []
-        for k in range(grid.shape[0]):
-            # approx_log_ref[k] = P(selection | D = N + Gamma * grid[k])
-            _approx_density.append(np.exp(-np.true_divide((grid[k] - mean_parameter)**2,
-                                                          2 * target_cov) + approx_log_ref[k]))
-
-        _approx_density_ = np.asarray(_approx_density) / (np.asarray(_approx_density).sum())
-        return np.cumsum(_approx_density_)
-
-    def approx_ci(self,
-                  param_grid,
-                  stat_grid,
-                  target_cov,
-                  approx_log_ref,
-                  indx_obsv,
-                  level):
-
-        area = np.zeros(param_grid.shape[0])
-
-        for k in range(param_grid.shape[0]):
-            area_vec = self.approx_CDF(param_grid[k],
-                                       target_cov,
-                                       approx_log_ref,
-                                       stat_grid)
-
-            area[k] = area_vec[indx_obsv]
-
-        alpha = 1 - level
-        region = param_grid[(area >= alpha / 2.) & (area <= (1 - alpha / 2.))]
-
-        if region.size > 0:
-            return np.nanmin(region), np.nanmax(region)
-        else:
-            return 0., 0.
-
     def _construct_families(self):
 
         self._families = []
@@ -182,12 +184,14 @@ class approximate_grid_inference(object):
                     0.5 * (grid - self.observed_target[m])**2 / var_target)
             logW -= logW.max()
 
+            # construction of families follows `selectinf.learning.core`
+            
             self._families.append(discrete_family(grid,
                                                   np.exp(logW)))
             
-            logG = - 0.5 * grid**2 / var_target
-            logG -= logG.max()
-            import matplotlib.pyplot as plt
+            # logG = - 0.5 * grid**2 / var_target
+            # logG -= logG.max()
+            # import matplotlib.pyplot as plt
 
             # plt.plot(self.stat_grid[m][10:30], approx_log_ref[10:30])
             # plt.plot(self.stat_grid[m][:10], approx_log_ref[:10], 'r', linewidth=4)
@@ -198,11 +202,9 @@ class approximate_grid_inference(object):
             # plt.plot(grid, logW)
             # plt.plot(grid, logG)
 
-            # stop
-
-    def approx_pivots(self,
-                      mean_parameter,
-                      alternatives=None):
+    def _approx_pivots(self,
+                       mean_parameter,
+                       alternatives=None):
 
         if not hasattr(self, "_families"):
             self._construct_families()
@@ -216,6 +218,9 @@ class approximate_grid_inference(object):
             family = self._families[m]
             observed_target = self.observed_target[m]
             var_target = self.target_cov[m, m]
+
+            # construction of pivot from families follows `selectinf.learning.core`
+
             _cdf = family.cdf((mean_parameter[m] - observed_target) / var_target,
                               x=observed_target)
             if alternatives[m] == 'twosided':
@@ -228,8 +233,8 @@ class approximate_grid_inference(object):
                 raise ValueError('alternative should be in ["twosided", "less", "greater"]')
         return pivot
 
-    def approx_intervals(self,
-                         level=0.9):
+    def _approx_intervals(self,
+                          level=0.9):
 
         if not hasattr(self, "_families"):
             self._construct_families()
@@ -237,6 +242,7 @@ class approximate_grid_inference(object):
         lower, upper = [], []
 
         for m in range(self.ntarget):
+            # construction of intervals from families follows `selectinf.learning.core`
             family = self._families[m]
             observed_target = self.observed_target[m]
             l, u = family.equal_tailed_interval(observed_target,
@@ -247,64 +253,3 @@ class approximate_grid_inference(object):
 
         return np.asarray(lower), np.asarray(upper)
 
-    def summary(self,
-                alternatives=None,
-                parameter=None,
-                level=0.9):
-        """
-        Produce p-values and confidence intervals for targets
-        of model including selected features
-
-        Parameters
-        ----------
-
-        alternatives : [str], optional
-            Sequence of strings describing the alternatives,
-            should be values of ['twosided', 'less', 'greater']
-
-        parameter : np.array
-            Hypothesized value for parameter -- defaults to 0.
-
-        level : float
-            Confidence level.
-
-        """
-
-        if parameter is not None:
-            pivots = self.approx_pivots(parameter,
-                                        alternatives=alternatives)
-        else:
-            pivots = None
-
-        pvalues = self.approx_pivots(np.zeros_like(self.observed_target),
-                                     alternatives=alternatives)
-        lower, upper = self.approx_intervals(level=level)
-
-        result = pd.DataFrame({'target':self.observed_target,
-                               'pvalue':pvalues,
-                               'lower_confidence':lower,
-                               'upper_confidence':upper})
-
-        if not np.all(parameter == 0):
-            result.insert(4, 'pivot', pivots)
-            result.insert(5, 'parameter', parameter)
-
-        return result
-
-def _log_concave_approx(xval, yval):
-    """
-    Approximate a log-concave function
-    to full line based on sample.
-
-    Assumes `xval` is sorted
-    """
-
-    nu, nl = 10, 10
-    n = xval.shape[0]
-    D = np.vstack([np.ones(n), xval, xval**2]).T
-
-    Du = D[-nu:]
-    Qu = np.linalg(Du).dot(yval[-nu:])
-
-    Dl = D[:nl]
-    Ql = np.linalg(Dl).dot(yval[:nl])

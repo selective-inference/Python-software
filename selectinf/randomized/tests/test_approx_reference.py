@@ -110,7 +110,7 @@ def test_approx_pivot(n=500,
                                                           cov_target,
                                                           cov_target_score)
 
-        pivot = approximate_grid_inf.approx_pivots(beta_target)
+        pivot = approximate_grid_inf._approx_pivots(beta_target)
 
         return pivot
 
@@ -175,7 +175,7 @@ def test_approx_ci(n=500,
                                                           cov_target,
                                                           cov_target_score)
 
-        lci, uci = approximate_grid_inf.approx_intervals(level)
+        lci, uci = approximate_grid_inf._approx_intervals(level)
 
         S = conv.approximate_grid_inference(observed_target,
                                             cov_target,
