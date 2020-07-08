@@ -105,16 +105,10 @@ def test_approx_pivot(n=500,
                                           cov_target,
                                           cov_target_score)[1]
 
-        scale_ = 4 * np.max(np.sqrt(np.diag(inverse_info)))
-        ngrid = 2 * scale_/0.1
-
-        grid = np.linspace(- scale_, scale_, num=ngrid)
-
         approximate_grid_inf = approximate_grid_inference(conv,
                                                           observed_target,
                                                           cov_target,
-                                                          cov_target_score,
-                                                          grid=grid)
+                                                          cov_target_score)
 
         pivot = approximate_grid_inf.approx_pivots(beta_target)
 
@@ -176,18 +170,10 @@ def test_approx_ci(n=500,
         scale_ = np.max(_scale)
         ngrid = int(2 * scale_/0.1)
 
-        grid = np.linspace(-scale_, scale_, num=ngrid)
-
         approximate_grid_inf = approximate_grid_inference(conv,
                                                           observed_target,
                                                           cov_target,
-                                                          cov_target_score,
-                                                          grid=grid)
-
-        param_grid = np.zeros((ntarget, ngrid))
-        mle = np.asarray(result['MLE'])
-        for j in range(ntarget):
-            param_grid[j,:] = np.linspace(mle[j]-_scale[j], mle[j]+_scale[j], num=ngrid)
+                                                          cov_target_score)
 
         lci, uci = approximate_grid_inf.approx_intervals(level)
 
