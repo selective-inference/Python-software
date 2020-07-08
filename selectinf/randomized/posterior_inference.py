@@ -24,7 +24,7 @@ class posterior(object):
     prior : callable
         A callable object that takes a single argument
         `parameter` of the same shape as `observed_target`
-        and returns (gradient of log prior, value of log prior)
+        and returns (value of log prior, gradient of log prior)
 
     dispersion : float, optional
         A dispersion parameter for likelihood. 
@@ -122,7 +122,7 @@ class posterior(object):
                     self.prec_target.dot(target_parameter) \
                     - self.linear_coef.T.dot(prec_marginal.dot(soln)- conjugate_marginal))
 
-        grad_prior, log_prior = self.prior(target_parameter)
+        log_prior, grad_prior = self.prior(target_parameter)
 
         return (self.dispersion * (log_lik - self.log_ref) / sigmasq + log_prior,
                 self.dispersion * grad_lik/sigmasq + grad_prior)

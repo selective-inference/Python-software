@@ -275,9 +275,9 @@ def test_hiv_data(nsample=10000,
                                            level=level,
                                            solve_args={'tol':1.e-12})[:2]
 
-    # approx_inf = conv.approximate_grid_inference(observed_target,
-    #                                              cov_target,
-    #                                              cov_target_score)
+    approx_inf = conv.approximate_grid_inference(observed_target,
+                                                 cov_target,
+                                                 cov_target_score)
 
     posterior_inf = conv.posterior(observed_target,
                                    cov_target,
@@ -316,7 +316,7 @@ def test_hiv_data(nsample=10000,
           np.mean(upper_gibbs - lower_gibbs),
           np.mean((2*Z_quantile)*np.sqrt(np.diag(posterior_inf.inverse_info))),
           np.mean(mle['upper_confidence'] - mle['lower_confidence']),
-          #np.mean(approx_inf['upper_confidence'] - approx_inf['lower_confidence'])
+          np.mean(approx_inf['upper_confidence'] - approx_inf['lower_confidence'])
     )
 
     print("lengths: naive intervals ", np.mean(naive_intervals[:,1]-naive_intervals[:,0]))
@@ -330,8 +330,8 @@ def test_hiv_data(nsample=10000,
                            'Gibbs_upper_credible': upper_gibbs,
                            'MLE_lower_confidence': mle['lower_confidence'],
                            'MLE_upper_confidence': mle['upper_confidence'],
-                           #'approx_lower_confidence': approx_inf['lower_confidence'],
-                           #'approx_upper_confidence': approx_inf['upper_confidence'],
+                           'approx_lower_confidence': approx_inf['lower_confidence'],
+                           'approx_upper_confidence': approx_inf['upper_confidence'],
                            'Split_lower_confidence': split_intervals[:,0],
                            'Split_upper_confidence': split_intervals[:, 1],
                            'Naive_lower_confidence': naive_intervals[:, 0],
