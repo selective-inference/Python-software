@@ -128,11 +128,18 @@ class query(object):
         Parameters
         ----------
 
-        target : one of ['selected', 'full']
+        observed_target : ndarray
+            Observed estimate of target.
 
-        features : np.bool
-            Binary encoding of which features to use in final
-            model and targets.
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        alternatives : [str], optional
+            Sequence of strings describing the alternatives,
+            should be values of ['twosided', 'less', 'greater']
 
         parameter : np.array
             Hypothesized value for parameter -- defaults to 0.
@@ -288,10 +295,12 @@ class query(object):
             print('Using dispersion parameter 1...')
             
         if prior is None:
+            Di = 1. / (200 * np.diag(target_cov))
             def prior(target_parameter):
-                grad_prior = -target_parameter / 100
-                log_prior = -np.linalg.norm(target_parameter)**2 /(2. * 100)
-                return grad_prior, log_prior
+                grad_prior = -target_parameter * Di
+                log_prior = -0.5 * np.sum(target_parameter**2 * Di)
+                stop
+                return log_prior, grad_prior
         
         return posterior(self,
                          observed_target,
@@ -305,24 +314,28 @@ class query(object):
                                    observed_target,
                                    target_cov,
                                    target_score_cov,
-                                   grid = None,
-                                   dispersion=None,
+                                   grid=None,
+                                   alternatives=None,
                                    solve_args={'tol': 1.e-12}):
 
-        if dispersion is None:
-            dispersion = 1
-            print('Using dispersion parameter 1...')
+        # result, inverse_info = self.selective_MLE(observed_target,
+        #                                           target_cov,
+        #                                           target_score_cov)[:2]
 
-        if grid is None:
-            grid = np.linspace(- 20., 20., num=401)
+        # if dispersion is None:
+        #     dispersion = 1
+        #     print('Using dispersion parameter 1...')
 
-        return approximate_grid_inference(self,
-                                          observed_target,
-                                          target_cov,
-                                          target_score_cov,
-                                          grid,
-                                          dispersion,
-                                          solve_args=solve_args)
+        G = approximate_grid_inference(self,
+                                       observed_target,
+                                       target_cov,
+                                       target_score_cov,
+                                       #inverse_info,
+                                       #result['MLE'],
+                                       #dispersion,
+                                       grid=grid,
+                                       solve_args=solve_args)
+        return G.summary(alternatives=alternatives)
 
 
 class gaussian_query(query):

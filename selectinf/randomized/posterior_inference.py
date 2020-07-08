@@ -49,8 +49,8 @@ class posterior(object):
         logdens_linear = query.sampler.logdens_transform[0]
 
         result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
-                                                            cov_target,
-                                                            cov_target_score)
+                                                                 cov_target,
+                                                                 cov_target_score)
             
         ### Note for an informative prior we might want to change this...
         
@@ -97,7 +97,7 @@ class posterior(object):
 
         sigmasq = sigma**2
         mean_marginal = self.linear_coef.dot(target_parameter) + self.offset_coef
-        prec_marginal = np.linalg.inv(self.cov_marginal)
+        prec_marginal = self.prec_marginal
         conjugate_marginal = prec_marginal.dot(mean_marginal)
 
         useC = True
@@ -115,8 +115,8 @@ class posterior(object):
 
         log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal)/2.
 
-        log_lik = -((self.observed_target - target_parameter).T.dot(self.prec_target).dot(self.observed_target - target_parameter)) / 2.\
-                  - log_normalizer
+        log_lik = -(((self.observed_target - target_parameter).T.dot(self.prec_target).dot(self.observed_target - target_parameter)) / 2.
+                  - log_normalizer)
 
         grad_lik = (self.prec_target.dot(self.observed_target) -
                     self.prec_target.dot(target_parameter) \
@@ -124,9 +124,8 @@ class posterior(object):
 
         grad_prior, log_prior = self.prior(target_parameter)
 
-        return (self.dispersion * grad_lik/sigmasq + grad_prior,
-                self.dispersion * log_lik/sigmasq + log_prior -
-                (self.dispersion* self.log_ref/sigmasq))
+        return (self.dispersion * (log_lik - self.log_ref) / sigmasq + log_prior,
+                self.dispersion * grad_lik/sigmasq + grad_prior)
 
     ### Private method
 
@@ -140,21 +139,22 @@ class posterior(object):
         target_linear = -self.logdens_linear.dot(self.cov_target_score.T.dot(self.prec_target))
 
         implied_precision = np.zeros((self.ntarget + self.nopt, self.ntarget + self.nopt))
-        implied_precision[:self.ntarget, :self.ntarget] = (self.prec_target +
+        implied_precision[:self.ntarget][:,:self.ntarget] = (self.prec_target +
                                                            target_linear.T.dot(self.cond_precision.dot(target_linear)))
-        implied_precision[:self.ntarget, self.ntarget:] = -target_linear.T.dot(self.cond_precision)
-        implied_precision[self.ntarget:, :self.ntarget] = (-target_linear.T.dot(self.cond_precision)).T
-        implied_precision[self.ntarget:, self.ntarget:] = self.cond_precision
+        implied_precision[:self.ntarget][:,self.ntarget:] = -target_linear.T.dot(self.cond_precision)
+        implied_precision[self.ntarget:][:,:self.ntarget] = (-target_linear.T.dot(self.cond_precision)).T
+        implied_precision[self.ntarget:][:,self.ntarget:] = self.cond_precision
 
         implied_cov = np.linalg.inv(implied_precision)
-        self.linear_coef = implied_cov[self.ntarget:, :self.ntarget].dot(self.prec_target)
+        self.linear_coef = implied_cov[self.ntarget:][:,:self.ntarget].dot(self.prec_target)
 
         target_offset = self.cond_mean - target_linear.dot(self.observed_target)
-        M = implied_cov[self.ntarget:, self.ntarget:].dot(self.cond_precision.dot(target_offset))
+        M = implied_cov[self.ntarget:][:,self.ntarget:].dot(self.cond_precision.dot(target_offset))
         N = -target_linear.T.dot(self.cond_precision).dot(target_offset)
-        self.offset_coef = implied_cov[self.ntarget:, :self.ntarget].dot(N) + M
+        self.offset_coef = implied_cov[self.ntarget:][:,:self.ntarget].dot(N) + M
 
-        self.cov_marginal = implied_cov[self.ntarget:, self.ntarget:]
+        self.cov_marginal = implied_cov[self.ntarget:][:,self.ntarget:]
+        self.prec_marginal = np.linalg.inv(self.cov_marginal)
 
 ### sampling methods
 
@@ -214,7 +214,7 @@ def gibbs_sampler(selective_posterior,
         scale_update_sq = invgamma.rvs(a=(0.1 +
                                        selective_posterior.ntarget +
                                        selective_posterior.ntarget/2),
-                                       scale=0.1-((scale_update**2) * sampler.grad_posterior[1]),
+                                       scale=0.1-((scale_update**2)*sampler.posterior_[0]),
                                        size=1)
         scale_samples[i] = np.sqrt(scale_update_sq)
         sampler.scaling = np.sqrt(scale_update_sq)
@@ -252,11 +252,11 @@ class langevin(object):
 
     def __next__(self):
         while True:
-            self.grad_posterior = self.gradient_map(self.state, self.scaling)
-            candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.grad_posterior[0])
+            self.posterior_ = self.gradient_map(self.state, self.scaling)
+            candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_[1])
                         + np.sqrt(2.)* (self.proposal_sqrt.dot(self._noise.rvs(self._shape))) * self._sqrt_step)
 
-            if not np.all(np.isfinite(self.gradient_map(candidate)[0])):
+            if not np.all(np.isfinite(self.gradient_map(candidate, self.scaling)[1])):
                 self.stepsize *= 0.5
                 self._sqrt_step = np.sqrt(self.stepsize)
             else:
