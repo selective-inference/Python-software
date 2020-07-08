@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 from scipy.stats import norm as ndist
 
 from ...tests.instance import gaussian_instance, HIV_NRTI
@@ -244,8 +243,8 @@ def test_hiv_data(nsample=10000,
     n, p = X.shape
     X /= np.sqrt(n)
     
-    ols_fit = sm.OLS(Y, X).fit()
-    _sigma = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1)
+    ols_fit = np.linalg.pinv(X).dot(Y)
+    _sigma = np.linalg.norm(Y - X.dot(ols_fit)) / np.sqrt(n - p - 1)
 
     const = split_lasso.gaussian
 
