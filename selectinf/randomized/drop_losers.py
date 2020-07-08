@@ -66,7 +66,7 @@ class drop_losers(gaussian_query):
 
         self._setup_sampler(A, b, linear, offset)
 
-    def selective_MLE(self,
+    def MLE_inference(self,
                       level=0.9,
                       solve_args={'tol':1.e-12}):
         """
