@@ -150,9 +150,10 @@ def test_flexible_prior1(nsample=100, nburnin=50):
                                       M,
                                       dispersion=dispersion)
 
+    Di = 1. / (200 * np.diag(cov_target))
     def prior(target_parameter):
-        grad_prior = -target_parameter / 100
-        log_prior = -np.linalg.norm(target_parameter)**2 /(2. * 100)
+        grad_prior = -target_parameter * Di
+        log_prior = -np.sum(target_parameter**2 * Di)
         return log_prior, grad_prior
 
     seed_state = np.random.get_state()
