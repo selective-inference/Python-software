@@ -97,17 +97,97 @@ class query(object):
 
         raise NotImplementedError('abstract method')
 
-    def setup_sampler(self):
-        """
-        Setup query to prepare for sampling.
-        Should set a few key attributes:
+class gaussian_query(query):
 
-            - observed_score_state
-            - observed_opt_state
-            - opt_transform
+    useC = True
 
-        """
-        raise NotImplementedError('abstract method -- only keyword arguments')
+    """
+    A class with Gaussian perturbation to the objective -- 
+    easy to apply CLT to such things
+    """
+
+    def fit(self, perturb=None):
+
+        p = self.nfeature
+
+        # take a new perturbation if supplied
+        if perturb is not None:
+            self._initial_omega = perturb
+        if self._initial_omega is None:
+            self._initial_omega = self.randomizer.sample()
+
+    # Private methods
+
+    def _setup_sampler(self, 
+                       linear_part,
+                       offset,
+                       opt_linear,
+                       opt_offset,
+                       # optional dispersion parameter
+                       # for covariance of randomization
+                       dispersion=1):
+
+        A, b = linear_part, offset
+        if not np.all(A.dot(self.observed_opt_state) - b <= 0):
+            raise ValueError('constraints not satisfied')
+
+        (cond_mean, 
+         cond_cov, 
+         cond_precision, 
+         logdens_linear) = self._setup_implied_gaussian(opt_linear, 
+                                                        opt_offset,
+                                                        dispersion)
+
+        def log_density(logdens_linear, offset, cond_prec, opt, score):
+            if score.ndim == 1:
+                mean_term = logdens_linear.dot(score.T + offset).T
+            else:
+                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
+            arg = opt + mean_term
+            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
+
+        log_density = functools.partial(log_density, 
+                                        logdens_linear, 
+                                        opt_offset, 
+                                        cond_precision)
+
+        self.cond_mean, self.cond_cov = cond_mean, cond_cov
+
+        affine_con = constraints(A,
+                                 b,
+                                 mean=cond_mean,
+                                 covariance=cond_cov)
+
+        self.sampler = affine_gaussian_sampler(affine_con,
+                                               self.observed_opt_state,
+                                               self.observed_score_state,
+                                               log_density,
+                                               (logdens_linear, opt_offset),
+                                               selection_info=self.selection_variable,
+                                               useC=self.useC)
+
+    def _setup_implied_gaussian(self, 
+                                opt_linear, 
+                                opt_offset,
+                                # optional dispersion parameter
+                                # for covariance of randomization
+                                dispersion=1):
+
+        _, prec = self.randomizer.cov_prec 
+        prec = prec / dispersion
+
+        if np.asarray(prec).shape in [(), (0,)]:
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+        else:
+            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
+
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        return cond_mean, cond_cov, cond_precision, logdens_linear
 
     def summary(self,
                 observed_target, 
@@ -197,10 +277,9 @@ class query(object):
 
         if compute_intervals:
 
-            MLE = query.selective_MLE(self,
-                                      observed_target,
-                                      target_cov,
-                                      target_score_cov)[0]
+            MLE = self.selective_MLE(observed_target,
+                                     target_cov,
+                                     target_score_cov)[0]
             MLE_intervals = np.asarray(MLE[['lower_confidence', 'upper_confidence']])
 
             intervals = self.sampler.confidence_intervals(  
@@ -313,121 +392,38 @@ class query(object):
                                    observed_target,
                                    target_cov,
                                    target_score_cov,
-                                   grid=None,
                                    alternatives=None,
                                    solve_args={'tol': 1.e-12}):
 
-        # result, inverse_info = self.selective_MLE(observed_target,
-        #                                           target_cov,
-        #                                           target_score_cov)[:2]
+        """
 
-        # if dispersion is None:
-        #     dispersion = 1
-        #     print('Using dispersion parameter 1...')
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        alternatives : [str], optional
+            Sequence of strings describing the alternatives,
+            should be values of ['twosided', 'less', 'greater']
+
+        solve_args : dict, optional
+            Arguments passed to solver.
+
+        """
 
         G = approximate_grid_inference(self,
                                        observed_target,
                                        target_cov,
                                        target_score_cov,
-                                       #inverse_info,
-                                       #result['MLE'],
-                                       #dispersion,
-                                       grid=grid,
                                        solve_args=solve_args)
         return G.summary(alternatives=alternatives)
-
-
-class gaussian_query(query):
-
-    useC = True
-
-    """
-    A class with Gaussian perturbation to the objective -- 
-    easy to apply CLT to such things
-    """
-
-    def fit(self, perturb=None):
-
-        p = self.nfeature
-
-        # take a new perturbation if supplied
-        if perturb is not None:
-            self._initial_omega = perturb
-        if self._initial_omega is None:
-            self._initial_omega = self.randomizer.sample()
-
-    # Private methods
-
-    def _setup_sampler(self, 
-                       linear_part,
-                       offset,
-                       opt_linear,
-                       opt_offset,
-                       # optional dispersion parameter
-                       # for covariance of randomization
-                       dispersion=1):
-
-        A, b = linear_part, offset
-        if not np.all(A.dot(self.observed_opt_state) - b <= 0):
-            raise ValueError('constraints not satisfied')
-
-        (cond_mean, 
-         cond_cov, 
-         cond_precision, 
-         logdens_linear) = self._setup_implied_gaussian(opt_linear, 
-                                                        opt_offset,
-                                                        dispersion)
-
-        def log_density(logdens_linear, offset, cond_prec, opt, score):
-            if score.ndim == 1:
-                mean_term = logdens_linear.dot(score.T + offset).T
-            else:
-                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
-            arg = opt + mean_term
-            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
-
-        log_density = functools.partial(log_density, 
-                                        logdens_linear, 
-                                        opt_offset, 
-                                        cond_precision)
-
-        self.cond_mean, self.cond_cov = cond_mean, cond_cov
-
-        affine_con = constraints(A,
-                                 b,
-                                 mean=cond_mean,
-                                 covariance=cond_cov)
-
-        self.sampler = affine_gaussian_sampler(affine_con,
-                                               self.observed_opt_state,
-                                               self.observed_score_state,
-                                               log_density,
-                                               (logdens_linear, opt_offset),
-                                               selection_info=self.selection_variable,
-                                               useC=self.useC)
-
-    def _setup_implied_gaussian(self, 
-                                opt_linear, 
-                                opt_offset,
-                                # optional dispersion parameter
-                                # for covariance of randomization
-                                dispersion=1):
-
-        _, prec = self.randomizer.cov_prec 
-        prec = prec / dispersion
-
-        if np.asarray(prec).shape in [(), (0,)]:
-            cond_precision = opt_linear.T.dot(opt_linear) * prec
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        else:
-            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
-
-        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
-
-        return cond_mean, cond_cov, cond_precision, logdens_linear
 
 class multiple_queries(object):
 

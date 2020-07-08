@@ -11,9 +11,8 @@ class approximate_grid_inference(object):
     def __init__(self,
                  query,
                  observed_target,
-                 cov_target,
-                 cov_target_score,
-                 grid=None,
+                 target_cov,
+                 target_score_cov,
                  solve_args={'tol':1.e-12}):
 
         """
@@ -22,6 +21,10 @@ class approximate_grid_inference(object):
 
         Parameters
         ----------
+
+        query : `gaussian_query`
+            A Gaussian query which has information
+            to describe implied Gaussian.
 
         observed_target : ndarray
             Observed estimate of target.
@@ -32,23 +35,16 @@ class approximate_grid_inference(object):
         target_score_cov : ndarray
             Estimated covariance of target and score of randomized query.
 
-        grid : ndarray
-            Grid on which to evaluate the approximate
-            probability of selection.
-
-        mle : ndarray
-            Selective MLE as initial guess.
-
-        inverse_info : ndarray
-            Selective inverse information to guide grid search.
+        solve_args : dict, optional
+            Arguments passed to solver.
 
         """
 
         self.solve_args = solve_args
 
         result, inverse_info = query.selective_MLE(observed_target,
-                                                   cov_target,
-                                                   cov_target_score,
+                                                   target_cov,
+                                                   target_score_cov,
                                                    solve_args=solve_args)[:2]
         mle = result['MLE']
         
@@ -61,12 +57,12 @@ class approximate_grid_inference(object):
         self.cond_cov = query.cond_cov
 
         self.observed_target = observed_target
-        self.cov_target_score = cov_target_score
-        self.cov_target = cov_target
+        self.target_score_cov = target_score_cov
+        self.target_cov = target_cov
 
         self.init_soln = query.observed_opt_state
 
-        self.ntarget = ntarget = cov_target.shape[0]
+        self.ntarget = ntarget = target_cov.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
         ngrid = 40
 
@@ -81,8 +77,8 @@ class approximate_grid_inference(object):
 
     def _approx_log_reference(self,
                              observed_target,
-                             cov_target,
-                             cov_target_score,
+                             target_cov,
+                             target_score_cov,
                              grid):
 
         """
@@ -92,8 +88,8 @@ class approximate_grid_inference(object):
         if np.asarray(observed_target).shape in [(), (0,)]:
            raise ValueError('no target specified')
 
-        prec_target = np.linalg.inv(cov_target)
-        target_lin = - self.logdens_linear.dot(cov_target_score.T.dot(prec_target))
+        prec_target = np.linalg.inv(target_cov)
+        target_lin = - self.logdens_linear.dot(target_score_cov.T.dot(prec_target))
 
         ref_hat = []
         solver = solve_barrier_affine_C
@@ -102,7 +98,7 @@ class approximate_grid_inference(object):
             # target_lin is "something" times Gamma,
             # where "something" comes from implied Gaussian
             # cond_mean is "something" times D
-            # Gamma is cov_target_score.T.dot(prec_target)
+            # Gamma is target_score_cov.T.dot(prec_target)
             
             cond_mean_grid = (target_lin.dot(np.atleast_1d(grid[k] - observed_target)) + 
                               self.cond_mean)
@@ -121,7 +117,7 @@ class approximate_grid_inference(object):
 
     def approx_CDF(self,
                    mean_parameter,
-                   cov_target,
+                   target_cov,
                    approx_log_ref,
                    grid):
 
@@ -129,7 +125,7 @@ class approximate_grid_inference(object):
         for k in range(grid.shape[0]):
             # approx_log_ref[k] = P(selection | D = N + Gamma * grid[k])
             _approx_density.append(np.exp(-np.true_divide((grid[k] - mean_parameter)**2,
-                                                          2 * cov_target) + approx_log_ref[k]))
+                                                          2 * target_cov) + approx_log_ref[k]))
 
         _approx_density_ = np.asarray(_approx_density) / (np.asarray(_approx_density).sum())
         return np.cumsum(_approx_density_)
@@ -137,7 +133,7 @@ class approximate_grid_inference(object):
     def approx_ci(self,
                   param_grid,
                   stat_grid,
-                  cov_target,
+                  target_cov,
                   approx_log_ref,
                   indx_obsv,
                   level):
@@ -146,7 +142,7 @@ class approximate_grid_inference(object):
 
         for k in range(param_grid.shape[0]):
             area_vec = self.approx_CDF(param_grid[k],
-                                       cov_target,
+                                       target_cov,
                                        approx_log_ref,
                                        stat_grid)
 
@@ -164,15 +160,15 @@ class approximate_grid_inference(object):
 
         self._families = []
         for m in range(self.ntarget):
-            p = self.cov_target_score.shape[1]
+            p = self.target_score_cov.shape[1]
             observed_target_uni = (self.observed_target[m]).reshape((1,))
-            cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
-            var_target = cov_target_uni[0, 0]
-            cov_target_score_uni = self.cov_target_score[m, :].reshape((1, p))
+            target_cov_uni = (np.diag(self.target_cov)[m]).reshape((1, 1))
+            var_target = target_cov_uni[0, 0]
+            target_score_cov_uni = self.target_score_cov[m, :].reshape((1, p))
 
             approx_log_ref = self._approx_log_reference(observed_target_uni,
-                                                        cov_target_uni,
-                                                        cov_target_score_uni,
+                                                        target_cov_uni,
+                                                        target_score_cov_uni,
                                                         self.stat_grid[m])
 
             approx_fn = interp1d(self.stat_grid[m],
@@ -219,7 +215,7 @@ class approximate_grid_inference(object):
         for m in range(self.ntarget):
             family = self._families[m]
             observed_target = self.observed_target[m]
-            var_target = self.cov_target[m, m]
+            var_target = self.target_cov[m, m]
             _cdf = family.cdf((mean_parameter[m] - observed_target) / var_target,
                               x=observed_target)
             if alternatives[m] == 'twosided':
@@ -245,7 +241,7 @@ class approximate_grid_inference(object):
             observed_target = self.observed_target[m]
             l, u = family.equal_tailed_interval(observed_target,
                                                         alpha=1-level)
-            var_target = self.cov_target[m, m]
+            var_target = self.target_cov[m, m]
             lower.append(l *  var_target + observed_target)
             upper.append(u * var_target + observed_target)
 
