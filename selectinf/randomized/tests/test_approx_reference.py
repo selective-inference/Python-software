@@ -221,7 +221,7 @@ def main(nsim=300, CI = False):
                                       p=100,
                                       signal_fac=1.,
                                       s=5,
-                                      sigma=2.,
+                                      sigma=3.,
                                       rho=0.4,
                                       randomizer_scale=1.)
 
@@ -232,4 +232,4 @@ def main(nsim=300, CI = False):
             print("iteration completed ", n + 1)
 
 if __name__ == "__main__":
-    main(nsim=20, CI = True)
+    main(nsim=40, CI = False)
