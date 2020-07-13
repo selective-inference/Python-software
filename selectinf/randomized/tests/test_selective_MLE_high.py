@@ -83,7 +83,7 @@ def test_full_targets(n=200,
 
 def test_selected_targets(n=2000, 
                           p=200, 
-                          signal_fac=10.,
+                          signal_fac=1.,
                           s=5, 
                           sigma=3, 
                           rho=0.4, 
@@ -147,43 +147,18 @@ def test_selected_targets(n=2000,
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+
+            print("observed_opt_state ", conv.observed_opt_state)
+            # print("check ", np.asarray(result['MLE']), np.asarray(result['unbiased']))
+
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
-
-
-def main(nsim=500, full=False):
-    P0, PA, cover, length_int = [], [], [], []
-    from statsmodels.distributions import ECDF
-
-    n, p, s = 500, 100, 5
-
-    for i in range(nsim):
-        if full:
-            if n > p:
-                full_dispersion = True
-            else:
-                full_dispersion = False
-            p0, pA, cover_, intervals = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
-            avg_length = intervals[:, 1] - intervals[:, 0]
-        else:
-            full_dispersion = True
-            p0, pA, cover_, intervals = test_selected_targets(n=n, p=p, s=s,
-                                                              full_dispersion=full_dispersion)
-            avg_length = intervals[:, 1] - intervals[:, 0]
-
-        cover.extend(cover_)
-        P0.extend(p0)
-        PA.extend(pA)
-        print(
-            np.array(PA) < 0.1, np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
-            np.mean(avg_length), 'null pvalue + power + length')
-
 
 def test_instance():
 
     n, p, s = 500, 100, 5
     X = np.random.standard_normal((n, p))
     beta = np.zeros(p)
-    #beta[:s] = np.sqrt(2 * np.log(p) / n)
+    beta[:s] = np.sqrt(2 * np.log(p) / n)
     Y = X.dot(beta) + np.random.standard_normal(n)
 
     scale_ = np.std(Y)
@@ -215,17 +190,47 @@ def test_instance():
     beta_target = np.linalg.pinv(X[:, M]).dot(X.dot(beta))
 
     coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+    print("observed_opt_state ", L.observed_opt_state)
+    #print("check ", np.asarray(result['MLE']), np.asarray(result['unbiased']))
 
     return coverage
 
-def main(nsim=500):
+# def main(nsim=500):
+#
+#     cover = []
+#     for i in range(nsim):
+#
+#         cover_ = test_instance()
+#         cover.extend(cover_)
+#         print(np.mean(cover), 'coverage so far ')
 
-    cover = []
+def main(nsim=500, full=False):
+    P0, PA, cover, length_int = [], [], [], []
+    from statsmodels.distributions import ECDF
+
+    n, p, s = 500, 100, 5
+
     for i in range(nsim):
+        if full:
+            if n > p:
+                full_dispersion = True
+            else:
+                full_dispersion = False
+            p0, pA, cover_, intervals = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
+            avg_length = intervals[:, 1] - intervals[:, 0]
+        else:
+            full_dispersion = True
+            p0, pA, cover_, intervals = test_selected_targets(n=n, p=p, s=s,
+                                                              full_dispersion=full_dispersion)
+            avg_length = intervals[:, 1] - intervals[:, 0]
 
-        cover_ = test_instance()
         cover.extend(cover_)
-        print(np.mean(cover), 'coverage so far ')
+        P0.extend(p0)
+        PA.extend(pA)
+        print(
+            np.array(PA) < 0.1, np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
+            np.mean(avg_length), 'null pvalue + power + length')
+
 
 if __name__ == "__main__":
-    main(nsim=500)
+    main(nsim=100)
