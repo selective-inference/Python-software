@@ -1699,7 +1699,6 @@ def selective_MLE(observed_target,
     ind_unbiased_estimator = observed_target + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean
                                                                                             - init_soln)))
 
-    print("check within MLE ", soln, init_soln)
     L = target_lin.T.dot(prec_opt)
     observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
     observed_info_mean = target_cov.dot(observed_info_natural.dot(target_cov))
