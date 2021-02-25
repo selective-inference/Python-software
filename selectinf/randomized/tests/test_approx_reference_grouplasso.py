@@ -1,6 +1,6 @@
 import numpy as np
 
-from ...tests.instance import gaussian_instance, gaussian_group_instance
+from ...tests.instance import gaussian_group_instance
 from ..approx_reference_grouplasso import group_lasso, approximate_grid_inference
 
 def test_approx_pivot(n=500,
