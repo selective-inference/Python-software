@@ -875,7 +875,7 @@ def test_rlasso_gaussian():
                                                          random_signs=True)
 
         sigma_ = np.std(y)
-        if target is not 'debiased':
+        if target != 'debiased':
             lam = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
         else:
             lam = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_

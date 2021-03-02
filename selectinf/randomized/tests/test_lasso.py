@@ -41,7 +41,7 @@ def test_highdim_lasso(n=500,
     n, p = X.shape
 
     sigma_ = np.std(Y)
-    if target is not 'debiased':
+    if target != 'debiased':
         W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
     else:
         W = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
@@ -394,5 +394,3 @@ def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3, AR=True):
     plt.show()
 
 
-if __name__ == "__main__":
-    main()

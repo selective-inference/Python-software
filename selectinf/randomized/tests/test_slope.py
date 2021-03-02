@@ -55,9 +55,9 @@ if rpy_loaded:
 
         if W is None:
             r_W = robjects.NA_Logical
-            if choice_weights is "gaussian":
+            if choice_weights == "gaussian":
                 r_choice_weights  = robjects.StrVector('gaussian')
-            elif choice_weights is "bh":
+            elif choice_weights == "bh":
                 r_choice_weights = robjects.StrVector('bh')
         else:
             r_W = robjects.r.matrix(W, nrow=p, ncol=1)
