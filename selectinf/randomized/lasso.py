@@ -285,7 +285,7 @@ class lasso(gaussian_query):
             \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
 
         where $\lambda$ is `feature_weights`. The ridge term
-        is determined by the Hessian and `np.std(Y)` by default,
+        is determined by the Hessian by default,
         as is the randomizer scale.
 
         Parameters
@@ -333,10 +333,10 @@ class lasso(gaussian_query):
 
         mean_diag = np.mean((X ** 2).sum(0))
         if ridge_term is None:
-            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+            ridge_term = np.sqrt(mean_diag) / (np.sqrt(n - 1) * sigma**2)
 
         if randomizer_scale is None:
-            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
+            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y, ddof=1)
 
         randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
 
@@ -409,7 +409,7 @@ class lasso(gaussian_query):
         mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
-            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+            ridge_term = np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5
@@ -481,6 +481,7 @@ class lasso(gaussian_query):
         L : `selection.randomized.lasso.lasso`
 
         """
+        n, p = X.shape
         loglike = rr.glm.cox(X, times, status, quadratic=quadratic)
 
         # scale for randomization seems kind of meaningless here...
@@ -488,7 +489,7 @@ class lasso(gaussian_query):
         mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
-            ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+            ridge_term = np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
@@ -559,7 +560,7 @@ class lasso(gaussian_query):
         mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
-            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+            ridge_term = np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts) * np.sqrt(n / (n - 1.))
@@ -694,7 +695,7 @@ def selected_targets(loglike,
                      features, 
                      sign_info={}, 
                      dispersion=None,
-                     solve_args={'tol': 1.e-12, 'min_its': 50},
+                     solve_args={'tol': 1.e-12, 'min_its': 100},
                      hessian=None):
 
     X, y = loglike.data
@@ -727,7 +728,8 @@ def full_targets(loglike,
                  W, 
                  features, 
                  dispersion=None,
-                 solve_args={'tol': 1.e-12, 'min_its': 50}):
+                 solve_args={'tol': 1.e-12, 'min_its': 50},
+                 hessian=None):
     
     X, y = loglike.data
     n, p = X.shape
@@ -738,6 +740,11 @@ def full_targets(loglike,
     # target is one-step estimator
 
     Qfull = X.T.dot(W[:, None] * X)
+    if hessian is None:
+        Qfull = X.T.dot(W[:, None] * X)
+    else:
+        Qfull = hessian
+
     Qfull_inv = np.linalg.inv(Qfull)
     full_estimator = loglike.solve(**solve_args)
     cov_target = Qfull_inv[features][:, features]
@@ -1131,6 +1138,7 @@ class split_lasso(lasso):
         L : `selection.randomized.lasso.lasso`
 
         """
+        n, p = X.shape
         loglike = rr.glm.cox(X, times, status, quadratic=quadratic)
 
         return split_lasso(loglike, 

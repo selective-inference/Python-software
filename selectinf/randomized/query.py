@@ -1486,7 +1486,7 @@ def _solve_barrier_affine_py(conjugate_arg,
                              min_its=200,
                              tol=1.e-10):
 
-    scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
+    scaling = 1 / np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
 
     if feasible_point is None:
         feasible_point = 1. / scaling
@@ -1555,7 +1555,7 @@ def _solve_barrier_nonneg(conjugate_arg,
                           nstep=1000,
                           tol=1.e-8):
 
-    scaling = np.sqrt(np.diag(precision))
+    scaling = 1 / np.sqrt(np.diag(precision))
 
     if feasible_point is None:
         feasible_point = 1. / scaling

@@ -31,9 +31,16 @@ def _design(n, p, rho, equicorrelated):
         X = np.random.standard_normal((n, p)).dot(cholX.T)
     return X, sigmaX, cholX
 
-def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
-                      random_signs=False, df=np.inf,
-                      scale=True, center=True,
+def gaussian_instance(n=100,
+                      p=200,
+                      s=7,
+                      sigma=5,
+                      rho=0.,
+                      signal=7,
+                      random_signs=False,
+                      df=np.inf,
+                      scale=True,
+                      center=True,
                       equicorrelated=True):
 
 
@@ -61,14 +68,13 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     sigma : float
         Noise level
 
-    rho : float
-        Equicorrelation value (must be in interval [0,1])
+    rho : float 
+        Correlation parameter. Must be in interval [0,1] for
+        equicorrelated, [-1,1] for AR(1).
 
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
-        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
-        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -77,9 +83,15 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     df : int
         Degrees of freedom for noise (from T distribution).
 
-    equicorrelated: bool
-        If true, design in equi-correlated,
-        Else design is AR.
+    scale : bool
+        Scale columns of design matrix?
+
+    center : bool
+        Center columns of design matrix?
+
+    equicorrelated : bool
+        Should columns of design be equi-correlated
+        or AR(1)?
 
     Returns
     -------
@@ -101,6 +113,13 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
 
     sigmaX : np.ndarray((p,p))
         Row covariance.
+
+    Notes
+    -----
+        
+    The size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+    If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
+
     """
 
     X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
@@ -166,18 +185,27 @@ def logistic_instance(n=100,
     s : int
         True sparsity
 
-    rho : float
-        Equicorrelation value (must be in interval [0,1])
+    rho : float 
+        Correlation parameter. Must be in interval [0,1] for
+        equicorrelated, [-1,1] for AR(1).
 
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
-        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
-        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
         Else they are all positive.
+
+    scale : bool
+        Scale columns of design matrix?
+
+    center : bool
+        Center columns of design matrix?
+
+    equicorrelated : bool
+        Should columns of design be equi-correlated
+        or AR(1)?
 
     Returns
     -------
@@ -197,6 +225,11 @@ def logistic_instance(n=100,
     sigmaX : np.ndarray((p,p))
         Row covariance.
 
+    Notes
+    -----
+        
+    The size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+    If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
     """
 
     X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
@@ -230,7 +263,11 @@ def logistic_instance(n=100,
     Y = np.random.binomial(1, pi)
     return X, Y, beta, np.nonzero(active)[0], sigmaX
 
-def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
+def poisson_instance(n=100,
+                     p=200,
+                     s=7,
+                     rho=0.3,
+                     signal=4,
                      random_signs=False, 
                      scale=True, 
                      center=True, 
@@ -252,18 +289,27 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     s : int
         True sparsity
 
-    rho : float
-        Equicorrelation value (must be in interval [0,1])
+    rho : float 
+        Correlation parameter. Must be in interval [0,1] for
+        equicorrelated, [-1,1] for AR(1).
 
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
-        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
-        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
         Else they are all positive.
+
+    scale : bool
+        Scale columns of design matrix?
+
+    center : bool
+        Center columns of design matrix?
+
+    equicorrelated : bool
+        Should columns of design be equi-correlated
+        or AR(1)?
 
     Returns
     -------
@@ -283,6 +329,11 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     sigmaX : np.ndarray((p,p))
         Row covariance.
 
+    Notes
+    -----
+        
+    The size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+    If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
     """
 
     X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
@@ -315,6 +366,118 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
 
     Y = np.random.poisson(mu)
     return X, Y, beta, np.nonzero(active)[0], sigmaX
+
+def cox_instance(n=100,
+                 p=200,
+                 s=7,
+                 rho=0.3,
+                 signal=4,
+                 random_signs=False, 
+                 scale=True, 
+                 center=True, 
+                 p_censor=0.1,
+                 equicorrelated=True):
+    """A testing instance for the LASSO.
+    Design is equi-correlated in the population,
+    normalized to have columns of norm 1.
+
+    Parameters
+    ----------
+
+    n : int
+        Sample size
+
+    p : int
+        Number of features
+
+    s : int
+        True sparsity
+
+    rho : float 
+        Correlation parameter. Must be in interval [0,1] for
+        equicorrelated, [-1,1] for AR(1).
+
+    signal : float or (float, float)
+        Sizes for the coefficients. If a tuple -- then coefficients
+        are equally spaced between these values using np.linspace.
+
+    random_signs : bool
+        If true, assign random signs to coefficients.
+        Else they are all positive.
+
+    scale : bool
+        Scale columns of design matrix?
+
+    center : bool
+        Center columns of design matrix?
+
+    equicorrelated : bool
+        Should columns of design be equi-correlated
+        or AR(1)?
+
+    p_censor : float
+        Probability of right-censorship.
+
+    Returns
+    -------
+
+    X : np.float((n,p))
+        Design matrix.
+
+    T : np.float(n)
+        Response vector of times.
+
+    S : np.bool(n)
+        Right-censoring status.
+
+    beta : np.float(p)
+        True coefficients.
+
+    active : np.int(s)
+        Non-zero pattern.
+
+    sigmaX : np.ndarray((p,p))
+        Row covariance.
+
+    Notes
+    -----
+        
+    The size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+    If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
+
+    """
+
+    X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
+
+    if center:
+        X -= X.mean(0)[None,:]
+
+    beta = np.zeros(p) 
+    signal = np.atleast_1d(signal)
+    if signal.shape == (1,):
+        beta[:s] = signal[0] 
+    else:
+        beta[:s] = np.linspace(signal[0], signal[1], s)
+    if random_signs:
+        beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    np.random.shuffle(beta)
+    beta /= np.sqrt(n)
+
+    if scale:
+        scaling = X.std(0) * np.sqrt(n)
+        X /= scaling[None, :]
+        beta *= np.sqrt(n)
+        sigmaX = sigmaX / np.multiply.outer(scaling, scaling)
+
+    active = np.zeros(p, np.bool)
+    active[beta != 0] = True
+
+    eta = linpred = np.dot(X, beta) 
+    mu = np.exp(eta)
+
+    T = np.random.exponential(mu)
+    S = np.random.choice([0,1], n, p=[p_censor,1-p_censor])
+    return X, T, S, beta, np.nonzero(active)[0], sigmaX
 
 def HIV_NRTI(drug='3TC', 
              standardize=True, 
