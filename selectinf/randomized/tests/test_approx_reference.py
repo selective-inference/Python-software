@@ -50,6 +50,10 @@ def test_summary(n=500,
                                           nonzero,
                                           dispersion=dispersion)
 
+        inverse_info = conv.selective_MLE(observed_target,
+                                          cov_target,
+                                          cov_target_score)[1]
+        
         S = conv.approximate_grid_inference(observed_target,
                                             cov_target,
                                             cov_target_score,
@@ -105,10 +109,16 @@ def test_approx_pivot(n=500,
                                           cov_target,
                                           cov_target_score)[1]
 
-        approximate_grid_inf = approximate_grid_inference(conv,
-                                                          observed_target,
+        approximate_grid_inf = approximate_grid_inference(observed_target,
                                                           cov_target,
-                                                          cov_target_score)
+                                                          cov_target_score,
+                                                          inverse_info,
+                                                          conv.observed_opt_state,
+                                                          conv.sampler.affine_con.mean,
+                                                          conv.sampler.affine_con.covariance,
+                                                          conv.sampler.logdens_transform[0],
+                                                          conv.sampler.affine_con.linear_part,
+                                                          conv.sampler.affine_con.offset)
 
         pivot = approximate_grid_inf._approx_pivots(beta_target)
 
@@ -170,10 +180,16 @@ def test_approx_ci(n=500,
         scale_ = np.max(_scale)
         ngrid = int(2 * scale_/0.1)
 
-        approximate_grid_inf = approximate_grid_inference(conv,
-                                                          observed_target,
+        approximate_grid_inf = approximate_grid_inference(observed_target,
                                                           cov_target,
-                                                          cov_target_score)
+                                                          cov_target_score,
+                                                          inverse_info,
+                                                          conv.observed_opt_state,
+                                                          conv.sampler.affine_con.mean,
+                                                          conv.sampler.affine_con.covariance,
+                                                          conv.sampler.logdens_transform[0],
+                                                          conv.sampler.affine_con.linear_part,
+                                                          conv.sampler.affine_con.offset)
 
         lci, uci = approximate_grid_inf._approx_intervals(level)
 
