@@ -162,20 +162,38 @@ class lasso(gaussian_query):
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
         X, y = self.loglike.data
-        W = self._W = self.loglike.saturated_loss.hessian(X.dot(beta_bar))
-        _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
-        _hessian_unpen = np.dot(X.T, X[:, unpenalized] * W[:, None])
+        linpred = X.dot(beta_bar)
+        n = linpred.shape[0]
+        if hasattr(self.loglike.saturated_loss, "hessian"): # a GLM -- all we need is W
+            W = self._W = self.loglike.saturated_loss.hessian(linpred)
+            _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
+            _hessian_unpen = np.dot(X.T, X[:, unpenalized] * W[:, None])
+        elif hasattr(self.loglike.saturated_loss, "hessian_mult"):
+            active_right = np.zeros((n, active.sum()))
+            for i, j in enumerate(np.nonzero(active)[0]):
+                active_right[:,i] = self.loglike.saturated_loss.hessian_mult(linpred, 
+                                                                             X[:,j], 
+                                                                             case_weights=self.loglike.saturated_loss.case_weights)
+            unpen_right = np.zeros((n, unpenalized.sum()))
+            for i, j in enumerate(np.nonzero(unpenalized)[0]):
+                unpen_right[:,i] = self.loglike.saturated_loss.hessian_mult(linpred, 
+                                                                            X[:,j], 
+                                                                            case_weights=self.loglike.saturated_loss.case_weights)
+            _hessian_active = X.T.dot(active_right)
+            _hessian_unpen = X.T.dot(unpen_right)
+        else:
+            raise ValueError('saturated_loss has no hessian or hessian_mult method')
 
         _score_linear_term = -np.hstack([_hessian_active, _hessian_unpen])
 
         # set the observed score (data dependent) state
 
         # observed_score_state is
-        # \nabla \ell(\bar{\beta}_E) + Q(\bar{\beta}_E) \bar{\beta}_E
+        # \nabla \ell(\bar{\beta}_E) - Q(\bar{\beta}_E) \bar{\beta}_E
         # in linear regression this is _ALWAYS_ -X^TY
         # 
         # should be asymptotically equivalent to
-        # \nabla \ell(\beta^*) + Q(\beta^*)\beta^*
+        # \nabla \ell(\beta^*) - Q(\beta^*)\beta^*
 
         self.observed_score_state = _score_linear_term.dot(_beta_unpenalized)
         self.observed_score_state[inactive] += self.loglike.smooth_objective(beta_bar, 'grad')[inactive]
@@ -300,9 +318,6 @@ class lasso(gaussian_query):
         randomizer_scale : float
             Scale for IID components of randomizer.
 
-        randomizer : str
-            One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
 
@@ -380,9 +395,6 @@ class lasso(gaussian_query):
 
         randomizer_scale : float
             Scale for IID components of randomizer.
-
-        randomizer : str
-            One of ['laplace', 'logistic', 'gaussian']
 
         Returns
         -------
@@ -463,16 +475,13 @@ class lasso(gaussian_query):
         randomizer_scale : float
             Scale for IID components of randomizer.
 
-        randomizer : str
-            One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
 
         L : `selection.randomized.lasso.lasso`
 
         """
-        loglike = coxph_obj(X, times, status, quadratic=quadratic)
+        loglike = rr.glm.cox(X, times, status, quadratic=quadratic)
 
         # scale for randomization seems kind of meaningless here...
 
@@ -535,9 +544,6 @@ class lasso(gaussian_query):
 
         randomizer_scale : float
             Scale for IID components of randomizer.
-
-        randomizer : str
-            One of ['laplace', 'logistic', 'gaussian']
 
         Returns
         -------
@@ -620,9 +626,6 @@ class lasso(gaussian_query):
         randomizer_scale : float
             Scale for IID components of randomizer.
 
-        randomizer : str
-            One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
 
@@ -691,16 +694,21 @@ def selected_targets(loglike,
                      features, 
                      sign_info={}, 
                      dispersion=None,
-                     solve_args={'tol': 1.e-12, 'min_its': 50}):
+                     solve_args={'tol': 1.e-12, 'min_its': 50},
+                     hessian=None):
 
     X, y = loglike.data
     n, p = X.shape
 
     Xfeat = X[:, features]
-    Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
+    if hessian is None:
+        Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
+        _score_linear = -Xfeat.T.dot(W[:, None] * X).T
+    else:
+        Qfeat = hessian[features][:,features]
+        _score_linear = -hessian[features].T
     observed_target = restricted_estimator(loglike, features, solve_args=solve_args)
     cov_target = np.linalg.inv(Qfeat)
-    _score_linear = -Xfeat.T.dot(W[:, None] * X).T
     crosscov_target_score = _score_linear.dot(cov_target)
     alternatives = ['twosided'] * features.sum()
     features_idx = np.arange(p)[features]
@@ -823,7 +831,8 @@ class split_lasso(lasso):
                  feature_weights,
                  proportion_select,
                  ridge_term=0,
-                 perturb=None):
+                 perturb=None,
+                 estimate_dispersion=False):
 
         (self.loglike,
          self.feature_weights,
@@ -836,11 +845,11 @@ class split_lasso(lasso):
         self.nfeature = p = self.loglike.shape[0]
         self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
         self._initial_omega = perturb
+        self.estimate_dispersion = estimate_dispersion
 
     def fit(self,
             solve_args={'tol': 1.e-12, 'min_its': 50},
-            perturb=None,
-            estimate_dispersion=True):
+            perturb=None):
 
         signs = lasso.fit(self, 
                           solve_args=solve_args,
@@ -851,7 +860,7 @@ class split_lasso(lasso):
 
         # we then setup up the sampler again
 
-        if estimate_dispersion:
+        if self.estimate_dispersion:
 
             X, y = self.loglike.data
             n, p = X.shape
@@ -864,7 +873,6 @@ class split_lasso(lasso):
             # run setup again after 
             # estimating dispersion 
 
-            print(dispersion, 'dispersion')
             if df_fit > 0:
                 self._setup_sampler(*self._setup_sampler_data, 
                                      dispersion=dispersion)
@@ -949,7 +957,7 @@ class split_lasso(lasso):
                  proportion,
                  sigma=1.,
                  quadratic=None,
-                 ridge_term=0):
+                 estimate_dispersion=True):
         r"""
         Squared-error LASSO with feature weights.
         Objective function is (before randomization)
@@ -977,6 +985,9 @@ class split_lasso(lasso):
             `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
 
+        proportion: float
+            What proportion of data to use for selection.
+ 
         sigma : float (optional)
             Noise variance. Set to 1 if `covariance_estimator` is not None.
             This scales the loglikelihood by `sigma**(-2)`.
@@ -985,12 +996,6 @@ class split_lasso(lasso):
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic
             coefficient to 0.
-
-        randomizer_scale : float
-            Scale for IID components of randomizer.
-
-        randomizer : str
-            One of ['laplace', 'logistic', 'gaussian']
 
         Returns
         -------
@@ -1003,10 +1008,185 @@ class split_lasso(lasso):
                                   Y, 
                                   coef=1. / sigma ** 2, 
                                   quadratic=quadratic)
-        n, p = X.shape
 
         return split_lasso(loglike, 
-                           np.asarray(feature_weights) / sigma ** 2,
+                           np.asarray(feature_weights)/sigma**2,
+                           proportion,
+                           estimate_dispersion=estimate_dispersion)
+
+
+    @staticmethod
+    def logistic(X,
+                 successes,
+                 feature_weights,
+                 proportion,
+                 trials=None,
+                 quadratic=None):
+        r"""
+        Logistic LASSO with feature weights (before randomization)
+
+        .. math::
+
+             \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\ell$ is the negative of the logistic
+        log-likelihood (half the logistic deviance)
+        and $\lambda$ is `feature_weights`.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        successes : ndarray
+            Shape (n,) -- response vector. An integer number of successes.
+            For data that is proportions, multiply the proportions
+            by the number of trials first.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        proportion: float
+            What proportion of data to use for selection.
+ 
+        trials : ndarray (optional)
+            Number of trials per response, defaults to
+            ones the same shape as Y.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+
+        loglike = rr.glm.logistic(X,
+                                  successes,
+                                  trials=trials,
+                                  quadratic=quadratic)
+
+        return split_lasso(loglike, 
+                           np.asarray(feature_weights),
                            proportion)
 
+    @staticmethod
+    def coxph(X,
+              times,
+              status,
+              feature_weights,
+              proportion,
+              quadratic=None):
+        r"""
+        Cox proportional hazards LASSO with feature weights.
+        Objective function is (before randomization)
 
+        .. math::
+
+            \beta \mapsto \ell^{\text{Cox}}(\beta) + 
+            \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\ell^{\text{Cox}}$ is the
+        negative of the log of the Cox partial
+        likelihood and $\lambda$ is `feature_weights`.
+        Uses Efron's tie breaking method.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        times : ndarray
+            Shape (n,) -- the survival times.
+
+        status : ndarray
+            Shape (n,) -- the censoring status.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        proportion: float
+            What proportion of data to use for selection.
+ 
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+        loglike = rr.glm.cox(X, times, status, quadratic=quadratic)
+
+        return split_lasso(loglike, 
+                           np.asarray(feature_weights),
+                           proportion)
+
+    @staticmethod
+    def poisson(X,
+                counts,
+                feature_weights,
+                proportion,
+                quadratic=None,
+                ridge_term=None):
+        r"""
+        Poisson log-linear LASSO with feature weights.
+        Objective function is (before randomization)
+
+        .. math::
+
+            \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\ell^{\text{Poisson}}$ is the negative
+        of the log of the Poisson likelihood (half the deviance)
+        and $\lambda$ is `feature_weights`.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        counts : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        proportion: float
+            What proportion of data to use for selection.
+ 
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+        loglike = rr.glm.poisson(X, counts, quadratic=quadratic)
+
+        return split_lasso(loglike, 
+                           np.asarray(feature_weights),
+                           proportion)

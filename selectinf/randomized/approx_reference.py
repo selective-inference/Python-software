@@ -9,10 +9,16 @@ from ..distributions.discrete_family import discrete_family
 class approximate_grid_inference(object):
 
     def __init__(self,
-                 query,
                  observed_target,
                  target_cov,
                  target_score_cov,
+                 inverse_info,
+                 init_soln,
+                 cond_mean,
+                 cond_cov,
+                 logdens_linear,
+                 linear_part,
+                 offset,
                  solve_args={'tol':1.e-12}):
 
         """
@@ -41,26 +47,18 @@ class approximate_grid_inference(object):
         """
 
         self.solve_args = solve_args
-
-        result, inverse_info = query.selective_MLE(observed_target,
-                                                   target_cov,
-                                                   target_score_cov,
-                                                   solve_args=solve_args)[:2]
-        mle = result['MLE']
         
-        self.linear_part = query.sampler.affine_con.linear_part
-        self.offset = query.sampler.affine_con.offset
+        self.init_soln = init_soln
+        self.cond_mean = cond_mean
+        self.cond_cov = cond_cov
+        self.prec_opt = np.linalg.inv(self.cond_cov)
 
-        self.logdens_linear = query.sampler.logdens_transform[0]
-        self.cond_mean = query.cond_mean
-        self.prec_opt = np.linalg.inv(query.cond_cov)
-        self.cond_cov = query.cond_cov
-
+        self.logdens_linear = logdens_linear
+        self.linear_part = linear_part
+        self.offset = offset
         self.observed_target = observed_target
         self.target_score_cov = target_score_cov
         self.target_cov = target_cov
-
-        self.init_soln = query.observed_opt_state
 
         self.ntarget = ntarget = target_cov.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
