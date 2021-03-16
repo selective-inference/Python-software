@@ -16,7 +16,8 @@ def test_standalone_inference(n=2000,
                               approx=True,
                               MLE=True):
     """
-    Compare to R randomized lasso
+    Check that standalone functions reproduce same p-values
+    as methods of `selectinf.randomized.lasso`
     """
 
     signal = np.sqrt(signal_fac * np.log(p)) / np.sqrt(n)
