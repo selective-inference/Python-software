@@ -418,11 +418,23 @@ class gaussian_query(query):
 
         """
 
-        G = approximate_grid_inference(self,
-                                       observed_target,
+        inverse_info = self.selective_MLE(observed_target,
+                                          target_cov,
+                                          target_score_cov,
+                                          solve_args=solve_args)[1]
+
+        G = approximate_grid_inference(observed_target,
                                        target_cov,
                                        target_score_cov,
+                                       inverse_info,
+                                       self.observed_opt_state,
+                                       self.cond_mean,
+                                       self.cond_cov,
+                                       self.sampler.logdens_transform[0],
+                                       self.sampler.affine_con.linear_part,
+                                       self.sampler.affine_con.offset,
                                        solve_args=solve_args)
+
         return G.summary(alternatives=alternatives)
 
 class multiple_queries(object):

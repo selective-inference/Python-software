@@ -6,7 +6,7 @@ import nose.tools as nt
 import regreg.api as rr
 
 from ..lasso import lasso, selected_targets, full_targets, debiased_targets
-from ...tests.instance import gaussian_instance
+from ...tests.instance import gaussian_instance, logistic_instance
 from ...tests.flags import SET_SEED
 from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
@@ -354,6 +354,75 @@ def test_compareR(n=200,
 
     assert np.linalg.norm(conv.sampler.affine_con.covariance - cond_cov) / np.linalg.norm(cond_cov) < 1.e-3
     assert np.linalg.norm(conv.sampler.affine_con.mean - cond_mean[:,0]) / np.linalg.norm(cond_mean[:,0]) < 1.e-3
+
+def test_logistic_lasso(n=500, 
+                        p=200, 
+                        signal_fac=1.5, 
+                        s=5, 
+                        full=True, 
+                        rho=0.4, 
+                        randomizer_scale=1., 
+                        ndraw=5000, 
+                        burnin=1000, 
+                        ridge_term=None, compare_to_lasso=True):
+    """
+    Compare to R randomized lasso
+    """
+
+    inst, const = logistic_instance, lasso.logistic
+    signal = np.sqrt(signal_fac * 2 * np.log(p))
+    X, Y, beta = inst(n=n,
+                      p=p, 
+                      signal=signal, 
+                      s=s, 
+                      equicorrelated=False, 
+                      rho=rho, 
+                      random_signs=True)[:3]
+
+    if ridge_term is None:
+        mean_diag = np.mean((X**2).sum(0))
+        ridge_term = (np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+
+    W = np.ones(X.shape[1]) * choose_lambda(X) * 0.7
+
+    perturb = np.random.standard_normal(p) * randomizer_scale / np.sqrt(n)
+
+    conv = const(X, 
+                 Y, 
+                 W, 
+                 randomizer_scale=randomizer_scale / np.sqrt(n),
+                 ridge_term=ridge_term)
+    
+    signs = conv.fit()
+    nonzero = signs != 0
+
+    # sanity check
+
+    if full:
+        (observed_target, 
+         cov_target, 
+         cov_target_score, 
+         alternatives) = full_targets(conv.loglike, 
+                                      conv._W, 
+                                      nonzero)
+    else:
+        (observed_target, 
+         cov_target, 
+         cov_target_score, 
+         alternatives) = selected_targets(conv.loglike, 
+                                          conv._W, 
+                                          nonzero)
+
+    result = conv.summary(observed_target, 
+                          cov_target, 
+                          cov_target_score, 
+                          alternatives,
+                          ndraw=ndraw,
+                          burnin=burnin, 
+                          compute_intervals=False)
+    pval = result['pvalue']
+
+    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
 
 def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3, AR=True):
