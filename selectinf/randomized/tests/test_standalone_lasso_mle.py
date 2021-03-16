@@ -112,8 +112,8 @@ def approximate_mle_inference(training_proportion,
     target_cov = np.linalg.inv(selected_hessian)
     cond_precision = selected_hessian / ratio
     cond_cov = target_cov * ratio
-    cond_cov = cond_cov * selected_signs[None, :] * selected_signs[:, None]
     selected_signs[np.isnan(selected_signs)] = 1 # for unpenalized
+    cond_cov = cond_cov * selected_signs[None, :] * selected_signs[:, None]
 
     logdens_linear = target_cov * selected_signs[:,None] 
     cond_mean = selected_beta_refit * selected_signs - logdens_linear.dot(
@@ -155,8 +155,8 @@ def approximate_normalizer_inference(training_proportion,
     target_cov = np.linalg.inv(selected_hessian)
     cond_precision = selected_hessian / ratio
     cond_cov = target_cov * ratio
-    cond_cov = cond_cov * selected_signs[None, :] * selected_signs[:, None]
     selected_signs[np.isnan(selected_signs)] = 1 # for unpenalized
+    cond_cov = cond_cov * selected_signs[None, :] * selected_signs[:, None]
 
     logdens_linear = target_cov * selected_signs[:,None] 
     cond_mean = selected_beta_refit * selected_signs - logdens_linear.dot(
