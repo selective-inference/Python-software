@@ -140,7 +140,11 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     return X, Y, beta * sigma, np.nonzero(active)[0], sigma, sigmaX
 
 
-def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
+def logistic_instance(n=100,
+                      p=200,
+                      s=7,
+                      rho=0.3,
+                      signal=14,
                       random_signs=False, 
                       scale=True, 
                       center=True, 
