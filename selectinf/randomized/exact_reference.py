@@ -64,7 +64,7 @@ class exact_grid_inference(object):
 
         self.ntarget = ntarget = target_cov.shape[0]
         _scale = 4. * np.sqrt(np.diag(inverse_info))
-        ngrid = 60
+        ngrid = 40
 
         self.stat_grid = np.zeros((ntarget, ngrid))
         for j in range(ntarget):
