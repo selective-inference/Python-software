@@ -393,6 +393,7 @@ class gaussian_query(query):
                                    target_cov,
                                    target_score_cov,
                                    alternatives=None,
+                                   level=0.9,
                                    solve_args={'tol': 1.e-12}):
 
         """
@@ -412,6 +413,9 @@ class gaussian_query(query):
         alternatives : [str], optional
             Sequence of strings describing the alternatives,
             should be values of ['twosided', 'less', 'greater']
+
+        level : float, optional
+            Confidence level.
 
         solve_args : dict, optional
             Arguments passed to solver.
@@ -435,7 +439,8 @@ class gaussian_query(query):
                                        self.sampler.affine_con.offset,
                                        solve_args=solve_args)
 
-        return G.summary(alternatives=alternatives)
+        return G.summary(alternatives=alternatives,
+                         level=level)
 
 class multiple_queries(object):
 
