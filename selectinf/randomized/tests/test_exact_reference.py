@@ -17,23 +17,26 @@ def test_approx_pivot(n=500,
 
     X, Y, beta = inst(n=n,
                       p=p,
-                      signal=signal,
+                      signal=0,
                       s=s,
-                      equicorrelated=False,
+                      equicorrelated=True,
                       rho=rho,
                       sigma=sigma,
-                      random_signs=True)[:3]
+                      random_signs=False)[:3]
 
     n, p = X.shape
 
     sigma_ = np.std(Y)
-    dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+    #dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+    dispersion = sigma_ ** 2
 
-    W = 1 * np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * np.sqrt(dispersion)
+    #W = 1 * np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * np.sqrt(dispersion)
+    eps = np.random.standard_normal((n, 2000)) * Y.std()
+    lam_theory = 0.7 * np.median(np.abs(X.T.dot(eps)).max(1))
 
     conv = const(X,
                  Y,
-                 W,
+                 lam_theory * np.ones(p),
                  randomizer_scale=randomizer_scale * dispersion)
 
     signs = conv.fit()
@@ -49,7 +52,7 @@ def test_approx_pivot(n=500,
          alternatives) = selected_targets(conv.loglike,
                                           conv._W,
                                           nonzero,
-                                          dispersion=dispersion)
+                                          dispersion=None)
 
         exact_grid_inf = exact_grid_inference(conv,
                                               observed_target,
@@ -133,12 +136,12 @@ def main(nsim=300, CI=False):
     if CI is False:
         _pivot = []
         for i in range(nsim):
-            _pivot.extend(test_approx_pivot(n=500,
-                                            p=100,
-                                            signal_fac=0.5,
-                                            s=5,
-                                            sigma=3.,
-                                            rho=0.50,
+            _pivot.extend(test_approx_pivot(n=100,
+                                            p=400,
+                                            signal_fac=1.,
+                                            s=0,
+                                            sigma=1.,
+                                            rho=0.30,
                                             randomizer_scale=0.7))
 
             print("iteration completed ", i)
@@ -172,4 +175,4 @@ def main(nsim=300, CI=False):
 
 
 if __name__ == "__main__":
-    main(nsim=50, CI=True)
+    main(nsim=50, CI=False)
