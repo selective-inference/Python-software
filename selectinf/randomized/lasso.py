@@ -321,7 +321,7 @@ class lasso(gaussian_query):
             ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
-            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
+            randomizer_scale = np.sqrt(mean_diag) * 0.7 * np.std(Y) * np.sqrt(n / (n - 1.))
 
         randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
 
