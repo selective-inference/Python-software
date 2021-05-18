@@ -210,7 +210,7 @@ class lasso(gaussian_query):
                                                 unpenalized_directions)
 
         opt_offset = self.initial_subgrad
-
+        self.opt_linear = opt_linear
         # now make the constraints and implied gaussian
 
         self._setup = True
