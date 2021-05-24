@@ -138,13 +138,13 @@ def test_UMVU(n=500,
                       feat,
                       dispersion)
 
-            print("check ", np.allclose(est, umvu, atol=1e-04), umvu, est)
+            print("check ", np.allclose(est-umvu, np.zeros(est.shape[0]), atol=1e-03), est-umvu)
 
             return umvu, est
 
 def main():
 
-    test_UMVU(n=400, p=100, s=5)
+    test_UMVU(n=100, p=400, s=5)
 
 if __name__ == "__main__":
     main()
