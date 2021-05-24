@@ -64,9 +64,7 @@ class approximate_grid_inference(object):
 
         self.ntarget = ntarget = target_cov.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
-        ngrid = 40
-
-        scale_ = 4 * np.max(np.sqrt(np.diag(inverse_info)))
+        ngrid = 60
 
         self.stat_grid = np.zeros((ntarget, ngrid))
         for j in range(ntarget):
@@ -181,13 +179,14 @@ class approximate_grid_inference(object):
 
             grid = np.linspace(self.stat_grid[m].min(), self.stat_grid[m].max(), 1000)
             logW = (approx_fn(grid) -
-                    0.5 * (grid - self.observed_target[m])**2 / var_target)
+                   0.5 * (grid - self.observed_target[m])**2 / var_target)
             logW -= logW.max()
+            weights = np.exp(logW)
 
             # construction of families follows `selectinf.learning.core`
             
             self._families.append(discrete_family(grid,
-                                                  np.exp(logW)))
+                                                  weights))
             
             # logG = - 0.5 * grid**2 / var_target
             # logG -= logG.max()
@@ -223,6 +222,7 @@ class approximate_grid_inference(object):
 
             _cdf = family.cdf((mean_parameter[m] - observed_target) / var_target,
                               x=observed_target)
+            #_cdf = family.cdf(mean_parameter[m]/var_target, x=observed_target)
             if alternatives[m] == 'twosided':
                 pivot.append(2 * min(_cdf, 1 - _cdf))
             elif alternatives[m] == 'greater':
