@@ -208,7 +208,6 @@ class approximate_grid_inference(object):
             alternatives = ['twosided'] * self.ntarget
 
         pivot = []
-        p = self.target_score_cov.shape[1]
 
         for m in range(self.ntarget):
 
