@@ -61,7 +61,9 @@ def test_approx_pivot(n=500,
                       s=5,
                       sigma=2.,
                       rho=0.4,
-                      randomizer_scale=1.):
+                      randomizer_scale=1.,
+                      equicorrelated=False,
+                      useIP=False):
 
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
@@ -72,7 +74,7 @@ def test_approx_pivot(n=500,
                           p=p,
                           signal=signal,
                           s=s,
-                          equicorrelated=True,
+                          equicorrelated=equicorrelated,
                           rho=rho,
                           sigma=sigma,
                           random_signs=False)[:3]
@@ -86,14 +88,13 @@ def test_approx_pivot(n=500,
             dispersion = sigma_ ** 2
 
         eps = np.random.standard_normal((n, 2000)) * Y.std()
-        lam_theory = 0.6 * np.median(np.abs(X.T.dot(eps)).max(1))
-        W = lam_theory * np.ones(p)
+        W = 0.7 * np.median(np.abs(X.T.dot(eps)).max(1))
 
         conv = const(X,
                      Y,
                      W,
-                     ridge_term=0.,
-                     randomizer_scale=randomizer_scale * sigma_)
+                     ridge_term=0.)
+                     #randomizer_scale=randomizer_scale * sigma_)
 
         signs = conv.fit()
         nonzero = signs != 0
@@ -113,7 +114,8 @@ def test_approx_pivot(n=500,
             approximate_grid_inf = approximate_grid_inference(conv,
                                                               observed_target,
                                                               cov_target,
-                                                              cov_target_score)
+                                                              cov_target_score,
+                                                              useIP=useIP)
 
             pivot = approximate_grid_inf._approx_pivots(beta_target)
 
@@ -203,13 +205,15 @@ def main(nsim=300, CI = False):
     if CI is False:
         _pivot = []
         for i in range(nsim):
-            _pivot.extend(test_approx_pivot(n=500,
-                                            p=100,
+            _pivot.extend(test_approx_pivot(n=100,
+                                            p=400,
                                             signal_fac=0.5,
                                             s=0,
                                             sigma=2.,
-                                            rho=0.50,
-                                            randomizer_scale=1.))
+                                            rho=0.30,
+                                            randomizer_scale=1.,
+                                            equicorrelated=True,
+                                            useIP=True))
 
             print("iteration completed ", i)
 

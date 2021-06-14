@@ -10,7 +10,9 @@ def test_approx_pivot(n=500,
                       s=5,
                       sigma=2.,
                       rho=0.4,
-                      randomizer_scale=1.):
+                      randomizer_scale=1.,
+                      equicorrelated=False,
+                      useIP=False):
 
     while True:
 
@@ -21,7 +23,7 @@ def test_approx_pivot(n=500,
                           p=p,
                           signal=signal,
                           s=s,
-                          equicorrelated=True,
+                          equicorrelated=equicorrelated,
                           rho=rho,
                           sigma=sigma,
                           random_signs=True)[:3]
@@ -62,7 +64,8 @@ def test_approx_pivot(n=500,
             exact_grid_inf = exact_grid_inference(conv,
                                                   observed_target,
                                                   cov_target,
-                                                  cov_target_score)
+                                                  cov_target_score,
+                                                  useIP=useIP)
 
             pivot = exact_grid_inf._pivots(beta_target)
 
@@ -77,20 +80,22 @@ def main(nsim=300):
 
     _pivot = []
     for i in range(nsim):
-        _pivot.extend(test_approx_pivot(n=400,
-                                        p=100,
+        _pivot.extend(test_approx_pivot(n=100,
+                                        p=400,
                                         signal_fac=0.5,
                                         s=0,
                                         sigma=1.,
                                         rho=0.30,
-                                        randomizer_scale=1.))
+                                        randomizer_scale=1.,
+                                        equicorrelated=True,
+                                        useIP=False))
 
         print("iteration completed ", i)
 
     plt.clf()
     ecdf_pivot = ECDF(np.asarray(_pivot))
     grid = np.linspace(0, 1, 101)
-    plt.plot(grid, ecdf_pivot(grid), c='blue', marker='^')
+    plt.plot(grid, ecdf_pivot(grid), c='blue')
     plt.plot(grid, grid, 'k--')
     plt.show()
 
