@@ -13,7 +13,8 @@ class exact_grid_inference(object):
                  observed_target,
                  target_cov,
                  target_score_cov,
-                 solve_args={'tol': 1.e-12}):
+                 solve_args={'tol': 1.e-12},
+                 useIP=False):
 
         """
         Produce p-values and confidence intervals for targets
@@ -57,15 +58,24 @@ class exact_grid_inference(object):
 
         self.ntarget = ntarget = target_cov.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
-        ngrid = 1000
 
-        self.stat_grid = np.zeros((ntarget, ngrid))
-        for j in range(ntarget):
-            self.stat_grid[j, :] = np.linspace(observed_target[j] - 1.5 * _scale[j],
-                                               observed_target[j] + 1.5 * _scale[j],
-                                               num=ngrid)
+        if useIP == False:
+            ngrid = 1000
+            self.stat_grid = np.zeros((ntarget, ngrid))
+            for j in range(ntarget):
+                self.stat_grid[j, :] = np.linspace(observed_target[j] - 1.5 * _scale[j],
+                                                   observed_target[j] + 1.5 * _scale[j],
+                                                   num=ngrid)
+        else:
+            ngrid = 60
+            self.stat_grid = np.zeros((ntarget, ngrid))
+            for j in range(ntarget):
+                self.stat_grid[j, :] = np.linspace(observed_target[j] - 1.5 * _scale[j],
+                                                   observed_target[j] + 1.5 * _scale[j],
+                                                   num=ngrid)
 
         self.opt_linear = query.opt_linear
+        self.useIP = useIP
 
     def summary(self,
                 alternatives=None,
@@ -199,14 +209,25 @@ class exact_grid_inference(object):
                                          target_cov_uni,
                                          target_score_cov_uni,
                                          self.stat_grid[m])
+            if self.useIP == False:
+                logW = (log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
+                logW -= logW.max()
+                self._families.append(discrete_family(self.stat_grid[m],
+                                                      np.exp(logW)))
+            else:
+                approx_fn = interp1d(self.stat_grid[m],
+                                     log_ref,
+                                     kind='quadratic',
+                                     bounds_error=False,
+                                     fill_value='extrapolate')
 
-            logW = (log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
-            logW -= logW.max()
+                grid = np.linspace(self.stat_grid[m].min(), self.stat_grid[m].max(), 1000)
+                logW = (approx_fn(grid) -
+                        0.5 * (grid - self.observed_target[m]) ** 2 / var_target)
 
-            # construction of families follows `selectinf.learning.core`
-
-            self._families.append(discrete_family(self.stat_grid[m],
-                                                  np.exp(logW)))
+                logW -= logW.max()
+                self._families.append(discrete_family(grid,
+                                                      np.exp(logW)))
 
     def _pivots(self,
                 mean_parameter,
