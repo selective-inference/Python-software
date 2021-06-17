@@ -109,8 +109,8 @@ class posterior(object):
 
         log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal) / 2.
 
-        log_lik = -(((self.observed_target - target).T.dot(self._prec).dot(
-            self.observed_target - target)) / 2. - log_normalizer)
+        log_lik = -((self.observed_target - target).T.dot(self._prec).dot(self.observed_target - target)) / 2. \
+                  - log_normalizer
 
         grad_lik = self.S.T.dot(self._prec.dot(self.observed_target) - self._prec.dot(target) - self.linear_coef.T.dot(
             prec_marginal.dot(soln) - conjugate_marginal))
@@ -137,7 +137,7 @@ class posterior(object):
         target_off = self.cond_mean - target_lin.dot(self.observed_target)
 
         self.linear_coef = target_lin
-        self.offset_coef = self.cond_mean - target_lin.dot(self.observed_target)
+        self.offset_coef = target_off
 
         if np.asarray(self.randomizer_prec).shape in [(), (0,)]:
             _prec = self.prec_target + (target_linear.T.dot(target_linear) * self.randomizer_prec) \
@@ -149,15 +149,14 @@ class posterior(object):
             _P = target_linear.T.dot(self.randomizer_prec).dot(target_offset)
 
         _Q = np.linalg.inv(_prec + target_lin.T.dot(self.cond_precision).dot(target_lin))
-        self.prec_marginal = self.cond_precision - self.cond_precision.dot(target_lin).dot(_Q).dot(target_lin.T).dot(
-            self.cond_precision)
+        self.prec_marginal = self.cond_precision - self.cond_precision.dot(target_lin).dot(_Q).dot(target_lin.T).dot(self.cond_precision)
 
         r = np.linalg.inv(_prec).dot(target_lin.T.dot(self.cond_precision).dot(target_off) - _P)
         S = np.linalg.inv(_prec).dot(self.prec_target)
 
         self.r = r
         self.S = S
-        # print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
+        #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
         self._prec = _prec
 
 
@@ -185,6 +184,7 @@ def langevin_sampler(selective_posterior,
     for i, sample in enumerate(sampler):
         sampler.scaling = np.sqrt(selective_posterior.dispersion)
         samples[i, :] = sample.copy()
+        #print("sample ", i, samples[i,:])
         if i == nsample - 1:
             break
 

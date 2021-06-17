@@ -15,7 +15,7 @@ from ..constraints.affine import (sample_from_constraints,
 from .posterior_inference import posterior
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 from .approx_reference import approximate_grid_inference
-
+from ..algorithms.barrier_affine import solve_barrier_affine_py
 
 class query(object):
     r"""
@@ -1433,7 +1433,7 @@ def selective_MLE(observed_target,
     if useC:
         solver = solve_barrier_affine_C
     else:
-        solver = _solve_barrier_affine_py
+        solver = solve_barrier_affine_py
 
     val, soln, hess = solver(conjugate_arg,
                              prec_opt,
