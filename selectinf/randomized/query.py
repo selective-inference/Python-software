@@ -135,6 +135,7 @@ class gaussian_query(query):
                                         opt_offset,
                                         cond_precision)
 
+
         _, randomizer_prec = self.randomizer.cov_prec
         self.cond_mean, self.cond_cov, self.randomizer_prec = cond_mean, cond_cov, randomizer_prec
 

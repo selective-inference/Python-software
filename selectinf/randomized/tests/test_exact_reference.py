@@ -43,8 +43,7 @@ def test_approx_pivot(n=500,
         conv = const(X,
                      Y,
                      W,
-                     ridge_term=0.)
-                     #randomizer_scale=randomizer_scale * np.sqrt(dispersion))
+                     randomizer_scale=randomizer_scale * np.sqrt(dispersion))
 
         signs = conv.fit()
         nonzero = signs != 0
@@ -82,11 +81,11 @@ def main(nsim=300):
     for i in range(nsim):
         _pivot.extend(test_approx_pivot(n=100,
                                         p=400,
-                                        signal_fac=0.5,
+                                        signal_fac=1.,
                                         s=0,
-                                        sigma=1.,
+                                        sigma=2.,
                                         rho=0.30,
-                                        randomizer_scale=1.,
+                                        randomizer_scale=0.7,
                                         equicorrelated=True,
                                         useIP=False))
 
