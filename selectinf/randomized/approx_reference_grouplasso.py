@@ -12,7 +12,7 @@ import pandas as pd
 import regreg.api as rr
 from .randomization import randomization
 from ..base import restricted_estimator
-from .query import _solve_barrier_affine_py
+from ..algorithms.barrier_affine import solve_barrier_affine_py as solver
 from ..distributions.discrete_family import discrete_family
 
 class group_lasso(object):
@@ -74,6 +74,8 @@ class group_lasso(object):
         ordered_vars = []  # indices "ordered" by sorting group labels
 
         tol = 1.e-20
+
+        _, self.randomizer_prec = self.randomizer.cov_prec
 
         # now we are collecting the directions and norms of the active groups
         for g in sorted(np.unique(self.groups)):  # g is group label
@@ -175,8 +177,6 @@ class group_lasso(object):
         self.linear_part = -np.eye(self.observed_opt_state.shape[0])
         self.offset = np.zeros(self.observed_opt_state.shape[0])
 
-        # print("K.K.T. map", np.allclose(self._initial_omega, self.observed_score_state + self.opt_linear.dot(self.observed_opt_state)
-        #                                + self.opt_offset, rtol=1e-03))
         return active_signs, soln
 
     def _solve_randomized_problem(self,
@@ -302,15 +302,32 @@ class group_lasso(object):
         observed_target = np.atleast_1d(observed_target)
         prec_target = inv(target_cov)
 
+        prec_opt = self.cond_precision
+
+        score_offset = self.observed_score_state + self.opt_offset
+
         # target_lin determines how the conditional mean of optimization variables
         # vary with target
         # logdens_linear determines how the argument of the optimization density
         # depends on the score, not how the mean depends on score, hence the minus sign
 
-        target_lin = - logdens_linear.dot(target_score_cov.T.dot(prec_target))
-        target_offset = cond_mean - target_lin.dot(observed_target)
+        target_linear = target_score_cov.T.dot(prec_target)
+        target_offset = score_offset - target_linear.dot(observed_target)
 
-        prec_opt = self.cond_precision
+        target_lin = - logdens_linear.dot(target_linear)
+        target_off = cond_mean - target_lin.dot(observed_target)
+
+        if np.asarray(self.randomizer_prec).shape in [(), (0,)]:
+            _P = target_linear.T.dot(target_offset) * self.randomizer_prec
+            _prec = prec_target + (target_linear.T.dot(target_linear) * self.randomizer_prec) - target_lin.T.dot(
+                prec_opt).dot(
+                target_lin)
+        else:
+            _P = target_linear.T.dot(self.randomizer_prec).dot(target_offset)
+            _prec = prec_target + (target_linear.T.dot(self.randomizer_prec).dot(target_linear)) - target_lin.T.dot(
+                prec_opt).dot(target_lin)
+
+        C = target_cov.dot(_P - target_lin.T.dot(prec_opt).dot(target_off))
 
         conjugate_arg = prec_opt.dot(cond_mean)
 
@@ -324,23 +341,32 @@ class group_lasso(object):
                                                            useJacobian,
                                                            **solve_args)
 
-        log_ref = val + conjugate_arg.T.dot(cond_cov).dot(conjugate_arg) / 2.
+        final_estimator = target_cov.dot(_prec).dot(observed_target) \
+                          + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln))) + C
 
-        final_estimator = observed_target + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))
-        ind_unbiased_estimator = observed_target + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean
-                                                                                                - init_soln)))
+        unbiased_estimator = target_cov.dot(_prec).dot(observed_target) + target_cov.dot(
+            _P - target_lin.T.dot(prec_opt).dot(target_off))
+
         L = target_lin.T.dot(prec_opt)
-        observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
+        observed_info_natural = _prec + L.dot(target_lin) - L.dot(hess.dot(L.T))
+
         observed_info_mean = target_cov.dot(observed_info_natural.dot(target_cov))
 
         Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
+
         pvalues = ndist.cdf(Z_scores)
+
         pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
 
-        alpha = 1. - level
+        alpha = 1 - level
         quantile = ndist.ppf(1 - alpha / 2.)
-        intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
-                               final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
+
+        intervals = np.vstack([final_estimator -
+                               quantile * np.sqrt(np.diag(observed_info_mean)),
+                               final_estimator +
+                               quantile * np.sqrt(np.diag(observed_info_mean))]).T
+
+        log_ref = val + conjugate_arg.T.dot(cond_cov).dot(conjugate_arg) / 2.
 
         result = pd.DataFrame({'MLE': final_estimator,
                                'SE': np.sqrt(np.diag(observed_info_mean)),
@@ -348,7 +374,7 @@ class group_lasso(object):
                                'pvalue': pvalues,
                                'lower_confidence': intervals[:, 0],
                                'upper_confidence': intervals[:, 1],
-                               'unbiased': ind_unbiased_estimator})
+                               'unbiased': unbiased_estimator})
 
         return result, observed_info_mean, log_ref
 
@@ -383,7 +409,8 @@ class approximate_grid_inference(object):
     def __init__(self,
                  query,
                  dispersion,
-                 solve_args={'tol': 1.e-12}):
+                 solve_args={'tol': 1.e-12},
+                 useIP=True):
 
         """
         Produce p-values and confidence intervals for targets
@@ -407,12 +434,6 @@ class approximate_grid_inference(object):
 
         result, inverse_info = query.selective_MLE(dispersion=dispersion)[:2]
 
-        (observed_target, target_cov, target_score_cov, alternatives) = query.selected_targets(dispersion)
-
-        self.observed_target = observed_target
-        self.target_score_cov = target_score_cov
-        self.target_cov = target_cov
-
         self.linear_part = query.linear_part
         self.offset = query.offset
 
@@ -423,17 +444,37 @@ class approximate_grid_inference(object):
         self.C = query.C
         self.active_dirs = query.active_dirs
 
+        (observed_target, target_cov, target_score_cov, alternatives) = query.selected_targets(dispersion)
+        self.observed_target = observed_target
+        self.target_score_cov = target_score_cov
+        self.target_cov = target_cov
+
         self.init_soln = query.observed_opt_state
+
+        self.randomizer_prec = query.randomizer_prec
+        self.score_offset = query.observed_score_state + query.opt_offset
 
         self.ntarget = ntarget = target_cov.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
-        ngrid = 40
 
-        self.stat_grid = np.zeros((ntarget, ngrid))
-        for j in range(ntarget):
-            self.stat_grid[j, :] = np.linspace(observed_target[j] - 1.5 * _scale[j],
-                                               observed_target[j] + 1.5 * _scale[j],
-                                               num=ngrid)
+        if useIP == False:
+            ngrid = 1000
+            self.stat_grid = np.zeros((ntarget, ngrid))
+            for j in range(ntarget):
+                self.stat_grid[j, :] = np.linspace(observed_target[j] - 1.5 * _scale[j],
+                                                   observed_target[j] + 1.5 * _scale[j],
+                                                   num=ngrid)
+        else:
+            ngrid = 100
+            self.stat_grid = np.zeros((ntarget, ngrid))
+            for j in range(ntarget):
+                self.stat_grid[j, :] = np.linspace(observed_target[j] - 1.5 * _scale[j],
+                                                   observed_target[j] + 1.5 * _scale[j],
+                                                   num=ngrid)
+
+        self.opt_linear = query.opt_linear
+        self.useIP = useIP
+
     def summary(self,
                 alternatives=None,
                 parameter=None,
@@ -453,7 +494,7 @@ class approximate_grid_inference(object):
         """
 
         if parameter is not None:
-            pivots = self.approx_pivots(parameter,
+            pivots = self._approx_pivots(parameter,
                                         alternatives=alternatives)
         else:
             pivots = None
@@ -473,15 +514,16 @@ class approximate_grid_inference(object):
 
         return result
 
-    def _approx_log_reference(self,
-                              observed_target,
-                              target_cov,
-                              target_score_cov,
-                              grid):
+    def log_reference(self,
+                      observed_target,
+                      target_cov,
+                      target_score_cov,
+                      grid):
 
         """
         Approximate the log of the reference density on a grid.
         """
+
         if np.asarray(observed_target).shape in [(), (0,)]:
             raise ValueError('no target specified')
 
@@ -489,58 +531,88 @@ class approximate_grid_inference(object):
         target_lin = - self.logdens_linear.dot(target_score_cov.T.dot(prec_target))
 
         ref_hat = []
-        solver = _solve_barrier_affine_py
 
         for k in range(grid.shape[0]):
+            # in the usual D = N + Gamma theta.hat,
+            # target_lin is "something" times Gamma,
+            # where "something" comes from implied Gaussian
+            # cond_mean is "something" times D
+            # Gamma is target_score_cov.T.dot(prec_target)
+
+            num_opt = self.prec_opt.shape[0]
+            num_con = self.linear_part.shape[0]
 
             cond_mean_grid = (target_lin.dot(np.atleast_1d(grid[k] - observed_target)) +
                               self.cond_mean)
-            conjugate_arg = self.prec_opt.dot(cond_mean_grid)
 
-            val, soln, _ = solver(conjugate_arg,
-                               self.prec_opt,
-                               self.init_soln,
-                               self.linear_part,
-                               self.offset,
-                               **self.solve_args)
+            #direction for decomposing o
 
-            log_jacob = jacobian_grad_hess(soln, self.C, self.active_dirs)
+            eta = -self.prec_opt.dot(self.logdens_linear.dot(target_score_cov.T))
 
-            ref_hat.append(-val - (conjugate_arg.T.dot(self.cond_cov).dot(conjugate_arg) / 2.) + log_jacob[0])
+            implied_mean = np.asscalar(eta.T.dot(cond_mean_grid))
+            implied_cov = np.asscalar(eta.T.dot(self.cond_cov).dot(eta))
+            implied_prec = 1./implied_cov
+
+            _A = self.cond_cov.dot(eta) * implied_prec
+            R = np.identity(num_opt) - _A.dot(eta.T)
+
+            A = self.linear_part.dot(_A).reshape((-1,))
+            b = self.offset-self.linear_part.dot(R).dot(self.init_soln)
+
+            conjugate_arg = implied_mean * implied_prec
+
+            val, soln, _ = solver(np.asarray([conjugate_arg]),
+                                  np.reshape(implied_prec, (1,1)),
+                                  eta.T.dot(self.init_soln),
+                                  A.reshape((A.shape[0],1)),
+                                  b,
+                                  **self.solve_args)
+
+            gamma_ = _A.dot(soln) + R.dot(self.init_soln)
+            log_jacob = jacobian_grad_hess(gamma_, self.C, self.active_dirs)
+
+            ref_hat.append(-val - ((conjugate_arg ** 2) * implied_cov)/ 2. + log_jacob[0])
 
         return np.asarray(ref_hat)
 
     def _construct_families(self):
 
+        self._construct_density()
+
         self._families = []
+
         for m in range(self.ntarget):
             p = self.target_score_cov.shape[1]
             observed_target_uni = (self.observed_target[m]).reshape((1,))
+
             target_cov_uni = (np.diag(self.target_cov)[m]).reshape((1, 1))
-            var_target = target_cov_uni[0, 0]
             target_score_cov_uni = self.target_score_cov[m, :].reshape((1, p))
 
-            approx_log_ref = self._approx_log_reference(observed_target_uni,
-                                                        target_cov_uni,
-                                                        target_score_cov_uni,
-                                                        self.stat_grid[m])
+            var_target = 1. / ((self.precs[m])[0, 0])
 
-            approx_fn = interp1d(self.stat_grid[m],
-                                 approx_log_ref,
-                                 kind='quadratic',
-                                 bounds_error=False,
-                                 fill_value='extrapolate')
+            log_ref = self.log_reference(observed_target_uni,
+                                         target_cov_uni,
+                                         target_score_cov_uni,
+                                         self.stat_grid[m])
+            if self.useIP == False:
+                logW = (log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
+                logW -= logW.max()
+                self._families.append(discrete_family(self.stat_grid[m],
+                                                      np.exp(logW)))
+            else:
+                approx_fn = interp1d(self.stat_grid[m],
+                                     log_ref,
+                                     kind='quadratic',
+                                     bounds_error=False,
+                                     fill_value='extrapolate')
 
-            grid = np.linspace(self.stat_grid[m].min(), self.stat_grid[m].max(), 1000)
-            logW = (approx_fn(grid) -
-                    0.5 * (grid - self.observed_target[m]) ** 2 / var_target)
-            logW -= logW.max()
+                grid = np.linspace(self.stat_grid[m].min(), self.stat_grid[m].max(), 1000)
+                logW = (approx_fn(grid) -
+                        0.5 * (grid - self.observed_target[m]) ** 2 / var_target)
 
-            # construction of families follows `selectinf.learning.core`
-
-            self._families.append(discrete_family(grid,
-                                                  np.exp(logW)))
-
+                logW -= logW.max()
+                self._families.append(discrete_family(grid,
+                                                      np.exp(logW)))
 
     def _approx_pivots(self,
                        mean_parameter,
@@ -555,15 +627,15 @@ class approximate_grid_inference(object):
         pivot = []
 
         for m in range(self.ntarget):
-            print("variable computed ", m)
+
             family = self._families[m]
-            observed_target = self.observed_target[m]
-            var_target = self.target_cov[m, m]
+            var_target = 1. / ((self.precs[m])[0, 0])
 
-            # construction of pivot from families follows `selectinf.learning.core`
+            mean = self.S[m].dot(mean_parameter[m].reshape((1,))) + self.r[m]
 
-            _cdf = family.cdf((mean_parameter[m] - observed_target) / var_target,
-                              x=observed_target)
+            _cdf = family.cdf((mean[0] - self.observed_target[m]) / var_target, x=self.observed_target[m])
+            print("variable completed ", m)
+
             if alternatives[m] == 'twosided':
                 pivot.append(2 * min(_cdf, 1 - _cdf))
             elif alternatives[m] == 'greater':
@@ -575,7 +647,7 @@ class approximate_grid_inference(object):
         return pivot
 
     def _approx_intervals(self,
-                          level=0.9):
+                   level=0.9):
 
         if not hasattr(self, "_families"):
             self._construct_families()
@@ -586,13 +658,53 @@ class approximate_grid_inference(object):
             # construction of intervals from families follows `selectinf.learning.core`
             family = self._families[m]
             observed_target = self.observed_target[m]
+
             l, u = family.equal_tailed_interval(observed_target,
                                                 alpha=1 - level)
-            var_target = self.target_cov[m, m]
+
+            var_target = 1. / ((self.precs[m])[0, 0])
+
             lower.append(l * var_target + observed_target)
             upper.append(u * var_target + observed_target)
 
         return np.asarray(lower), np.asarray(upper)
+
+    ### Private method
+    def _construct_density(self):
+
+        precs = {}
+        S = {}
+        r = {}
+
+        p = self.target_score_cov.shape[1]
+
+        for m in range(self.ntarget):
+            observed_target_uni = (self.observed_target[m]).reshape((1,))
+            target_cov_uni = (np.diag(self.target_cov)[m]).reshape((1, 1))
+            prec_target = 1. / target_cov_uni
+            target_score_cov_uni = self.target_score_cov[m, :].reshape((1, p))
+
+            target_linear = target_score_cov_uni.T.dot(prec_target)
+            target_offset = (self.score_offset - target_linear.dot(observed_target_uni)).reshape(
+                (target_linear.shape[0],))
+
+            target_lin = -self.logdens_linear.dot(target_linear)
+            target_off = (self.cond_mean - target_lin.dot(observed_target_uni)).reshape((target_lin.shape[0],))
+
+            _prec = prec_target + (target_linear.T.dot(target_linear) * self.randomizer_prec) - target_lin.T.dot(
+                self.prec_opt).dot(target_lin)
+
+            _P = target_linear.T.dot(target_offset) * self.randomizer_prec
+            _r = (1. / _prec).dot(target_lin.T.dot(self.prec_opt).dot(target_off) - _P)
+            _S = np.linalg.inv(_prec).dot(prec_target)
+
+            S[m] = _S
+            r[m] = _r
+            precs[m] = _prec
+
+        self.precs = precs
+        self.S = S
+        self.r = r
 
 
 def solve_barrier_affine_jacobian_py(conjugate_arg,
@@ -719,13 +831,15 @@ def jacobian_grad_hess(gamma, C, active_dirs):
         GammaMinus = calc_GammaMinus(gamma, active_dirs)
 
         # eigendecomposition
-        evalues, evectors = eig(GammaMinus + C)
+        #evalues, evectors = eig(GammaMinus + C)
 
         # log Jacobian
-        J = log(evalues).sum()
+        #J = log(evalues).sum()
+        J = np.log(np.linalg.det(GammaMinus + C))
 
         # inverse
-        GpC_inv = evectors.dot(np.diag(1 / evalues).dot(evectors.T))
+        #GpC_inv = evectors.dot(np.diag(1 / evalues).dot(evectors.T))
+        GpC_inv = np.linalg.inv(GammaMinus + C)
 
         # summing matrix (gamma.size by C.shape[0])
         S = block_diag(*[np.ones((1, ug.size - 1)) for ug in active_dirs.values()])

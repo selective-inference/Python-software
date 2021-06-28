@@ -11,54 +11,61 @@ def test_approx_pivot(n=500,
                       sigma=3.,
                       rho=0.3,
                       randomizer_scale=1,
-                      weight_frac=1.2):
+                      weight_frac=1.5):
 
-    inst, const = gaussian_group_instance, group_lasso.gaussian
-    signal = np.sqrt(signal_fac * 2 * np.log(p))
+    while True:
 
-    X, Y, beta = inst(n=n,
-                      p=p,
-                      signal=signal,
-                      sgroup=sgroup,
-                      groups=groups,
-                      equicorrelated=False,
-                      rho=rho,
-                      sigma=sigma,
-                      random_signs=True)[:3]
+        inst, const = gaussian_group_instance, group_lasso.gaussian
+        signal = np.sqrt(signal_fac * 2 * np.log(p))
 
-    n, p = X.shape
+        X, Y, beta = inst(n=n,
+                          p=p,
+                          signal=signal,
+                          sgroup=sgroup,
+                          groups=groups,
+                          equicorrelated=False,
+                          rho=rho,
+                          sigma=sigma,
+                          random_signs=True)[:3]
 
-    sigma_ = np.std(Y)
-    dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+        n, p = X.shape
 
-    penalty_weights = dict([(i, weight_frac * sigma_ * np.sqrt(2 * np.log(p))) for i in np.unique(groups)])
+        sigma_ = np.std(Y)
 
-    conv = const(X,
-                 Y,
-                 groups,
-                 penalty_weights,
-                 randomizer_scale=randomizer_scale * dispersion)
+        if n > (2 * p):
+            dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+        else:
+            dispersion = sigma_ ** 2
 
-    signs, _ = conv.fit()
-    nonzero = signs != 0
-    print("number of selected variables ", nonzero.sum())
+        penalty_weights = dict([(i, weight_frac * sigma_ * np.sqrt(2 * np.log(p))) for i in np.unique(groups)])
 
-    if nonzero.sum()>0:
+        conv = const(X,
+                     Y,
+                     groups,
+                     penalty_weights,
+                     randomizer_scale=randomizer_scale * np.sqrt(dispersion))
 
-        conv._setup_implied_gaussian()
+        signs, _ = conv.fit()
+        nonzero = signs != 0
+        print("number of selected variables ", nonzero.sum())
 
-        beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+        if nonzero.sum() > 0:
+            conv._setup_implied_gaussian()
 
-        approximate_grid_inf = approximate_grid_inference(conv,
-                                                          dispersion)
+            beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
-        pivot = approximate_grid_inf._approx_pivots(beta_target)
+            approximate_grid_inf = approximate_grid_inference(conv,
+                                                              dispersion)
 
-        return pivot
+            pivot = approximate_grid_inf._approx_pivots(beta_target)
+
+            return pivot
 
 
 def main(nsim=300, CI = False):
 
+    import matplotlib as mpl
+    mpl.use('tkagg')
     import matplotlib.pyplot as plt
     from statsmodels.distributions.empirical_distribution import ECDF
     if CI is False:
@@ -66,13 +73,13 @@ def main(nsim=300, CI = False):
         for i in range(nsim):
             _pivot.extend(test_approx_pivot(n=500,
                                             p=100,
-                                            signal_fac=0.3,
-                                            sgroup=3,
-                                            groups=np.arange(20).repeat(5),
-                                            sigma=1.,
+                                            signal_fac=1.,
+                                            sgroup=0,
+                                            groups=np.arange(25).repeat(4),
+                                            sigma=2.,
                                             rho=0.20,
                                             randomizer_scale=0.5,
-                                            weight_frac=1.))
+                                            weight_frac=1.2))
 
             print("iteration completed ", i)
 
