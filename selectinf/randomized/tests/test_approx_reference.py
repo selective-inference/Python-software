@@ -181,16 +181,11 @@ def test_approx_ci(n=500,
         scale_ = np.max(_scale)
         ngrid = int(2 * scale_/0.1)
 
-        approximate_grid_inf = approximate_grid_inference(observed_target,
+        approximate_grid_inf = approximate_grid_inference(conv,
+                                                          observed_target,
                                                           cov_target,
                                                           cov_target_score,
-                                                          inverse_info,
-                                                          conv.observed_opt_state,
-                                                          conv.sampler.affine_con.mean,
-                                                          conv.sampler.affine_con.covariance,
-                                                          conv.sampler.logdens_transform[0],
-                                                          conv.sampler.affine_con.linear_part,
-                                                          conv.sampler.affine_con.offset)
+                                                          useIP=False)
 
         lci, uci = approximate_grid_inf._approx_intervals(level)
 
