@@ -1075,17 +1075,6 @@ class polynomial_gaussian_sampler(affine_gaussian_sampler):
 
         raise NotImplementedError
 
-    def reparam_map(self, 
-                    parameter_target, 
-                    observed_target, 
-                    target_cov, 
-                    target_score_cov, 
-                    init_soln, 
-                    solve_args={'tol':1.e-12},
-                    useC=True):
-
-        raise NotImplementedError
-
     def _log_density_ray(self,
                          candidate,
                          direction,

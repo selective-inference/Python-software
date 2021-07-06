@@ -2,12 +2,11 @@ from __future__ import division, print_function
 
 import numpy as np, pandas as pd
 from scipy.interpolate import interp1d
+from scipy.stats import norm as ndist
 
 from ..distributions.discrete_family import discrete_family
-from ..algorithms.barrier_affine import solve_barrier_affine_py
 
-
-class approximate_grid_inference(object):
+class exact_grid_inference(object):
 
     def __init__(self,
                  query,
@@ -34,8 +33,6 @@ class approximate_grid_inference(object):
         solve_args : dict, optional
             Arguments passed to solver.
         """
-
-        self.solve_args = solve_args
 
         result, inverse_info = query.selective_MLE(observed_target,
                                                    target_cov,
@@ -99,14 +96,14 @@ class approximate_grid_inference(object):
         """
 
         if parameter is not None:
-            pivots = self.approx_pivots(parameter,
+            pivots = self._pivots(parameter,
                                         alternatives=alternatives)
         else:
             pivots = None
 
-        pvalues = self._approx_pivots(np.zeros_like(self.observed_target),
+        pvalues = self._pivots(np.zeros_like(self.observed_target),
                                       alternatives=alternatives)
-        lower, upper = self._approx_intervals(level=level)
+        lower, upper = self._intervals(level=level)
 
         result = pd.DataFrame({'target': self.observed_target,
                                'pvalue': pvalues,
@@ -119,15 +116,12 @@ class approximate_grid_inference(object):
 
         return result
 
-    def _approx_log_reference(self,
-                              observed_target,
-                              target_cov,
-                              target_score_cov,
-                              grid):
+    def log_reference(self,
+                      observed_target,
+                      target_cov,
+                      target_score_cov,
+                      grid):
 
-        """
-        Approximate the log of the reference density on a grid.
-        """
         if np.asarray(observed_target).shape in [(), (0,)]:
             raise ValueError('no target specified')
 
@@ -135,7 +129,7 @@ class approximate_grid_inference(object):
         target_lin = - self.logdens_linear.dot(target_score_cov.T.dot(prec_target))
 
         ref_hat = []
-        solver = solve_barrier_affine_py
+
         for k in range(grid.shape[0]):
             # in the usual D = N + Gamma theta.hat,
             # target_lin is "something" times Gamma,
@@ -143,18 +137,56 @@ class approximate_grid_inference(object):
             # cond_mean is "something" times D
             # Gamma is target_score_cov.T.dot(prec_target)
 
+            num_opt = self.prec_opt.shape[0]
+            num_con = self.linear_part.shape[0]
+
             cond_mean_grid = (target_lin.dot(np.atleast_1d(grid[k] - observed_target)) +
                               self.cond_mean)
-            conjugate_arg = self.prec_opt.dot(cond_mean_grid)
 
-            val, _, _ = solver(conjugate_arg,
-                               self.prec_opt,
-                               self.init_soln,
-                               self.linear_part,
-                               self.offset,
-                               **self.solve_args)
+            #direction for decomposing o
 
-            ref_hat.append(-val - (conjugate_arg.T.dot(self.cond_cov).dot(conjugate_arg) / 2.))
+            eta = -self.prec_opt.dot(self.logdens_linear.dot(target_score_cov.T))
+
+            implied_mean = np.asscalar(eta.T.dot(cond_mean_grid))
+            implied_cov = np.asscalar(eta.T.dot(self.cond_cov).dot(eta))
+            implied_prec = 1./implied_cov
+
+            _A = self.cond_cov.dot(eta) * implied_prec
+            R = np.identity(num_opt) - _A.dot(eta.T)
+
+            A = self.linear_part.dot(_A).reshape((-1,))
+            b = -self.linear_part.dot(R).dot(self.init_soln)
+
+            trunc_ = np.true_divide((self.offset + b), A)
+
+            neg_indx = np.asarray([j for j in range(num_con) if A[j] < 0.])
+            pos_indx = np.asarray([j for j in range(num_con) if A[j] > 0.])
+
+            if pos_indx.shape[0]>0 and neg_indx.shape[0]>0:
+
+                trunc_lower = np.max(trunc_[neg_indx])
+                trunc_upper = np.min(trunc_[pos_indx])
+
+                lower_limit = (trunc_lower - implied_mean) * np.sqrt(implied_prec)
+                upper_limit = (trunc_upper - implied_mean) * np.sqrt(implied_prec)
+
+                ref_hat.append(np.log(ndist.cdf(upper_limit) - ndist.cdf(lower_limit)))
+
+            elif pos_indx.shape[0] == num_con:
+
+                trunc_upper = np.min(trunc_[pos_indx])
+
+                upper_limit = (trunc_upper - implied_mean) * np.sqrt(implied_prec)
+
+                ref_hat.append(np.log(ndist.cdf(upper_limit)))
+
+            else:
+
+                trunc_lower = np.max(trunc_[neg_indx])
+
+                lower_limit = (trunc_lower - implied_mean) * np.sqrt(implied_prec)
+
+                ref_hat.append(np.log(1. - ndist.cdf(lower_limit)))
 
         return np.asarray(ref_hat)
 
@@ -173,20 +205,18 @@ class approximate_grid_inference(object):
 
             var_target = 1. / ((self.precs[m])[0, 0])
 
-            approx_log_ref = self._approx_log_reference(observed_target_uni,
-                                                        target_cov_uni,
-                                                        target_score_cov_uni,
-                                                        self.stat_grid[m])
-
-
+            log_ref = self.log_reference(observed_target_uni,
+                                         target_cov_uni,
+                                         target_score_cov_uni,
+                                         self.stat_grid[m])
             if self.useIP == False:
-                logW = (approx_log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
+                logW = (log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
                 logW -= logW.max()
                 self._families.append(discrete_family(self.stat_grid[m],
                                                       np.exp(logW)))
             else:
                 approx_fn = interp1d(self.stat_grid[m],
-                                     approx_log_ref,
+                                     log_ref,
                                      kind='quadratic',
                                      bounds_error=False,
                                      fill_value='extrapolate')
@@ -199,25 +229,9 @@ class approximate_grid_inference(object):
                 self._families.append(discrete_family(grid,
                                                       np.exp(logW)))
 
-
-            # construction of families follows `selectinf.learning.core`
-
-            # logG = - 0.5 * grid**2 / var_target
-            # logG -= logG.max()
-            # import matplotlib.pyplot as plt
-
-            # plt.plot(self.stat_grid[m][10:30], approx_log_ref[10:30])
-            # plt.plot(self.stat_grid[m][:10], approx_log_ref[:10], 'r', linewidth=4)
-            # plt.plot(self.stat_grid[m][30:], approx_log_ref[30:], 'r', linewidth=4)
-            # plt.plot(self.stat_grid[m]*1.5, fapprox(self.stat_grid[m]*1.5), 'k--')
-            # plt.show()
-
-            # plt.plot(grid, logW)
-            # plt.plot(grid, logG)
-
-    def _approx_pivots(self,
-                       mean_parameter,
-                       alternatives=None):
+    def _pivots(self,
+                mean_parameter,
+                alternatives=None):
 
         if not hasattr(self, "_families"):
             self._construct_families()
@@ -233,8 +247,6 @@ class approximate_grid_inference(object):
             var_target = 1. / ((self.precs[m])[0, 0])
 
             mean = self.S[m].dot(mean_parameter[m].reshape((1,))) + self.r[m]
-            #print("mean ", np.allclose(mean[0], mean_parameter[m]), self.r[m], self.S[m])
-            # construction of pivot from families follows `selectinf.learning.core`
 
             _cdf = family.cdf((mean[0] - self.observed_target[m]) / var_target, x=self.observed_target[m])
 
@@ -248,8 +260,8 @@ class approximate_grid_inference(object):
                 raise ValueError('alternative should be in ["twosided", "less", "greater"]')
         return pivot
 
-    def _approx_intervals(self,
-                          level=0.9):
+    def _intervals(self,
+                   level=0.9):
 
         if not hasattr(self, "_families"):
             self._construct_families()
@@ -307,3 +319,7 @@ class approximate_grid_inference(object):
         self.precs = precs
         self.S = S
         self.r = r
+
+
+
+
