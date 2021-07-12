@@ -118,20 +118,20 @@ class gaussian_query(query):
         (cond_mean,
          cond_cov,
          cond_precision,
-         logdens_linear) = self._setup_implied_gaussian(opt_linear,
+         regress_opt) = self._setup_implied_gaussian(opt_linear,
                                                         opt_offset,
                                                         dispersion)
 
-        def log_density(logdens_linear, offset, cond_prec, opt, score):
+        def log_density(regress_opt, offset, cond_prec, opt, score):
             if score.ndim == 1:
-                mean_term = logdens_linear.dot(score.T + offset).T
+                mean_term = regress_opt.dot(score.T + offset).T
             else:
-                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
-            arg = opt + mean_term
+                mean_term = regress_opt.dot(score.T + offset[:, None]).T
+            arg = opt - mean_term
             return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
 
         log_density = functools.partial(log_density,
-                                        logdens_linear,
+                                        regress_opt,
                                         opt_offset,
                                         cond_precision)
 
@@ -148,7 +148,7 @@ class gaussian_query(query):
                                                self.observed_opt_state,
                                                self.observed_score_state,
                                                log_density,
-                                               (logdens_linear, opt_offset),
+                                               (regress_opt, opt_offset),
                                                self.randomizer_prec,
                                                selection_info=self.selection_variable,
                                                useC=self.useC)
@@ -166,15 +166,17 @@ class gaussian_query(query):
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
             cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+            regress_opt = -cond_cov.dot(opt_linear.T) * prec
         else:
             cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
             cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
+            regress_opt = -cond_cov.dot(opt_linear.T).dot(prec)
 
-        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+        # regress_opt is regression coefficient of opt onto score + u...
 
-        return cond_mean, cond_cov, cond_precision, logdens_linear
+        cond_mean = regress_opt.dot(self.observed_score_state + opt_offset)
+
+        return cond_mean, cond_cov, cond_precision, regress_opt
 
     def summary(self,
                 observed_target,
@@ -833,7 +835,7 @@ class affine_gaussian_sampler(optimization_sampler):
                  observed_score_state,
                  log_cond_density,
                  logdens_transform,  # described how score enters log_density.
-                 randomizer_prec,
+                 cov_product, # product score_cov.dot(randomizer_prec),
                  selection_info=None,
                  useC=False):
 
@@ -875,7 +877,7 @@ class affine_gaussian_sampler(optimization_sampler):
         self._log_cond_density = log_cond_density
         self.logdens_transform = logdens_transform
         self.useC = useC
-        self.randomizer_prec = randomizer_prec
+        self.cov_product = cov_product
 
     def log_cond_density(self,
                          opt_sample,
@@ -977,16 +979,16 @@ class affine_gaussian_sampler(optimization_sampler):
         if (not hasattr(self, "_direction") or not
         np.all(self._direction == direction)):
 
-            logdens_lin, logdens_offset = self.logdens_transform
+            regress_opt, logdens_offset = self.logdens_transform
 
             if opt_sample.shape[1] == 1:
 
                 prec = 1. / self.covariance[0, 0]
-                quadratic_term = logdens_lin.dot(direction) ** 2 * prec
-                arg = (logdens_lin.dot(nuisance + logdens_offset) +
-                       logdens_lin.dot(direction) * gaussian_sample +
-                       opt_sample[:, 0])
-                linear_term = logdens_lin.dot(direction) * prec * arg
+                quadratic_term = regress_opt.dot(direction) ** 2 * prec
+                arg = (opt_sample[:, 0] -
+                       regress_opt.dot(nuisance + logdens_offset) -
+                       regress_opt.dot(direction) * gaussian_sample) 
+                linear_term = -regress_opt.dot(direction) * prec * arg
                 constant_term = arg ** 2 * prec
 
                 self._cache = {'linear_term': linear_term,
@@ -996,22 +998,22 @@ class affine_gaussian_sampler(optimization_sampler):
                 self._direction = direction.copy()
 
                 # density is a Gaussian evaluated at
-                # O_i + A(N + (Z_i + theta) * gamma + b)
+                # O_i - A(N + (Z_i + theta) * gamma + b)
 
                 # b is logdens_offset
-                # A is logdens_linear
+                # A is regress_opt
                 # Z_i is gaussian_sample[i] (real-valued)
                 # gamma is direction
                 # O_i is opt_sample[i]
 
                 # let arg1 = O_i
                 # let arg2 = A(N+b + Z_i \cdot gamma)
-                # then it is of the form (arg1 + arg2 + theta * A gamma)
+                # then it is of the form (arg1 - arg2 - theta * A gamma)
 
-                logdens_lin, logdens_offset = self.logdens_transform
+                regress_opt, logdens_offset = self.logdens_transform
                 cov = self.covariance
                 prec = np.linalg.inv(cov)
-                linear_part = logdens_lin.dot(direction)  # A gamma
+                linear_part = -regress_opt.dot(direction)  # -A gamma
 
                 if 1 in opt_sample.shape:
                     pass  # stop3 what's this for?
@@ -1020,10 +1022,10 @@ class affine_gaussian_sampler(optimization_sampler):
                 quadratic_term = linear_part.T.dot(prec).dot(linear_part)
 
                 arg1 = opt_sample.T
-                arg2 = logdens_lin.dot(np.multiply.outer(direction, gaussian_sample) +
-                                       (nuisance + logdens_offset)[:, None])
+                arg2 = -regress_opt.dot(np.multiply.outer(direction, gaussian_sample) +
+                                        (nuisance + logdens_offset)[:, None])
                 arg = arg1 + arg2
-                linear_term = linear_part.T.dot(prec).dot(arg)
+                linear_term = -regress_opt.T.dot(prec).dot(arg)
                 constant_term = np.sum(prec.dot(arg) * arg, 0)
 
                 self._cache = {'linear_term': linear_term,
@@ -1312,7 +1314,7 @@ def selective_MLE(observed_target,
                   # only for independent estimator
                   cond_mean,
                   cond_cov,
-                  logdens_linear,
+                  regress_opt,
                   linear_part,
                   offset,
                   randomizer_prec,
@@ -1337,7 +1339,7 @@ def selective_MLE(observed_target,
         Conditional mean of optimization variables given target.
     cond_cov : ndarray
         Conditional covariance of optimization variables given target.
-    logdens_linear : ndarray
+    regress_opt : ndarray
         Describes how conditional mean of optimization
         variables varies with target.
     linear_part : ndarray
@@ -1362,13 +1364,13 @@ def selective_MLE(observed_target,
 
     # target_lin determines how the conditional mean of optimization variables
     # vary with target
-    # logdens_linear determines how the argument of the optimization density
+    # regress_opt determines how the argument of the optimization density
     # depends on the score, not how the mean depends on score, hence the minus sign
 
     target_linear = target_score_cov.T.dot(prec_target)
     target_offset = score_offset - target_linear.dot(observed_target)
 
-    target_lin = - logdens_linear.dot(target_linear)
+    target_lin = regress_opt.dot(target_linear)
     target_off = cond_mean - target_lin.dot(observed_target)
 
     if np.asarray(randomizer_prec).shape in [(), (0,)]:

@@ -45,7 +45,7 @@ class approximate_grid_inference(object):
         self.linear_part = query.sampler.affine_con.linear_part
         self.offset = query.sampler.affine_con.offset
 
-        self.logdens_linear = query.sampler.logdens_transform[0]
+        self.regress_opt = query.sampler.logdens_transform[0]
         self.cond_mean = query.cond_mean
         self.prec_opt = np.linalg.inv(query.cond_cov)
         self.cond_cov = query.cond_cov
@@ -132,7 +132,7 @@ class approximate_grid_inference(object):
             raise ValueError('no target specified')
 
         prec_target = np.linalg.inv(target_cov)
-        target_lin = - self.logdens_linear.dot(target_score_cov.T.dot(prec_target))
+        target_lin = self.regress_opt.dot(target_score_cov.T.dot(prec_target))
 
         ref_hat = []
         solver = solve_barrier_affine_py
@@ -290,7 +290,7 @@ class approximate_grid_inference(object):
             target_offset = (self.score_offset - target_linear.dot(observed_target_uni)).reshape(
                 (target_linear.shape[0],))
 
-            target_lin = -self.logdens_linear.dot(target_linear)
+            target_lin = self.regress_opt.dot(target_linear)
             target_off = (self.cond_mean - target_lin.dot(observed_target_uni)).reshape((target_lin.shape[0],))
 
             _prec = prec_target + (target_linear.T.dot(target_linear) * self.randomizer_prec) - target_lin.T.dot(

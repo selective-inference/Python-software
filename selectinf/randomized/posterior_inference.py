@@ -40,7 +40,7 @@ class posterior(object):
 
         linear_part = query.sampler.affine_con.linear_part
         offset = query.sampler.affine_con.offset
-        logdens_linear = query.sampler.logdens_transform[0]
+        regress_opt = query.sampler.logdens_transform[0]
         _, randomizer_prec = query.randomizer.cov_prec
         score_offset = query.observed_score_state + query.sampler.logdens_transform[1]
 
@@ -59,7 +59,7 @@ class posterior(object):
 
         self.observed_target = observed_target
         self.cov_target_score = cov_target_score
-        self.logdens_linear = logdens_linear
+        self.regress_opt = regress_opt
         self.randomizer_prec = randomizer_prec
         self.score_offset = score_offset
 
@@ -133,7 +133,7 @@ class posterior(object):
         target_linear = self.cov_target_score.T.dot(self.prec_target)
         target_offset = self.score_offset - target_linear.dot(self.observed_target)
 
-        target_lin = -self.logdens_linear.dot(target_linear)
+        target_lin = self.regress_opt.dot(target_linear)
         target_off = self.cond_mean - target_lin.dot(self.observed_target)
 
         self.linear_coef = target_lin

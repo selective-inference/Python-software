@@ -201,7 +201,7 @@ class group_lasso(query):
         dispersion = 1.
 
         (prec_opt_linear,
-         logdens_linear) = self._get_precision_opt_linear(opt_linear,
+         regress_opt) = self._get_precision_opt_linear(opt_linear,
                                                           ordered_vars,
                                                           dispersion)
 
@@ -231,7 +231,7 @@ class group_lasso(query):
                                                   self.observed_score_state,
                                                   log_cond_density,
                                                   log_det,
-                                                  (np.atleast_2d(logdens_linear.T[:,idx_g].dot(dir_g).T), 
+                                                  (np.atleast_2d(regress_opt.T[:,idx_g].dot(dir_g).T), 
                                                    opt_offset))
             self._samplers[group] = sampler
 
@@ -375,9 +375,9 @@ class group_lasso(query):
 
         cond_precision = opt_linear.T.dot(value)
         cond_cov = np.linalg.inv(cond_precision)
-        logdens_linear = cond_cov.dot(value.T) * dispersion # is this last dispersion correct?
+        regress_opt = -cond_cov.dot(value.T) * dispersion # is this last dispersion correct?
 
-        return value, logdens_linear
+        return value, regress_opt
 
     def _solve_randomized_problem(self, 
                                   perturb=None, 

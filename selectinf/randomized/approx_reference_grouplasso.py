@@ -244,19 +244,19 @@ class group_lasso(object):
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = self.opt_linear.T.dot(self.opt_linear) * prec
             cond_cov = inv(cond_precision)
-            logdens_linear = cond_cov.dot(self.opt_linear.T) * prec
+            regress_opt = -cond_cov.dot(self.opt_linear.T) * prec
         else:
             cond_precision = self.opt_linear.T.dot(prec.dot(self.opt_linear))
             cond_cov = inv(cond_precision)
-            logdens_linear = cond_cov.dot(self.opt_linear.T).dot(prec)
+            regress_opt = -cond_cov.dot(self.opt_linear.T).dot(prec)
 
-        cond_mean = -logdens_linear.dot(self.observed_score_state + self.opt_offset)
+        cond_mean = regress_opt.dot(self.observed_score_state + self.opt_offset)
         self.cond_mean = cond_mean
         self.cond_cov = cond_cov
         self.cond_precision = cond_precision
-        self.logdens_linear = logdens_linear
+        self.regress_opt = regress_opt
 
-        return cond_mean, cond_cov, cond_precision, logdens_linear
+        return cond_mean, cond_cov, cond_precision, regress_opt
 
     def selective_MLE(self,
                       solve_args={'tol': 1.e-12},
@@ -277,7 +277,7 @@ class group_lasso(object):
         init_soln:  (opt_state) initial (observed) value of optimization variables
         cond_mean: conditional mean of optimization variables (model on _setup_implied_gaussian)
         cond_cov: conditional variance of optimization variables (model on _setup_implied_gaussian)
-        logdens_linear: (model on _setup_implied_gaussian)
+        regress_opt: (model on _setup_implied_gaussian)
         linear_part: like A_scaling (from lasso)
         offset: like b_scaling (from lasso)
         solve_args: passed on to solver
@@ -292,7 +292,7 @@ class group_lasso(object):
         init_soln = self.observed_opt_state  # just the gammas
         cond_mean = self.cond_mean
         cond_cov = self.cond_cov
-        logdens_linear = self.logdens_linear
+        regress_opt = self.regress_opt
         linear_part = self.linear_part
         offset = self.offset
 
@@ -308,13 +308,13 @@ class group_lasso(object):
 
         # target_lin determines how the conditional mean of optimization variables
         # vary with target
-        # logdens_linear determines how the argument of the optimization density
+        # regress_opt determines how the argument of the optimization density
         # depends on the score, not how the mean depends on score, hence the minus sign
 
         target_linear = target_score_cov.T.dot(prec_target)
         target_offset = score_offset - target_linear.dot(observed_target)
 
-        target_lin = - logdens_linear.dot(target_linear)
+        target_lin = regress_opt.dot(target_linear)
         target_off = cond_mean - target_lin.dot(observed_target)
 
         if np.asarray(self.randomizer_prec).shape in [(), (0,)]:
@@ -437,7 +437,7 @@ class approximate_grid_inference(object):
         self.linear_part = query.linear_part
         self.offset = query.offset
 
-        self.logdens_linear = query.logdens_linear
+        self.regress_opt = query.regress_opt
         self.cond_mean = query.cond_mean
         self.prec_opt = np.linalg.inv(query.cond_cov)
         self.cond_cov = query.cond_cov
@@ -528,7 +528,7 @@ class approximate_grid_inference(object):
             raise ValueError('no target specified')
 
         prec_target = np.linalg.inv(target_cov)
-        target_lin = - self.logdens_linear.dot(target_score_cov.T.dot(prec_target))
+        target_lin = self.regress_opt.dot(target_score_cov.T.dot(prec_target))
 
         ref_hat = []
 
@@ -547,7 +547,7 @@ class approximate_grid_inference(object):
 
             #direction for decomposing o
 
-            eta = -self.prec_opt.dot(self.logdens_linear.dot(target_score_cov.T))
+            eta = self.prec_opt.dot(self.regress_opt.dot(target_score_cov.T))
 
             implied_mean = np.asscalar(eta.T.dot(cond_mean_grid))
             implied_cov = np.asscalar(eta.T.dot(self.cond_cov).dot(eta))
@@ -688,7 +688,7 @@ class approximate_grid_inference(object):
             target_offset = (self.score_offset - target_linear.dot(observed_target_uni)).reshape(
                 (target_linear.shape[0],))
 
-            target_lin = -self.logdens_linear.dot(target_linear)
+            target_lin = self.regress_opt.dot(target_linear)
             target_off = (self.cond_mean - target_lin.dot(observed_target_uni)).reshape((target_lin.shape[0],))
 
             _prec = prec_target + (target_linear.T.dot(target_linear) * self.randomizer_prec) - target_lin.T.dot(
