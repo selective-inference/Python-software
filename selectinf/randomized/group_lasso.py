@@ -103,8 +103,8 @@ class group_lasso(query):
 
         p = self.nfeature
 
-        (self.initial_soln, 
-         self.initial_subgrad) = self._solve_randomized_problem(
+        (self.observed_soln, 
+         self.observed_subgrad) = self._solve_randomized_problem(
                                       perturb=perturb, 
                                       solve_args=solve_args)
 
@@ -124,7 +124,7 @@ class group_lasso(query):
         for g in sorted(np.unique(self.penalty.groups)):
             group = self.penalty.groups == g
 
-            soln = self.initial_soln
+            soln = self.observed_soln
             if np.linalg.norm(soln[group]) * tol * np.linalg.norm(soln):
                 ordered_groups.append(g)
                 ordered_vars.extend(np.nonzero(group)[0])
@@ -184,8 +184,6 @@ class group_lasso(query):
         for i, var in enumerate(ordered_vars):
             opt_linear[var, i] += self.ridge_term
 
-        opt_offset = self.initial_subgrad
-         
         # for group LASSO, we will have
         # a different sampler for each group
         # based on conditioning on all scalings
@@ -209,9 +207,8 @@ class group_lasso(query):
                                                         ordered_groups,
                                                         ordered_vars,
                                                         opt_linear,
-                                                        opt_offset,
                                                         self.observed_score_state,
-                                                        self.initial_subgrad,
+                                                        self.observed_subgrad,
                                                         self.penalty, 
                                                         prec_opt_linear).items():
 
@@ -232,7 +229,7 @@ class group_lasso(query):
                                                   log_cond_density,
                                                   log_det,
                                                   (np.atleast_2d(regress_opt.T[:,idx_g].dot(dir_g).T), 
-                                                   opt_offset))
+                                                   self.observed_subgrad))
             self._samplers[group] = sampler
 
         self._setup = True
@@ -242,8 +239,8 @@ class group_lasso(query):
     def summary(self,
                 observed_target, 
                 group_assignments,
-                target_cov, 
-                target_score_cov, 
+                cov_target, 
+                cov_target_score, 
                 alternatives,
                 parameter=None,
                 level=0.9,
@@ -268,8 +265,8 @@ class group_lasso(query):
              intervals_) = self._inference_for_target(
                                observed_target[group_idx],
                                group,
-                               target_cov[group_idx][:, group_idx],
-                               target_score_cov[group_idx],
+                               cov_target[group_idx][:, group_idx],
+                               cov_target_score[group_idx],
                                [alternatives[i] for i in np.nonzero(group_idx)[0]],
                                parameter=parameter[group_idx],
                                level=level,
@@ -284,8 +281,8 @@ class group_lasso(query):
     def _inference_for_target(self,
                               observed_target, 
                               group,
-                              target_cov, 
-                              target_score_cov, 
+                              cov_target, 
+                              cov_target_score, 
                               alternatives,
                               opt_sample=None,
                               target_sample=None,
@@ -332,8 +329,8 @@ class group_lasso(query):
             ndraw = opt_sample.shape[0]
 
         pivots = sampler.coefficient_pvalues(observed_target,
-                                             target_cov,
-                                             target_score_cov,
+                                             cov_target,
+                                             cov_target_score,
                                              parameter=parameter,
                                              sample=(opt_sample, logW),
                                              normal_sample=target_sample,
@@ -341,8 +338,8 @@ class group_lasso(query):
 
         if not np.all(parameter == 0):
             pvalues = sampler.coefficient_pvalues(observed_target,
-                                                  target_cov,
-                                                  target_score_cov,
+                                                  cov_target,
+                                                  cov_target_score,
                                                   parameter=np.zeros_like(parameter),
                                                   sample=(opt_sample, logW),
                                                   normal_sample=target_sample,
@@ -354,8 +351,8 @@ class group_lasso(query):
         if compute_intervals:
 
             intervals = sampler.confidence_intervals(observed_target,
-                                                     target_cov,
-                                                     target_score_cov,
+                                                     cov_target,
+                                                     cov_target_score,
                                                      sample=(opt_sample, logW),
                                                      normal_sample=target_sample,
                                                      level=level)
@@ -396,12 +393,12 @@ class group_lasso(query):
         
         problem = rr.simple_problem(self.loglike, self.penalty)
 
-        initial_soln = problem.solve(quad, **solve_args) 
-        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 
+        observed_soln = problem.solve(quad, **solve_args) 
+        observed_subgrad = -(self.loglike.smooth_objective(observed_soln, 
                                                           'grad') +
-                            quad.objective(initial_soln, 'grad'))
+                            quad.objective(observed_soln, 'grad'))
 
-        return initial_soln, initial_subgrad
+        return observed_soln, observed_subgrad
 
     @staticmethod
     def gaussian(X,
@@ -858,7 +855,6 @@ def _reference_density_info(soln,
                             ordered_groups, # ordering is used in assumptions about columns opt_linear
                             ordered_variables,
                             opt_linear,
-                            opt_offset,
                             observed_score_state,
                             observed_subgrad,
                             group_lasso_penalty, 
@@ -1064,12 +1060,12 @@ class polynomial_gaussian_sampler(affine_gaussian_sampler):
 
     def selective_MLE(self, 
                       observed_target, 
-                      target_cov, 
-                      target_score_cov, 
+                      cov_target, 
+                      cov_target_score, 
                       # initial (observed) value of optimization variables -- 
                       # used as a feasible point.
                       # precise value used only for independent estimator 
-                      init_soln, 
+                      observed_soln, 
                       solve_args={'tol':1.e-12}, 
                       level=0.9):
 

@@ -105,12 +105,12 @@ class lasso(gaussian_query):
 
         p = self.nfeature
 
-        (self.initial_soln, 
-         self.initial_subgrad) = self._solve_randomized_problem(
+        (self.observed_soln, 
+         self.observed_subgrad) = self._solve_randomized_problem(
                                      perturb=perturb, 
                                      solve_args=solve_args)
 
-        active_signs = np.sign(self.initial_soln)
+        active_signs = np.sign(self.observed_soln)
         active = self._active = active_signs != 0
 
         self._lagrange = self.penalty.weights
@@ -133,8 +133,8 @@ class lasso(gaussian_query):
 
         # initial state for opt variables
 
-        initial_scalings = np.fabs(self.initial_soln[active])
-        initial_unpenalized = self.initial_soln[self._unpenalized]
+        initial_scalings = np.fabs(self.observed_soln[active])
+        initial_unpenalized = self.observed_soln[self._unpenalized]
 
         self.observed_opt_state = np.concatenate([initial_scalings,
                                                   initial_unpenalized])
@@ -227,7 +227,6 @@ class lasso(gaussian_query):
                                                 + self.ridge_term *
                                                 unpenalized_directions)
 
-        opt_offset = self.initial_subgrad
         self.opt_linear = opt_linear
         # now make the constraints and implied gaussian
 
@@ -238,7 +237,7 @@ class lasso(gaussian_query):
         self._setup_sampler_data = (A_scaling[:active.sum()],
                                     b_scaling[:active.sum()],
                                     opt_linear,
-                                    opt_offset)
+                                    self.observed_subgrad)
         if num_opt_var > 0:
             self._setup_sampler(*self._setup_sampler_data)
 
@@ -261,12 +260,12 @@ class lasso(gaussian_query):
 
         problem = rr.simple_problem(self.loglike, self.penalty)
 
-        initial_soln = problem.solve(quad, **solve_args) 
-        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 
+        observed_soln = problem.solve(quad, **solve_args) 
+        observed_subgrad = -(self.loglike.smooth_objective(observed_soln, 
                                                           'grad') +
-                            quad.objective(initial_soln, 'grad'))
+                            quad.objective(observed_soln, 'grad'))
 
-        return initial_soln, initial_subgrad
+        return observed_soln, observed_subgrad
 
     @staticmethod
     def gaussian(X,
@@ -888,7 +887,7 @@ class split_lasso(lasso):
 
     def _setup_implied_gaussian(self, 
                                 opt_linear, 
-                                opt_offset,
+                                observed_subgrad,
                                 dispersion):
 
         # key observation is that the covariance of the added noise is 
@@ -919,7 +918,7 @@ class split_lasso(lasso):
         regress_opt = np.zeros((len(ordered_vars),
                                    self.nfeature)) 
         regress_opt[:, ordered_vars] = -cond_cov * signs[None, :] / (dispersion * ratio)
-        cond_mean = regress_opt.dot(self.observed_score_state + opt_offset)
+        cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
 
         return cond_mean, cond_cov, cond_precision, regress_opt
 
@@ -950,12 +949,12 @@ class split_lasso(lasso):
         randomized_loss.coef *= inv_frac
 
         problem = rr.simple_problem(randomized_loss, self.penalty)
-        initial_soln = problem.solve(quad, **solve_args) 
-        initial_subgrad = -(randomized_loss.smooth_objective(initial_soln,
+        observed_soln = problem.solve(quad, **solve_args) 
+        observed_subgrad = -(randomized_loss.smooth_objective(observed_soln,
                                                              'grad') +
-                            quad.objective(initial_soln, 'grad'))
+                            quad.objective(observed_soln, 'grad'))
 
-        return initial_soln, initial_subgrad
+        return observed_soln, observed_subgrad
 
     @staticmethod
     def gaussian(X,

@@ -84,13 +84,13 @@ class drop_losers(gaussian_query):
         
         observed_target = self.means[self._winners]
         std_win = self.std.loc[self._winners]
-        target_cov = np.diag(std_win**2 / (self._n1_win + self._n2_win))
-        target_score_cov = -target_cov
+        cov_target = np.diag(std_win**2 / (self._n1_win + self._n2_win))
+        cov_target_score = -cov_target
         
         result = gaussian_query.selective_MLE(self,
                                               observed_target,
-                                              target_cov,
-                                              target_score_cov,
+                                              cov_target,
+                                              cov_target_score,
                                               level=level,
                                               solve_args=solve_args)
         result[0].insert(0, 'arm', self._winners)
@@ -120,13 +120,13 @@ class drop_losers(gaussian_query):
         """
         observed_target = self.means[self._winners]
         std_win = self.std.loc[self._winners]
-        target_cov = np.diag(std_win**2 / (self._n1_win + self._n2_win))
-        target_score_cov = -target_cov
+        cov_target = np.diag(std_win**2 / (self._n1_win + self._n2_win))
+        cov_target_score = -cov_target
 
         result = gaussian_query.summary(self,
                                         observed_target,
-                                        target_cov,
-                                        target_score_cov,
+                                        cov_target,
+                                        cov_target_score,
                                         alternatives=['twosided']*self.K,
                                         ndraw=ndraw,
                                         level=level,

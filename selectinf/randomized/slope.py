@@ -81,22 +81,22 @@ class slope(gaussian_query):
 
         quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
         problem = rr.simple_problem(self.loglike, self.penalty)
-        initial_soln = problem.solve(quad, **solve_args)
-        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 'grad') +
-                            quad.objective(initial_soln, 'grad'))
+        observed_soln = problem.solve(quad, **solve_args)
+        observed_subgrad = -(self.loglike.smooth_objective(observed_soln, 'grad') +
+                            quad.objective(observed_soln, 'grad'))
 
-        return initial_soln, initial_subgrad
+        return observed_soln, observed_subgrad
 
     def fit(self,
             solve_args={'tol': 1.e-12, 'min_its': 50},
             perturb=None):
 
-        self.initial_soln, self.initial_subgrad = self._solve_randomized_problem(perturb=perturb, solve_args=solve_args)
-        p = self.initial_soln.shape[0]
+        self.observed_soln, self.observed_subgrad = self._solve_randomized_problem(perturb=perturb, solve_args=solve_args)
+        p = self.observed_soln.shape[0]
 
         # now we have to work out SLOPE details, clusters, etc.
 
-        active_signs = np.sign(self.initial_soln)
+        active_signs = np.sign(self.observed_soln)
         active = self._active = active_signs != 0
 
         self._overall = overall = active> 0
@@ -107,9 +107,9 @@ class slope(gaussian_query):
                                    'variables': self._overall}
 
 
-        indices = np.argsort(-np.fabs(self.initial_soln))
-        sorted_soln = self.initial_soln[indices]
-        initial_scalings = np.sort(np.unique(np.fabs(self.initial_soln[active])))[::-1]
+        indices = np.argsort(-np.fabs(self.observed_soln))
+        sorted_soln = self.observed_soln[indices]
+        initial_scalings = np.sort(np.unique(np.fabs(self.observed_soln[active])))[::-1]
         self.observed_opt_state = initial_scalings
         self._unpenalized = np.zeros(p, np.bool)
 
@@ -141,7 +141,7 @@ class slope(gaussian_query):
                 cur_indx = j + 1
                 sign_vec = np.zeros(p)
                 sign_vec[np.arange(j + 1 - cur_indx_array[pointer]) + cur_indx_array[pointer]] = \
-                    np.sign(self.initial_soln[indices[np.arange(j + 1 - cur_indx_array[pointer]) + cur_indx_array[pointer]]])
+                    np.sign(self.observed_soln[indices[np.arange(j + 1 - cur_indx_array[pointer]) + cur_indx_array[pointer]]])
                 signs_cluster.append(sign_vec)
                 pointer = pointer + 1
                 if sorted_soln[j + 1] == 0:
@@ -156,7 +156,6 @@ class slope(gaussian_query):
             _opt_linear_term = X.T.dot(X_clustered)
 
             _, prec = self.randomizer.cov_prec
-            opt_linear, opt_offset = (_opt_linear_term, self.initial_subgrad)
 
             # now make the constraints
 
@@ -170,8 +169,8 @@ class slope(gaussian_query):
 
             self._setup_sampler(A_scaling,
                                 b_scaling,
-                                opt_linear,
-                                opt_offset)
+                                _opt_linear_term,
+                                self.observed_subgrad)
 
             return active_signs
 

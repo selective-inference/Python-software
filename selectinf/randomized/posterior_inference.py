@@ -109,10 +109,11 @@ class posterior(object):
 
         log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal) / 2.
 
-        log_lik = -((self.observed_target - target).T.dot(self._prec).dot(self.observed_target - target)) / 2. \
+        _prec = self.prec_target_nosel # shorthand
+        log_lik = -((self.observed_target - target).T.dot(_prec).dot(self.observed_target - target)) / 2. \
                   - log_normalizer
 
-        grad_lik = self.S.T.dot(self._prec.dot(self.observed_target) - self._prec.dot(target) - self.linear_coef.T.dot(
+        grad_lik = self.S.T.dot(_prec.dot(self.observed_target) - _prec.dot(target) - self.linear_coef.T.dot(
             prec_marginal.dot(soln) - conjugate_marginal))
 
         log_prior, grad_prior = self.prior(target_parameter)
@@ -130,34 +131,34 @@ class posterior(object):
         implied mean as a function of the true parameters.
         """
 
-        score_decomp = self.cov_target_score.T.dot(self.prec_target)
-        score_resid = self.score_offset - score_decomp.dot(self.observed_target)
+        regress_score_target = self.cov_target_score.T.dot(self.prec_target)
+        resid_score_target = self.score_offset - regress_score_target.dot(self.observed_target)
 
-        target_lin = self.regress_opt.dot(score_decomp)
-        target_off = self.cond_mean - target_lin.dot(self.observed_target)
+        regress_opt_target = self.regress_opt.dot(regress_score_target)
+        resid_mean_opt_target = self.cond_mean - regress_opt_target.dot(self.observed_target)
 
-        self.linear_coef = target_lin
-        self.offset_coef = target_off
+        self.linear_coef = regress_opt_target
+        self.offset_coef = resid_mean_opt_target
 
         if np.asarray(self.randomizer_prec).shape in [(), (0,)]:
-            _prec = self.prec_target + (score_decomp.T.dot(score_decomp) * self.randomizer_prec) \
-                    - target_lin.T.dot(self.cond_precision).dot(target_lin)
-            _P = score_decomp.T.dot(score_resid) * self.randomizer_prec
+            prec_target_nosel = self.prec_target + (regress_score_target.T.dot(regress_score_target) * self.randomizer_prec) \
+                    - regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target)
+            _P = regress_score_target.T.dot(resid_score_target) * self.randomizer_prec
         else:
-            _prec = self.prec_target + (score_decomp.T.dot(self.randomizer_prec).dot(score_decomp)) \
-                    - target_lin.T.dot(self.cond_precision).dot(target_lin)
-            _P = score_decomp.T.dot(self.randomizer_prec).dot(score_resid)
+            prec_target_nosel = self.prec_target + (regress_score_target.T.dot(self.randomizer_prec).dot(regress_score_target)) \
+                    - regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target)
+            _P = regress_score_target.T.dot(self.randomizer_prec).dot(resid_score_target)
 
-        _Q = np.linalg.inv(_prec + target_lin.T.dot(self.cond_precision).dot(target_lin))
-        self.prec_marginal = self.cond_precision - self.cond_precision.dot(target_lin).dot(_Q).dot(target_lin.T).dot(self.cond_precision)
+        _Q = np.linalg.inv(_prec + regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target))
+        self.prec_marginal = self.cond_precision - self.cond_precision.dot(regress_opt_target).dot(_Q).dot(regress_opt_target.T).dot(self.cond_precision)
 
-        r = np.linalg.inv(_prec).dot(target_lin.T.dot(self.cond_precision).dot(target_off) - _P)
+        r = np.linalg.inv(_prec).dot(regress_opt_target.T.dot(self.cond_precision).dot(resid_mean_opt_target) - _P)
         S = np.linalg.inv(_prec).dot(self.prec_target)
 
         self.r = r
         self.S = S
         #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
-        self._prec = _prec
+        self.prec_target_nosel = prec_target_nosel
 
 
 ### sampling methods

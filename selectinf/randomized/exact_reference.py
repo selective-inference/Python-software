@@ -11,8 +11,8 @@ class exact_grid_inference(object):
     def __init__(self,
                  query,
                  observed_target,
-                 target_cov,
-                 target_score_cov,
+                 cov_target,
+                 cov_target_score,
                  solve_args={'tol': 1.e-12},
                  useIP=False):
 
@@ -26,17 +26,17 @@ class exact_grid_inference(object):
             to describe implied Gaussian.
         observed_target : ndarray
             Observed estimate of target.
-        target_cov : ndarray
+        cov_target : ndarray
             Estimated covaraince of target.
-        target_score_cov : ndarray
+        cov_target_score : ndarray
             Estimated covariance of target and score of randomized query.
         solve_args : dict, optional
             Arguments passed to solver.
         """
 
         result, inverse_info = query.selective_MLE(observed_target,
-                                                   target_cov,
-                                                   target_score_cov,
+                                                   cov_target,
+                                                   cov_target_score,
                                                    solve_args=solve_args)[:2]
 
         self.linear_part = query.sampler.affine_con.linear_part
@@ -48,15 +48,15 @@ class exact_grid_inference(object):
         self.cond_cov = query.cond_cov
 
         self.observed_target = observed_target
-        self.target_score_cov = target_score_cov
-        self.target_cov = target_cov
+        self.cov_target_score = cov_target_score
+        self.cov_target = cov_target
 
-        self.init_soln = query.observed_opt_state
+        self.observed_soln = query.observed_opt_state
 
         self.randomizer_prec = query.sampler.randomizer_prec
         self.score_offset = query.observed_score_state + query.sampler.logdens_transform[1]
 
-        self.ntarget = ntarget = target_cov.shape[0]
+        self.ntarget = ntarget = cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
 
         if useIP == False:
@@ -118,34 +118,34 @@ class exact_grid_inference(object):
 
     def log_reference(self,
                       observed_target,
-                      target_cov,
-                      target_score_cov,
+                      cov_target,
+                      cov_target_score,
                       grid):
 
         if np.asarray(observed_target).shape in [(), (0,)]:
             raise ValueError('no target specified')
 
-        prec_target = np.linalg.inv(target_cov)
-        target_lin = self.regress_opt.dot(target_score_cov.T.dot(prec_target))
+        prec_target = np.linalg.inv(cov_target)
+        regress_opt_target = self.regress_opt.dot(cov_target_score.T.dot(prec_target))
 
         ref_hat = []
 
         for k in range(grid.shape[0]):
             # in the usual D = N + Gamma theta.hat,
-            # target_lin is "something" times Gamma,
+            # regress_opt_target is "something" times Gamma,
             # where "something" comes from implied Gaussian
             # cond_mean is "something" times D
-            # Gamma is target_score_cov.T.dot(prec_target)
+            # Gamma is cov_target_score.T.dot(prec_target)
 
             num_opt = self.prec_opt.shape[0]
             num_con = self.linear_part.shape[0]
 
-            cond_mean_grid = (target_lin.dot(np.atleast_1d(grid[k] - observed_target)) +
+            cond_mean_grid = (regress_opt_target.dot(np.atleast_1d(grid[k] - observed_target)) +
                               self.cond_mean)
 
             #direction for decomposing o
 
-            eta = self.prec_opt.dot(self.regress_opt.dot(target_score_cov.T))
+            eta = self.prec_opt.dot(self.regress_opt.dot(cov_target_score.T))
 
             implied_mean = np.asscalar(eta.T.dot(cond_mean_grid))
             implied_cov = np.asscalar(eta.T.dot(self.cond_cov).dot(eta))
@@ -155,7 +155,7 @@ class exact_grid_inference(object):
             R = np.identity(num_opt) - _A.dot(eta.T)
 
             A = self.linear_part.dot(_A).reshape((-1,))
-            b = -self.linear_part.dot(R).dot(self.init_soln)
+            b = -self.linear_part.dot(R).dot(self.observed_soln)
 
             trunc_ = np.true_divide((self.offset + b), A)
 
@@ -197,17 +197,17 @@ class exact_grid_inference(object):
         self._families = []
 
         for m in range(self.ntarget):
-            p = self.target_score_cov.shape[1]
+            p = self.cov_target_score.shape[1]
             observed_target_uni = (self.observed_target[m]).reshape((1,))
 
-            target_cov_uni = (np.diag(self.target_cov)[m]).reshape((1, 1))
-            target_score_cov_uni = self.target_score_cov[m, :].reshape((1, p))
+            cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
+            cov_target_score_uni = self.cov_target_score[m, :].reshape((1, p))
 
             var_target = 1. / ((self.precs[m])[0, 0])
 
             log_ref = self.log_reference(observed_target_uni,
-                                         target_cov_uni,
-                                         target_score_cov_uni,
+                                         cov_target_uni,
+                                         cov_target_score_uni,
                                          self.stat_grid[m])
             if self.useIP == False:
                 logW = (log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
@@ -290,31 +290,31 @@ class exact_grid_inference(object):
         S = {}
         r = {}
 
-        p = self.target_score_cov.shape[1]
+        p = self.cov_target_score.shape[1]
 
         for m in range(self.ntarget):
             observed_target_uni = (self.observed_target[m]).reshape((1,))
-            target_cov_uni = (np.diag(self.target_cov)[m]).reshape((1, 1))
-            prec_target = 1. / target_cov_uni
-            target_score_cov_uni = self.target_score_cov[m, :].reshape((1, p))
+            cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
+            prec_target = 1. / cov_target_uni
+            cov_target_score_uni = self.cov_target_score[m, :].reshape((1, p))
 
-            score_decomp = target_score_cov_uni.T.dot(prec_target)
-            score_resid = (self.score_offset - score_decomp.dot(observed_target_uni)).reshape(
-                (score_decomp.shape[0],))
+            regress_score_target = cov_target_score_uni.T.dot(prec_target)
+            resid_score_target = (self.score_offset - regress_score_target.dot(observed_target_uni)).reshape(
+                (regress_score_target.shape[0],))
 
-            target_lin = self.regress_opt.dot(score_decomp)
-            target_off = (self.cond_mean - target_lin.dot(observed_target_uni)).reshape((target_lin.shape[0],))
+            regress_opt_target = self.regress_opt.dot(regress_score_target)
+            resid_mean_opt_target = (self.cond_mean - regress_opt_target.dot(observed_target_uni)).reshape((regress_opt_target.shape[0],))
 
-            _prec = prec_target + (score_decomp.T.dot(score_decomp) * self.randomizer_prec) - target_lin.T.dot(
-                self.prec_opt).dot(target_lin)
+            prec_target_nosel = prec_target + (regress_score_target.T.dot(regress_score_target) * self.randomizer_prec) - regress_opt_target.T.dot(
+                self.prec_opt).dot(regress_opt_target)
 
-            _P = score_decomp.T.dot(score_resid) * self.randomizer_prec
-            _r = (1. / _prec).dot(target_lin.T.dot(self.prec_opt).dot(target_off) - _P)
+            _P = regress_score_target.T.dot(resid_score_target) * self.randomizer_prec
+            _r = (1. / _prec).dot(regress_opt_target.T.dot(self.prec_opt).dot(resid_mean_opt_target) - _P)
             _S = np.linalg.inv(_prec).dot(prec_target)
 
             S[m] = _S
             r[m] = _r
-            precs[m] = _prec
+            precs[m] = prec_target_nosel
 
         self.precs = precs
         self.S = S

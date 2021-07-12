@@ -108,9 +108,9 @@ class marginal_screening(screening):
 
         opt_linear = np.zeros((p, self.num_opt_var))
         opt_linear[self._selected] = np.diag(active_signs)
-        opt_offset = np.zeros(p)
-        opt_offset[self._selected] = active_signs * self.threshold[self._selected]
-        opt_offset[self._not_selected] = _randomized_score[self._not_selected]
+        observed_subgrad = np.zeros(p)
+        observed_subgrad[self._selected] = active_signs * self.threshold[self._selected]
+        observed_subgrad[self._not_selected] = _randomized_score[self._not_selected]
 
         self._setup = True
 
@@ -120,7 +120,7 @@ class marginal_screening(screening):
         self._setup_sampler(A_scaling,
                             b_scaling,
                             opt_linear,
-                            opt_offset)
+                            observed_subgrad)
 
         return self._selected
 
@@ -211,9 +211,9 @@ class stepup(screening):
             for j in range(self.num_opt_var):
                 opt_linear[selected_idx[j], j] = active_signs[j]
 
-            opt_offset = np.zeros(p)
-            opt_offset[self._selected] = active_signs * last_cutoff
-            opt_offset[self._not_selected] = _randomized_score[self._not_selected]
+            observed_subgrad = np.zeros(p)
+            observed_subgrad[self._selected] = active_signs * last_cutoff
+            observed_subgrad[self._not_selected] = _randomized_score[self._not_selected]
 
             self._setup = True
 
@@ -223,7 +223,7 @@ class stepup(screening):
             self._setup_sampler(A_scaling,
                                 b_scaling,
                                 opt_linear,
-                                opt_offset)
+                                observed_subgrad)
         else:
             self._selected = np.zeros(p, np.bool)
         return self._selected
@@ -328,7 +328,7 @@ class topK(screening):
 
             opt_linear = np.zeros((p, self.num_opt_var))
             opt_linear[self._selected] = np.diag(topK_signs)
-            opt_offset = np.zeros(p)  
+            observed_subgrad = np.zeros(p)  
 
         else:
 
@@ -346,7 +346,7 @@ class topK(screening):
 
             opt_linear = np.zeros((p, self.num_opt_var))
             opt_linear[self._selected] = np.identity(self.num_opt_var)
-            opt_offset = np.zeros(p)  
+            observed_subgrad = np.zeros(p)  
 
         # in both cases, this conditioning means we just need to compute
         # the observed lower bound
@@ -360,7 +360,7 @@ class topK(screening):
         self._setup_sampler(A_scaling,
                             b_scaling,
                             opt_linear,
-                            opt_offset)
+                            observed_subgrad)
 
         return self._selected
 

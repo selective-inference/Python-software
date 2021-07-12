@@ -60,8 +60,8 @@ class group_lasso(object):
             perturb=None):
 
         # solve the randomized version of group lasso
-        (self.initial_soln,
-         self.initial_subgrad) = self._solve_randomized_problem(perturb=perturb,
+        (self.observed_soln,
+         self.observed_subgrad) = self._solve_randomized_problem(perturb=perturb,
                                                                 solve_args=solve_args)
 
         # initialize variables
@@ -81,7 +81,7 @@ class group_lasso(object):
         for g in sorted(np.unique(self.groups)):  # g is group label
 
             group_mask = self.groups == g
-            soln = self.initial_soln  # do not need to keep setting this
+            soln = self.observed_soln  # do not need to keep setting this
 
             if norm(soln[group_mask]) > tol * norm(soln):  # is group g appreciably nonzero
                 ordered_groups.append(g)
@@ -127,12 +127,10 @@ class group_lasso(object):
         for i, var in enumerate(ordered_vars):
             opt_linearNoU[var, i] += self.ridge_term
 
-        opt_offset = self.initial_subgrad
-
         self.observed_score_state = -opt_linearNoU.dot(_beta_unpenalized)
         self.observed_score_state[~overall] += self.loglike.smooth_objective(beta_bar, 'grad')[~overall]
 
-        active_signs = np.sign(self.initial_soln)
+        active_signs = np.sign(self.observed_soln)
         active = np.flatnonzero(active_signs)
         self.active = active
 
@@ -171,7 +169,6 @@ class group_lasso(object):
 
         self.opt_linear = opt_linearNoU.dot(U)
         self.active_dirs = active_dirs
-        self.opt_offset = opt_offset
         self.ordered_vars = ordered_vars
 
         self.linear_part = -np.eye(self.observed_opt_state.shape[0])
@@ -198,12 +195,12 @@ class group_lasso(object):
 
         # if all groups are size 1, set up lasso penalty and run usual lasso solver... (see existing code)...
 
-        initial_soln = problem.solve(quad, **solve_args)
-        initial_subgrad = -(self.loglike.smooth_objective(initial_soln,
+        observed_soln = problem.solve(quad, **solve_args)
+        observed_subgrad = -(self.loglike.smooth_objective(observed_soln,
                                                           'grad') +
-                            quad.objective(initial_soln, 'grad'))
+                            quad.objective(observed_soln, 'grad'))
 
-        return initial_soln, initial_subgrad
+        return observed_soln, observed_subgrad
 
     @staticmethod
     def gaussian(X,
@@ -250,7 +247,7 @@ class group_lasso(object):
             cond_cov = inv(cond_precision)
             regress_opt = -cond_cov.dot(self.opt_linear.T).dot(prec)
 
-        cond_mean = regress_opt.dot(self.observed_score_state + self.opt_offset)
+        cond_mean = regress_opt.dot(self.observed_score_state + self.observed_subgrad)
         self.cond_mean = cond_mean
         self.cond_cov = cond_cov
         self.cond_precision = cond_precision
@@ -272,9 +269,9 @@ class group_lasso(object):
         Parameters
         ----------
         observed_target: from selected_targets
-        target_cov: from selected_targets
-        target_cov_score: from selected_targets
-        init_soln:  (opt_state) initial (observed) value of optimization variables
+        cov_target: from selected_targets
+        cov_target_score: from selected_targets
+        observed_soln:  (opt_state) initial (observed) value of optimization variables
         cond_mean: conditional mean of optimization variables (model on _setup_implied_gaussian)
         cond_cov: conditional variance of optimization variables (model on _setup_implied_gaussian)
         regress_opt: (model on _setup_implied_gaussian)
@@ -287,9 +284,9 @@ class group_lasso(object):
         """
 
         self._setup_implied_gaussian()  # Calculate useful quantities
-        (observed_target, target_cov, target_score_cov, alternatives) = self.selected_targets(dispersion)
+        (observed_target, cov_target, cov_target_score, alternatives) = self.selected_targets(dispersion)
 
-        init_soln = self.observed_opt_state  # just the gammas
+        observed_soln = self.observed_opt_state  # just the gammas
         cond_mean = self.cond_mean
         cond_cov = self.cond_cov
         regress_opt = self.regress_opt
@@ -300,40 +297,40 @@ class group_lasso(object):
             raise ValueError('no target specified')
 
         observed_target = np.atleast_1d(observed_target)
-        prec_target = inv(target_cov)
+        prec_target = inv(cov_target)
 
         prec_opt = self.cond_precision
 
-        score_offset = self.observed_score_state + self.opt_offset
+        score_offset = self.observed_score_state + self.observed_subgrad
 
-        # target_lin determines how the conditional mean of optimization variables
+        # regress_opt_target determines how the conditional mean of optimization variables
         # vary with target
         # regress_opt determines how the argument of the optimization density
         # depends on the score, not how the mean depends on score, hence the minus sign
 
-        score_decomp = target_score_cov.T.dot(prec_target)
-        score_resid = score_offset - score_decomp.dot(observed_target)
+        regress_score_target = cov_target_score.T.dot(prec_target)
+        resid_score_target = score_offset - regress_score_target.dot(observed_target)
 
-        target_lin = regress_opt.dot(score_decomp)
-        target_off = cond_mean - target_lin.dot(observed_target)
+        regress_opt_target = regress_opt.dot(regress_score_target)
+        resid_mean_opt_target = cond_mean - regress_opt_target.dot(observed_target)
 
         if np.asarray(self.randomizer_prec).shape in [(), (0,)]:
-            _P = score_decomp.T.dot(score_resid) * self.randomizer_prec
-            _prec = prec_target + (score_decomp.T.dot(score_decomp) * self.randomizer_prec) - target_lin.T.dot(
+            _P = regress_score_target.T.dot(resid_score_target) * self.randomizer_prec
+            _prec = prec_target + (regress_score_target.T.dot(regress_score_target) * self.randomizer_prec) - regress_opt_target.T.dot(
                 prec_opt).dot(
-                target_lin)
+                regress_opt_target)
         else:
-            _P = score_decomp.T.dot(self.randomizer_prec).dot(score_resid)
-            _prec = prec_target + (score_decomp.T.dot(self.randomizer_prec).dot(score_decomp)) - target_lin.T.dot(
-                prec_opt).dot(target_lin)
+            _P = regress_score_target.T.dot(self.randomizer_prec).dot(resid_score_target)
+            _prec = prec_target + (regress_score_target.T.dot(self.randomizer_prec).dot(regress_score_target)) - regress_opt_target.T.dot(
+                prec_opt).dot(regress_opt_target)
 
-        C = target_cov.dot(_P - target_lin.T.dot(prec_opt).dot(target_off))
+        C = cov_target.dot(_P - regress_opt_target.T.dot(prec_opt).dot(resid_mean_opt_target))
 
         conjugate_arg = prec_opt.dot(cond_mean)
 
         val, soln, hess = solve_barrier_affine_jacobian_py(conjugate_arg,
                                                            prec_opt,
-                                                           init_soln,
+                                                           observed_soln,
                                                            linear_part,
                                                            offset,
                                                            self.C,
@@ -341,16 +338,16 @@ class group_lasso(object):
                                                            useJacobian,
                                                            **solve_args)
 
-        final_estimator = target_cov.dot(_prec).dot(observed_target) \
-                          + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln))) + C
+        final_estimator = cov_target.dot(_prec).dot(observed_target) \
+                          + cov_target.dot(regress_opt_target.T.dot(prec_opt.dot(cond_mean - soln))) + C
 
-        unbiased_estimator = target_cov.dot(_prec).dot(observed_target) + target_cov.dot(
-            _P - target_lin.T.dot(prec_opt).dot(target_off))
+        unbiased_estimator = cov_target.dot(_prec).dot(observed_target) + cov_target.dot(
+            _P - regress_opt_target.T.dot(prec_opt).dot(resid_mean_opt_target))
 
-        L = target_lin.T.dot(prec_opt)
-        observed_info_natural = _prec + L.dot(target_lin) - L.dot(hess.dot(L.T))
+        L = regress_opt_target.T.dot(prec_opt)
+        observed_info_natural = _prec + L.dot(regress_opt_target) - L.dot(hess.dot(L.T))
 
-        observed_info_mean = target_cov.dot(observed_info_natural.dot(target_cov))
+        observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
 
         Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
 
@@ -422,9 +419,9 @@ class approximate_grid_inference(object):
             to describe implied Gaussian.
         observed_target : ndarray
             Observed estimate of target.
-        target_cov : ndarray
+        cov_target : ndarray
             Estimated covaraince of target.
-        target_score_cov : ndarray
+        cov_target_score : ndarray
             Estimated covariance of target and score of randomized query.
         solve_args : dict, optional
             Arguments passed to solver.
@@ -444,17 +441,17 @@ class approximate_grid_inference(object):
         self.C = query.C
         self.active_dirs = query.active_dirs
 
-        (observed_target, target_cov, target_score_cov, alternatives) = query.selected_targets(dispersion)
+        (observed_target, cov_target, cov_target_score, alternatives) = query.selected_targets(dispersion)
         self.observed_target = observed_target
-        self.target_score_cov = target_score_cov
-        self.target_cov = target_cov
+        self.cov_target_score = cov_target_score
+        self.cov_target = cov_target
 
-        self.init_soln = query.observed_opt_state
+        self.observed_soln = query.observed_opt_state
 
         self.randomizer_prec = query.randomizer_prec
-        self.score_offset = query.observed_score_state + query.opt_offset
+        self.score_offset = query.observed_score_state + query.observed_subgrad
 
-        self.ntarget = ntarget = target_cov.shape[0]
+        self.ntarget = ntarget = cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
 
         if useIP == False:
@@ -516,8 +513,8 @@ class approximate_grid_inference(object):
 
     def log_reference(self,
                       observed_target,
-                      target_cov,
-                      target_score_cov,
+                      cov_target,
+                      cov_target_score,
                       grid):
 
         """
@@ -527,27 +524,27 @@ class approximate_grid_inference(object):
         if np.asarray(observed_target).shape in [(), (0,)]:
             raise ValueError('no target specified')
 
-        prec_target = np.linalg.inv(target_cov)
-        target_lin = self.regress_opt.dot(target_score_cov.T.dot(prec_target))
+        prec_target = np.linalg.inv(cov_target)
+        regress_opt_target = self.regress_opt.dot(cov_target_score.T.dot(prec_target))
 
         ref_hat = []
 
         for k in range(grid.shape[0]):
             # in the usual D = N + Gamma theta.hat,
-            # target_lin is "something" times Gamma,
+            # regress_opt_target is "something" times Gamma,
             # where "something" comes from implied Gaussian
             # cond_mean is "something" times D
-            # Gamma is target_score_cov.T.dot(prec_target)
+            # Gamma is cov_target_score.T.dot(prec_target)
 
             num_opt = self.prec_opt.shape[0]
             num_con = self.linear_part.shape[0]
 
-            cond_mean_grid = (target_lin.dot(np.atleast_1d(grid[k] - observed_target)) +
+            cond_mean_grid = (regress_opt_target.dot(np.atleast_1d(grid[k] - observed_target)) +
                               self.cond_mean)
 
             #direction for decomposing o
 
-            eta = self.prec_opt.dot(self.regress_opt.dot(target_score_cov.T))
+            eta = self.prec_opt.dot(self.regress_opt.dot(cov_target_score.T))
 
             implied_mean = np.asscalar(eta.T.dot(cond_mean_grid))
             implied_cov = np.asscalar(eta.T.dot(self.cond_cov).dot(eta))
@@ -557,18 +554,18 @@ class approximate_grid_inference(object):
             R = np.identity(num_opt) - _A.dot(eta.T)
 
             A = self.linear_part.dot(_A).reshape((-1,))
-            b = self.offset-self.linear_part.dot(R).dot(self.init_soln)
+            b = self.offset-self.linear_part.dot(R).dot(self.observed_soln)
 
             conjugate_arg = implied_mean * implied_prec
 
             val, soln, _ = solver(np.asarray([conjugate_arg]),
                                   np.reshape(implied_prec, (1,1)),
-                                  eta.T.dot(self.init_soln),
+                                  eta.T.dot(self.observed_soln),
                                   A.reshape((A.shape[0],1)),
                                   b,
                                   **self.solve_args)
 
-            gamma_ = _A.dot(soln) + R.dot(self.init_soln)
+            gamma_ = _A.dot(soln) + R.dot(self.observed_soln)
             log_jacob = jacobian_grad_hess(gamma_, self.C, self.active_dirs)
 
             ref_hat.append(-val - ((conjugate_arg ** 2) * implied_cov)/ 2. + log_jacob[0])
@@ -582,17 +579,17 @@ class approximate_grid_inference(object):
         self._families = []
 
         for m in range(self.ntarget):
-            p = self.target_score_cov.shape[1]
+            p = self.cov_target_score.shape[1]
             observed_target_uni = (self.observed_target[m]).reshape((1,))
 
-            target_cov_uni = (np.diag(self.target_cov)[m]).reshape((1, 1))
-            target_score_cov_uni = self.target_score_cov[m, :].reshape((1, p))
+            cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
+            cov_target_score_uni = self.cov_target_score[m, :].reshape((1, p))
 
             var_target = 1. / ((self.precs[m])[0, 0])
 
             log_ref = self.log_reference(observed_target_uni,
-                                         target_cov_uni,
-                                         target_score_cov_uni,
+                                         cov_target_uni,
+                                         cov_target_score_uni,
                                          self.stat_grid[m])
             if self.useIP == False:
                 logW = (log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
@@ -676,26 +673,26 @@ class approximate_grid_inference(object):
         S = {}
         r = {}
 
-        p = self.target_score_cov.shape[1]
+        p = self.cov_target_score.shape[1]
 
         for m in range(self.ntarget):
             observed_target_uni = (self.observed_target[m]).reshape((1,))
-            target_cov_uni = (np.diag(self.target_cov)[m]).reshape((1, 1))
-            prec_target = 1. / target_cov_uni
-            target_score_cov_uni = self.target_score_cov[m, :].reshape((1, p))
+            cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
+            prec_target = 1. / cov_target_uni
+            cov_target_score_uni = self.cov_target_score[m, :].reshape((1, p))
 
-            score_decomp = target_score_cov_uni.T.dot(prec_target)
-            score_resid = (self.score_offset - score_decomp.dot(observed_target_uni)).reshape(
-                (score_decomp.shape[0],))
+            regress_score_target = cov_target_score_uni.T.dot(prec_target)
+            resid_score_target = (self.score_offset - regress_score_target.dot(observed_target_uni)).reshape(
+                (regress_score_target.shape[0],))
 
-            target_lin = self.regress_opt.dot(score_decomp)
-            target_off = (self.cond_mean - target_lin.dot(observed_target_uni)).reshape((target_lin.shape[0],))
+            regress_opt_target = self.regress_opt.dot(regress_score_target)
+            resid_mean_opt_target = (self.cond_mean - regress_opt_target.dot(observed_target_uni)).reshape((regress_opt_target.shape[0],))
 
-            _prec = prec_target + (score_decomp.T.dot(score_decomp) * self.randomizer_prec) - target_lin.T.dot(
-                self.prec_opt).dot(target_lin)
+            _prec = prec_target + (regress_score_target.T.dot(regress_score_target) * self.randomizer_prec) - regress_opt_target.T.dot(
+                self.prec_opt).dot(regress_opt_target)
 
-            _P = score_decomp.T.dot(score_resid) * self.randomizer_prec
-            _r = (1. / _prec).dot(target_lin.T.dot(self.prec_opt).dot(target_off) - _P)
+            _P = regress_score_target.T.dot(resid_score_target) * self.randomizer_prec
+            _r = (1. / _prec).dot(regress_opt_target.T.dot(self.prec_opt).dot(resid_mean_opt_target) - _P)
             _S = np.linalg.inv(_prec).dot(prec_target)
 
             S[m] = _S
