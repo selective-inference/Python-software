@@ -298,17 +298,17 @@ class exact_grid_inference(object):
             prec_target = 1. / target_cov_uni
             target_score_cov_uni = self.target_score_cov[m, :].reshape((1, p))
 
-            target_linear = target_score_cov_uni.T.dot(prec_target)
-            target_offset = (self.score_offset - target_linear.dot(observed_target_uni)).reshape(
-                (target_linear.shape[0],))
+            score_decomp = target_score_cov_uni.T.dot(prec_target)
+            score_resid = (self.score_offset - score_decomp.dot(observed_target_uni)).reshape(
+                (score_decomp.shape[0],))
 
-            target_lin = self.regress_opt.dot(target_linear)
+            target_lin = self.regress_opt.dot(score_decomp)
             target_off = (self.cond_mean - target_lin.dot(observed_target_uni)).reshape((target_lin.shape[0],))
 
-            _prec = prec_target + (target_linear.T.dot(target_linear) * self.randomizer_prec) - target_lin.T.dot(
+            _prec = prec_target + (score_decomp.T.dot(score_decomp) * self.randomizer_prec) - target_lin.T.dot(
                 self.prec_opt).dot(target_lin)
 
-            _P = target_linear.T.dot(target_offset) * self.randomizer_prec
+            _P = score_decomp.T.dot(score_resid) * self.randomizer_prec
             _r = (1. / _prec).dot(target_lin.T.dot(self.prec_opt).dot(target_off) - _P)
             _S = np.linalg.inv(_prec).dot(prec_target)
 

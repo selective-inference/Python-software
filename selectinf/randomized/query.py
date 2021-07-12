@@ -119,8 +119,8 @@ class gaussian_query(query):
          cond_cov,
          cond_precision,
          regress_opt) = self._setup_implied_gaussian(opt_linear,
-                                                        opt_offset,
-                                                        dispersion)
+                                                     opt_offset,
+                                                     dispersion)
 
         def log_density(regress_opt, offset, cond_prec, opt, score):
             if score.ndim == 1:
@@ -950,7 +950,8 @@ class affine_gaussian_sampler(optimization_sampler):
         solve_args : dict, optional
             Arguments passed to solver.
         """
-        score_offset = self.observed_score_state + self.logdens_transform[1]
+
+        score_offset = self.observed_score_state + self.logdens_transform[1] # logdens_transform[1] is observed_subgrad
 
         return selective_MLE(observed_target,
                              target_cov,
@@ -1367,19 +1368,19 @@ def selective_MLE(observed_target,
     # regress_opt determines how the argument of the optimization density
     # depends on the score, not how the mean depends on score, hence the minus sign
 
-    target_linear = target_score_cov.T.dot(prec_target)
-    target_offset = score_offset - target_linear.dot(observed_target)
+    score_decomp = target_score_cov.T.dot(prec_target)
+    score_resid = score_offset - score_decomp.dot(observed_target)
 
-    target_lin = regress_opt.dot(target_linear)
+    target_lin = regress_opt.dot(score_decomp)
     target_off = cond_mean - target_lin.dot(observed_target)
 
     if np.asarray(randomizer_prec).shape in [(), (0,)]:
-        _P = target_linear.T.dot(target_offset) * randomizer_prec
-        _prec = prec_target + (target_linear.T.dot(target_linear) * randomizer_prec) - target_lin.T.dot(prec_opt).dot(
+        _P = score_decomp.T.dot(score_resid) * randomizer_prec
+        _prec = prec_target + (score_decomp.T.dot(score_decomp) * randomizer_prec) - target_lin.T.dot(prec_opt).dot(
             target_lin)
     else:
-        _P = target_linear.T.dot(randomizer_prec).dot(target_offset)
-        _prec = prec_target + (target_linear.T.dot(randomizer_prec).dot(target_linear)) - target_lin.T.dot(
+        _P = score_decomp.T.dot(randomizer_prec).dot(score_resid)
+        _prec = prec_target + (score_decomp.T.dot(randomizer_prec).dot(score_decomp)) - target_lin.T.dot(
             prec_opt).dot(target_lin)
 
     C = target_cov.dot(_P - target_lin.T.dot(prec_opt).dot(target_off))

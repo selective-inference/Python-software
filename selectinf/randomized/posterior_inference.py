@@ -130,23 +130,23 @@ class posterior(object):
         implied mean as a function of the true parameters.
         """
 
-        target_linear = self.cov_target_score.T.dot(self.prec_target)
-        target_offset = self.score_offset - target_linear.dot(self.observed_target)
+        score_decomp = self.cov_target_score.T.dot(self.prec_target)
+        score_resid = self.score_offset - score_decomp.dot(self.observed_target)
 
-        target_lin = self.regress_opt.dot(target_linear)
+        target_lin = self.regress_opt.dot(score_decomp)
         target_off = self.cond_mean - target_lin.dot(self.observed_target)
 
         self.linear_coef = target_lin
         self.offset_coef = target_off
 
         if np.asarray(self.randomizer_prec).shape in [(), (0,)]:
-            _prec = self.prec_target + (target_linear.T.dot(target_linear) * self.randomizer_prec) \
+            _prec = self.prec_target + (score_decomp.T.dot(score_decomp) * self.randomizer_prec) \
                     - target_lin.T.dot(self.cond_precision).dot(target_lin)
-            _P = target_linear.T.dot(target_offset) * self.randomizer_prec
+            _P = score_decomp.T.dot(score_resid) * self.randomizer_prec
         else:
-            _prec = self.prec_target + (target_linear.T.dot(self.randomizer_prec).dot(target_linear)) \
+            _prec = self.prec_target + (score_decomp.T.dot(self.randomizer_prec).dot(score_decomp)) \
                     - target_lin.T.dot(self.cond_precision).dot(target_lin)
-            _P = target_linear.T.dot(self.randomizer_prec).dot(target_offset)
+            _P = score_decomp.T.dot(self.randomizer_prec).dot(score_resid)
 
         _Q = np.linalg.inv(_prec + target_lin.T.dot(self.cond_precision).dot(target_lin))
         self.prec_marginal = self.cond_precision - self.cond_precision.dot(target_lin).dot(_Q).dot(target_lin.T).dot(self.cond_precision)
