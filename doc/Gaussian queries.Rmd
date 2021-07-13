@@ -156,12 +156,14 @@ $$
 \end{aligned}
 $$
 
-So, to compute `_prec` we need to compute this above matrix and apply it to $B\Theta_{\hat{\theta}}$. **If we suppose that $\Sigma_{\omega}$ and $\Sigma_S \Theta_{\omega}$ can be computed without $p^2$ memory then we only
-have to store $L$ and $(L^T\Theta_{\omega}L)^{-1}$.** We are already storing $(L^T\Theta_{\omega}L)^{-1}$ as the conditional covariance in the affine constraint.
+## Three matrices
 
-This matrix might be easier to compute for both data splitting and general case (when we know $\Sigma_{\omega}$).
+- All the computations above can be expressed of some target specific info like $B, \Theta_{\hat{\theta}}, \Sigma_{\hat{\theta}}, \hat{\theta}$ and
 
-
-
-
-In order to compute `_P` suppose wee have stored $PL^T(L^T\Theta_{\omega}L)^{-1}LP$ as well as 
+$$
+\begin{aligned}
+M_1 &= \Sigma_S \Theta_{\omega} \\
+M_2 &= M_1 \Sigma_{\omega} M_1^T \\
+M_3 &= M_1 L (L^T\Sigma_{\omega}L)^{-1} L M_1^T
+\end{aligned}
+$$

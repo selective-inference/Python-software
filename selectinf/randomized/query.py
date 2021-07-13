@@ -188,9 +188,9 @@ class gaussian_query(query):
 
         cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
 
-        M1 = prod_score_prec.dot(cov_rand).dot(prod_score_prec.T)
-        M2 = prod_score_prec.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(prod_score_prec.T)
-        M3 = prod_score_prec
+        M1 = prod_score_prec 
+        M2 = M1.dot(cov_rand).dot(M1.T)
+        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) 
     
         return (cond_mean,
                 cond_cov,
@@ -1346,7 +1346,7 @@ def selective_MLE(observed_target,
                   linear_part,
                   offset,
                   opt_linear,
-                  M1,
+                  M1,   
                   M2,
                   M3,
                   observed_score,
@@ -1393,38 +1393,21 @@ def selective_MLE(observed_target,
 
     prec_opt = np.linalg.inv(cond_cov)
 
-    # regress_opt_target determines how the conditional mean of optimization variables
-    # vary with target
-    # regress_opt determines how the argument of the optimization density
-    # depends on the score, not how the mean depends on score, hence the minus sign
-
-    ## regress_score_target = cov_target_score.T.dot(prec_target)
-    ## resid_score_target = score_offset - regress_score_target.dot(observed_target)
-
-    ## regress_opt_target = regress_opt.dot(regress_score_target)
-    ## resid_mean_opt_target = cond_mean - regress_opt_target.dot(observed_target)
-
-    # M1, M2, M3 can be computed quickly (assumption) -- we can make this
-    # faster later
-    # shorthand
-    
-    # these could be done by the query at `fit` time
-
     # this is specific to target
     
     T1 = regress_target_score.T.dot(prec_target)
-    T2 = T1.T.dot(M1.dot(T1))
-    T3 = T1.T.dot(M2.dot(T1)) 
+    T2 = T1.T.dot(M2.dot(T1))
+    T3 = T1.T.dot(M3.dot(T1)) 
 
     prec_target_nosel = prec_target + T2 - T3
-    _P = T1.T.dot(M3.dot(observed_score)) - T2.dot(observed_target)
+    _P = T1.T.dot(M1.dot(observed_score)) - T2.dot(observed_target)
 
-    T4 = M3.T.dot(T1)
+    T4 = M1.T.dot(T1)
     T5 = opt_linear.T.dot(T4)
     T6 = cond_cov.dot(T5)
     T7 = opt_linear.dot(T6)
-    T8 = M3.dot(T7)
-    T9 = T8.dot(observed_target) + M3.dot(opt_linear.dot(cond_mean))
+    T8 = M1.dot(T7)
+    T9 = T8.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))
     T10 = T1.T.dot(T9) 
     C = cov_target.dot(T10)
 
@@ -1442,7 +1425,7 @@ def selective_MLE(observed_target,
                              offset,
                              **solve_args)
 
-    T11 = regress_target_score.dot(M3.dot(opt_linear))
+    T11 = regress_target_score.dot(M1.dot(opt_linear))
     final_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) \
                       + T11.dot(cond_mean - soln) + C
 
