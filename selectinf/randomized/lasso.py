@@ -249,13 +249,7 @@ class lasso(gaussian_query):
 
         #### to be fixed -- set the cov_score here without dispersion
 
-        self._cov_randomizer, prec = self.randomizer.cov_prec
-        self._prod_score_prec_unnorm = _hessian
-
-        if np.asarray(prec).shape in [(), (0,)]:
-            self._prod_score_prec_unnorm *= prec
-        else:
-            self._prod_score_prec_unnorm = self._prod_score_prec_unnorm.dot(prec)
+        self._hessian = _hessian
 
         #####
         
@@ -946,7 +940,18 @@ class split_lasso(lasso):
 
         prod_score_prec = np.identity(self.nfeature) / ratio
         
-        return cond_mean, cond_cov, cond_precision, regress_opt, prod_score_prec
+        cov_rand = self._hessian * dispersion
+        M1 = prod_score_prec.dot(cov_rand).dot(prod_score_prec.T)
+        M2 = prod_score_prec.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(prod_score_prec.T)
+        M3 = prod_score_prec
+    
+        return (cond_mean,
+                cond_cov,
+                cond_precision,
+                regress_opt,
+                M1,
+                M2,
+                M3)
 
     def _solve_randomized_problem(self, 
                                   # optional binary vector 

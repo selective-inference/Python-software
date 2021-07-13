@@ -119,9 +119,11 @@ class gaussian_query(query):
          cond_cov,
          cond_precision,
          regress_opt,
-         prod_score_prec) = self._setup_implied_gaussian(opt_linear,
-                                                         observed_subgrad,
-                                                         dispersion)
+         M1,
+         M2,
+         M3) = self._setup_implied_gaussian(opt_linear,
+                                            observed_subgrad,
+                                            dispersion)
 
         def log_density(regress_opt, u, cond_prec, opt, score): # u == subgrad
             if score.ndim == 1:
@@ -136,8 +138,7 @@ class gaussian_query(query):
                                         observed_subgrad,
                                         cond_precision)
 
-        cov_randomizer = self._cov_randomizer
-        self.cond_mean, self.cond_cov, self.cov_randomizer = cond_mean, cond_cov, cov_randomizer
+        self.cond_mean, self.cond_cov = cond_mean, cond_cov
 
         affine_con = constraints(A,
                                  b,
@@ -148,11 +149,12 @@ class gaussian_query(query):
                                                self.observed_opt_state,
                                                self.observed_score_state,
                                                log_density,
-                                               regress_opt,
+                                               regress_opt, # not needed?
                                                observed_subgrad,
-                                               cov_randomizer,  # \Sigma_{\omega}
                                                opt_linear,      # L
-                                               prod_score_prec, # \Sigma_S \Theta_{\omega}
+                                               M1,
+                                               M2,
+                                               M3,
                                                selection_info=self.selection_variable,
                                                useC=self.useC)
 
@@ -163,10 +165,15 @@ class gaussian_query(query):
                                 # for covariance of randomization
                                 dispersion=1):
 
-        _, prec = self.randomizer.cov_prec
-        prec = prec / dispersion
+        cov_rand, prec = self.randomizer.cov_prec
+        prec = prec / dispersion # why do we do this here -- prec is just known
 
-        prod_score_prec = self._prod_score_prec_unnorm * dispersion # this is usually unnormalized by dispersion
+        if np.asarray(prec).shape in [(), (0,)]:
+            _prod_score_prec_unnorm = self._hessian * prec
+        else:
+            _prod_score_prec_unnorm = self._hessian.dot(prec)
+
+        prod_score_prec = _prod_score_prec_unnorm * dispersion
         
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
@@ -181,7 +188,17 @@ class gaussian_query(query):
 
         cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
 
-        return cond_mean, cond_cov, cond_precision, regress_opt, prod_score_prec
+        M1 = prod_score_prec.dot(cov_rand).dot(prod_score_prec.T)
+        M2 = prod_score_prec.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(prod_score_prec.T)
+        M3 = prod_score_prec
+    
+        return (cond_mean,
+                cond_cov,
+                cond_precision,
+                regress_opt,
+                M1,
+                M2,
+                M3)
 
     def summary(self,
                 observed_target,
@@ -841,9 +858,10 @@ class affine_gaussian_sampler(optimization_sampler):
                  log_cond_density,
                  regress_opt,
                  observed_subgrad,
-                 cov_randomizer,  # \Sigma_{\omega}
-                 opt_linear,      # L
-                 prod_score_prec, # \Sigma_S \Theta_{\omega}
+                 opt_linear,      
+                 M1,
+                 M2,
+                 M3,
                  selection_info=None,
                  useC=False):
 
@@ -886,9 +904,8 @@ class affine_gaussian_sampler(optimization_sampler):
         self.regress_opt = regress_opt
         self.observed_subgrad = observed_subgrad
         self.useC = useC
-        self.cov_randomizer = cov_randomizer
         self.opt_linear = opt_linear
-        self.prod_score_prec = prod_score_prec
+        self.M1, self.M2, self.M3 = M1, M2, M3
 
     def log_cond_density(self,
                          opt_sample,
@@ -968,12 +985,12 @@ class affine_gaussian_sampler(optimization_sampler):
                              observed_soln,
                              self.mean,
                              self.covariance,
-                             self.regress_opt,
                              self.affine_con.linear_part,
                              self.affine_con.offset,
-                             self.cov_randomizer,
                              self.opt_linear,
-                             self.prod_score_prec,
+                             self.M1,
+                             self.M2,
+                             self.M3,
                              self.observed_score_state + self.observed_subgrad,
                              solve_args=solve_args,
                              level=level,
@@ -1326,12 +1343,12 @@ def selective_MLE(observed_target,
                   # only for independent estimator
                   cond_mean,
                   cond_cov,
-                  regress_opt,
                   linear_part,
                   offset,
-                  cov_randomizer,
                   opt_linear,
-                  prod_score_prec,
+                  M1,
+                  M2,
+                  M3,
                   observed_score,
                   solve_args={'tol': 1.e-12},
                   level=0.9,
@@ -1393,10 +1410,6 @@ def selective_MLE(observed_target,
     
     # these could be done by the query at `fit` time
 
-    M1 = prod_score_prec.dot(cov_randomizer).dot(prod_score_prec.T)
-    M2 = prod_score_prec.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(prod_score_prec.T)
-    M3 = prod_score_prec
-    
     # this is specific to target
     
     T1 = regress_target_score.T.dot(prec_target)
