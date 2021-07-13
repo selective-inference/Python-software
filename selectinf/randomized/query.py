@@ -1391,6 +1391,8 @@ def selective_MLE(observed_target,
     # faster later
     # shorthand
     
+    # these could be done by the query at `fit` time
+
     M1 = prod_score_prec.dot(cov_randomizer).dot(prod_score_prec.T)
     M2 = prod_score_prec.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(prod_score_prec.T)
     M3 = prod_score_prec
