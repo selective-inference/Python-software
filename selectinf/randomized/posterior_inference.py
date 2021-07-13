@@ -41,7 +41,7 @@ class posterior(object):
         linear_part = query.sampler.affine_con.linear_part
         offset = query.sampler.affine_con.offset
         regress_opt = query.sampler.logdens_transform[0]
-        _, randomizer_prec = query.randomizer.cov_prec
+        _, prec_randomizer = query.randomizer.cov_prec
         score_offset = query.observed_score_state + query.sampler.logdens_transform[1]
 
         result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
@@ -60,7 +60,7 @@ class posterior(object):
         self.observed_target = observed_target
         self.cov_target_score = cov_target_score
         self.regress_opt = regress_opt
-        self.randomizer_prec = randomizer_prec
+        self.prec_randomizer = prec_randomizer
         self.score_offset = score_offset
 
         self.feasible_point = query.observed_opt_state
@@ -140,14 +140,14 @@ class posterior(object):
         self.linear_coef = regress_opt_target
         self.offset_coef = resid_mean_opt_target
 
-        if np.asarray(self.randomizer_prec).shape in [(), (0,)]:
-            prec_target_nosel = self.prec_target + (regress_score_target.T.dot(regress_score_target) * self.randomizer_prec) \
+        if np.asarray(self.prec_randomizer).shape in [(), (0,)]:
+            prec_target_nosel = self.prec_target + (regress_score_target.T.dot(regress_score_target) * self.prec_randomizer) \
                     - regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target)
-            _P = regress_score_target.T.dot(resid_score_target) * self.randomizer_prec
+            _P = regress_score_target.T.dot(resid_score_target) * self.prec_randomizer
         else:
-            prec_target_nosel = self.prec_target + (regress_score_target.T.dot(self.randomizer_prec).dot(regress_score_target)) \
+            prec_target_nosel = self.prec_target + (regress_score_target.T.dot(self.prec_randomizer).dot(regress_score_target)) \
                     - regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target)
-            _P = regress_score_target.T.dot(self.randomizer_prec).dot(resid_score_target)
+            _P = regress_score_target.T.dot(self.prec_randomizer).dot(resid_score_target)
 
         _Q = np.linalg.inv(_prec + regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target))
         self.prec_marginal = self.cond_precision - self.cond_precision.dot(regress_opt_target).dot(_Q).dot(regress_opt_target.T).dot(self.cond_precision)

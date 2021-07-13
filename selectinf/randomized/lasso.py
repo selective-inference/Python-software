@@ -164,10 +164,12 @@ class lasso(gaussian_query):
         X, y = self.loglike.data
         linpred = X.dot(beta_bar)
         n = linpred.shape[0]
+
         if hasattr(self.loglike.saturated_loss, "hessian"): # a GLM -- all we need is W
             W = self._W = self.loglike.saturated_loss.hessian(linpred)
             _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
             _hessian_unpen = np.dot(X.T, X[:, unpenalized] * W[:, None])
+            _hessian = np.dot(X.T, X * W[:, None]) # CAREFUL -- this will be big
         elif hasattr(self.loglike.saturated_loss, "hessian_mult"):
             active_right = np.zeros((n, active.sum()))
             for i, j in enumerate(np.nonzero(active)[0]):
@@ -181,6 +183,12 @@ class lasso(gaussian_query):
                                                                             case_weights=self.loglike.saturated_loss.case_weights)
             _hessian_active = X.T.dot(active_right)
             _hessian_unpen = X.T.dot(unpen_right)
+            _hessian = []
+            for i in range(p):
+                _hessian.append(self.loglike.saturated_loss.hessian_mult(linpred, 
+                                                                         X[:,i], 
+                                                                         case_weights=self.loglike.saturated_loss.case_weights))
+            _hessian = X.T.dot(np.array(_hessian).T)
         else:
             raise ValueError('saturated_loss has no hessian or hessian_mult method')
 
@@ -238,6 +246,19 @@ class lasso(gaussian_query):
                                     b_scaling[:active.sum()],
                                     opt_linear,
                                     self.observed_subgrad)
+
+        #### to be fixed -- set the cov_score here without dispersion
+
+        self._cov_randomizer, prec = self.randomizer.cov_prec
+        self._prod_score_prec_unnorm = _hessian
+
+        if np.asarray(prec).shape in [(), (0,)]:
+            self._prod_score_prec_unnorm *= prec
+        else:
+            self._prod_score_prec_unnorm = self._prod_score_prec_unnorm.dot(prec)
+
+        #####
+        
         if num_opt_var > 0:
             self._setup_sampler(*self._setup_sampler_data)
 
@@ -721,7 +742,9 @@ def selected_targets(loglike,
         dispersion = ((y - loglike.saturated_loss.mean_function(
             Xfeat.dot(observed_target))) ** 2 / W).sum() / (n - Xfeat.shape[1])
 
-    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+    regress_target_score = np.zeros((cov_target.shape[0], p))
+    regress_target_score[:,features] = cov_target
+    return observed_target, cov_target * dispersion, regress_target_score, alternatives
 
 def full_targets(loglike, 
                  W, 
@@ -756,7 +779,8 @@ def full_targets(loglike,
                       (n - p))
 
     alternatives = ['twosided'] * features.sum()
-    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+    regress_target_score = Qfull_inv[features] # weights missing?
+    return observed_target, cov_target * dispersion, regress_target_score, alternatives
 
 def debiased_targets(loglike, 
                      W, 
@@ -811,7 +835,7 @@ def debiased_targets(loglike,
                       (n - features.sum()))
 
     alternatives = ['twosided'] * features.sum()
-    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+    return observed_target, cov_target * dispersion, Qinv_hat, alternatives
 
 def form_targets(target, 
                  loglike, 
@@ -920,7 +944,9 @@ class split_lasso(lasso):
         regress_opt[:, ordered_vars] = -cond_cov * signs[None, :] / (dispersion * ratio)
         cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
 
-        return cond_mean, cond_cov, cond_precision, regress_opt
+        prod_score_prec = np.identity(self.nfeature) / ratio
+        
+        return cond_mean, cond_cov, cond_precision, regress_opt, prod_score_prec
 
     def _solve_randomized_problem(self, 
                                   # optional binary vector 

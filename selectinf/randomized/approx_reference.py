@@ -56,7 +56,7 @@ class approximate_grid_inference(object):
 
         self.observed_soln = query.observed_opt_state
 
-        self.randomizer_prec = query.sampler.randomizer_prec
+        self.prec_randomizer = query.sampler.prec_randomizer
         self.score_offset = query.observed_score_state + query.sampler.logdens_transform[1]
 
         self.ntarget = ntarget = cov_target.shape[0]
@@ -293,10 +293,10 @@ class approximate_grid_inference(object):
             regress_opt_target = self.regress_opt.dot(regress_score_target)
             resid_mean_opt_target = (self.cond_mean - regress_opt_target.dot(observed_target_uni)).reshape((regress_opt_target.shape[0],))
 
-            prec_target_nosel = prec_target + (regress_score_target.T.dot(regress_score_target) * self.randomizer_prec) - regress_opt_target.T.dot(
+            prec_target_nosel = prec_target + (regress_score_target.T.dot(regress_score_target) * self.prec_randomizer) - regress_opt_target.T.dot(
                 self.prec_opt).dot(regress_opt_target)
 
-            _P = regress_score_target.T.dot(resid_score_target) * self.randomizer_prec
+            _P = regress_score_target.T.dot(resid_score_target) * self.prec_randomizer
             _r = (1. / _prec).dot(regress_opt_target.T.dot(self.prec_opt).dot(resid_mean_opt_target) - _P)
             _S = np.linalg.inv(_prec).dot(prec_target)
 

@@ -118,9 +118,10 @@ class gaussian_query(query):
         (cond_mean,
          cond_cov,
          cond_precision,
-         regress_opt) = self._setup_implied_gaussian(opt_linear,
-                                                     observed_subgrad,
-                                                     dispersion)
+         regress_opt,
+         prod_score_prec) = self._setup_implied_gaussian(opt_linear,
+                                                         observed_subgrad,
+                                                         dispersion)
 
         def log_density(regress_opt, u, cond_prec, opt, score): # u == subgrad
             if score.ndim == 1:
@@ -135,9 +136,8 @@ class gaussian_query(query):
                                         observed_subgrad,
                                         cond_precision)
 
-
-        _, randomizer_prec = self.randomizer.cov_prec
-        self.cond_mean, self.cond_cov, self.randomizer_prec = cond_mean, cond_cov, randomizer_prec
+        cov_randomizer = self._cov_randomizer
+        self.cond_mean, self.cond_cov, self.cov_randomizer = cond_mean, cond_cov, cov_randomizer
 
         affine_con = constraints(A,
                                  b,
@@ -150,7 +150,9 @@ class gaussian_query(query):
                                                log_density,
                                                regress_opt,
                                                observed_subgrad,
-                                               self.randomizer_prec,
+                                               cov_randomizer,  # \Sigma_{\omega}
+                                               opt_linear,      # L
+                                               prod_score_prec, # \Sigma_S \Theta_{\omega}
                                                selection_info=self.selection_variable,
                                                useC=self.useC)
 
@@ -164,6 +166,8 @@ class gaussian_query(query):
         _, prec = self.randomizer.cov_prec
         prec = prec / dispersion
 
+        prod_score_prec = self._prod_score_prec_unnorm * dispersion # this is usually unnormalized by dispersion
+        
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
             cond_cov = np.linalg.inv(cond_precision)
@@ -172,17 +176,17 @@ class gaussian_query(query):
             cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
             cond_cov = np.linalg.inv(cond_precision)
             regress_opt = -cond_cov.dot(opt_linear.T).dot(prec)
-
+            
         # regress_opt is regression coefficient of opt onto score + u...
 
         cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
 
-        return cond_mean, cond_cov, cond_precision, regress_opt
+        return cond_mean, cond_cov, cond_precision, regress_opt, prod_score_prec
 
     def summary(self,
                 observed_target,
                 cov_target,
-                cov_target_score,
+                regress_target_score,
                 alternatives,
                 opt_sample=None,
                 target_sample=None,
@@ -200,8 +204,8 @@ class gaussian_query(query):
             Observed estimate of target.
         cov_target : ndarray
             Estimated covaraince of target.
-        cov_target_score : ndarray
-            Estimated covariance of target and score of randomized query.
+        regress_target_score : ndarray
+            Estimated regression coefficient of target on score.
         alternatives : [str], optional
             Sequence of strings describing the alternatives,
             should be values of ['twosided', 'less', 'greater']
@@ -234,7 +238,7 @@ class gaussian_query(query):
 
         pivots = self.sampler.coefficient_pvalues(observed_target,
                                                   cov_target,
-                                                  cov_target_score,
+                                                  regress_target_score,
                                                   parameter=parameter,
                                                   sample=(opt_sample, logW),
                                                   normal_sample=target_sample,
@@ -243,7 +247,7 @@ class gaussian_query(query):
         if not np.all(parameter == 0):
             pvalues = self.sampler.coefficient_pvalues(observed_target,
                                                        cov_target,
-                                                       cov_target_score,
+                                                       regress_target_score,
                                                        parameter=np.zeros_like(parameter),
                                                        sample=(opt_sample, logW),
                                                        normal_sample=target_sample,
@@ -257,13 +261,13 @@ class gaussian_query(query):
         if compute_intervals:
             MLE = self.selective_MLE(observed_target,
                                      cov_target,
-                                     cov_target_score)[0]
+                                     regress_target_score)[0]
             MLE_intervals = np.asarray(MLE[['lower_confidence', 'upper_confidence']])
 
             intervals = self.sampler.confidence_intervals(
                 observed_target,
                 cov_target,
-                cov_target_score,
+                regress_target_score,
                 sample=(opt_sample, logW),
                 normal_sample=target_sample,
                 initial_guess=MLE_intervals,
@@ -281,7 +285,7 @@ class gaussian_query(query):
     def selective_MLE(self,
                       observed_target,
                       cov_target,
-                      cov_target_score,
+                      regress_target_score,
                       level=0.9,
                       solve_args={'tol': 1.e-12}):
         """
@@ -291,7 +295,7 @@ class gaussian_query(query):
             Observed estimate of target.
         cov_target : ndarray
             Estimated covaraince of target.
-        cov_target_score : ndarray
+        regress_target_score : ndarray
             Estimated covariance of target and score of randomized query.
         level : float, optional
             Confidence level.
@@ -301,7 +305,7 @@ class gaussian_query(query):
 
         return self.sampler.selective_MLE(observed_target,
                                           cov_target,
-                                          cov_target_score,
+                                          regress_target_score,
                                           self.observed_opt_state,
                                           level=level,
                                           solve_args=solve_args)
@@ -309,7 +313,7 @@ class gaussian_query(query):
     def posterior(self,
                   observed_target,
                   cov_target,
-                  cov_target_score,
+                  regress_target_score,
                   prior=None,
                   dispersion=None,
                   solve_args={'tol': 1.e-12}):
@@ -320,7 +324,7 @@ class gaussian_query(query):
             Observed estimate of target.
         cov_target : ndarray
             Estimated covaraince of target.
-        cov_target_score : ndarray
+        regress_target_score : ndarray
             Estimated covariance of target and score of randomized query.
         prior : callable
             A callable object that takes a single argument
@@ -347,7 +351,7 @@ class gaussian_query(query):
         return posterior(self,
                          observed_target,
                          cov_target,
-                         cov_target_score,
+                         regress_target_score,
                          prior,
                          dispersion,
                          solve_args=solve_args)
@@ -355,7 +359,7 @@ class gaussian_query(query):
     def approximate_grid_inference(self,
                                    observed_target,
                                    cov_target,
-                                   cov_target_score,
+                                   regress_target_score,
                                    alternatives=None,
                                    solve_args={'tol': 1.e-12}):
 
@@ -366,7 +370,7 @@ class gaussian_query(query):
             Observed estimate of target.
         cov_target : ndarray
             Estimated covaraince of target.
-        cov_target_score : ndarray
+        regress_target_score : ndarray
             Estimated covariance of target and score of randomized query.
         alternatives : [str], optional
             Sequence of strings describing the alternatives,
@@ -378,7 +382,7 @@ class gaussian_query(query):
         G = approximate_grid_inference(self,
                                        observed_target,
                                        cov_target,
-                                       cov_target_score,
+                                       regress_target_score,
                                        solve_args=solve_args)
         return G.summary(alternatives=alternatives)
 
@@ -837,7 +841,9 @@ class affine_gaussian_sampler(optimization_sampler):
                  log_cond_density,
                  regress_opt,
                  observed_subgrad,
-                 randomizer_prec,
+                 cov_randomizer,  # \Sigma_{\omega}
+                 opt_linear,      # L
+                 prod_score_prec, # \Sigma_S \Theta_{\omega}
                  selection_info=None,
                  useC=False):
 
@@ -880,7 +886,9 @@ class affine_gaussian_sampler(optimization_sampler):
         self.regress_opt = regress_opt
         self.observed_subgrad = observed_subgrad
         self.useC = useC
-        self.randomizer_prec = randomizer_prec
+        self.cov_randomizer = cov_randomizer
+        self.opt_linear = opt_linear
+        self.prod_score_prec = prod_score_prec
 
     def log_cond_density(self,
                          opt_sample,
@@ -928,7 +936,7 @@ class affine_gaussian_sampler(optimization_sampler):
     def selective_MLE(self,
                       observed_target,
                       cov_target,
-                      cov_target_score,
+                      regress_target_score,
                       # initial (observed) value of optimization variables --
                       # used as a feasible point.
                       # precise value used only for independent estimator
@@ -944,7 +952,7 @@ class affine_gaussian_sampler(optimization_sampler):
             Observed estimate of target.
         cov_target : ndarray
             Estimated covaraince of target.
-        cov_target_score : ndarray
+        regress_target_score : ndarray
             Estimated covariance of target and score of randomized query.
         observed_soln : ndarray
             Feasible point for optimization problem.
@@ -954,19 +962,19 @@ class affine_gaussian_sampler(optimization_sampler):
             Arguments passed to solver.
         """
 
-        score_offset = self.observed_score_state + self.observed_subgrad
-
         return selective_MLE(observed_target,
                              cov_target,
-                             cov_target_score,
+                             regress_target_score,
                              observed_soln,
                              self.mean,
                              self.covariance,
                              self.regress_opt,
                              self.affine_con.linear_part,
                              self.affine_con.offset,
-                             self.randomizer_prec,
-                             score_offset,
+                             self.cov_randomizer,
+                             self.opt_linear,
+                             self.prod_score_prec,
+                             self.observed_score_state + self.observed_subgrad,
                              solve_args=solve_args,
                              level=level,
                              useC=self.useC)
@@ -1156,8 +1164,8 @@ class optimization_intervals(object):
              opt_sample,
              _,
              _,
-             cov_target_score) in self.opt_sampling_info:
-            cur_score_cov = linear_func.dot(cov_target_score)
+             regress_target_score) in self.opt_sampling_info:
+            cur_score_cov = linear_func.dot(regress_target_score)
 
             # cur_nuisance is in the view's score coordinates
             cur_nuisance = opt_sampler.observed_score_state - cur_score_cov * observed_stat / cov_target
@@ -1167,7 +1175,7 @@ class optimization_intervals(object):
         weights = self._weights(sample_stat,  # normal sample
                                 candidate,  # candidate value
                                 nuisance,  # nuisance sufficient stats for each view
-                                translate_dirs)  # points will be moved like sample * cov_target_score
+                                translate_dirs)  # points will be moved like sample * regress_target_score
 
         pivot = np.mean((sample_stat + candidate <= observed_stat) * weights) / np.mean(weights)
 
@@ -1311,7 +1319,7 @@ def naive_pvalues(diag_cov, observed, parameter):
 
 def selective_MLE(observed_target,
                   cov_target,
-                  cov_target_score,
+                  regress_target_score,
                   observed_soln,  # initial (observed) value of
                   # optimization variables -- used as a
                   # feasible point.  precise value used
@@ -1321,8 +1329,10 @@ def selective_MLE(observed_target,
                   regress_opt,
                   linear_part,
                   offset,
-                  randomizer_prec,
-                  score_offset,
+                  cov_randomizer,
+                  opt_linear,
+                  prod_score_prec,
+                  observed_score,
                   solve_args={'tol': 1.e-12},
                   level=0.9,
                   useC=False):
@@ -1335,8 +1345,8 @@ def selective_MLE(observed_target,
         Observed estimate of target.
     cov_target : ndarray
         Estimated covaraince of target.
-    cov_target_score : ndarray
-        Estimated covariance of target and score of randomized query.
+    regress_target_score : ndarray
+        Estimated regression coefficient of target on score.
     observed_soln : ndarray
         Feasible point for optimization problem.
     cond_mean : ndarray
@@ -1371,23 +1381,37 @@ def selective_MLE(observed_target,
     # regress_opt determines how the argument of the optimization density
     # depends on the score, not how the mean depends on score, hence the minus sign
 
-    regress_score_target = cov_target_score.T.dot(prec_target)
-    resid_score_target = score_offset - regress_score_target.dot(observed_target)
+    ## regress_score_target = cov_target_score.T.dot(prec_target)
+    ## resid_score_target = score_offset - regress_score_target.dot(observed_target)
 
-    regress_opt_target = regress_opt.dot(regress_score_target)
-    resid_mean_opt_target = cond_mean - regress_opt_target.dot(observed_target)
+    ## regress_opt_target = regress_opt.dot(regress_score_target)
+    ## resid_mean_opt_target = cond_mean - regress_opt_target.dot(observed_target)
 
+    # M1, M2, M3 can be computed quickly (assumption) -- we can make this
+    # faster later
+    # shorthand
+    
+    M1 = prod_score_prec.dot(cov_randomizer).dot(prod_score_prec.T)
+    M2 = prod_score_prec.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(prod_score_prec.T)
+    M3 = prod_score_prec
+    
+    # this is specific to target
+    
+    T1 = regress_target_score.T.dot(prec_target)
+    T2 = T1.T.dot(M1.dot(T1))
+    T3 = T1.T.dot(M2.dot(T1)) 
 
-    if np.asarray(randomizer_prec).shape in [(), (0,)]:
-        _P = regress_score_target.T.dot(resid_score_target) * randomizer_prec
-        prec_target_nosel = prec_target + (regress_score_target.T.dot(regress_score_target) * randomizer_prec) - regress_opt_target.T.dot(prec_opt).dot(
-            regress_opt_target)
-    else:
-        _P = regress_score_target.T.dot(randomizer_prec).dot(resid_score_target)
-        prec_target_nosel = prec_target + (regress_score_target.T.dot(randomizer_prec).dot(regress_score_target)) - regress_opt_target.T.dot(
-            prec_opt).dot(regress_opt_target)
+    prec_target_nosel = prec_target + T2 - T3
+    _P = T1.T.dot(M3.dot(observed_score)) - T2.dot(observed_target)
 
-    C = cov_target.dot(_P - regress_opt_target.T.dot(prec_opt).dot(resid_mean_opt_target))
+    T4 = M3.T.dot(T1)
+    T5 = opt_linear.T.dot(T4)
+    T6 = cond_cov.dot(T5)
+    T7 = opt_linear.dot(T6)
+    T8 = M3.dot(T7)
+    T9 = T8.dot(observed_target) + M3.dot(opt_linear.dot(cond_mean))
+    T10 = T1.T.dot(T9) 
+    C = cov_target.dot(T10)
 
     conjugate_arg = prec_opt.dot(cond_mean)
 
@@ -1403,14 +1427,16 @@ def selective_MLE(observed_target,
                              offset,
                              **solve_args)
 
+    T11 = regress_target_score.dot(M3.dot(opt_linear))
     final_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) \
-                      + cov_target.dot(regress_opt_target.T.dot(prec_opt.dot(cond_mean - soln))) + C
+                      + T11.dot(cond_mean - soln) + C
 
+    T12 = prec_target.dot(T11)
+    T13 = T3
     unbiased_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) + cov_target.dot(
-        _P - regress_opt_target.T.dot(prec_opt).dot(resid_mean_opt_target))
+        _P - T12.dot(cond_mean) + T13.dot(observed_target))
 
-    L = regress_opt_target.T.dot(prec_opt)
-    observed_info_natural = prec_target_nosel + L.dot(regress_opt_target) - L.dot(hess.dot(L.T))
+    observed_info_natural = prec_target_nosel + T3 - T12.dot(hess.dot(T12.T))
 
     observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
 

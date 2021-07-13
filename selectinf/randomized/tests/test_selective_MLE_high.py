@@ -428,7 +428,7 @@ def test_cox(n=2000,
         if nonzero.sum() > 0:
 
             cox_full = rr.glm.cox(X, T, S)
-            full_hess = cox_full.hessian(conv.initial_soln)
+            full_hess = cox_full.hessian(conv.observed_soln)
 
             (observed_target, 
              cov_target, 
@@ -488,7 +488,7 @@ def test_cox_split(n=2000,
         if nonzero.sum() > 0:
 
             cox_full = rr.glm.cox(X, T, S)
-            full_hess = cox_full.hessian(conv.initial_soln)
+            full_hess = cox_full.hessian(conv.observed_soln)
 
             (observed_target, 
              cov_target, 
