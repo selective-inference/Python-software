@@ -1400,16 +1400,18 @@ def selective_MLE(observed_target,
     T3 = T1.T.dot(M3.dot(T1)) 
 
     prec_target_nosel = prec_target + T2 - T3
-    _P = T1.T.dot(M1.dot(observed_score)) - T2.dot(observed_target)
+    _P = -(T1.T.dot(M1.dot(observed_score)) + T2.dot(observed_target)) ##flipped sign of second term here
 
     T4 = M1.T.dot(T1)
     T5 = opt_linear.T.dot(T4)
     T6 = cond_cov.dot(T5)
     T7 = opt_linear.dot(T6)
     T8 = M1.dot(T7)
-    T9 = T8.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))
+    T9 = (-T8.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean)))
+    #T9 = M1.dot(opt_linear.dot(cond_mean))
     T10 = T1.T.dot(T9) 
-    C = cov_target.dot(T10)
+    C = cov_target.dot(_P - T10)
+    print("check within MLE ", np.allclose(T2 - T3, np.zeros((T2.shape[0], T2.shape[1]))), np.allclose((_P-T10), np.zeros(T10.shape[0])))
 
     conjugate_arg = prec_opt.dot(cond_mean)
 
