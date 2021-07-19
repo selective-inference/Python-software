@@ -942,7 +942,7 @@ class split_lasso(lasso):
         
         cov_rand = self._hessian * dispersion
 
-        M1 = prod_score_prec 
+        M1 = prod_score_prec
         M2 = M1.dot(cov_rand).dot(M1.T)
         M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) 
     
