@@ -4,15 +4,16 @@ from ...tests.instance import gaussian_instance
 from ..lasso import lasso, selected_targets
 from ..exact_reference import exact_grid_inference
 
-def test_approx_pivot(n=500,
-                      p=100,
-                      signal_fac=1.,
-                      s=5,
-                      sigma=2.,
-                      rho=0.4,
-                      randomizer_scale=1.,
-                      equicorrelated=False,
-                      useIP=False):
+def test_inf(n=500,
+             p=100,
+             signal_fac=1.,
+             s=5,
+             sigma=2.,
+             rho=0.4,
+             randomizer_scale=1.,
+             equicorrelated=False,
+             useIP=False,
+             CI=True):
 
     while True:
 
@@ -66,37 +67,71 @@ def test_approx_pivot(n=500,
                                                   cov_target_score,
                                                   useIP=useIP)
 
-            pivot = exact_grid_inf._pivots(beta_target)
+            if CI is False:
+                pivot = exact_grid_inf._pivots(beta_target)
+                return pivot
 
-            return pivot
+            else:
+                lci, uci = exact_grid_inf._intervals(level=0.90)
+                coverage = (lci < beta_target) * (uci > beta_target)
+                length = uci - lci
+                mle_length = 1.65*2 * np.sqrt(np.diag(exact_grid_inf.inverse_info))
+                return np.mean(coverage), np.mean(length), np.mean(mle_length)
 
-def main(nsim=300):
+def main(nsim=300, CI = False):
 
-    import matplotlib as mpl
-    mpl.use('tkagg')
-    import matplotlib.pyplot as plt
-    from statsmodels.distributions.empirical_distribution import ECDF
+    if CI is False:
 
-    _pivot = []
-    for i in range(nsim):
-        _pivot.extend(test_approx_pivot(n=100,
-                                        p=400,
-                                        signal_fac=1.,
-                                        s=0,
-                                        sigma=2.,
-                                        rho=0.30,
-                                        randomizer_scale=0.7,
-                                        equicorrelated=True,
-                                        useIP=False))
+        import matplotlib as mpl
+        mpl.use('tkagg')
+        import matplotlib.pyplot as plt
+        from statsmodels.distributions.empirical_distribution import ECDF
 
-        print("iteration completed ", i)
+        _pivot = []
+        for i in range(nsim):
+            _pivot.extend(test_inf(n=100,
+                                   p=400,
+                                   signal_fac=1.,
+                                   s=0,
+                                   sigma=2.,
+                                   rho=0.30,
+                                   randomizer_scale=0.7,
+                                   equicorrelated=True,
+                                   useIP=False,
+                                   CI=False))
 
-    plt.clf()
-    ecdf_pivot = ECDF(np.asarray(_pivot))
-    grid = np.linspace(0, 1, 101)
-    plt.plot(grid, ecdf_pivot(grid), c='blue')
-    plt.plot(grid, grid, 'k--')
-    plt.show()
+            print("iteration completed ", i)
+
+        plt.clf()
+        ecdf_pivot = ECDF(np.asarray(_pivot))
+        grid = np.linspace(0, 1, 101)
+        plt.plot(grid, ecdf_pivot(grid), c='blue')
+        plt.plot(grid, grid, 'k--')
+        plt.show()
+
+    else:
+        coverage_ = 0.
+        length_ = 0.
+        mle_length_= 0.
+        for n in range(nsim):
+            cov, len, mle_len = test_inf(n=400,
+                                         p=100,
+                                         signal_fac=0.5,
+                                         s=5,
+                                         sigma=2.,
+                                         rho=0.30,
+                                         randomizer_scale=0.7,
+                                         equicorrelated=True,
+                                         useIP=False,
+                                         CI=True)
+
+            coverage_ += cov
+            length_ += len
+            mle_length_ += mle_len
+            print("coverage so far ", coverage_ / (n + 1.))
+            print("lengths so far ", length_ / (n + 1.), mle_length_/ (n + 1.))
+            print("iteration completed ", n + 1)
+
 
 if __name__ == "__main__":
-    main(nsim=100)
+    main(nsim=100, CI=True)

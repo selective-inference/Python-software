@@ -76,6 +76,7 @@ class exact_grid_inference(object):
 
         self.opt_linear = query.opt_linear
         self.useIP = useIP
+        self.inverse_info = inverse_info
 
     def summary(self,
                 alternatives=None,
