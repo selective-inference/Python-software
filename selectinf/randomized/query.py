@@ -166,7 +166,7 @@ class gaussian_query(query):
                                 dispersion=1):
 
         cov_rand, prec = self.randomizer.cov_prec
-        prec = prec / dispersion # why do we do this here -- prec is just known
+        prec = prec
 
         if np.asarray(prec).shape in [(), (0,)]:
             _prod_score_prec_unnorm = self._hessian * prec
@@ -1407,10 +1407,9 @@ def selective_MLE(observed_target,
     T6 = cond_cov.dot(T5)
     T7 = opt_linear.dot(T6)
     T8 = M1.dot(T7)
-    T9 = (-T8.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean)))
+    T9 = (-T8.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))) ##flipped sign of first term here
     T10 = T1.T.dot(T9) 
-    C = cov_target.dot(_P - T10)
-    print("check within MLE ", np.allclose(T2 - T3, np.zeros((T2.shape[0], T2.shape[1]))), np.allclose(C, np.zeros(C.shape[0])))
+    C = cov_target.dot(_P - T10) ##added missing _P in computing C
 
     conjugate_arg = prec_opt.dot(cond_mean)
 
@@ -1462,8 +1461,8 @@ def selective_MLE(observed_target,
                            'lower_confidence': intervals[:, 0],
                            'upper_confidence': intervals[:, 1],
                            'unbiased': unbiased_estimator})
-    return result, observed_info_mean, log_ref,\
-           T11[:,0], cond_mean - soln, cov_target.dot(prec_target_nosel).dot(observed_target),  C
+
+    return result, observed_info_mean, log_ref
 
 
 

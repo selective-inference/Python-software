@@ -93,8 +93,7 @@ def test_full_targets(n=200,
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
 
-def test_selected_targets(seedn,
-                          n=2000,
+def test_selected_targets(n=2000,
                           p=200,
                           signal_fac=1.2,
                           s=5,
@@ -110,7 +109,6 @@ def test_selected_targets(seedn,
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 
     while True:
-        np.random.seed(seed=seedn)
         X, Y, beta = inst(n=n,
                           p=p,
                           signal=signal,
@@ -152,9 +150,9 @@ def test_selected_targets(seedn,
                                               nonzero,
                                               dispersion=dispersion)
 
-            result, _, _, X1, X2, X3, X4 = conv.selective_MLE(observed_target,
+            result = conv.selective_MLE(observed_target,
                                         cov_target,
-                                        cov_target_score)
+                                        cov_target_score)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
@@ -163,10 +161,7 @@ def test_selected_targets(seedn,
 
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
 
-            # print("check ", np.asarray(result['MLE']), np.asarray(result['unbiased']))
-
-            #return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
-            return result['MLE'], result['lower_confidence'], result['upper_confidence'], X1, X2, X3, X4
+            return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
 
 def test_instance():
@@ -320,26 +315,86 @@ def test_selected_targets_disperse(n=500,
 #         print("coverage and lengths ", np.mean(cover), np.mean(avg_length))
 
 
+def test_selected_instance(seedn,
+                           n=2000,
+                           p=200,
+                           signal_fac=1.2,
+                           s=5,
+                           sigma=2,
+                           rho=0.7,
+                           randomizer_scale=1.,
+                           full_dispersion=True):
+    """
+    Compare to R randomized lasso
+    """
+
+    inst, const = gaussian_instance, lasso.gaussian
+    signal = np.sqrt(signal_fac * 2 * np.log(p))
+
+    while True:
+        np.random.seed(seed=seedn)
+        X, Y, beta = inst(n=n,
+                          p=p,
+                          signal=signal,
+                          s=s,
+                          equicorrelated=True,
+                          rho=rho,
+                          sigma=sigma,
+                          random_signs=True)[:3]
+
+        idx = np.arange(p)
+        sigmaX = rho ** np.abs(np.subtract.outer(idx, idx))
+        print("snr", beta.T.dot(sigmaX).dot(beta) / ((sigma ** 2.) * n))
+
+        n, p = X.shape
+
+        sigma_ = np.std(Y)
+        W = 0.8 * np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
+
+        conv = const(X,
+                     Y,
+                     W,
+                     ridge_term=0.,
+                     randomizer_scale=randomizer_scale * sigma_)
+
+        signs = conv.fit()
+        nonzero = signs != 0
+        print("dimensions", n, p, nonzero.sum())
+
+        if nonzero.sum() > 0:
+            dispersion = None
+            if full_dispersion:
+                dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+
+            (observed_target,
+             cov_target,
+             cov_target_score,
+             alternatives) = selected_targets(conv.loglike,
+                                              conv._W,
+                                              nonzero,
+                                              dispersion=dispersion)
+
+            result = conv.selective_MLE(observed_target,
+                                        cov_target,
+                                        cov_target_score)[0]
+
+            return result['MLE'], result['lower_confidence'], result['upper_confidence']
+
 def main(nsim =50):
 
     import pandas as pd
-    column_names = ["Experiment Replicate", "MLE", "Lower Conf", "Upper Conf", "X1", "X2", "X3", "X4"]
+    column_names = ["Experiment Replicate", "MLE", "Lower Conf", "Upper Conf"]
     master_DF = pd.DataFrame(columns=column_names)
     DF = pd.DataFrame(columns=column_names)
 
     n, p, s = 500, 100, 5
     for i in range(nsim):
         full_dispersion = True
-        mle, lower_conf, upper_conf, X1, X2, X3, X4 = test_selected_targets(seedn=i, n=n, p=p, s=s, signal_fac=1.2, full_dispersion=full_dispersion)
-        #print("check ", mle, lower_conf, upper_conf)
+        mle, lower_conf, upper_conf = test_selected_instance(seedn=i, n=n, p=p, s=s, signal_fac=1.2, full_dispersion=full_dispersion)
         DF["MLE"] = pd.Series(mle)
         DF["Lower Conf"] = pd.Series(lower_conf)
         DF["Upper Conf"] = pd.Series(upper_conf)
         DF["Experiment Replicate"] = pd.Series((i*np.ones(len(mle),int)).tolist())
-        DF["X1"] = pd.Series(X1)
-        DF["X2"] = pd.Series(X2)
-        DF["X3"] = pd.Series(X3)
-        DF["X4"] = pd.Series(X4)
 
         master_DF = DF.append(master_DF, ignore_index=True)
 
