@@ -152,9 +152,9 @@ def test_selected_targets(seedn,
                                               nonzero,
                                               dispersion=dispersion)
 
-            result = conv.selective_MLE(observed_target,
+            result, _, _, X1, X2, X3, X4 = conv.selective_MLE(observed_target,
                                         cov_target,
-                                        cov_target_score)[0]
+                                        cov_target_score)
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
@@ -166,7 +166,7 @@ def test_selected_targets(seedn,
             # print("check ", np.asarray(result['MLE']), np.asarray(result['unbiased']))
 
             #return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
-            return result['MLE'], result['lower_confidence'], result['upper_confidence']
+            return result['MLE'], result['lower_confidence'], result['upper_confidence'], X1, X2, X3, X4
 
 
 def test_instance():
@@ -292,50 +292,54 @@ def test_selected_targets_disperse(n=500,
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
 
-def test_inf(nsim=500, full=False):
-    P0, PA, cover, length_int = [], [], [], []
-    from statsmodels.distributions import ECDF
-
-    n, p, s = 500, 100, 0
-
-    for i in range(nsim):
-        if full:
-            if n > p:
-                full_dispersion = True
-            else:
-                full_dispersion = False
-            p0, pA, cover_, intervals = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
-            avg_length = intervals[:, 1] - intervals[:, 0]
-        else:
-            full_dispersion = True
-            p0, pA, cover_, intervals = test_selected_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
-            avg_length = intervals[:, 1] - intervals[:, 0]
-
-        cover.extend(cover_)
-        P0.extend(p0)
-        PA.extend(pA)
-        # print(
-        #     np.array(PA) < 0.1, np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
-        #     np.mean(avg_length), 'null pvalue + power + length')
-        print("coverage and lengths ", np.mean(cover), np.mean(avg_length))
+# def main(nsim=500, full=False):
+#     P0, PA, cover, length_int = [], [], [], []
+#     from statsmodels.distributions import ECDF
+#
+#     n, p, s = 500, 100, 0
+#
+#     for i in range(nsim):
+#         if full:
+#             if n > p:
+#                 full_dispersion = True
+#             else:
+#                 full_dispersion = False
+#             p0, pA, cover_, intervals = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
+#             avg_length = intervals[:, 1] - intervals[:, 0]
+#         else:
+#             full_dispersion = True
+#             p0, pA, cover_, intervals = test_selected_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
+#             avg_length = intervals[:, 1] - intervals[:, 0]
+#
+#         cover.extend(cover_)
+#         P0.extend(p0)
+#         PA.extend(pA)
+#         # print(
+#         #     np.array(PA) < 0.1, np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
+#         #     np.mean(avg_length), 'null pvalue + power + length')
+#         print("coverage and lengths ", np.mean(cover), np.mean(avg_length))
 
 
 def main(nsim =50):
 
     import pandas as pd
-    column_names = ["Experiment Replicate", "MLE", "Lower Conf", "Upper Conf"]
+    column_names = ["Experiment Replicate", "MLE", "Lower Conf", "Upper Conf", "X1", "X2", "X3", "X4"]
     master_DF = pd.DataFrame(columns=column_names)
     DF = pd.DataFrame(columns=column_names)
 
     n, p, s = 500, 100, 5
     for i in range(nsim):
         full_dispersion = True
-        mle, lower_conf, upper_conf = test_selected_targets(n=n, p=p, s=s, signal_fac=1.2, full_dispersion=full_dispersion, seedn=i)
+        mle, lower_conf, upper_conf, X1, X2, X3, X4 = test_selected_targets(seedn=i, n=n, p=p, s=s, signal_fac=1.2, full_dispersion=full_dispersion)
         #print("check ", mle, lower_conf, upper_conf)
         DF["MLE"] = pd.Series(mle)
         DF["Lower Conf"] = pd.Series(lower_conf)
         DF["Upper Conf"] = pd.Series(upper_conf)
         DF["Experiment Replicate"] = pd.Series((i*np.ones(len(mle),int)).tolist())
+        DF["X1"] = pd.Series(X1)
+        DF["X2"] = pd.Series(X2)
+        DF["X3"] = pd.Series(X3)
+        DF["X4"] = pd.Series(X4)
 
         master_DF = DF.append(master_DF, ignore_index=True)
 
