@@ -738,7 +738,7 @@ def selected_targets(loglike,
 
     regress_target_score = np.zeros((cov_target.shape[0], p))
     regress_target_score[:,features] = cov_target
-    return observed_target, cov_target * dispersion, regress_target_score, alternatives
+    return observed_target, cov_target * dispersion, regress_target_score * dispersion, alternatives
 
 def full_targets(loglike, 
                  W, 
