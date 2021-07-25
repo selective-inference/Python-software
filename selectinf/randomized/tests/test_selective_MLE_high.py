@@ -345,6 +345,7 @@ def test_mle_inference(seedn,
 
         idx = np.arange(p)
         sigmaX = rho ** np.abs(np.subtract.outer(idx, idx))
+        snr = beta.T.dot(sigmaX).dot(beta) / ((sigma ** 2.) * n)
         print("snr", beta.T.dot(sigmaX).dot(beta) / ((sigma ** 2.) * n))
 
         n, p = X.shape
@@ -392,19 +393,19 @@ def test_mle_inference(seedn,
                                         cov_target_score,
                                         dispersion)[0]
 
-            return result['MLE'], result['lower_confidence'], result['upper_confidence']
+            return result['MLE'], result['lower_confidence'], result['upper_confidence'], snr
 
 def main(nsim =50):
 
     import pandas as pd
-    column_names = ["Experiment Replicate", "MLE", "Lower Conf", "Upper Conf"]
+    column_names = ["Experiment Replicate", "MLE", "Lower Conf", "Upper Conf", "SNR"]
     master_DF = pd.DataFrame(columns=column_names)
     DF = pd.DataFrame(columns=column_names)
 
     n, p, s = 500, 100, 5
     for i in range(nsim):
         full_dispersion = True
-        mle, lower_conf, upper_conf = test_mle_inference(seedn=i,
+        mle, lower_conf, upper_conf, snr = test_mle_inference(seedn=i,
                                                          n=n,
                                                          p=p,
                                                          s=s,
@@ -416,6 +417,7 @@ def main(nsim =50):
         DF["Lower Conf"] = pd.Series(lower_conf)
         DF["Upper Conf"] = pd.Series(upper_conf)
         DF["Experiment Replicate"] = pd.Series((i*np.ones(len(mle),int)).tolist())
+        DF["SNR"] = pd.Series((snr * np.ones(len(mle))).tolist())
 
         master_DF = DF.append(master_DF, ignore_index=True)
 
