@@ -315,15 +315,16 @@ def test_selected_targets_disperse(n=500,
 #         print("coverage and lengths ", np.mean(cover), np.mean(avg_length))
 
 
-def test_selected_instance(seedn,
-                           n=2000,
-                           p=200,
-                           signal_fac=1.2,
-                           s=5,
-                           sigma=2,
-                           rho=0.7,
-                           randomizer_scale=1.,
-                           full_dispersion=True):
+def test_mle_inference(seedn,
+                       n=2000,
+                       p=200,
+                       signal_fac=1.2,
+                       s=5,
+                       sigma=2,
+                       rho=0.7,
+                       randomizer_scale=1.,
+                       full_dispersion=True,
+                       full=False):
     """
     Compare to R randomized lasso
     """
@@ -366,17 +367,30 @@ def test_selected_instance(seedn,
             if full_dispersion:
                 dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
 
-            (observed_target,
-             cov_target,
-             cov_target_score,
-             alternatives) = selected_targets(conv.loglike,
+            if full:
+                (observed_target,
+                 cov_target,
+                 cov_target_score,
+                 dispersion,
+                 alternatives) = full_targets(conv.loglike,
                                               conv._W,
                                               nonzero,
                                               dispersion=dispersion)
 
+            else:
+                (observed_target,
+                 cov_target,
+                 cov_target_score,
+                 dispersion,
+                 alternatives) = selected_targets(conv.loglike,
+                                                  conv._W,
+                                                  nonzero,
+                                                  dispersion=dispersion)
+
             result = conv.selective_MLE(observed_target,
                                         cov_target,
-                                        cov_target_score)[0]
+                                        cov_target_score,
+                                        dispersion)[0]
 
             return result['MLE'], result['lower_confidence'], result['upper_confidence']
 
@@ -390,7 +404,14 @@ def main(nsim =50):
     n, p, s = 500, 100, 5
     for i in range(nsim):
         full_dispersion = True
-        mle, lower_conf, upper_conf = test_selected_instance(seedn=i, n=n, p=p, s=s, signal_fac=1.2, full_dispersion=full_dispersion)
+        mle, lower_conf, upper_conf = test_mle_inference(seedn=i,
+                                                         n=n,
+                                                         p=p,
+                                                         s=s,
+                                                         signal_fac=1.2,
+                                                         full_dispersion=full_dispersion,
+                                                         full=True)
+
         DF["MLE"] = pd.Series(mle)
         DF["Lower Conf"] = pd.Series(lower_conf)
         DF["Upper Conf"] = pd.Series(upper_conf)

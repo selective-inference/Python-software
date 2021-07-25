@@ -106,24 +106,22 @@ class gaussian_query(query):
                        linear_part,
                        offset,
                        opt_linear,
-                       observed_subgrad,
-                       # optional dispersion parameter
-                       # for covariance of randomization
-                       dispersion=1):
+                       observed_subgrad):
 
         A, b = linear_part, offset
         if not np.all(A.dot(self.observed_opt_state) - b <= 0):
             raise ValueError('constraints not satisfied')
 
+        cov_rand, prec = self.randomizer.cov_prec
+
         (cond_mean,
          cond_cov,
          cond_precision,
          regress_opt,
-         M1,
-         M2,
-         M3) = self._setup_implied_gaussian(opt_linear,
-                                            observed_subgrad,
-                                            dispersion)
+         prod_score_prec_unnorm) = self._setup_implied_gaussian(opt_linear,
+                                                                observed_subgrad,
+                                                                cov_rand,
+                                                                prec)
 
         def log_density(regress_opt, u, cond_prec, opt, score): # u == subgrad
             if score.ndim == 1:
@@ -149,31 +147,25 @@ class gaussian_query(query):
                                                self.observed_opt_state,
                                                self.observed_score_state,
                                                log_density,
-                                               regress_opt, # not needed?
+                                               regress_opt,
                                                observed_subgrad,
                                                opt_linear,      # L
-                                               M1,
-                                               M2,
-                                               M3,
+                                               prod_score_prec_unnorm,
+                                               cov_rand,
                                                selection_info=self.selection_variable,
                                                useC=self.useC)
 
     def _setup_implied_gaussian(self,
                                 opt_linear,
                                 observed_subgrad,
-                                # optional dispersion parameter
-                                # for covariance of randomization
-                                dispersion=1):
+                                cov_rand,
+                                prec):
 
-        cov_rand, prec = self.randomizer.cov_prec
-        prec = prec
 
         if np.asarray(prec).shape in [(), (0,)]:
-            _prod_score_prec_unnorm = self._hessian * prec
+            prod_score_prec_unnorm = self._hessian * prec
         else:
-            _prod_score_prec_unnorm = self._hessian.dot(prec)
-
-        prod_score_prec = _prod_score_prec_unnorm * dispersion
+            prod_score_prec_unnorm = self._hessian.dot(prec)
         
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
@@ -187,23 +179,18 @@ class gaussian_query(query):
         # regress_opt is regression coefficient of opt onto score + u...
 
         cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
-
-        M1 = prod_score_prec 
-        M2 = M1.dot(cov_rand).dot(M1.T)
-        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) 
     
         return (cond_mean,
                 cond_cov,
                 cond_precision,
                 regress_opt,
-                M1,
-                M2,
-                M3)
+                prod_score_prec_unnorm)
 
     def summary(self,
                 observed_target,
                 cov_target,
                 regress_target_score,
+                dispersion,
                 alternatives,
                 opt_sample=None,
                 target_sample=None,
@@ -303,6 +290,7 @@ class gaussian_query(query):
                       observed_target,
                       cov_target,
                       regress_target_score,
+                      dispersion,
                       level=0.9,
                       solve_args={'tol': 1.e-12}):
         """
@@ -323,6 +311,7 @@ class gaussian_query(query):
         return self.sampler.selective_MLE(observed_target,
                                           cov_target,
                                           regress_target_score,
+                                          dispersion,
                                           self.observed_opt_state,
                                           level=level,
                                           solve_args=solve_args)
@@ -858,10 +847,9 @@ class affine_gaussian_sampler(optimization_sampler):
                  log_cond_density,
                  regress_opt,
                  observed_subgrad,
-                 opt_linear,      
-                 M1,
-                 M2,
-                 M3,
+                 opt_linear,
+                 prod_score_prec_unnorm,
+                 cov_rand,
                  selection_info=None,
                  useC=False):
 
@@ -905,7 +893,9 @@ class affine_gaussian_sampler(optimization_sampler):
         self.observed_subgrad = observed_subgrad
         self.useC = useC
         self.opt_linear = opt_linear
-        self.M1, self.M2, self.M3 = M1, M2, M3
+
+        self.prod_score_prec_unnorm = prod_score_prec_unnorm
+        self.cov_rand = cov_rand
 
     def log_cond_density(self,
                          opt_sample,
@@ -954,6 +944,7 @@ class affine_gaussian_sampler(optimization_sampler):
                       observed_target,
                       cov_target,
                       regress_target_score,
+                      dispersion,
                       # initial (observed) value of optimization variables --
                       # used as a feasible point.
                       # precise value used only for independent estimator
@@ -979,6 +970,11 @@ class affine_gaussian_sampler(optimization_sampler):
             Arguments passed to solver.
         """
 
+        prod_score_prec = self.prod_score_prec_unnorm * dispersion
+        M1 = prod_score_prec
+        M2 = M1.dot(self.cov_rand).dot(M1.T)
+        M3 = M1.dot(self.opt_linear.dot(self.covariance).dot(self.opt_linear.T)).dot(M1.T)
+
         return selective_MLE(observed_target,
                              cov_target,
                              regress_target_score,
@@ -988,9 +984,9 @@ class affine_gaussian_sampler(optimization_sampler):
                              self.affine_con.linear_part,
                              self.affine_con.offset,
                              self.opt_linear,
-                             self.M1,
-                             self.M2,
-                             self.M3,
+                             M1,
+                             M2,
+                             M3,
                              self.observed_score_state + self.observed_subgrad,
                              solve_args=solve_args,
                              level=level,
@@ -1410,7 +1406,6 @@ def selective_MLE(observed_target,
     T9 = (-T8.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))) ##flipped sign of first term here
     T10 = T1.T.dot(T9) 
     C = cov_target.dot(_P - T10) ##added missing _P in computing C
-
     conjugate_arg = prec_opt.dot(cond_mean)
 
     if useC:

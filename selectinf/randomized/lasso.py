@@ -737,8 +737,8 @@ def selected_targets(loglike,
             Xfeat.dot(observed_target))) ** 2 / W).sum() / (n - Xfeat.shape[1])
 
     regress_target_score = np.zeros((cov_target.shape[0], p))
-    regress_target_score[:,features] = cov_target ##scale by dispersion while returning the value
-    return observed_target, cov_target * dispersion, regress_target_score * dispersion, alternatives
+    regress_target_score[:,features] = cov_target
+    return observed_target, cov_target * dispersion, regress_target_score, dispersion, alternatives
 
 def full_targets(loglike, 
                  W, 
@@ -774,7 +774,7 @@ def full_targets(loglike,
 
     alternatives = ['twosided'] * features.sum()
     regress_target_score = Qfull_inv[features] # weights missing?
-    return observed_target, cov_target * dispersion, regress_target_score, alternatives
+    return observed_target, cov_target * dispersion, regress_target_score, dispersion, alternatives
 
 def debiased_targets(loglike, 
                      W, 
@@ -829,7 +829,7 @@ def debiased_targets(loglike,
                       (n - features.sum()))
 
     alternatives = ['twosided'] * features.sum()
-    return observed_target, cov_target * dispersion, Qinv_hat, alternatives
+    return observed_target, cov_target * dispersion, Qinv_hat, dispersion, alternatives
 
 def form_targets(target, 
                  loglike, 
