@@ -355,7 +355,7 @@ def test_mle_inference(seedn,
         conv = const(X,
                      Y,
                      W,
-                     ridge_term=0.,
+                     #ridge_term=0.,
                      randomizer_scale=randomizer_scale * sigma_)
 
         signs = conv.fit()
@@ -410,7 +410,7 @@ def main(nsim =50):
                                                          s=s,
                                                          signal_fac=1.2,
                                                          full_dispersion=full_dispersion,
-                                                         full=True)
+                                                         full=False)
 
         DF["MLE"] = pd.Series(mle)
         DF["Lower Conf"] = pd.Series(lower_conf)
