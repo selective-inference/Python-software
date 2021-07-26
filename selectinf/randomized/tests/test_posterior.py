@@ -49,7 +49,8 @@ def test_Langevin(n=500,
 
     (observed_target,
      cov_target,
-     cov_target_score,
+     regress_target_score,
+     dispersion,
      alternatives) = selected_targets(conv.loglike,
                                       conv._W,
                                       nonzero,
@@ -57,7 +58,7 @@ def test_Langevin(n=500,
 
     posterior_inf = conv.posterior(observed_target,
                                    cov_target,
-                                   cov_target_score,
+                                   regress_target_score,
                                    dispersion=dispersion)
 
     samples = langevin_sampler(posterior_inf,
@@ -362,6 +363,6 @@ def test_hiv_data(nsample=10000,
 
 if __name__ == "__main__":
     # test_hiv_data(split_proportion=0.50)
-    test_coverage(nsim=100)
+    test_coverage(nsim=1)
 
 
