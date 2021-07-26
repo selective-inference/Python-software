@@ -188,6 +188,10 @@ class gaussian_query(query):
         M2 = M1.dot(cov_rand).dot(M1.T)
         M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T)
 
+        self.M1 = M1
+        self.M2 = M2
+        self.M3 = M3
+
         return (cond_mean,
                 cond_cov,
                 cond_precision,

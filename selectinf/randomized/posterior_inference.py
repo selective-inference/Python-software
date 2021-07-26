@@ -45,7 +45,6 @@ class posterior(object):
 
         observed_score = query.observed_score_state + query.observed_subgrad
 
-        print("dispersion ", dispersion)
         result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
                                                                  cov_target,
                                                                  regress_target_score,
@@ -53,7 +52,9 @@ class posterior(object):
 
         ### Note for an informative prior we might want to change this...
 
-        self.cond_precision = np.linalg.inv(query.cond_cov)
+        cond_cov = query.cond_cov
+        self.cond_precision = np.linalg.inv(cond_cov)
+        self.cond_cov = cond_cov
         self.cov_target = cov_target
         self.prec_target = np.linalg.inv(cov_target)
 
@@ -65,16 +66,11 @@ class posterior(object):
         self.opt_linear = opt_linear
         self.observed_score = observed_score
 
-        prod_score_prec = query.prod_score_prec_unnorm * dispersion
-        M1 = prod_score_prec
-        M2 = M1.dot(query.cov_rand).dot(M1.T)
-        M3 = M1.dot(self.opt_linear.dot(query.cond_cov).dot(self.opt_linear.T)).dot(M1.T)
+        self.M1 = query.M1 * dispersion
+        self.M2 = query.M2 * (dispersion ** 2)
+        self.M3 = query.M3 * (dispersion ** 2)
+        self.feasible_point = query.observed_opt_state
 
-        self.M1 = M1
-        self.M2 = M2
-        self.M3 = M3
-
-        self.feasible_point = query.initial_point
         self.cond_mean = query.cond_mean
         self.linear_part = linear_part
         self.offset = offset
@@ -159,14 +155,16 @@ class posterior(object):
         T9 = (-T8.dot(self.observed_target) + self.M1.dot(self.opt_linear.dot(self.cond_mean)))  ##flipped sign of first term here
         T10 = T1.T.dot(T9)
 
-        self.prec_marginal = self.cond_precision - T5.dot(_Q).dot(T5)
+        self.prec_marginal = self.cond_precision - T5.dot(_Q).dot(T5.T)
+        self.linear_coef = self.cond_cov.dot(T5)
+        self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
 
         r = np.linalg.inv(prec_target_nosel).dot(T10 - _P)
         S = np.linalg.inv(prec_target_nosel).dot(self.prec_target)
 
         self.r = r
         self.S = S
-        #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
+        print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
         self.prec_target_nosel = prec_target_nosel
 
 
