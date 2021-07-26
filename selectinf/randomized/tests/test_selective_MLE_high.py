@@ -411,7 +411,7 @@ def main(nsim =50):
                                                          s=s,
                                                          signal_fac=1.2,
                                                          full_dispersion=full_dispersion,
-                                                         full=False)
+                                                         full=True)
 
         DF["MLE"] = pd.Series(mle)
         DF["Lower Conf"] = pd.Series(lower_conf)
