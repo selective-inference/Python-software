@@ -150,7 +150,6 @@ class posterior(object):
         bias_target = self.cov_target.dot(T1.T.dot(-T4.dot(self.observed_target) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
 
         _Q = np.linalg.inv(prec_target_nosel + T3)
-
         self.prec_marginal = self.cond_precision - T5.T.dot(_Q).dot(T5)
         self.linear_coef = self.cond_cov.dot(T5.T)
         self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
@@ -163,6 +162,7 @@ class posterior(object):
         #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
         self.prec_target_nosel = prec_target_nosel
 
+        print("match parameters ", r, S, prec_target_nosel, self.prec_marginal, self.linear_coef, self.offset_coef)
 
 ### sampling methods
 
@@ -188,7 +188,7 @@ def langevin_sampler(selective_posterior,
     for i, sample in enumerate(sampler):
         sampler.scaling = np.sqrt(selective_posterior.dispersion)
         samples[i, :] = sample.copy()
-        print("sample ", i, samples[i,:])
+        #print("sample ", i, samples[i,:])
         if i == nsample - 1:
             break
 
