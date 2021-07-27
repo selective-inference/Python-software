@@ -263,8 +263,10 @@ class langevin(object):
     def __next__(self):
         while True:
             self.posterior_ = self.gradient_map(self.state, self.scaling)
+            _proposal = self.proposal_sqrt.dot(self._noise.rvs(self._shape))
             candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_[1])
-                         + np.sqrt(2.) * (self.proposal_sqrt.dot(self._noise.rvs(self._shape))) * self._sqrt_step)
+                         + np.sqrt(2.) * _proposal * self._sqrt_step)
+            print("check proposal ", _proposal, self.posterior_[1], np.diag(self.proposal_scale))
 
             if not np.all(np.isfinite(self.gradient_map(candidate, self.scaling)[1])):
                 self.stepsize *= 0.5
