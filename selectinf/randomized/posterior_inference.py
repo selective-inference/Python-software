@@ -162,7 +162,8 @@ class posterior(object):
         #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
         self.prec_target_nosel = prec_target_nosel
 
-        print("match parameters ", r, S, prec_target_nosel, self.prec_marginal, self.linear_coef, self.offset_coef)
+        #print("match parameters ", r, S, prec_target_nosel, self.prec_marginal, self.linear_coef, self.offset_coef)
+        print("match parameters ", np.diag(self.prec_marginal), np.diag(self.linear_coef), self.offset_coef)
 
 ### sampling methods
 
@@ -172,6 +173,7 @@ def langevin_sampler(selective_posterior,
                      proposal_scale=None,
                      step=1.):
     state = selective_posterior.initial_estimate
+    print("check INI ", state)
     stepsize = 1. / (step * selective_posterior.ntarget)
 
     if proposal_scale is None:
@@ -188,7 +190,7 @@ def langevin_sampler(selective_posterior,
     for i, sample in enumerate(sampler):
         sampler.scaling = np.sqrt(selective_posterior.dispersion)
         samples[i, :] = sample.copy()
-        #print("sample ", i, samples[i,:])
+        print("sample ", i, samples[i,:])
         if i == nsample - 1:
             break
 

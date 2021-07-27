@@ -90,8 +90,8 @@ def test_coverage(nsim=100):
                                    sigma=3.,
                                    rho=0.2,
                                    randomizer_scale=1.,
-                                   nsample=1500,
-                                   nburnin=100)
+                                   nsample=5,
+                                   nburnin=0)
 
         cov += cov_
         len += len_
