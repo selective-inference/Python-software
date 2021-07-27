@@ -149,21 +149,20 @@ class posterior(object):
 
         bias_target = self.cov_target.dot(T1.T.dot(-T4.dot(self.observed_target) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
 
+        ###set parameters for the marginal distribution of optimization variables
         _Q = np.linalg.inv(prec_target_nosel + T3)
         self.prec_marginal = self.cond_precision - T5.T.dot(_Q).dot(T5)
         self.linear_coef = self.cond_cov.dot(T5.T)
         self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
 
+        ###set parameters for the marginal distribution of target
         r = np.linalg.inv(prec_target_nosel).dot(self.prec_target.dot(bias_target))
         S = np.linalg.inv(prec_target_nosel).dot(self.prec_target)
 
         self.r = r
         self.S = S
-        #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
         self.prec_target_nosel = prec_target_nosel
-
-        #print("match parameters ", r, S, prec_target_nosel, self.prec_marginal, self.linear_coef, self.offset_coef)
-        print("match parameters ", np.diag(self.prec_marginal), np.diag(self.linear_coef), self.offset_coef)
+        # print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
 
 ### sampling methods
 
@@ -172,8 +171,8 @@ def langevin_sampler(selective_posterior,
                      nburnin=100,
                      proposal_scale=None,
                      step=1.):
+
     state = selective_posterior.initial_estimate
-    print("check INI ", state)
     stepsize = 1. / (step * selective_posterior.ntarget)
 
     if proposal_scale is None:
@@ -248,7 +247,7 @@ class langevin(object):
         self.proposal_scale = proposal_scale
         self._shape = self.state.shape[0]
         self._sqrt_step = np.sqrt(self.stepsize)
-        self._noise = ndist(loc=0, scale=1)
+        #self._noise = ndist(loc=0, scale=1)
         self.sample = np.copy(initial_condition)
         self.scaling = scaling
 
@@ -263,10 +262,10 @@ class langevin(object):
     def __next__(self):
         while True:
             self.posterior_ = self.gradient_map(self.state, self.scaling)
-            _proposal = self.proposal_sqrt.dot(self._noise.rvs(self._shape))
+            #_proposal = self.proposal_sqrt.dot(self._noise.rvs(self._shape))
+            _proposal = self.proposal_sqrt.dot(np.random.standard_normal(self._shape))
             candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_[1])
                          + np.sqrt(2.) * _proposal * self._sqrt_step)
-            print("check proposal ", _proposal, self.posterior_[1], np.diag(self.proposal_scale))
 
             if not np.all(np.isfinite(self.gradient_map(candidate, self.scaling)[1])):
                 self.stepsize *= 0.5

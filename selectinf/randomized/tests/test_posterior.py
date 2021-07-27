@@ -18,7 +18,6 @@ def test_Langevin(n=500,
                   nsample=1500,
                   nburnin=100):
 
-    np.random.seed(0)
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 
@@ -80,6 +79,7 @@ def test_Langevin(n=500,
 
 
 def test_coverage(nsim=100):
+    np.random.seed(0)
     cov, len = 0., 0.
 
     for i in range(nsim):
@@ -90,8 +90,8 @@ def test_coverage(nsim=100):
                                    sigma=3.,
                                    rho=0.2,
                                    randomizer_scale=1.,
-                                   nsample=5,
-                                   nburnin=0)
+                                   nsample=1500,
+                                   nburnin=100)
 
         cov += cov_
         len += len_
