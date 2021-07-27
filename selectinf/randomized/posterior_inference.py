@@ -189,7 +189,7 @@ def langevin_sampler(selective_posterior,
     for i, sample in enumerate(sampler):
         sampler.scaling = np.sqrt(selective_posterior.dispersion)
         samples[i, :] = sample.copy()
-        print("sample ", i, samples[i,:])
+        #print("sample ", i, samples[i,:])
         if i == nsample - 1:
             break
 
@@ -247,7 +247,7 @@ class langevin(object):
         self.proposal_scale = proposal_scale
         self._shape = self.state.shape[0]
         self._sqrt_step = np.sqrt(self.stepsize)
-        #self._noise = ndist(loc=0, scale=1)
+        self._noise = ndist(loc=0, scale=1)
         self.sample = np.copy(initial_condition)
         self.scaling = scaling
 
@@ -262,8 +262,7 @@ class langevin(object):
     def __next__(self):
         while True:
             self.posterior_ = self.gradient_map(self.state, self.scaling)
-            #_proposal = self.proposal_sqrt.dot(self._noise.rvs(self._shape))
-            _proposal = self.proposal_sqrt.dot(np.random.standard_normal(self._shape))
+            _proposal = self.proposal_sqrt.dot(self._noise.rvs(self._shape))
             candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_[1])
                          + np.sqrt(2.) * _proposal * self._sqrt_step)
 
