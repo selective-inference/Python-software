@@ -1361,6 +1361,7 @@ def selective_MLE(observed_target,
                   solve_args={'tol': 1.e-12},
                   level=0.9,
                   useC=False):
+
     """
     Selective MLE based on approximation of
     CGF.
@@ -1406,18 +1407,15 @@ def selective_MLE(observed_target,
     T1 = regress_target_score.T.dot(prec_target)
     T2 = T1.T.dot(M2.dot(T1))
     T3 = T1.T.dot(M3.dot(T1)) 
+    T4 = M1.dot(opt_linear).dot(cond_cov).dot(opt_linear.T.dot(M1.T.dot(T1)))
+    T5 = T1.T.dot(M1.dot(opt_linear))
 
     prec_target_nosel = prec_target + T2 - T3
+
     _P = -(T1.T.dot(M1.dot(observed_score)) + T2.dot(observed_target)) ##flipped sign of second term here
 
-    T4 = M1.T.dot(T1)
-    T5 = opt_linear.T.dot(T4)
-    T6 = cond_cov.dot(T5)
-    T7 = opt_linear.dot(T6)
-    T8 = M1.dot(T7)
-    T9 = (-T8.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))) ##flipped sign of first term here
-    T10 = T1.T.dot(T9) 
-    C = cov_target.dot(_P - T10) ##added missing _P in computing C
+    bias_target = cov_target.dot(T1.T.dot(-T4.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))) - _P)
+
     conjugate_arg = prec_opt.dot(cond_mean)
 
     if useC:
@@ -1432,16 +1430,12 @@ def selective_MLE(observed_target,
                              offset,
                              **solve_args)
 
-    T11 = regress_target_score.dot(M1.dot(opt_linear))
     final_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) \
-                      + T11.dot(cond_mean - soln) + C
+                      + regress_target_score.dot(M1.dot(opt_linear)).dot(cond_mean - soln) - bias_target
 
-    T12 = prec_target.dot(T11)
-    T13 = T3
-    unbiased_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) + cov_target.dot(
-        _P - T12.dot(cond_mean) + T13.dot(observed_target))
+    observed_info_natural = prec_target_nosel + T3 - T5.dot(hess.dot(T5.T))
 
-    observed_info_natural = prec_target_nosel + T3 - T12.dot(hess.dot(T12.T))
+    unbiased_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) - bias_target
 
     observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
 

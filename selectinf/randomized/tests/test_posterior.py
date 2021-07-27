@@ -78,6 +78,7 @@ def test_Langevin(n=500,
 
 
 def test_coverage(nsim=100):
+    np.random.seed(0)
     cov, len = 0., 0.
 
     for i in range(nsim):
@@ -363,6 +364,6 @@ def test_hiv_data(nsample=10000,
 
 if __name__ == "__main__":
     # test_hiv_data(split_proportion=0.50)
-    test_coverage(nsim=10)
+    test_coverage(nsim=1)
 
 

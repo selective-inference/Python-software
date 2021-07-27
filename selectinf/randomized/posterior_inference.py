@@ -116,12 +116,11 @@ class posterior(object):
 
         log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal) / 2.
 
-        _prec = self.prec_target_nosel # shorthand
-        log_lik = -((self.observed_target - target).T.dot(_prec).dot(self.observed_target - target)) / 2. \
+        log_lik = -((self.observed_target - target).T.dot(self.prec_target_nosel).dot(self.observed_target - target)) / 2. \
                   - log_normalizer
 
-        grad_lik = self.S.T.dot(_prec.dot(self.observed_target) - _prec.dot(target) - self.linear_coef.T.dot(
-            prec_marginal.dot(soln) - conjugate_marginal))
+        grad_lik = self.S.T.dot(self.prec_target_nosel.dot(self.observed_target) - self.prec_target_nosel.dot(target)
+                                - self.linear_coef.T.dot(prec_marginal.dot(soln) - conjugate_marginal))
 
         log_prior, grad_prior = self.prior(target_parameter)
 
@@ -141,30 +140,27 @@ class posterior(object):
         T1 = self.regress_target_score.T.dot(self.prec_target)
         T2 = T1.T.dot(self.M2.dot(T1))
         T3 = T1.T.dot(self.M3.dot(T1))
+        T4 = self.M1.dot(self.opt_linear).dot(self.cond_cov).dot(self.opt_linear.T.dot(self.M1.T.dot(T1)))
+        T5 = T1.T.dot(self.M1.dot(self.opt_linear))
 
         prec_target_nosel = self.prec_target + T2 - T3
+
         _P = -(T1.T.dot(self.M1.dot(self.observed_score)) + T2.dot(self.observed_target))
+
+        bias_target = self.cov_target.dot(T1.T.dot(-T4.dot(self.observed_target) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
 
         _Q = np.linalg.inv(prec_target_nosel + T3)
 
-        T4 = self.M1.T.dot(T1)
-        T5 = self.opt_linear.T.dot(T4)
-        T6 = self.cond_cov.dot(T5)
-        T7 = self.opt_linear.dot(T6)
-        T8 = self.M1.dot(T7)
-        T9 = (-T8.dot(self.observed_target) + self.M1.dot(self.opt_linear.dot(self.cond_mean)))  ##flipped sign of first term here
-        T10 = T1.T.dot(T9)
-
-        self.prec_marginal = self.cond_precision - T5.dot(_Q).dot(T5.T)
-        self.linear_coef = self.cond_cov.dot(T5)
+        self.prec_marginal = self.cond_precision - T5.T.dot(_Q).dot(T5)
+        self.linear_coef = self.cond_cov.dot(T5.T)
         self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
 
-        r = np.linalg.inv(prec_target_nosel).dot(T10 - _P)
+        r = np.linalg.inv(prec_target_nosel).dot(self.prec_target.dot(bias_target))
         S = np.linalg.inv(prec_target_nosel).dot(self.prec_target)
 
         self.r = r
         self.S = S
-        print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
+        #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
         self.prec_target_nosel = prec_target_nosel
 
 
@@ -192,7 +188,7 @@ def langevin_sampler(selective_posterior,
     for i, sample in enumerate(sampler):
         sampler.scaling = np.sqrt(selective_posterior.dispersion)
         samples[i, :] = sample.copy()
-        #print("sample ", i, samples[i,:])
+        print("sample ", i, samples[i,:])
         if i == nsample - 1:
             break
 
