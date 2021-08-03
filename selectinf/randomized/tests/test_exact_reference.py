@@ -12,7 +12,6 @@ def test_inf(n=500,
              rho=0.4,
              randomizer_scale=1.,
              equicorrelated=False,
-             useIP=False,
              CI=True):
 
     while True:
@@ -55,7 +54,8 @@ def test_inf(n=500,
 
             (observed_target,
              cov_target,
-             cov_target_score,
+             regress_target_score,
+             dispersion,
              alternatives) = selected_targets(conv.loglike,
                                               conv._W,
                                               nonzero,
@@ -64,8 +64,8 @@ def test_inf(n=500,
             exact_grid_inf = exact_grid_inference(conv,
                                                   observed_target,
                                                   cov_target,
-                                                  cov_target_score,
-                                                  useIP=useIP)
+                                                  regress_target_score,
+                                                  dispersion=dispersion)
 
             if CI is False:
                 pivot = exact_grid_inf._pivots(beta_target)
@@ -89,15 +89,14 @@ def main(nsim=300, CI = False):
 
         _pivot = []
         for i in range(nsim):
-            _pivot.extend(test_inf(n=100,
-                                   p=400,
+            _pivot.extend(test_inf(n=400,
+                                   p=100,
                                    signal_fac=1.,
                                    s=0,
                                    sigma=2.,
                                    rho=0.30,
                                    randomizer_scale=0.7,
                                    equicorrelated=True,
-                                   useIP=False,
                                    CI=False))
 
             print("iteration completed ", i)
@@ -122,7 +121,6 @@ def main(nsim=300, CI = False):
                                          rho=0.30,
                                          randomizer_scale=0.7,
                                          equicorrelated=True,
-                                         useIP=False,
                                          CI=True)
 
             coverage_ += cov
@@ -134,4 +132,4 @@ def main(nsim=300, CI = False):
 
 
 if __name__ == "__main__":
-    main(nsim=100, CI=True)
+    main(nsim=100, CI=False)
