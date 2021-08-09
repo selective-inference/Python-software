@@ -109,7 +109,8 @@ def test_approx_pivot(n=500,
 
             (observed_target,
              cov_target,
-             cov_target_score,
+             regress_target_score,
+             dispersion,
              alternatives) = selected_targets(conv.loglike,
                                               conv._W,
                                               nonzero,
@@ -118,9 +119,9 @@ def test_approx_pivot(n=500,
             approximate_grid_inf = approximate_grid_inference(conv,
                                                               observed_target,
                                                               cov_target,
-                                                              cov_target_score,
+                                                              regress_target_score,
+                                                              dispersion=dispersion,
                                                               useIP=useIP)
-
 
             pivot = approximate_grid_inf._approx_pivots(beta_target)
 
@@ -134,7 +135,8 @@ def test_approx_ci(n=500,
                    sigma=2.,
                    rho=0.4,
                    randomizer_scale=1.,
-                   level=0.9):
+                   level=0.9,
+                   useIP=False):
 
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
@@ -167,7 +169,8 @@ def test_approx_ci(n=500,
 
         (observed_target,
          cov_target,
-         cov_target_score,
+         regress_target_score,
+         dispersion,
          alternatives) = selected_targets(conv.loglike,
                                           conv._W,
                                           nonzero,
@@ -175,7 +178,8 @@ def test_approx_ci(n=500,
 
         result, inverse_info = conv.selective_MLE(observed_target,
                                                   cov_target,
-                                                  cov_target_score)[:2]
+                                                  regress_target_score,
+                                                  dispersion)[:2]
 
         _scale = 4 * np.sqrt(np.diag(inverse_info))
         scale_ = np.max(_scale)
@@ -184,14 +188,11 @@ def test_approx_ci(n=500,
         approximate_grid_inf = approximate_grid_inference(conv,
                                                           observed_target,
                                                           cov_target,
-                                                          cov_target_score,
-                                                          useIP=False)
+                                                          regress_target_score,
+                                                          dispersion=dispersion,
+                                                          useIP=useIP)
 
         lci, uci = approximate_grid_inf._approx_intervals(level)
-
-        S = conv.approximate_grid_inference(observed_target,
-                                            cov_target,
-                                            cov_target_score)
 
     beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
     coverage = (lci < beta_target) * (uci > beta_target)
@@ -214,7 +215,7 @@ def main(nsim=300, CI = False):
             _pivot.extend(test_approx_pivot(n=100,
                                             p=400,
                                             signal_fac=0.5,
-                                            s=0,
+                                            s=5,
                                             sigma=2.,
                                             rho=0.30,
                                             randomizer_scale=1.,

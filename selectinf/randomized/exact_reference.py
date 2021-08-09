@@ -44,9 +44,9 @@ class exact_grid_inference(object):
         observed_score = query.observed_score_state + query.observed_subgrad
 
         result, inverse_info, log_ref = query.selective_MLE(observed_target,
-                                                                 cov_target,
-                                                                 regress_target_score,
-                                                                 dispersion)
+                                                            cov_target,
+                                                            regress_target_score,
+                                                            dispersion)
 
         cond_cov = query.cond_cov
         self.cond_precision = np.linalg.inv(cond_cov)
@@ -124,14 +124,11 @@ class exact_grid_inference(object):
     def log_reference(self,
                       observed_target,
                       cov_target,
-                      regress_target_score,
                       linear_coef,
                       grid):
 
         if np.asarray(observed_target).shape in [(), (0,)]:
             raise ValueError('no target specified')
-
-        prec_target = np.linalg.inv(cov_target)
 
         ref_hat = []
 
@@ -202,17 +199,14 @@ class exact_grid_inference(object):
         self._families = []
 
         for m in range(self.ntarget):
-            p = self.regress_target_score.shape[1]
-            observed_target_uni = (self.observed_target[m]).reshape((1,))
 
+            observed_target_uni = (self.observed_target[m]).reshape((1,))
             cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
-            regress_target_score_uni = self.regress_target_score[m, :].reshape((1, p))
 
             var_target = 1. / ((self.precs[m])[0, 0])
 
             log_ref = self.log_reference(observed_target_uni,
                                          cov_target_uni,
-                                         regress_target_score_uni,
                                          self.T[m],
                                          self.stat_grid[m])
 
