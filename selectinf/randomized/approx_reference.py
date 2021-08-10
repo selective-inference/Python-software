@@ -243,7 +243,6 @@ class approximate_grid_inference(object):
             var_target = 1. / ((self.precs[m])[0, 0])
 
             mean = self.S[m].dot(mean_parameter[m].reshape((1,))) + self.r[m]
-            #print("mean ", np.allclose(mean[0], mean_parameter[m]), self.r[m], self.S[m])
             # construction of pivot from families follows `selectinf.learning.core`
 
             _cdf = family.cdf((mean[0] - self.observed_target[m]) / var_target, x=self.observed_target[m])

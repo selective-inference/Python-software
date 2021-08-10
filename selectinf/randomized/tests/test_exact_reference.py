@@ -90,8 +90,8 @@ def main(nsim=300, CI = False):
 
         _pivot = []
         for i in range(nsim):
-            _pivot.extend(test_inf(n=400,
-                                   p=100,
+            _pivot.extend(test_inf(n=100,
+                                   p=400,
                                    signal_fac=1.,
                                    s=0,
                                    sigma=2.,
@@ -133,103 +133,3 @@ def main(nsim=300, CI = False):
 
 if __name__ == "__main__":
     main(nsim=500, CI=False)
-
-# def test_selected_instance(seedn,
-#                            n=500,
-#                            p=100,
-#                            signal_fac=1.,
-#                            s=5,
-#                            sigma=2.,
-#                            rho=0.4,
-#                            randomizer_scale=1.,
-#                            equicorrelated=False):
-#
-#     while True:
-#         np.random.seed(seedn)
-#         inst, const = gaussian_instance, lasso.gaussian
-#         signal = np.sqrt(signal_fac * 2 * np.log(p))
-#
-#         X, Y, beta = inst(n=n,
-#                           p=p,
-#                           signal=signal,
-#                           s=s,
-#                           equicorrelated=equicorrelated,
-#                           rho=rho,
-#                           sigma=sigma,
-#                           random_signs=True)[:3]
-#
-#         n, p = X.shape
-#
-#         sigma_ = np.std(Y)
-#
-#         if n > (2 * p):
-#             dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
-#         else:
-#             dispersion = sigma_ ** 2
-#
-#         eps = np.random.standard_normal((n, 2000)) * Y.std()
-#         W = 0.7 * np.median(np.abs(X.T.dot(eps)).max(1))
-#
-#         conv = const(X,
-#                      Y,
-#                      W,
-#                      ridge_term=0.,
-#                      randomizer_scale=randomizer_scale * np.sqrt(dispersion))
-#
-#         signs = conv.fit()
-#         nonzero = signs != 0
-#         print("size of selected set ", nonzero.sum())
-#
-#         if nonzero.sum() > 0:
-#             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
-#
-#             (observed_target,
-#              cov_target,
-#              regress_target_score,
-#              dispersion,
-#              alternatives) = selected_targets(conv.loglike,
-#                                               conv._W,
-#                                               nonzero,
-#                                               dispersion=dispersion)
-#
-#             exact_grid_inf = exact_grid_inference(conv,
-#                                                   observed_target,
-#                                                   cov_target,
-#                                                   regress_target_score,
-#                                                   dispersion=dispersion)
-#
-#             lci, uci = exact_grid_inf._intervals(level=0.90)
-#             coverage = (lci < beta_target) * (uci > beta_target)
-#             length = uci - lci
-#             mle_length = 1.65 * 2 * np.sqrt(np.diag(exact_grid_inf.inverse_info))
-#             return coverage, length, mle_length
-#
-# def main(nsim =50):
-#
-#     import pandas as pd
-#     column_names = ["Experiment Replicate", "Coverage", "Length-ER", "Length-MLE"]
-#     master_DF = pd.DataFrame(columns=column_names)
-#     DF = pd.DataFrame(columns=column_names)
-#
-#     n, p, s = 500, 100, 5
-#     for i in range(nsim):
-#         full_dispersion = True
-#         cov, len_er, len_mle = test_selected_instance(seedn=i, n=n, p=p, s=s, signal_fac=1.2)
-#         DF["Coverage"] = pd.Series(cov)
-#         DF["Length-ER"] = pd.Series(len_er)
-#         DF["Length-MLE"] = pd.Series(len_mle)
-#         DF["Experiment Replicate"] = pd.Series((i*np.ones(len(cov),int)).tolist())
-#
-#         master_DF = DF.append(master_DF, ignore_index=True)
-#
-#     import os
-#     outpath = os.path.dirname(__file__)
-#
-#     outfile_mse_html = os.path.join(outpath, "compare_er.html")
-#     outfile_mse_csv = os.path.join(outpath, "compare_er.csv")
-#
-#     master_DF.to_html(outfile_mse_html, index=False)
-#     master_DF.to_csv(outfile_mse_csv, index=False)
-#
-# if __name__ == "__main__":
-#     main(nsim=10)

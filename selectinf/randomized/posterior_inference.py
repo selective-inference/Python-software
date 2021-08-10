@@ -162,7 +162,6 @@ class posterior(object):
         self.r = r
         self.S = S
         self.prec_target_nosel = prec_target_nosel
-        # print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
 
 ### sampling methods
 

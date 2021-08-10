@@ -115,17 +115,19 @@ def test_instance(nsample=100, nburnin=50):
     M = E.copy()
     M[-3:] = 1
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
+
     (observed_target,
      cov_target,
-     cov_target_score,
-     alternatives) = selected_targets(L.loglike,
+     regress_target_score,
+     dispersion,
+     alternatives)= selected_targets(L.loglike,
                                       L._W,
                                       M,
                                       dispersion=dispersion)
 
     posterior_inf = L.posterior(observed_target,
                                 cov_target,
-                                cov_target_score,
+                                regress_target_score,
                                 dispersion=dispersion)
 
     samples = langevin_sampler(posterior_inf,
@@ -163,9 +165,11 @@ def test_flexible_prior1(nsample=100, nburnin=50):
     M = E.copy()
     M[-3:] = 1
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
+
     (observed_target,
      cov_target,
-     cov_target_score,
+     regress_target_score,
+     dispersion,
      alternatives) = selected_targets(L.loglike,
                                       L._W,
                                       M,
@@ -181,11 +185,13 @@ def test_flexible_prior1(nsample=100, nburnin=50):
     seed_state = np.random.get_state()
     np.random.set_state(seed_state)
     Z1 = np.random.standard_normal()
+
     posterior_inf1 = L.posterior(observed_target,
-                                 cov_target,
-                                 cov_target_score,
-                                 dispersion=dispersion,
-                                 prior=prior)
+                                cov_target,
+                                regress_target_score,
+                                dispersion=dispersion,
+                                prior=prior)
+
     W1 = np.random.standard_normal()
     samples1 = langevin_sampler(posterior_inf1,
                                 nsample=nsample,
@@ -195,8 +201,9 @@ def test_flexible_prior1(nsample=100, nburnin=50):
     Z2 = np.random.standard_normal()
     posterior_inf2 = L.posterior(observed_target,
                                  cov_target,
-                                 cov_target_score,
+                                 regress_target_score,
                                  dispersion=dispersion)
+
     W2 = np.random.standard_normal()
     samples2 = langevin_sampler(posterior_inf2,
                                 nsample=nsample,
@@ -222,9 +229,11 @@ def test_flexible_prior2(nsample=1000, nburnin=50):
     M = E.copy()
     M[-3:] = 1
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
+
     (observed_target,
      cov_target,
-     cov_target_score,
+     regress_target_score,
+     dispersion,
      alternatives) = selected_targets(L.loglike,
                                       L._W,
                                       M,
@@ -238,10 +247,11 @@ def test_flexible_prior2(nsample=1000, nburnin=50):
         return log_prior, grad_prior
 
     posterior_inf = L.posterior(observed_target,
-                                cov_target,
-                                cov_target_score,
-                                dispersion=dispersion,
-                                prior=prior)
+                                 cov_target,
+                                 regress_target_score,
+                                 dispersion=dispersion,
+                                 prior=prior)
+
     adaptive_proposal = np.linalg.inv(np.linalg.inv(posterior_inf.inverse_info) +
                                       np.identity(posterior_inf.inverse_info.shape[0]) / 0.05 ** 2)
     samples = langevin_sampler(posterior_inf,
@@ -285,7 +295,8 @@ def test_hiv_data(nsample=10000,
 
     (observed_target,
      cov_target,
-     cov_target_score,
+     regress_target_score,
+     dispersion,
      alternatives) = selected_targets(conv.loglike,
                                       conv._W,
                                       nonzero,
@@ -293,17 +304,19 @@ def test_hiv_data(nsample=10000,
 
     mle, inverse_info = conv.selective_MLE(observed_target,
                                            cov_target,
-                                           cov_target_score,
+                                           regress_target_score,
+                                           dispersion,
                                            level=level,
                                            solve_args={'tol': 1.e-12})[:2]
 
     approx_inf = conv.approximate_grid_inference(observed_target,
                                                  cov_target,
-                                                 cov_target_score)
+                                                 regress_target_score,
+                                                 dispersion)
 
     posterior_inf = conv.posterior(observed_target,
                                    cov_target,
-                                   cov_target_score,
+                                   regress_target_score,
                                    dispersion=dispersion)
 
     samples_langevin = langevin_sampler(posterior_inf,
