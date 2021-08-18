@@ -12,9 +12,9 @@ from ..algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
 from .query import gaussian_query
 
 from .randomization import randomization
-from ..base import restricted_estimator
-from ..algorithms.debiased_lasso import (debiasing_matrix,
-                                         pseudoinverse_debiasing_matrix)
+from ..base import (restricted_estimator,
+                    _compute_hessian,
+                    _pearsonX2)
 
 #### High dimensional version
 #### - parametric covariance
@@ -143,6 +143,8 @@ class lasso(gaussian_query):
                                                  self._overall, 
                                                  solve_args=solve_args)
 
+        # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
+
         beta_bar = np.zeros(p)
         beta_bar[overall] = _beta_unpenalized
         self._beta_full = beta_bar
@@ -156,41 +158,17 @@ class lasso(gaussian_query):
         # U for unpenalized
         # -E for inactive
 
+        # compute part of hessian
+
+        _hessian, _hessian_active, _hessian_unpen  = _compute_hessian(self.loglike,
+                                                                      beta_bar,
+                                                                      active,
+                                                                      unpenalized)
+        
+        # fill in pieces of query
+        
         opt_linear = np.zeros((p, num_opt_var))
         _score_linear_term = np.zeros((p, num_opt_var))
-
-        # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
-
-        X, y = self.loglike.data
-        linpred = X.dot(beta_bar)
-        n = linpred.shape[0]
-
-        if hasattr(self.loglike.saturated_loss, "hessian"): # a GLM -- all we need is W
-            W = self._W = self.loglike.saturated_loss.hessian(linpred)
-            _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
-            _hessian_unpen = np.dot(X.T, X[:, unpenalized] * W[:, None])
-            _hessian = np.dot(X.T, X * W[:, None]) # CAREFUL -- this will be big
-        elif hasattr(self.loglike.saturated_loss, "hessian_mult"):
-            active_right = np.zeros((n, active.sum()))
-            for i, j in enumerate(np.nonzero(active)[0]):
-                active_right[:,i] = self.loglike.saturated_loss.hessian_mult(linpred, 
-                                                                             X[:,j], 
-                                                                             case_weights=self.loglike.saturated_loss.case_weights)
-            unpen_right = np.zeros((n, unpenalized.sum()))
-            for i, j in enumerate(np.nonzero(unpenalized)[0]):
-                unpen_right[:,i] = self.loglike.saturated_loss.hessian_mult(linpred, 
-                                                                            X[:,j], 
-                                                                            case_weights=self.loglike.saturated_loss.case_weights)
-            _hessian_active = X.T.dot(active_right)
-            _hessian_unpen = X.T.dot(unpen_right)
-            _hessian = []
-            for i in range(p):
-                _hessian.append(self.loglike.saturated_loss.hessian_mult(linpred, 
-                                                                         X[:,i], 
-                                                                         case_weights=self.loglike.saturated_loss.case_weights))
-            _hessian = X.T.dot(np.array(_hessian).T)
-        else:
-            raise ValueError('saturated_loss has no hessian or hessian_mult method')
 
         _score_linear_term = -np.hstack([_hessian_active, _hessian_unpen])
 
@@ -249,7 +227,7 @@ class lasso(gaussian_query):
 
         #### to be fixed -- set the cov_score here without dispersion
 
-        self._hessian = _hessian
+        self._unscaled_cov_score = _hessian
 
         #####
         
@@ -699,151 +677,6 @@ class lasso(gaussian_query):
 
         return obj
 
-# private functions
-
-# functions construct targets of inference
-# and covariance with score representation
-
-def selected_targets(loglike, 
-                     W, 
-                     features, 
-                     sign_info={}, 
-                     dispersion=None,
-                     solve_args={'tol': 1.e-12, 'min_its': 100},
-                     hessian=None):
-
-    X, y = loglike.data
-    n, p = X.shape
-
-    Xfeat = X[:, features]
-    if hessian is None:
-        Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
-        _score_linear = -Xfeat.T.dot(W[:, None] * X).T
-    else:
-        Qfeat = hessian[features][:,features]
-        _score_linear = -hessian[features].T
-    observed_target = restricted_estimator(loglike, features, solve_args=solve_args)
-    cov_target = np.linalg.inv(Qfeat)
-    crosscov_target_score = _score_linear.dot(cov_target)
-    alternatives = ['twosided'] * features.sum()
-    features_idx = np.arange(p)[features]
-
-    for i in range(len(alternatives)):
-        if features_idx[i] in sign_info.keys():
-            alternatives[i] = sign_info[features_idx[i]]
-
-    if dispersion is None:  # use Pearson's X^2
-        dispersion = ((y - loglike.saturated_loss.mean_function(
-            Xfeat.dot(observed_target))) ** 2 / W).sum() / (n - Xfeat.shape[1])
-
-    regress_target_score = np.zeros((cov_target.shape[0], p))
-    regress_target_score[:,features] = cov_target
-    return observed_target, cov_target * dispersion, regress_target_score, alternatives
-
-def full_targets(loglike, 
-                 W, 
-                 features, 
-                 dispersion=None,
-                 solve_args={'tol': 1.e-12, 'min_its': 50},
-                 hessian=None):
-    
-    X, y = loglike.data
-    n, p = X.shape
-    features_bool = np.zeros(p, np.bool)
-    features_bool[features] = True
-    features = features_bool
-
-    # target is one-step estimator
-
-    Qfull = X.T.dot(W[:, None] * X)
-    if hessian is None:
-        Qfull = X.T.dot(W[:, None] * X)
-    else:
-        Qfull = hessian
-
-    Qfull_inv = np.linalg.inv(Qfull)
-    full_estimator = loglike.solve(**solve_args)
-    cov_target = Qfull_inv[features][:, features]
-    observed_target = full_estimator[features]
-    crosscov_target_score = np.zeros((p, cov_target.shape[0]))
-    crosscov_target_score[features] = -np.identity(cov_target.shape[0])
-
-    if dispersion is None:  # use Pearson's X^2
-        dispersion = (((y - loglike.saturated_loss.mean_function(X.dot(full_estimator))) ** 2 / W).sum() / 
-                      (n - p))
-
-    alternatives = ['twosided'] * features.sum()
-    regress_target_score = Qfull_inv[features] # weights missing?
-    return observed_target, cov_target * dispersion, regress_target_score, alternatives
-
-def debiased_targets(loglike, 
-                     W, 
-                     features, 
-                     sign_info={}, 
-                     penalty=None, #required kwarg
-                     dispersion=None,
-                     approximate_inverse='JM',
-                     debiasing_args={}):
-
-    if penalty is None:
-        raise ValueError('require penalty for consistent estimator')
-
-    X, y = loglike.data
-    n, p = X.shape
-    features_bool = np.zeros(p, np.bool)
-    features_bool[features] = True
-    features = features_bool
-
-    # relevant rows of approximate inverse
-
-
-    if approximate_inverse == 'JM':
-        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(W)[:, None], 
-                                                  np.nonzero(features)[0],
-                                                  **debiasing_args)) / n
-    else:
-        Qinv_hat = np.atleast_2d(pseudoinverse_debiasing_matrix(X * np.sqrt(W)[:, None],
-                                                                np.nonzero(features)[0],
-                                                                **debiasing_args))
-
-    problem = rr.simple_problem(loglike, penalty)
-    nonrand_soln = problem.solve()
-    G_nonrand = loglike.smooth_objective(nonrand_soln, 'grad')
-
-    observed_target = nonrand_soln[features] - Qinv_hat.dot(G_nonrand)
-
-    if p > n:
-        M1 = Qinv_hat.dot(X.T)
-        cov_target = (M1 * W[None, :]).dot(M1.T)
-        crosscov_target_score = -(M1 * W[None, :]).dot(X).T
-    else:
-        Qfull = X.T.dot(W[:, None] * X)
-        cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
-        crosscov_target_score = -Qinv_hat.dot(Qfull).T
-
-    if dispersion is None:  # use Pearson's X^2
-        Xfeat = X[:, features]
-        Qrelax = Xfeat.T.dot(W[:, None] * Xfeat)
-        relaxed_soln = nonrand_soln[features] - np.linalg.inv(Qrelax).dot(G_nonrand[features])
-        dispersion = (((y - loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / W).sum() / 
-                      (n - features.sum()))
-
-    alternatives = ['twosided'] * features.sum()
-    return observed_target, cov_target * dispersion, Qinv_hat, alternatives
-
-def form_targets(target, 
-                 loglike, 
-                 W, 
-                 features, 
-                 **kwargs):
-    _target = {'full':full_targets,
-               'selected':selected_targets,
-               'debiased':debiased_targets}[target]
-    return _target(loglike,
-                   W,
-                   features,
-                   **kwargs)
-
 class split_lasso(lasso):
 
     """
@@ -906,7 +739,7 @@ class split_lasso(lasso):
     def _setup_implied_gaussian(self, 
                                 opt_linear, 
                                 observed_subgrad,
-                                dispersion):
+                                dispersion=1):
 
         # key observation is that the covariance of the added noise is 
         # roughly dispersion * (1 - pi) / pi * X^TX (in OLS regression, similar for other
@@ -940,12 +773,18 @@ class split_lasso(lasso):
 
         prod_score_prec = np.identity(self.nfeature) / ratio
         
-        cov_rand = self._hessian * dispersion
+        cov_rand = self._unscaled_cov_score * dispersion
 
-        M1 = prod_score_prec 
-        M2 = M1.dot(cov_rand).dot(M1.T)
-        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) 
+        M1 = prod_score_prec * dispersion
+        M2 = M1.dot(cov_rand).dot(M1.T) * (dispersion**2)
+        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) * (dispersion**2)
     
+        # would be nice to not store these?
+        
+        self.M1 = M1  
+        self.M2 = M2
+        self.M3 = M3
+
         return (cond_mean,
                 cond_cov,
                 cond_precision,
@@ -1229,3 +1068,5 @@ class split_lasso(lasso):
         return split_lasso(loglike, 
                            np.asarray(feature_weights),
                            proportion)
+
+    

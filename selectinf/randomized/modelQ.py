@@ -177,6 +177,8 @@ class modelQ(gaussian_query):
         _hessian_active = self.Q[:, active]
         _hessian_unpen = self.Q[:, unpenalized]
 
+        self._unscaled_cov_score = self.Q
+        
         _score_linear_term = -np.hstack([_hessian_active, _hessian_unpen])
 
         # set the observed score (data dependent) state

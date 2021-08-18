@@ -12,10 +12,14 @@ import regreg.api as rr
 from ..distributions.api import discrete_family
 from ..constraints.affine import (sample_from_constraints,
                                   constraints)
+from ..algorithms.barrier_affine import solve_barrier_affine_py
+from ..base import (selected_targets,
+                    full_targets,
+                    debiased_targets)
+
 from .posterior_inference import posterior
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 from .approx_reference import approximate_grid_inference
-from ..algorithms.barrier_affine import solve_barrier_affine_py
 
 class query(object):
     r"""
@@ -121,9 +125,9 @@ class gaussian_query(query):
          M2,
          M3) = self._setup_implied_gaussian(opt_linear,
                                             observed_subgrad,
-                                            dispersion)
+                                            dispersion=dispersion)
 
-        def log_density(regress_opt, u, cond_prec, opt, score): # u == subgrad
+        def log_density(regress_opt, u, cond_prec, opt, score):  # u == subgrad
             if score.ndim == 1:
                 mean_term = regress_opt.dot(score.T + u).T
             else:
@@ -147,9 +151,9 @@ class gaussian_query(query):
                                                self.observed_opt_state,
                                                self.observed_score_state,
                                                log_density,
-                                               regress_opt, # not needed?
+                                               regress_opt,  # not needed?
                                                observed_subgrad,
-                                               opt_linear,      # L
+                                               opt_linear,  # L
                                                M1,
                                                M2,
                                                M3,
@@ -164,12 +168,10 @@ class gaussian_query(query):
         cov_rand, prec = self.randomizer.cov_prec
 
         if np.asarray(prec).shape in [(), (0,)]:
-            _prod_score_prec_unnorm = self._hessian * prec
+            prod_score_prec_unnorm = self._unscaled_cov_score * prec
         else:
-            _prod_score_prec_unnorm = self._hessian.dot(prec)
+            prod_score_prec_unnorm = self._unscaled_cov_score.dot(prec)
 
-        prod_score_prec = _prod_score_prec_unnorm * dispersion
-        
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
             cond_cov = np.linalg.inv(cond_precision)
@@ -178,15 +180,19 @@ class gaussian_query(query):
             cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
             cond_cov = np.linalg.inv(cond_precision)
             regress_opt = -cond_cov.dot(opt_linear.T).dot(prec)
-            
+
         # regress_opt is regression coefficient of opt onto score + u...
 
         cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
 
-        M1 = prod_score_prec 
-        M2 = M1.dot(cov_rand).dot(M1.T)
-        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) 
-    
+        M1 = prod_score_prec_unnorm * dispersion
+        M2 = M1.dot(cov_rand).dot(M1.T) * (dispersion**2) 
+        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) * (dispersion**2)
+
+        self.M1 = M1
+        self.M2 = M2
+        self.M3 = M3
+
         return (cond_mean,
                 cond_cov,
                 cond_precision,
@@ -231,8 +237,6 @@ class gaussian_query(query):
             Defaults to 1000.
         compute_intervals : bool
             Compute confidence intervals?
-        dispersion : float (optional)
-            Use a known value for dispersion, or Pearson's X^2?
         """
 
         if parameter is None:
@@ -326,8 +330,8 @@ class gaussian_query(query):
                   observed_target,
                   cov_target,
                   regress_target_score,
+                  dispersion=1,
                   prior=None,
-                  dispersion=None,
                   solve_args={'tol': 1.e-12}):
         """
         Parameters
@@ -348,10 +352,6 @@ class gaussian_query(query):
             Arguments passed to solver.
         """
 
-        if dispersion is None:
-            dispersion = 1
-            print('Using dispersion parameter 1...')
-
         if prior is None:
             Di = 1. / (200 * np.diag(cov_target))
 
@@ -364,8 +364,8 @@ class gaussian_query(query):
                          observed_target,
                          cov_target,
                          regress_target_score,
-                         prior,
                          dispersion,
+                         prior,
                          solve_args=solve_args)
 
     def approximate_grid_inference(self,
@@ -373,7 +373,8 @@ class gaussian_query(query):
                                    cov_target,
                                    regress_target_score,
                                    alternatives=None,
-                                   solve_args={'tol': 1.e-12}):
+                                   solve_args={'tol': 1.e-12},
+                                   useIP=False):
 
         """
         Parameters
@@ -395,7 +396,8 @@ class gaussian_query(query):
                                        observed_target,
                                        cov_target,
                                        regress_target_score,
-                                       solve_args=solve_args)
+                                       solve_args=solve_args,
+                                       useIP=useIP)
         return G.summary(alternatives=alternatives)
 
 
@@ -853,7 +855,7 @@ class affine_gaussian_sampler(optimization_sampler):
                  log_cond_density,
                  regress_opt,
                  observed_subgrad,
-                 opt_linear,      
+                 opt_linear,
                  M1,
                  M2,
                  M3,
@@ -973,6 +975,10 @@ class affine_gaussian_sampler(optimization_sampler):
         solve_args : dict, optional
             Arguments passed to solver.
         """
+
+        # self.M1 = self.M1 * dispersion
+        # self.M2 = self.M2 * (dispersion**2)
+        # self.M3 = self.M3 * (dispersion**2)
 
         return selective_MLE(observed_target,
                              cov_target,
@@ -1348,6 +1354,7 @@ def selective_MLE(observed_target,
                   solve_args={'tol': 1.e-12},
                   level=0.9,
                   useC=False):
+
     """
     Selective MLE based on approximation of
     CGF.
@@ -1393,18 +1400,14 @@ def selective_MLE(observed_target,
     T1 = regress_target_score.T.dot(prec_target)
     T2 = T1.T.dot(M2.dot(T1))
     T3 = T1.T.dot(M3.dot(T1)) 
+    T4 = M1.dot(opt_linear).dot(cond_cov).dot(opt_linear.T.dot(M1.T.dot(T1)))
+    T5 = T1.T.dot(M1.dot(opt_linear))
 
     prec_target_nosel = prec_target + T2 - T3
-    _P = T1.T.dot(M1.dot(observed_score)) - T2.dot(observed_target)
 
-    T4 = M1.T.dot(T1)
-    T5 = opt_linear.T.dot(T4)
-    T6 = cond_cov.dot(T5)
-    T7 = opt_linear.dot(T6)
-    T8 = M1.dot(T7)
-    T9 = T8.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))
-    T10 = T1.T.dot(T9) 
-    C = cov_target.dot(T10)
+    _P = -(T1.T.dot(M1.dot(observed_score)) + T2.dot(observed_target)) ##flipped sign of second term here
+
+    bias_target = cov_target.dot(T1.T.dot(-T4.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))) - _P)
 
     conjugate_arg = prec_opt.dot(cond_mean)
 
@@ -1420,16 +1423,12 @@ def selective_MLE(observed_target,
                              offset,
                              **solve_args)
 
-    T11 = regress_target_score.dot(M1.dot(opt_linear))
     final_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) \
-                      + T11.dot(cond_mean - soln) + C
+                      + regress_target_score.dot(M1.dot(opt_linear)).dot(cond_mean - soln) - bias_target
 
-    T12 = prec_target.dot(T11)
-    T13 = T3
-    unbiased_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) + cov_target.dot(
-        _P - T12.dot(cond_mean) + T13.dot(observed_target))
+    observed_info_natural = prec_target_nosel + T3 - T5.dot(hess.dot(T5.T))
 
-    observed_info_natural = prec_target_nosel + T3 - T12.dot(hess.dot(T12.T))
+    unbiased_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) - bias_target
 
     observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
 
@@ -1456,7 +1455,6 @@ def selective_MLE(observed_target,
                            'lower_confidence': intervals[:, 0],
                            'upper_confidence': intervals[:, 1],
                            'unbiased': unbiased_estimator})
+
     return result, observed_info_mean, log_ref
-
-
 

@@ -31,45 +31,51 @@ class posterior(object):
                  query,
                  observed_target,
                  cov_target,
-                 cov_target_score,
+                 regress_target_score,
+                 dispersion,
                  prior,
-                 dispersion=1,
                  solve_args={'tol': 1.e-12}):
 
         self.solve_args = solve_args
 
         linear_part = query.sampler.affine_con.linear_part
         offset = query.sampler.affine_con.offset
-        regress_opt = query.sampler.logdens_transform[0]
-        _, prec_randomizer = query.randomizer.cov_prec
-        score_offset = query.observed_score_state + query.sampler.logdens_transform[1]
+
+        opt_linear = query.opt_linear
+
+        observed_score = query.observed_score_state + query.observed_subgrad
 
         result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
                                                                  cov_target,
-                                                                 cov_target_score)
+                                                                 regress_target_score)
 
         ### Note for an informative prior we might want to change this...
 
-        self.ntarget = cov_target.shape[0]
-        self.nopt = query.cond_cov.shape[0]
-
-        self.cond_precision = np.linalg.inv(query.cond_cov)
+        cond_cov = query.cond_cov
+        self.cond_precision = np.linalg.inv(cond_cov)
+        self.cond_cov = cond_cov
         self.cov_target = cov_target
         self.prec_target = np.linalg.inv(cov_target)
 
-        self.observed_target = observed_target
-        self.cov_target_score = cov_target_score
-        self.regress_opt = regress_opt
-        self.prec_randomizer = prec_randomizer
-        self.score_offset = score_offset
+        self.ntarget = self.cov_target.shape[0]
+        self.nopt = self.cond_precision.shape[0]
 
+        self.observed_target = observed_target
+        self.regress_target_score = regress_target_score
+        self.opt_linear = opt_linear
+        self.observed_score = observed_score
+
+        self.M1 = query.M1
+        self.M2 = query.M2
+        self.M3 = query.M3
         self.feasible_point = query.observed_opt_state
+
         self.cond_mean = query.cond_mean
         self.linear_part = linear_part
         self.offset = offset
 
         self.initial_estimate = np.asarray(result['MLE'])
-        self.dispersion = dispersion
+        self.dispersion = dispersion # why is this needed?
         self.log_ref = log_ref
 
         self._set_marginal_parameters()
@@ -109,12 +115,11 @@ class posterior(object):
 
         log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal) / 2.
 
-        _prec = self.prec_target_nosel # shorthand
-        log_lik = -((self.observed_target - target).T.dot(_prec).dot(self.observed_target - target)) / 2. \
+        log_lik = -((self.observed_target - target).T.dot(self.prec_target_nosel).dot(self.observed_target - target)) / 2. \
                   - log_normalizer
 
-        grad_lik = self.S.T.dot(_prec.dot(self.observed_target) - _prec.dot(target) - self.linear_coef.T.dot(
-            prec_marginal.dot(soln) - conjugate_marginal))
+        grad_lik = self.S.T.dot(self.prec_target_nosel.dot(self.observed_target) - self.prec_target_nosel.dot(target)
+                                - self.linear_coef.T.dot(prec_marginal.dot(soln) - conjugate_marginal))
 
         log_prior, grad_prior = self.prior(target_parameter)
 
@@ -131,35 +136,31 @@ class posterior(object):
         implied mean as a function of the true parameters.
         """
 
-        regress_score_target = self.cov_target_score.T.dot(self.prec_target)
-        resid_score_target = self.score_offset - regress_score_target.dot(self.observed_target)
+        T1 = self.regress_target_score.T.dot(self.prec_target)
+        T2 = T1.T.dot(self.M2.dot(T1))
+        T3 = T1.T.dot(self.M3.dot(T1))
+        T4 = self.M1.dot(self.opt_linear).dot(self.cond_cov).dot(self.opt_linear.T.dot(self.M1.T.dot(T1)))
+        T5 = T1.T.dot(self.M1.dot(self.opt_linear))
 
-        regress_opt_target = self.regress_opt.dot(regress_score_target)
-        resid_mean_opt_target = self.cond_mean - regress_opt_target.dot(self.observed_target)
+        prec_target_nosel = self.prec_target + T2 - T3
 
-        self.linear_coef = regress_opt_target
-        self.offset_coef = resid_mean_opt_target
+        _P = -(T1.T.dot(self.M1.dot(self.observed_score)) + T2.dot(self.observed_target))
 
-        if np.asarray(self.prec_randomizer).shape in [(), (0,)]:
-            prec_target_nosel = self.prec_target + (regress_score_target.T.dot(regress_score_target) * self.prec_randomizer) \
-                    - regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target)
-            _P = regress_score_target.T.dot(resid_score_target) * self.prec_randomizer
-        else:
-            prec_target_nosel = self.prec_target + (regress_score_target.T.dot(self.prec_randomizer).dot(regress_score_target)) \
-                    - regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target)
-            _P = regress_score_target.T.dot(self.prec_randomizer).dot(resid_score_target)
+        bias_target = self.cov_target.dot(T1.T.dot(-T4.dot(self.observed_target) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
 
-        _Q = np.linalg.inv(_prec + regress_opt_target.T.dot(self.cond_precision).dot(regress_opt_target))
-        self.prec_marginal = self.cond_precision - self.cond_precision.dot(regress_opt_target).dot(_Q).dot(regress_opt_target.T).dot(self.cond_precision)
+        ###set parameters for the marginal distribution of optimization variables
+        _Q = np.linalg.inv(prec_target_nosel + T3)
+        self.prec_marginal = self.cond_precision - T5.T.dot(_Q).dot(T5)
+        self.linear_coef = self.cond_cov.dot(T5.T)
+        self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
 
-        r = np.linalg.inv(_prec).dot(regress_opt_target.T.dot(self.cond_precision).dot(resid_mean_opt_target) - _P)
-        S = np.linalg.inv(_prec).dot(self.prec_target)
+        ###set parameters for the marginal distribution of target
+        r = np.linalg.inv(prec_target_nosel).dot(self.prec_target.dot(bias_target))
+        S = np.linalg.inv(prec_target_nosel).dot(self.prec_target)
 
         self.r = r
         self.S = S
-        #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
         self.prec_target_nosel = prec_target_nosel
-
 
 ### sampling methods
 
@@ -168,6 +169,7 @@ def langevin_sampler(selective_posterior,
                      nburnin=100,
                      proposal_scale=None,
                      step=1.):
+
     state = selective_posterior.initial_estimate
     stepsize = 1. / (step * selective_posterior.ntarget)
 
@@ -258,8 +260,9 @@ class langevin(object):
     def __next__(self):
         while True:
             self.posterior_ = self.gradient_map(self.state, self.scaling)
+            _proposal = self.proposal_sqrt.dot(self._noise.rvs(self._shape))
             candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_[1])
-                         + np.sqrt(2.) * (self.proposal_sqrt.dot(self._noise.rvs(self._shape))) * self._sqrt_step)
+                         + np.sqrt(2.) * _proposal * self._sqrt_step)
 
             if not np.all(np.isfinite(self.gradient_map(candidate, self.scaling)[1])):
                 self.stepsize *= 0.5

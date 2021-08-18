@@ -21,6 +21,7 @@ class screening(gaussian_query):
         self.covariance = covariance
         self.randomizer = randomizer
         self._initial_omega = perturb
+        self._unscaled_cov_score = covariance
 
     def fit(self, perturb=None):
 
@@ -28,7 +29,9 @@ class screening(gaussian_query):
         self._randomized_score = self.observed_score_state - self._initial_omega
         return self._randomized_score, self._randomized_score.shape[0]
 
-    def multivariate_targets(self, features, dispersion=1.):
+    def multivariate_targets(self,
+                             features,
+                             dispersion=1):
         """
         Entries of the mean of \Sigma[E,E]^{-1}Z_E
         """
@@ -42,9 +45,12 @@ class screening(gaussian_query):
         return (observed_target, 
                 cov_target * dispersion, 
                 crosscov_target_score.T * dispersion, 
+                dispersion,
                 alternatives)
 
-    def full_targets(self, features, dispersion=1.):
+    def full_targets(self,
+                     features,
+                     dispersion=1):
         """
         Entries of the mean of \Sigma[E,E]^{-1}Z_E
         """
@@ -55,9 +61,11 @@ class screening(gaussian_query):
         crosscov_target_score = -np.identity(Q.shape[0])[:, features]
         alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, dispersion, alternatives
 
-    def marginal_targets(self, features):
+    def marginal_targets(self,
+                         features,
+                         dispersion=1):
         """
         Entries of the mean of Z_E
         """
@@ -68,7 +76,7 @@ class screening(gaussian_query):
         crosscov_target_score = -score_linear
         alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target, crosscov_target_score.T, alternatives
+        return observed_target, cov_target, crosscov_target_score.T, dispersion, alternatives
 
 class marginal_screening(screening):
 

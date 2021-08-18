@@ -29,7 +29,7 @@ def test_modelQ():
     conH = LH.sampler.affine_con
     conQ = LQ.sampler.affine_con
 
-    np.testing.assert_allclose(LH.initial_soln, LQ.initial_soln)
+    np.testing.assert_allclose(LH.observed_soln, LQ.observed_soln)
     np.testing.assert_allclose(LH.initial_subgrad, LQ.initial_subgrad)
 
     np.testing.assert_allclose(conH.linear_part, conQ.linear_part)

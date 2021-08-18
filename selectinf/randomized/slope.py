@@ -20,7 +20,7 @@ import regreg.api as rr
 from ..constraints.affine import constraints
 
 from .randomization import randomization
-from ..base import restricted_estimator
+from ..base import restricted_estimator, _compute_hessian
 from .query import gaussian_query
 from .lasso import lasso
 
@@ -121,9 +121,11 @@ class slope(gaussian_query):
 
         self.num_opt_var = self.observed_opt_state.shape[0]
 
-        X, y = self.loglike.data
-        W = self._W = self.loglike.saturated_loss.hessian(X.dot(beta_bar))
-        _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
+        self._unscaled_cov_score, _hessian_active = _compute_hessian(self.loglike,
+                                                                     beta_bar,
+                                                                     active)
+
+
         _score_linear_term = -_hessian_active
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
@@ -152,6 +154,7 @@ class slope(gaussian_query):
         if signs_cluster.size == 0:
             return active_signs
         else:
+            X, y = self.loglike.data
             X_clustered = X[:, indices].dot(signs_cluster)
             _opt_linear_term = X.T.dot(X_clustered)
 

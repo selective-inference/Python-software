@@ -163,4 +163,3 @@ def main(nsim=500, n=100, p=200, target='selected', sigma=3, s=3):
             plt.savefig("plot.pdf")
     plt.show()
 
-
