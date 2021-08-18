@@ -47,8 +47,7 @@ class posterior(object):
 
         result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
                                                                  cov_target,
-                                                                 regress_target_score,
-                                                                 dispersion)
+                                                                 regress_target_score)
 
         ### Note for an informative prior we might want to change this...
 
@@ -76,7 +75,7 @@ class posterior(object):
         self.offset = offset
 
         self.initial_estimate = np.asarray(result['MLE'])
-        self.dispersion = dispersion
+        self.dispersion = dispersion # why is this needed?
         self.log_ref = log_ref
 
         self._set_marginal_parameters()

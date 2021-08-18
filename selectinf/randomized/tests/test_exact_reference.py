@@ -65,8 +65,7 @@ def test_inf(n=500,
             exact_grid_inf = exact_grid_inference(conv,
                                                   observed_target,
                                                   cov_target,
-                                                  regress_target_score,
-                                                  dispersion=dispersion)
+                                                  regress_target_score)
 
             if CI is False:
                 pivot = exact_grid_inf._pivots(beta_target)

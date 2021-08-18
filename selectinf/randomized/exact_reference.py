@@ -13,7 +13,6 @@ class exact_grid_inference(object):
                  observed_target,
                  cov_target,
                  regress_target_score,
-                 dispersion,
                  solve_args={'tol': 1.e-12}):
 
         """
@@ -45,8 +44,7 @@ class exact_grid_inference(object):
 
         result, inverse_info, log_ref = query.selective_MLE(observed_target,
                                                             cov_target,
-                                                            regress_target_score,
-                                                            dispersion)
+                                                            regress_target_score)
 
         cond_cov = query.cond_cov
         self.cond_precision = np.linalg.inv(cond_cov)
