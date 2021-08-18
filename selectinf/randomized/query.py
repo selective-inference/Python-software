@@ -107,8 +107,6 @@ class gaussian_query(query):
                        offset,
                        opt_linear,
                        observed_subgrad,
-                       # optional dispersion parameter
-                       # for covariance of randomization
                        dispersion=1):
 
         A, b = linear_part, offset
@@ -161,12 +159,9 @@ class gaussian_query(query):
     def _setup_implied_gaussian(self,
                                 opt_linear,
                                 observed_subgrad,
-                                # optional dispersion parameter
-                                # for covariance of randomization
                                 dispersion=1):
 
         cov_rand, prec = self.randomizer.cov_prec
-        prec = prec / dispersion # why do we do this here -- prec is just known
 
         if np.asarray(prec).shape in [(), (0,)]:
             _prod_score_prec_unnorm = self._hessian * prec
