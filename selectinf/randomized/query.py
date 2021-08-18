@@ -12,10 +12,14 @@ import regreg.api as rr
 from ..distributions.api import discrete_family
 from ..constraints.affine import (sample_from_constraints,
                                   constraints)
+from ..algorithms.barrier_affine import solve_barrier_affine_py
+from ..base import (selected_targets,
+                    full_targets,
+                    debiased_targets)
+
 from .posterior_inference import posterior
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 from .approx_reference import approximate_grid_inference
-from ..algorithms.barrier_affine import solve_barrier_affine_py
 
 class query(object):
     r"""
@@ -164,9 +168,9 @@ class gaussian_query(query):
         cov_rand, prec = self.randomizer.cov_prec
 
         if np.asarray(prec).shape in [(), (0,)]:
-            prod_score_prec_unnorm = self._hessian * prec
+            prod_score_prec_unnorm = self._unscaled_cov_score * prec
         else:
-            prod_score_prec_unnorm = self._hessian.dot(prec)
+            prod_score_prec_unnorm = self._unscaled_cov_score.dot(prec)
 
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
@@ -201,7 +205,6 @@ class gaussian_query(query):
                 observed_target,
                 cov_target,
                 regress_target_score,
-                dispersion,
                 alternatives,
                 opt_sample=None,
                 target_sample=None,
@@ -234,8 +237,6 @@ class gaussian_query(query):
             Defaults to 1000.
         compute_intervals : bool
             Compute confidence intervals?
-        dispersion : float (optional)
-            Use a known value for dispersion, or Pearson's X^2?
         """
 
         if parameter is None:
@@ -322,7 +323,6 @@ class gaussian_query(query):
                                           cov_target,
                                           regress_target_score,
                                           self.observed_opt_state,
-#                                          dispersion=dispersion,
                                           level=level,
                                           solve_args=solve_args)
 
@@ -373,7 +373,6 @@ class gaussian_query(query):
                                    cov_target,
                                    regress_target_score,
                                    alternatives=None,
-                                   dispersion=1,
                                    solve_args={'tol': 1.e-12},
                                    useIP=False):
 
@@ -398,7 +397,6 @@ class gaussian_query(query):
                                        cov_target,
                                        regress_target_score,
                                        solve_args=solve_args,
-                                       dispersion=dispersion,
                                        useIP=useIP)
         return G.summary(alternatives=alternatives)
 
@@ -1459,6 +1457,4 @@ def selective_MLE(observed_target,
                            'unbiased': unbiased_estimator})
 
     return result, observed_info_mean, log_ref
-
-
 

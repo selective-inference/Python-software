@@ -5,8 +5,9 @@ import regreg.api as rr
 
 
 from ..lasso import (lasso,
-                     split_lasso,
-                     full_targets,
+                     split_lasso)
+
+from ...base import (full_targets,
                      selected_targets,
                      debiased_targets)
 from ...tests.instance import (gaussian_instance,
@@ -69,7 +70,7 @@ def test_full_targets(n=200,
                  regress_target_score,
                  dispersion,
                  alternatives) = full_targets(conv.loglike,
-                                              conv._W,
+                                              conv.observed_soln,
                                               nonzero,
                                               dispersion=dispersion)
             else:
@@ -78,7 +79,7 @@ def test_full_targets(n=200,
                  regress_target_score,
                  dispersion,
                  alternatives) = debiased_targets(conv.loglike,
-                                                  conv._W,
+                                                  conv.observed_soln,
                                                   nonzero,
                                                   penalty=conv.penalty,
                                                   dispersion=dispersion)
@@ -151,8 +152,7 @@ def test_selected_targets(n=2000,
              regress_target_score,
              dispersion,
              alternatives) = selected_targets(conv.loglike,
-                                              conv._W,
-                                              nonzero,
+                                              conv.observed_soln,
                                               dispersion=dispersion)
 
             result = conv.selective_MLE(observed_target,
@@ -193,8 +193,8 @@ def test_instance():
      regress_target_score,
      dispersion,
      alternatives) = selected_targets(L.loglike,
-                                      L._W,
-                                      M,
+                                      L.observed_soln,
+                                      features=M,
                                       dispersion=dispersion)
 
     print("check shapes", observed_target.shape, E.sum())
@@ -261,8 +261,7 @@ def test_selected_targets_disperse(n=500,
              regress_target_score,
              dispersion,
              alternatives) = selected_targets(conv.loglike,
-                                              conv._W,
-                                              nonzero,
+                                              conv.observed_soln,
                                               dispersion=dispersion)
 
             result = conv.selective_MLE(observed_target,
@@ -323,8 +322,7 @@ def test_logistic(n=2000,
              cov_target_score,
              dispersion,
              alternatives) = selected_targets(conv.loglike,
-                                              conv._W,
-                                              nonzero, 
+                                              conv.observed_soln,
                                               dispersion=1)
 
             result = conv.selective_MLE(observed_target,
@@ -380,8 +378,7 @@ def test_logistic_split(n=2000,
              cov_target_score,
              dispersion,
              alternatives) = selected_targets(conv.loglike,
-                                              conv._W,
-                                              nonzero, 
+                                              conv.observed_soln,
                                               dispersion=1)
 
             result = conv.selective_MLE(observed_target,
@@ -437,8 +434,7 @@ def test_poisson(n=2000,
              cov_target_score,
              dispersion,
              alternatives) = selected_targets(conv.loglike,
-                                              conv._W,
-                                              nonzero, 
+                                              conv.observed_soln,
                                               dispersion=1)
 
             result = conv.selective_MLE(observed_target,
@@ -494,8 +490,7 @@ def test_poisson_split(n=2000,
              cov_target_score,
              dispersion,
              alternatives) = selected_targets(conv.loglike,
-                                              conv._W,
-                                              nonzero, 
+                                              conv.observed_soln,
                                               dispersion=1)
 
             result = conv.selective_MLE(observed_target,
@@ -554,9 +549,7 @@ def test_cox(n=2000,
              cov_target_score, 
              dispersion,
              alternatives) = selected_targets(conv.loglike, 
-                                              None,
-                                              nonzero,
-                                              hessian=full_hess,
+                                              conv.observed_soln,
                                               dispersion=1)
 
             result = conv.selective_MLE(observed_target,
@@ -615,9 +608,7 @@ def test_cox_split(n=2000,
              cov_target_score, 
              dispersion,
              alternatives) = selected_targets(conv.loglike, 
-                                              None,
-                                              nonzero,
-                                              hessian=full_hess,
+                                              conv.observed_soln,
                                               dispersion=1)
 
             result = conv.selective_MLE(observed_target,
@@ -683,8 +674,7 @@ def test_scale_invariant_split(n=200,
          cov_target_score,
          dispersion,
          alternatives) = selected_targets(conv.loglike,
-                                          conv._W,
-                                          nonzero, 
+                                          conv.observed_soln,
                                           dispersion=dispersion)
 
         print('dispersion', dispersion/scale**2)
@@ -766,8 +756,7 @@ def test_scale_invariant(n=200,
          cov_target_score,
          dispersion,
          alternatives) = selected_targets(conv.loglike,
-                                          conv._W,
-                                          nonzero, 
+                                          conv.observed_soln,
                                           dispersion=dispersion)
 
         print('dispersion', dispersion/scale**2)
@@ -796,46 +785,3 @@ def test_scale_invariant(n=200,
                        results[1]['pvalue'])
     
 
-def test_instance():
-    n, p, s = 500, 100, 5
-    X = np.random.standard_normal((n, p))
-    beta = np.zeros(p)
-    beta[:s] = np.sqrt(2 * np.log(p) / n)
-    Y = X.dot(beta) + np.random.standard_normal(n)
-
-    scale_ = np.std(Y)
-    # uses noise of variance n * scale_ / 4 by default
-    L = lasso.gaussian(X, Y, 3 * scale_ * np.sqrt(2 * np.log(p) * np.sqrt(n)))
-    signs = L.fit()
-    E = (signs != 0)
-
-    M = E.copy()
-    M[-3:] = 1
-    print("check ", M)
-    dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
-    (observed_target,
-     cov_target,
-     cov_target_score,
-     dispersion,
-     alternatives) = selected_targets(L.loglike,
-                                      L._W,
-                                      M,
-                                      dispersion=dispersion)
-
-    print("check shapes", observed_target.shape, E.sum())
-
-    result = L.selective_MLE(observed_target,
-                             cov_target,
-                             cov_target_score)[0]
-    estimate = result['MLE']
-    pval = result['pvalue']
-    intervals = np.asarray(result[['lower_confidence',
-                                   'upper_confidence']])
-
-    beta_target = np.linalg.pinv(X[:, M]).dot(X.dot(beta))
-
-    coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
-    print("observed_opt_state ", L.observed_opt_state)
-    # print("check ", np.asarray(result['MLE']), np.asarray(result['unbiased']))
-
-    return coverage

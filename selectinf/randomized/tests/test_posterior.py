@@ -2,10 +2,11 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm as ndist
 
-from ..lasso import lasso, selected_targets, split_lasso
+from ..lasso import lasso, split_lasso
 from ..posterior_inference import (langevin_sampler,
                                    gibbs_sampler)
 
+from ...base import selected_targets
 from ...tests.instance import gaussian_instance, HIV_NRTI
 from ...tests.flags import SET_SEED, SMALL_SAMPLES
 from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
@@ -57,8 +58,7 @@ def test_Langevin(n=500,
      regress_target_score,
      dispersion,
      alternatives) = selected_targets(conv.loglike,
-                                      conv._W,
-                                      nonzero,
+                                      conv.observed_soln,
                                       dispersion=dispersion)
 
     posterior_inf = conv.posterior(observed_target,
@@ -127,9 +127,9 @@ def test_instance(nsample=100, nburnin=50):
      regress_target_score,
      dispersion,
      alternatives)= selected_targets(L.loglike,
-                                      L._W,
-                                      M,
-                                      dispersion=dispersion)
+                                     L.observed_soln,
+                                     features=M,
+                                     dispersion=dispersion)
 
     posterior_inf = L.posterior(observed_target,
                                 cov_target,
@@ -183,8 +183,8 @@ def test_flexible_prior1(nsample=100,
      regress_target_score,
      dispersion,
      alternatives) = selected_targets(L.loglike,
-                                      L._W,
-                                      M,
+                                      L.observed_soln,
+                                      features=M,
                                       dispersion=dispersion)
 
     # default prior
@@ -253,8 +253,8 @@ def test_flexible_prior2(nsample=1000, nburnin=50):
      regress_target_score,
      dispersion,
      alternatives) = selected_targets(L.loglike,
-                                      L._W,
-                                      M,
+                                      L.observed_soln,
+                                      features=M,
                                       dispersion=dispersion)
 
     prior_var = 0.05 ** 2
@@ -318,21 +318,18 @@ def test_hiv_data(nsample=10000,
      regress_target_score,
      dispersion,
      alternatives) = selected_targets(conv.loglike,
-                                      conv._W,
-                                      nonzero,
+                                      conv.observed_soln,
                                       dispersion=dispersion)
 
     mle, inverse_info = conv.selective_MLE(observed_target,
                                            cov_target,
                                            regress_target_score,
-                                           dispersion,
                                            level=level,
                                            solve_args={'tol': 1.e-12})[:2]
 
     approx_inf = conv.approximate_grid_inference(observed_target,
                                                  cov_target,
                                                  regress_target_score,
-                                                 dispersion=dispersion,
                                                  useIP=False)
 
     posterior_inf = conv.posterior(observed_target,

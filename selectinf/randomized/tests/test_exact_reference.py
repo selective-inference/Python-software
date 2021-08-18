@@ -1,7 +1,8 @@
 import numpy as np
 
 from ...tests.instance import gaussian_instance
-from ..lasso import lasso, selected_targets
+from ..lasso import lasso
+from ...base import selected_targets
 from ..exact_reference import exact_grid_inference
 
 def test_inf(n=500,
@@ -58,8 +59,7 @@ def test_inf(n=500,
              regress_target_score,
              dispersion,
              alternatives) = selected_targets(conv.loglike,
-                                              conv._W,
-                                              nonzero,
+                                              conv.observed_soln,
                                               dispersion=dispersion)
 
             exact_grid_inf = exact_grid_inference(conv,

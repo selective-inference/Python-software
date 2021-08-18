@@ -49,11 +49,13 @@ def test_marginal(n=500,
                 (observed_target, 
                  cov_target, 
                  crosscov_target_score, 
+                 dispersion,
                  alternatives) = marginal_select.marginal_targets(nonzero)
             else:
                 (observed_target, 
                  cov_target, 
                  crosscov_target_score, 
+                 dispersion,
                  alternatives) = marginal_select.multivariate_targets(nonzero, dispersion=sigma**2)
 
             if use_MLE:
@@ -137,6 +139,7 @@ def test_simple(n=100,
             (observed_target, 
              cov_target, 
              crosscov_target_score, 
+             dispersion,
              alternatives) = marginal_select.marginal_targets(nonzero)
 
             if use_MLE:

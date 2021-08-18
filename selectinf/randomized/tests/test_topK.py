@@ -49,11 +49,13 @@ def test_topK(n=500,
                 (observed_target, 
                  cov_target, 
                  crosscov_target_score, 
+                 dipsersion,
                  alternatives) = topK_select.marginal_targets(nonzero)
             else:
                 (observed_target, 
                  cov_target, 
                  crosscov_target_score, 
+                 dispersion,
                  alternatives) = topK_select.multivariate_targets(nonzero, dispersion=sigma**2)
                
             if use_MLE:
@@ -129,12 +131,14 @@ def test_bias_topK(n=500,
                 (observed_target,
                  cov_target,
                  crosscov_target_score,
+                 dispersion,
                  alternatives) = topK_select.marginal_targets(nonzero)
             else:
                 beta_target = beta[nonzero]
                 (observed_target,
                  cov_target,
                  crosscov_target_score,
+                 dispersion,
                  alternatives) = topK_select.multivariate_targets(nonzero, dispersion=sigma**2)
 
             result = topK_select.selective_MLE(observed_target,
