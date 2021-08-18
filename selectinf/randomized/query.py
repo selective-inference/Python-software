@@ -120,7 +120,8 @@ class gaussian_query(query):
          M1,
          M2,
          M3) = self._setup_implied_gaussian(opt_linear,
-                                            observed_subgrad)
+                                            observed_subgrad,
+                                            dispersion=dispersion)
 
         def log_density(regress_opt, u, cond_prec, opt, score):  # u == subgrad
             if score.ndim == 1:
@@ -157,7 +158,8 @@ class gaussian_query(query):
 
     def _setup_implied_gaussian(self,
                                 opt_linear,
-                                observed_subgrad):
+                                observed_subgrad,
+                                dispersion=1):
 
         cov_rand, prec = self.randomizer.cov_prec
 
@@ -179,9 +181,9 @@ class gaussian_query(query):
 
         cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
 
-        M1 = prod_score_prec_unnorm
-        M2 = M1.dot(cov_rand).dot(M1.T)
-        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T)
+        M1 = prod_score_prec_unnorm * dispersion
+        M2 = M1.dot(cov_rand).dot(M1.T) * (dispersion**2) 
+        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) * (dispersion**2)
 
         self.M1 = M1
         self.M2 = M2
@@ -978,9 +980,9 @@ class affine_gaussian_sampler(optimization_sampler):
             Arguments passed to solver.
         """
 
-        self.M1 = self.M1 * dispersion
-        self.M2 = self.M2 * (dispersion**2)
-        self.M3 = self.M3 * (dispersion**2)
+        # self.M1 = self.M1 * dispersion
+        # self.M2 = self.M2 * (dispersion**2)
+        # self.M3 = self.M3 * (dispersion**2)
 
         return selective_MLE(observed_target,
                              cov_target,

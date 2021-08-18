@@ -61,9 +61,9 @@ class approximate_grid_inference(object):
         self.opt_linear = opt_linear
         self.observed_score = observed_score
 
-        self.M1 = query.M1 * dispersion
-        self.M2 = query.M2 * (dispersion ** 2)
-        self.M3 = query.M3 * (dispersion ** 2)
+        self.M1 = query.M1
+        self.M2 = query.M2
+        self.M3 = query.M3
         self.feasible_point = query.observed_opt_state
 
         self.cond_mean = query.cond_mean
