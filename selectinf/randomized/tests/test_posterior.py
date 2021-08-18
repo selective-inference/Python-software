@@ -2,12 +2,16 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm as ndist
 
-from ...tests.instance import gaussian_instance, HIV_NRTI
 from ..lasso import lasso, selected_targets, split_lasso
 from ..posterior_inference import (langevin_sampler,
                                    gibbs_sampler)
 
+from ...tests.instance import gaussian_instance, HIV_NRTI
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsample=50, nburnin=10)
 def test_Langevin(n=500,
                   p=100,
                   signal_fac=1.,
@@ -17,6 +21,7 @@ def test_Langevin(n=500,
                   randomizer_scale=1.,
                   nsample=1500,
                   nburnin=100):
+
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 
@@ -49,7 +54,8 @@ def test_Langevin(n=500,
 
     (observed_target,
      cov_target,
-     cov_target_score,
+     regress_target_score,
+     dispersion,
      alternatives) = selected_targets(conv.loglike,
                                       conv._W,
                                       nonzero,
@@ -57,16 +63,12 @@ def test_Langevin(n=500,
 
     posterior_inf = conv.posterior(observed_target,
                                    cov_target,
-                                   cov_target_score,
+                                   regress_target_score,
                                    dispersion=dispersion)
 
     samples = langevin_sampler(posterior_inf,
                                nsample=nsample,
                                nburnin=nburnin)
-
-    # gibbs_samples = gibbs_sampler(posterior_inf,
-    #                               nsample=nsample,
-    #                               nburnin=nburnin)
 
     lci = np.percentile(samples, 5, axis=0)
     uci = np.percentile(samples, 95, axis=0)
@@ -76,19 +78,24 @@ def test_Langevin(n=500,
     return np.mean(coverage), np.mean(length)
 
 
-def test_coverage(nsim=100):
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsample=50, nburnin=10, nsim=2)
+def test_coverage(nsim=100,
+                  nsample=1500,
+                  nburnin=100):
+
     cov, len = 0., 0.
 
     for i in range(nsim):
         cov_, len_ = test_Langevin(n=500,
                                    p=100,
-                                   signal_fac=1.,
+                                   signal_fac=0.5,
                                    s=5,
-                                   sigma=3.,
+                                   sigma=2.,
                                    rho=0.2,
                                    randomizer_scale=1.,
-                                   nsample=1500,
-                                   nburnin=100)
+                                   nsample=nsample,
+                                   nburnin=nburnin)
 
         cov += cov_
         len += len_
@@ -96,6 +103,8 @@ def test_coverage(nsim=100):
         print("coverage and lengths ", i, cov / (i + 1.), len / (i + 1.))
 
 
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsample=50, nburnin=10)
 def test_instance(nsample=100, nburnin=50):
     n, p, s = 500, 100, 5
     X = np.random.standard_normal((n, p))
@@ -112,17 +121,19 @@ def test_instance(nsample=100, nburnin=50):
     M = E.copy()
     M[-3:] = 1
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
+
     (observed_target,
      cov_target,
-     cov_target_score,
-     alternatives) = selected_targets(L.loglike,
+     regress_target_score,
+     dispersion,
+     alternatives)= selected_targets(L.loglike,
                                       L._W,
                                       M,
                                       dispersion=dispersion)
 
     posterior_inf = L.posterior(observed_target,
                                 cov_target,
-                                cov_target_score,
+                                regress_target_score,
                                 dispersion=dispersion)
 
     samples = langevin_sampler(posterior_inf,
@@ -143,8 +154,14 @@ def test_instance(nsample=100, nburnin=50):
     return np.mean(coverage), np.mean(length)
 
 
-def test_flexible_prior1(nsample=100, nburnin=50):
-    np.random.seed(0)
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsample=50, nburnin=10)
+def test_flexible_prior1(nsample=100,
+                         nburnin=50,
+                         seed=0):
+
+    np.random.seed(seed)
+    
     n, p, s = 500, 100, 5
     X = np.random.standard_normal((n, p))
     beta = np.zeros(p)
@@ -160,29 +177,35 @@ def test_flexible_prior1(nsample=100, nburnin=50):
     M = E.copy()
     M[-3:] = 1
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
+
     (observed_target,
      cov_target,
-     cov_target_score,
+     regress_target_score,
+     dispersion,
      alternatives) = selected_targets(L.loglike,
                                       L._W,
                                       M,
                                       dispersion=dispersion)
 
+    # default prior
+
     Di = 1. / (200 * np.diag(cov_target))
 
     def prior(target_parameter):
         grad_prior = -target_parameter * Di
-        log_prior = -np.sum(target_parameter ** 2 * Di)
+        log_prior = -0.5 * np.sum(target_parameter ** 2 * Di)
         return log_prior, grad_prior
 
     seed_state = np.random.get_state()
     np.random.set_state(seed_state)
     Z1 = np.random.standard_normal()
+
     posterior_inf1 = L.posterior(observed_target,
                                  cov_target,
-                                 cov_target_score,
+                                 regress_target_score,
                                  dispersion=dispersion,
                                  prior=prior)
+
     W1 = np.random.standard_normal()
     samples1 = langevin_sampler(posterior_inf1,
                                 nsample=nsample,
@@ -192,17 +215,22 @@ def test_flexible_prior1(nsample=100, nburnin=50):
     Z2 = np.random.standard_normal()
     posterior_inf2 = L.posterior(observed_target,
                                  cov_target,
-                                 cov_target_score,
+                                 regress_target_score,
                                  dispersion=dispersion)
+
     W2 = np.random.standard_normal()
     samples2 = langevin_sampler(posterior_inf2,
                                 nsample=nsample,
                                 nburnin=nburnin)
+    # these two assertions essentially just check the random state
+    # was run identically for samples1 and samples2 
     np.testing.assert_equal(Z1, Z2)
     np.testing.assert_equal(W1, W2)
     np.testing.assert_allclose(samples1, samples2, rtol=1.e-3)
 
 
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsample=50, nburnin=10)
 def test_flexible_prior2(nsample=1000, nburnin=50):
     n, p, s = 500, 100, 5
     X = np.random.standard_normal((n, p))
@@ -219,9 +247,11 @@ def test_flexible_prior2(nsample=1000, nburnin=50):
     M = E.copy()
     M[-3:] = 1
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
+
     (observed_target,
      cov_target,
-     cov_target_score,
+     regress_target_score,
+     dispersion,
      alternatives) = selected_targets(L.loglike,
                                       L._W,
                                       M,
@@ -235,10 +265,11 @@ def test_flexible_prior2(nsample=1000, nburnin=50):
         return log_prior, grad_prior
 
     posterior_inf = L.posterior(observed_target,
-                                cov_target,
-                                cov_target_score,
-                                dispersion=dispersion,
-                                prior=prior)
+                                 cov_target,
+                                 regress_target_score,
+                                 dispersion=dispersion,
+                                 prior=prior)
+
     adaptive_proposal = np.linalg.inv(np.linalg.inv(posterior_inf.inverse_info) +
                                       np.identity(posterior_inf.inverse_info.shape[0]) / 0.05 ** 2)
     samples = langevin_sampler(posterior_inf,
@@ -248,6 +279,8 @@ def test_flexible_prior2(nsample=1000, nburnin=50):
     return samples
 
 
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsample=50, nburnin=10)
 def test_hiv_data(nsample=10000,
                   nburnin=500,
                   level=0.90,
@@ -282,7 +315,8 @@ def test_hiv_data(nsample=10000,
 
     (observed_target,
      cov_target,
-     cov_target_score,
+     regress_target_score,
+     dispersion,
      alternatives) = selected_targets(conv.loglike,
                                       conv._W,
                                       nonzero,
@@ -290,17 +324,20 @@ def test_hiv_data(nsample=10000,
 
     mle, inverse_info = conv.selective_MLE(observed_target,
                                            cov_target,
-                                           cov_target_score,
+                                           regress_target_score,
+                                           dispersion,
                                            level=level,
                                            solve_args={'tol': 1.e-12})[:2]
 
     approx_inf = conv.approximate_grid_inference(observed_target,
                                                  cov_target,
-                                                 cov_target_score)
+                                                 regress_target_score,
+                                                 dispersion=dispersion,
+                                                 useIP=False)
 
     posterior_inf = conv.posterior(observed_target,
                                    cov_target,
-                                   cov_target_score,
+                                   regress_target_score,
                                    dispersion=dispersion)
 
     samples_langevin = langevin_sampler(posterior_inf,
@@ -358,10 +395,5 @@ def test_hiv_data(nsample=10000,
                            })
 
     return output, scale_interval, _sigma
-
-
-if __name__ == "__main__":
-    # test_hiv_data(split_proportion=0.50)
-    test_coverage(nsim=100)
 
 

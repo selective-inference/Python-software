@@ -4,15 +4,15 @@ from ...tests.instance import gaussian_instance
 from ..lasso import lasso, selected_targets
 from ..exact_reference import exact_grid_inference
 
-def test_approx_pivot(n=500,
-                      p=100,
-                      signal_fac=1.,
-                      s=5,
-                      sigma=2.,
-                      rho=0.4,
-                      randomizer_scale=1.,
-                      equicorrelated=False,
-                      useIP=False):
+def test_inf(n=500,
+             p=100,
+             signal_fac=1.,
+             s=5,
+             sigma=2.,
+             rho=0.4,
+             randomizer_scale=1.,
+             equicorrelated=False,
+             CI=True):
 
     while True:
 
@@ -43,6 +43,7 @@ def test_approx_pivot(n=500,
         conv = const(X,
                      Y,
                      W,
+                     ridge_term=0.,
                      randomizer_scale=randomizer_scale * np.sqrt(dispersion))
 
         signs = conv.fit()
@@ -54,7 +55,8 @@ def test_approx_pivot(n=500,
 
             (observed_target,
              cov_target,
-             cov_target_score,
+             regress_target_score,
+             dispersion,
              alternatives) = selected_targets(conv.loglike,
                                               conv._W,
                                               nonzero,
@@ -63,40 +65,18 @@ def test_approx_pivot(n=500,
             exact_grid_inf = exact_grid_inference(conv,
                                                   observed_target,
                                                   cov_target,
-                                                  cov_target_score,
-                                                  useIP=useIP)
+                                                  regress_target_score,
+                                                  dispersion=dispersion)
 
-            pivot = exact_grid_inf._pivots(beta_target)
+            if CI is False:
+                pivot = exact_grid_inf._pivots(beta_target)
+                return pivot
 
-            return pivot
+            else:
+                lci, uci = exact_grid_inf._intervals(level=0.90)
+                coverage = (lci < beta_target) * (uci > beta_target)
+                length = uci - lci
+                mle_length = 1.65*2 * np.sqrt(np.diag(exact_grid_inf.inverse_info))
+                return np.mean(coverage), np.mean(length), np.mean(mle_length)
 
-def main(nsim=300):
 
-    import matplotlib as mpl
-    mpl.use('tkagg')
-    import matplotlib.pyplot as plt
-    from statsmodels.distributions.empirical_distribution import ECDF
-
-    _pivot = []
-    for i in range(nsim):
-        _pivot.extend(test_approx_pivot(n=100,
-                                        p=400,
-                                        signal_fac=1.,
-                                        s=0,
-                                        sigma=2.,
-                                        rho=0.30,
-                                        randomizer_scale=0.7,
-                                        equicorrelated=True,
-                                        useIP=False))
-
-        print("iteration completed ", i)
-
-    plt.clf()
-    ecdf_pivot = ECDF(np.asarray(_pivot))
-    grid = np.linspace(0, 1, 101)
-    plt.plot(grid, ecdf_pivot(grid), c='blue')
-    plt.plot(grid, grid, 'k--')
-    plt.show()
-
-if __name__ == "__main__":
-    main(nsim=100)

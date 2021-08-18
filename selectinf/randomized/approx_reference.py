@@ -13,7 +13,8 @@ class approximate_grid_inference(object):
                  query,
                  observed_target,
                  cov_target,
-                 cov_target_score,
+                 regress_target_score,
+                 dispersion=1,
                  solve_args={'tol': 1.e-12},
                  useIP=False):
 
@@ -37,27 +38,39 @@ class approximate_grid_inference(object):
 
         self.solve_args = solve_args
 
-        result, inverse_info = query.selective_MLE(observed_target,
-                                                   cov_target,
-                                                   cov_target_score,
-                                                   solve_args=solve_args)[:2]
+        linear_part = query.sampler.affine_con.linear_part
+        offset = query.sampler.affine_con.offset
 
-        self.linear_part = query.sampler.affine_con.linear_part
-        self.offset = query.sampler.affine_con.offset
+        opt_linear = query.opt_linear
 
-        self.regress_opt = query.sampler.logdens_transform[0]
-        self.cond_mean = query.cond_mean
-        self.prec_opt = np.linalg.inv(query.cond_cov)
-        self.cond_cov = query.cond_cov
+        observed_score = query.observed_score_state + query.observed_subgrad
+
+        result, inverse_info, log_ref = query.selective_MLE(observed_target,
+                                                            cov_target,
+                                                            regress_target_score,
+                                                            dispersion)
+
+        cond_cov = query.cond_cov
+        self.cond_precision = np.linalg.inv(cond_cov)
+        self.cond_cov = cond_cov
+        self.cov_target = cov_target
+        self.prec_target = np.linalg.inv(cov_target)
 
         self.observed_target = observed_target
-        self.cov_target_score = cov_target_score
-        self.cov_target = cov_target
+        self.regress_target_score = regress_target_score
+        self.opt_linear = opt_linear
+        self.observed_score = observed_score
 
-        self.observed_soln = query.observed_opt_state
+        self.M1 = query.M1 * dispersion
+        self.M2 = query.M2 * (dispersion ** 2)
+        self.M3 = query.M3 * (dispersion ** 2)
+        self.feasible_point = query.observed_opt_state
 
-        self.prec_randomizer = query.sampler.prec_randomizer
-        self.score_offset = query.observed_score_state + query.sampler.logdens_transform[1]
+        self.cond_mean = query.cond_mean
+        self.linear_part = linear_part
+        self.offset = offset
+
+        self.feasible_point = query.observed_opt_state
 
         self.ntarget = ntarget = cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
@@ -79,6 +92,7 @@ class approximate_grid_inference(object):
 
         self.opt_linear = query.opt_linear
         self.useIP = useIP
+        self.inverse_info = inverse_info
 
     def summary(self,
                 alternatives=None,
@@ -122,7 +136,7 @@ class approximate_grid_inference(object):
     def _approx_log_reference(self,
                               observed_target,
                               cov_target,
-                              cov_target_score,
+                              linear_coef,
                               grid):
 
         """
@@ -131,11 +145,9 @@ class approximate_grid_inference(object):
         if np.asarray(observed_target).shape in [(), (0,)]:
             raise ValueError('no target specified')
 
-        prec_target = np.linalg.inv(cov_target)
-        regress_opt_target = self.regress_opt.dot(cov_target_score.T.dot(prec_target))
-
         ref_hat = []
         solver = solve_barrier_affine_py
+
         for k in range(grid.shape[0]):
             # in the usual D = N + Gamma theta.hat,
             # regress_opt_target is "something" times Gamma,
@@ -143,13 +155,12 @@ class approximate_grid_inference(object):
             # cond_mean is "something" times D
             # Gamma is cov_target_score.T.dot(prec_target)
 
-            cond_mean_grid = (regress_opt_target.dot(np.atleast_1d(grid[k] - observed_target)) +
-                              self.cond_mean)
-            conjugate_arg = self.prec_opt.dot(cond_mean_grid)
+            cond_mean_grid = (linear_coef.dot(np.atleast_1d(grid[k] - observed_target)) + self.cond_mean)
+            conjugate_arg = self.cond_precision.dot(cond_mean_grid)
 
             val, _, _ = solver(conjugate_arg,
-                               self.prec_opt,
-                               self.observed_soln,
+                               self.cond_precision,
+                               self.feasible_point,
                                self.linear_part,
                                self.offset,
                                **self.solve_args)
@@ -165,26 +176,25 @@ class approximate_grid_inference(object):
         self._families = []
 
         for m in range(self.ntarget):
-            p = self.cov_target_score.shape[1]
-            observed_target_uni = (self.observed_target[m]).reshape((1,))
 
+            observed_target_uni = (self.observed_target[m]).reshape((1,))
             cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
-            cov_target_score_uni = self.cov_target_score[m, :].reshape((1, p))
 
             var_target = 1. / ((self.precs[m])[0, 0])
 
             approx_log_ref = self._approx_log_reference(observed_target_uni,
                                                         cov_target_uni,
-                                                        cov_target_score_uni,
+                                                        self.T[m],
                                                         self.stat_grid[m])
 
-
             if self.useIP == False:
+
                 logW = (approx_log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
                 logW -= logW.max()
                 self._families.append(discrete_family(self.stat_grid[m],
                                                       np.exp(logW)))
             else:
+
                 approx_fn = interp1d(self.stat_grid[m],
                                      approx_log_ref,
                                      kind='quadratic',
@@ -233,7 +243,6 @@ class approximate_grid_inference(object):
             var_target = 1. / ((self.precs[m])[0, 0])
 
             mean = self.S[m].dot(mean_parameter[m].reshape((1,))) + self.r[m]
-            #print("mean ", np.allclose(mean[0], mean_parameter[m]), self.r[m], self.S[m])
             # construction of pivot from families follows `selectinf.learning.core`
 
             _cdf = family.cdf((mean[0] - self.observed_target[m]) / var_target, x=self.observed_target[m])
@@ -277,33 +286,40 @@ class approximate_grid_inference(object):
         precs = {}
         S = {}
         r = {}
+        T = {}
 
-        p = self.cov_target_score.shape[1]
+        p = self.regress_target_score.shape[1]
 
         for m in range(self.ntarget):
             observed_target_uni = (self.observed_target[m]).reshape((1,))
             cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
             prec_target = 1. / cov_target_uni
-            cov_target_score_uni = self.cov_target_score[m, :].reshape((1, p))
+            regress_target_score_uni = self.regress_target_score[m, :].reshape((1, p))
 
-            regress_score_target = cov_target_score_uni.T.dot(prec_target)
-            resid_score_target = (self.score_offset - regress_score_target.dot(observed_target_uni)).reshape(
-                (regress_score_target.shape[0],))
+            T1 = regress_target_score_uni.T.dot(prec_target)
+            T2 = T1.T.dot(self.M2.dot(T1))
+            T3 = T1.T.dot(self.M3.dot(T1))
+            T4 = self.M1.dot(self.opt_linear).dot(self.cond_cov).dot(self.opt_linear.T.dot(self.M1.T.dot(T1)))
+            T5 = T1.T.dot(self.M1.dot(self.opt_linear))
 
-            regress_opt_target = self.regress_opt.dot(regress_score_target)
-            resid_mean_opt_target = (self.cond_mean - regress_opt_target.dot(observed_target_uni)).reshape((regress_opt_target.shape[0],))
+            _T = self.cond_cov.dot(T5.T)
 
-            prec_target_nosel = prec_target + (regress_score_target.T.dot(regress_score_target) * self.prec_randomizer) - regress_opt_target.T.dot(
-                self.prec_opt).dot(regress_opt_target)
+            prec_target_nosel = prec_target + T2 - T3
 
-            _P = regress_score_target.T.dot(resid_score_target) * self.prec_randomizer
-            _r = (1. / _prec).dot(regress_opt_target.T.dot(self.prec_opt).dot(resid_mean_opt_target) - _P)
-            _S = np.linalg.inv(_prec).dot(prec_target)
+            _P = -(T1.T.dot(self.M1.dot(self.observed_score)) + T2.dot(observed_target_uni))
+
+            bias_target = cov_target_uni.dot(
+                T1.T.dot(-T4.dot(observed_target_uni) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
+
+            _r = np.linalg.inv(prec_target_nosel).dot(prec_target.dot(bias_target))
+            _S = np.linalg.inv(prec_target_nosel).dot(prec_target)
 
             S[m] = _S
             r[m] = _r
             precs[m] = prec_target_nosel
+            T[m] = _T
 
         self.precs = precs
         self.S = S
         self.r = r
+        self.T = T

@@ -738,7 +738,7 @@ def selected_targets(loglike,
 
     regress_target_score = np.zeros((cov_target.shape[0], p))
     regress_target_score[:,features] = cov_target
-    return observed_target, cov_target * dispersion, regress_target_score, alternatives
+    return observed_target, cov_target * dispersion, regress_target_score, dispersion, alternatives
 
 def full_targets(loglike, 
                  W, 
@@ -774,7 +774,7 @@ def full_targets(loglike,
 
     alternatives = ['twosided'] * features.sum()
     regress_target_score = Qfull_inv[features] # weights missing?
-    return observed_target, cov_target * dispersion, regress_target_score, alternatives
+    return observed_target, cov_target * dispersion, regress_target_score, dispersion, alternatives
 
 def debiased_targets(loglike, 
                      W, 
@@ -829,7 +829,7 @@ def debiased_targets(loglike,
                       (n - features.sum()))
 
     alternatives = ['twosided'] * features.sum()
-    return observed_target, cov_target * dispersion, Qinv_hat, alternatives
+    return observed_target, cov_target * dispersion, Qinv_hat, dispersion, alternatives
 
 def form_targets(target, 
                  loglike, 
@@ -906,7 +906,7 @@ class split_lasso(lasso):
     def _setup_implied_gaussian(self, 
                                 opt_linear, 
                                 observed_subgrad,
-                                dispersion):
+                                dispersion=1):
 
         # key observation is that the covariance of the added noise is 
         # roughly dispersion * (1 - pi) / pi * X^TX (in OLS regression, similar for other
@@ -942,10 +942,16 @@ class split_lasso(lasso):
         
         cov_rand = self._hessian * dispersion
 
-        M1 = prod_score_prec 
+        M1 = prod_score_prec
         M2 = M1.dot(cov_rand).dot(M1.T)
         M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) 
     
+        # would be nice to not store these?
+        
+        self.M1 = M1
+        self.M2 = M2
+        self.M3 = M3
+
         return (cond_mean,
                 cond_cov,
                 cond_precision,
