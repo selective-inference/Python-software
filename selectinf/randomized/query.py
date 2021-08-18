@@ -301,7 +301,6 @@ class gaussian_query(query):
                       observed_target,
                       cov_target,
                       regress_target_score,
-                      dispersion=1,
                       level=0.9,
                       solve_args={'tol': 1.e-12}):
         """
@@ -323,7 +322,7 @@ class gaussian_query(query):
                                           cov_target,
                                           regress_target_score,
                                           self.observed_opt_state,
-                                          dispersion=dispersion,
+#                                          dispersion=dispersion,
                                           level=level,
                                           solve_args=solve_args)
 
@@ -958,7 +957,6 @@ class affine_gaussian_sampler(optimization_sampler):
                       # used as a feasible point.
                       # precise value used only for independent estimator
                       observed_soln,
-                      dispersion=1,
                       solve_args={'tol': 1.e-12},
                       level=0.9):
         """
