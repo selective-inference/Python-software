@@ -202,10 +202,7 @@ class gaussian_query(query):
                 M3)
 
     def summary(self,
-                observed_target,
-                cov_target,
-                regress_target_score,
-                alternatives,
+                target_spec,
                 opt_sample=None,
                 target_sample=None,
                 parameter=None,
@@ -240,7 +237,7 @@ class gaussian_query(query):
         """
 
         if parameter is None:
-            parameter = np.zeros_like(observed_target)
+            parameter = np.zeros_like(target_spec.observed_target)
 
         if opt_sample is None:
             opt_sample, logW = self.sampler.sample(ndraw, burnin)
@@ -252,38 +249,36 @@ class gaussian_query(query):
                 opt_sample, logW = opt_sample
             ndraw = opt_sample.shape[0]
 
-        pivots = self.sampler.coefficient_pvalues(observed_target,
-                                                  cov_target,
-                                                  regress_target_score,
+        pivots = self.sampler.coefficient_pvalues(target_spec.observed_target,
+                                                  target_spec.cov_target,
+                                                  target_spec.regress_target_score,
                                                   parameter=parameter,
                                                   sample=(opt_sample, logW),
                                                   normal_sample=target_sample,
-                                                  alternatives=alternatives)
+                                                  alternatives=target_spec.alternatives)
 
         if not np.all(parameter == 0):
-            pvalues = self.sampler.coefficient_pvalues(observed_target,
-                                                       cov_target,
-                                                       regress_target_score,
+            pvalues = self.sampler.coefficient_pvalues(target_spec.observed_target,
+                                                       target_spec.cov_target,
+                                                       target_spec.regress_target_score,
                                                        parameter=np.zeros_like(parameter),
                                                        sample=(opt_sample, logW),
                                                        normal_sample=target_sample,
-                                                       alternatives=alternatives)
+                                                       alternatives=target_spec.alternatives)
         else:
             pvalues = pivots
 
-        result = pd.DataFrame({'target': observed_target,
+        result = pd.DataFrame({'target': target_spec.observed_target,
                                'pvalue': pvalues})
 
         if compute_intervals:
-            MLE = self.selective_MLE(observed_target,
-                                     cov_target,
-                                     regress_target_score)[0]
+            MLE = self.selective_MLE(target_spec)[0]
             MLE_intervals = np.asarray(MLE[['lower_confidence', 'upper_confidence']])
 
             intervals = self.sampler.confidence_intervals(
-                observed_target,
-                cov_target,
-                regress_target_score,
+                target_spec.observed_target,
+                target_spec.cov_target,
+                target_spec.regress_target_score,
                 sample=(opt_sample, logW),
                 normal_sample=target_sample,
                 initial_guess=MLE_intervals,
@@ -299,9 +294,7 @@ class gaussian_query(query):
         return result
 
     def selective_MLE(self,
-                      observed_target,
-                      cov_target,
-                      regress_target_score,
+                      target_spec,
                       level=0.9,
                       solve_args={'tol': 1.e-12}):
         """
@@ -319,18 +312,13 @@ class gaussian_query(query):
             Arguments passed to solver.
         """
 
-        return self.sampler.selective_MLE(observed_target,
-                                          cov_target,
-                                          regress_target_score,
+        return self.sampler.selective_MLE(target_spec,
                                           self.observed_opt_state,
                                           level=level,
                                           solve_args=solve_args)
 
     def posterior(self,
-                  observed_target,
-                  cov_target,
-                  regress_target_score,
-                  dispersion=1,
+                  target_spec,
                   prior=None,
                   solve_args={'tol': 1.e-12}):
         """
@@ -353,7 +341,7 @@ class gaussian_query(query):
         """
 
         if prior is None:
-            Di = 1. / (200 * np.diag(cov_target))
+            Di = 1. / (200 * np.diag(target_spec.cov_target))
 
             def prior(target_parameter):
                 grad_prior = -target_parameter * Di
@@ -361,18 +349,12 @@ class gaussian_query(query):
                 return log_prior, grad_prior
 
         return posterior(self,
-                         observed_target,
-                         cov_target,
-                         regress_target_score,
-                         dispersion,
+                         target_spec,
                          prior,
                          solve_args=solve_args)
 
     def approximate_grid_inference(self,
-                                   observed_target,
-                                   cov_target,
-                                   regress_target_score,
-                                   alternatives=None,
+                                   target_spec,
                                    solve_args={'tol': 1.e-12},
                                    useIP=False):
 
@@ -393,12 +375,10 @@ class gaussian_query(query):
         """
 
         G = approximate_grid_inference(self,
-                                       observed_target,
-                                       cov_target,
-                                       regress_target_score,
+                                       target_spec,
                                        solve_args=solve_args,
                                        useIP=useIP)
-        return G.summary(alternatives=alternatives)
+        return G.summary(alternatives=target_spec.alternatives)
 
 
 class multiple_queries(object):
@@ -438,10 +418,10 @@ class multiple_queries(object):
                 objective.fit()
 
     def summary(self,
-                observed_target,
-                opt_sampling_info,  # a sequence of (cov_target, score_cov)
+                target_specs,
+                # a sequence of target_specs
                 # objects in theory all cov_target
-                # should be about the same...
+                # should be about the same. as should the observed_target
                 alternatives=None,
                 parameter=None,
                 level=0.9,
@@ -471,25 +451,28 @@ class multiple_queries(object):
             Compute confidence intervals?
         """
 
+        observed_target = target_specs[0].observed_target
+        alternatives = target_specs[0].alternatives
+        
         if parameter is None:
             parameter = np.zeros_like(observed_target)
 
         if alternatives is None:
             alternatives = ['twosided'] * observed_target.shape[0]
 
-        if len(self.objectives) != len(opt_sampling_info):
+        if len(self.objectives) != len(target_specs):
             raise ValueError("number of objectives and sampling cov infos do not match")
 
         self.opt_sampling_info = []
         for i in range(len(self.objectives)):
-            if opt_sampling_info[i][0] is None or opt_sampling_info[i][1] is None:
+            if target_specs[i].cov_target is None or target_specs[i].regress_target_score is None:
                 raise ValueError("did not input target and score covariance info")
             opt_sample, opt_logW = self.objectives[i].sampler.sample(ndraw, burnin)
             self.opt_sampling_info.append((self.objectives[i].sampler,
                                            opt_sample,
                                            opt_logW,
-                                           opt_sampling_info[i][0],
-                                           opt_sampling_info[i][1]))
+                                           target_specs[i].cov_target,
+                                           target_specs[i].regress_target_score))
 
         pivots = self.coefficient_pvalues(observed_target,
                                           parameter=parameter,
@@ -568,7 +551,7 @@ class multiple_queries(object):
         return np.array(pvals)
 
     def confidence_intervals(self,
-                             observed_target,
+                             target_specs,
                              sample_args=(),
                              level=0.9):
 
@@ -948,9 +931,7 @@ class affine_gaussian_sampler(optimization_sampler):
         return _sample, np.zeros(_sample.shape[0])
 
     def selective_MLE(self,
-                      observed_target,
-                      cov_target,
-                      regress_target_score,
+                      target_spec,
                       # initial (observed) value of optimization variables --
                       # used as a feasible point.
                       # precise value used only for independent estimator
@@ -976,13 +957,7 @@ class affine_gaussian_sampler(optimization_sampler):
             Arguments passed to solver.
         """
 
-        # self.M1 = self.M1 * dispersion
-        # self.M2 = self.M2 * (dispersion**2)
-        # self.M3 = self.M3 * (dispersion**2)
-
-        return selective_MLE(observed_target,
-                             cov_target,
-                             regress_target_score,
+        return selective_MLE(target_spec,
                              observed_soln,
                              self.mean,
                              self.covariance,
@@ -1335,9 +1310,7 @@ def naive_pvalues(diag_cov, observed, parameter):
         pvalues[j] = 2 * min(pval, 1 - pval)
     return pvalues
 
-def selective_MLE(observed_target,
-                  cov_target,
-                  regress_target_score,
+def selective_MLE(target_spec,
                   observed_soln,  # initial (observed) value of
                   # optimization variables -- used as a
                   # feasible point.  precise value used
@@ -1387,6 +1360,10 @@ def selective_MLE(observed_target,
         Use python or C solver.
     """
 
+    (observed_target,
+     cov_target,
+     regress_target_score) = target_spec[:3]
+    
     if np.asarray(observed_target).shape in [(), (0,)]:
         raise ValueError('no target specified')
 

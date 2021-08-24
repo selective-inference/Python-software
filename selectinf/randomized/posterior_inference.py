@@ -29,14 +29,17 @@ class posterior(object):
 
     def __init__(self,
                  query,
-                 observed_target,
-                 cov_target,
-                 regress_target_score,
-                 dispersion,
+                 target_spec,
                  prior,
                  solve_args={'tol': 1.e-12}):
 
         self.solve_args = solve_args
+
+        (observed_target,
+         cov_target,
+         regress_target_score,
+         _,
+         dispersion) = target_spec
 
         linear_part = query.sampler.affine_con.linear_part
         offset = query.sampler.affine_con.offset
@@ -45,9 +48,7 @@ class posterior(object):
 
         observed_score = query.observed_score_state + query.observed_subgrad
 
-        result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
-                                                                 cov_target,
-                                                                 regress_target_score)
+        result, self.inverse_info, log_ref = query.selective_MLE(target_spec)
 
         ### Note for an informative prior we might want to change this...
 
@@ -217,6 +218,13 @@ def gibbs_sampler(selective_posterior,
         sample = sampler.__next__()
         samples[i, :] = sample
 
+        import sys
+        sys.stderr.write('a: ' + str(0.1 +
+                          selective_posterior.ntarget +
+                          selective_posterior.ntarget / 2)+'\n')
+        sys.stderr.write('scale: ' + str(0.1 - ((scale_update ** 2) * sampler.posterior_[0])) + '\n')
+        sys.stderr.write('scale_update: ' + str(scale_update) + '\n')
+        sys.stderr.write('initpoint: ' + str(sampler.posterior_[0]) + '\n')
         scale_update_sq = invgamma.rvs(a=(0.1 +
                                           selective_posterior.ntarget +
                                           selective_posterior.ntarget / 2),

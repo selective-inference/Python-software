@@ -1,7 +1,8 @@
 import numpy as np
 
 from ...tests.instance import gaussian_instance
-from ..lasso import lasso, selected_targets
+from ..lasso import lasso
+from ...base import selected_targets
 from ..approx_reference import approximate_grid_inference
 
 def test_inf(n=500,
@@ -12,7 +13,7 @@ def test_inf(n=500,
              rho=0.4,
              randomizer_scale=1.,
              equicorrelated=False,
-             useIP=False,
+             useIP=True,
              CI=False):
 
     inst, const = gaussian_instance, lasso.gaussian
@@ -53,19 +54,14 @@ def test_inf(n=500,
         if nonzero.sum() > 0:
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
-            (observed_target,
-             cov_target,
-             regress_target_score,
-             dispersion,
-             alternatives) = selected_targets(conv.loglike,
-                                              conv._W,
-                                              nonzero,
-                                              dispersion=dispersion)
+            target_spec = selected_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           dispersion=dispersion)
 
+            print(target_spec)
+            
             approximate_grid_inf = approximate_grid_inference(conv,
-                                                              observed_target,
-                                                              cov_target,
-                                                              regress_target_score,
+                                                              target_spec,
                                                               useIP=useIP)
 
             if CI is False:

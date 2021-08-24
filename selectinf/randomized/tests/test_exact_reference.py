@@ -54,18 +54,12 @@ def test_inf(n=500,
         if nonzero.sum() > 0:
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
-            (observed_target,
-             cov_target,
-             regress_target_score,
-             dispersion,
-             alternatives) = selected_targets(conv.loglike,
-                                              conv.observed_soln,
-                                              dispersion=dispersion)
+            target_spec = selected_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           dispersion=dispersion)
 
             exact_grid_inf = exact_grid_inference(conv,
-                                                  observed_target,
-                                                  cov_target,
-                                                  regress_target_score)
+                                                  target_spec)
 
             if CI is False:
                 pivot = exact_grid_inf._pivots(beta_target)

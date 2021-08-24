@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 
 import regreg.api as rr
@@ -45,6 +47,14 @@ def restricted_estimator(loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 # functions construct targets of inference
 # and covariance with score representation
 
+class TargetSpec(typing.NamedTuple):
+    
+    observed_target : np.ndarray
+    cov_target : np.ndarray
+    regress_target_score : np.ndarray
+    alternatives : list
+    dispersion : float = 1
+    
 def selected_targets(loglike, 
                      solution,
                      features=None,
@@ -85,7 +95,12 @@ def selected_targets(loglike,
 
     regress_target_score = np.zeros((cov_target.shape[0], p))
     regress_target_score[:,features] = cov_target
-    return observed_target, cov_target * dispersion, regress_target_score, dispersion, alternatives
+
+    return TargetSpec(observed_target,
+                      cov_target * dispersion,
+                      regress_target_score,
+                      alternatives,
+                      dispersion)
 
 def full_targets(loglike, 
                  solution,
@@ -124,7 +139,12 @@ def full_targets(loglike,
 
     alternatives = ['twosided'] * features.sum()
     regress_target_score = Qfull_inv[features] # weights missing?
-    return observed_target, cov_target * dispersion, regress_target_score, dispersion, alternatives
+
+    return TargetSpec(observed_target,
+                      cov_target * dispersion,
+                      regress_target_score,
+                      alternatives,
+                      dispersion)
 
 def debiased_targets(loglike, 
                      solution,
@@ -189,7 +209,12 @@ def debiased_targets(loglike,
                                 features.sum())
 
     alternatives = ['twosided'] * features.sum()
-    return observed_target, cov_target * dispersion, Qinv_hat, dispersion, alternatives
+
+    return TargetSpec(observed_target,
+                      cov_target * dispersion,
+                      Qinv_hat, 
+                      alternatives,
+                      dispersion)
 
 def form_targets(target, 
                  loglike, 

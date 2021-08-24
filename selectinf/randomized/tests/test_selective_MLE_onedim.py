@@ -4,7 +4,8 @@ import numpy as np
 from scipy.stats import norm as ndist
 import nose.tools as nt
 
-from ..lasso import lasso, full_targets
+from ..lasso import lasso
+from ...base import full_targets, TargetSpec
 from ...tests.instance import gaussian_instance
 
 def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=2, randomizer_scale=1):
@@ -28,18 +29,11 @@ def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=2, randomizer_scale=1):
 
             # this is current code where we estimate sigma
 
-            (observed_target, 
-             cov_target, 
-             regress_target_score, 
-             dispersion,
-             alternatives) = full_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero)
+            target_spec = full_targets(conv.loglike, 
+                                       conv.observed_soln,
+                                       features=nonzero)
             
-            result = conv.selective_MLE(observed_target, 
-                                        cov_target, 
-                                        regress_target_score,
-                                        np.ones((1,)) * signs[0])
+            result = conv.selective_MLE(target_spec)
 
             estimate_cur = float(result[0]['MLE'])
             Z_cur = float(result[0]['Zvalue'])
@@ -50,11 +44,13 @@ def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=2, randomizer_scale=1):
 
             target_Z = X.T.dot(Y) / np.sqrt((X**2).sum(0))
 
-            result2 = conv.sampler.selective_MLE(target_Z, 
-                                                 sigma**2 * np.ones((1,1)), 
-                                                 -np.ones((1,1)) / np.sqrt((X**2).sum(0)), 
+            target = TargetSpec(target_Z,
+                                sigma**2 * np.ones((1,1)),
+                                -np.ones((1,1)) / np.sqrt((X**2).sum(0)), 
+                                ['greater'],
+                                sigma**2)
+            result2 = conv.sampler.selective_MLE(target,
                                                  np.ones((1,)) * signs[0],
-                                                 dispersion=sigma**2,
                                                  solve_args={'tol':1.e-12})
             estimate, I, Z, pv = (float(result2[0]['MLE']),
                                   result2[1],
@@ -75,7 +71,7 @@ def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=2, randomizer_scale=1):
 
             pivot = ndist.cdf((estimate_cur - signal) / np.sqrt(I_cur[0,0]))
 
-            debug = Falsee
+            debug = False
             if debug:
                 print(estimate, approx_MLE, 'selective MLE')
                 print(beta[nonzero], 'truth')

@@ -109,7 +109,7 @@ def test_compare_topK(p=20,
     randomizer = randomization.gaussian(np.diag(np.array(full_std)**2 / np.array(n_1)) - 
                                         covariance)
 
-    randomized_topK = topK(full_means,
+    randomized_topK = topK(np.asarray(full_means),
                            covariance,
                            randomizer,
                            K,
@@ -117,11 +117,9 @@ def test_compare_topK(p=20,
 
     randomized_topK.fit(perturb=perturb)
 
-    (observed_target,
-     target_cov,
-     target_score_cov,
-     _) = randomized_topK.marginal_targets(randomized_topK.selection_variable['variables'])
-
+    target_spec = randomized_topK.marginal_targets(randomized_topK.selection_variable['variables'])
+    print('var', randomized_topK.selection_variable['variables'])
+    
     # try with a degenerate covariance now
 
     means2 = df2.groupby('arm').mean()['data'].iloc[range(p)]
@@ -135,52 +133,33 @@ def test_compare_topK(p=20,
                                        np.array(n_1)) - 
                                covariance2)
 
-    degenerate_topK = topK(means2,
+    degenerate_topK = topK(np.asarray(means2),
                            covariance2,
                            degenerate_randomizer,
                            K,
                            perturb=perturb2)
 
     np.random.seed(0)
-    summary1 = randomized_topK.summary(observed_target,
-                                       target_cov,
-                                       target_score_cov,
-                                       alternatives=['twosided']*K,
-                                       ndraw=10000,
-                                       burnin=2000,
-                                       compute_intervals=True)
+    summary1 = randomized_topK.selective_MLE(target_spec)[0]
     np.random.seed(0)
-    summary2 = dtl.summary(ndraw=10000,
-                           burnin=2000)
+    summary2 = dtl.MLE_inference()[0]
 
+
+    np.testing.assert_allclose(summary1['MLE'], summary2['MLE'], rtol=1.e-3)
     np.testing.assert_allclose(summary1['pvalue'], summary2['pvalue'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['target'], summary2['target'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['lower_confidence'], summary2['lower_confidence'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['upper_confidence'], summary2['upper_confidence'], rtol=1.e-3)
+    #np.testing.assert_allclose(summary1['lower_confidence'], summary2['lower_confidence'], rtol=1.e-3)
+    #np.testing.assert_allclose(summary1['upper_confidence'], summary2['upper_confidence'], rtol=1.e-3)
 
     np.random.seed(0)
     degenerate_topK.fit(perturb=perturb2)
-    summary3 = degenerate_topK.summary(observed_target,
-                                       target_cov,
-                                       target_score_cov,
-                                       alternatives=['twosided']*K,
+    summary3 = degenerate_topK.summary(target_spec,
                                        ndraw=10000,
                                        burnin=2000,
                                        compute_intervals=True)
     
     np.testing.assert_allclose(summary1['pvalue'], summary3['pvalue'], rtol=1.e-3)
     np.testing.assert_allclose(summary1['target'], summary3['target'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['lower_confidence'], summary3['lower_confidence'], rtol=1.e-3)
-    np.testing.assert_allclose(summary1['upper_confidence'], summary3['upper_confidence'], rtol=1.e-3)
+    #np.testing.assert_allclose(summary1['lower_confidence'], summary3['lower_confidence'], rtol=1.e-3)
+    #np.testing.assert_allclose(summary1['upper_confidence'], summary3['upper_confidence'], rtol=1.e-3)
 
 
-def main(nsim=100, use_MLE=True):
-
-    P0, cover = [], []
-    
-    for i in range(nsim):
-        p0, cover_ = test_drop_losers(use_MLE=use_MLE)
-
-        cover.extend(cover_)
-        P0.extend(p0)
-        print('coverage', np.mean(cover))

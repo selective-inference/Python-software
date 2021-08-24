@@ -7,12 +7,13 @@ import regreg.api as rr
 
 from .query import gaussian_query
 from .randomization import randomization
+from ..base import TargetSpec
 
 class screening(gaussian_query):
 
     def __init__(self,
                  observed_data,
-                 covariance, 
+                 covariance, # unscaled
                  randomizer,
                  perturb=None):
 
@@ -35,33 +36,38 @@ class screening(gaussian_query):
         """
         Entries of the mean of \Sigma[E,E]^{-1}Z_E
         """
-        score_linear = self.covariance[:, features].copy() / dispersion
-        Q = score_linear[features]
-        cov_target = np.linalg.inv(Q)
+        Q = self.covariance[features][:,features] 
+        Qinv = np.linalg.inv(Q)
+        cov_target = np.linalg.inv(Q) * dispersion
         observed_target = -np.linalg.inv(Q).dot(self.observed_score_state[features])
-        crosscov_target_score = -score_linear.dot(cov_target)
+        regress_target_score = -Qinv.dot(np.identity(self.covariance.shape[0])[features])
         alternatives = ['twosided'] * features.sum()
 
-        return (observed_target, 
-                cov_target * dispersion, 
-                crosscov_target_score.T * dispersion, 
-                dispersion,
-                alternatives)
+        return TargetSpec(observed_target, 
+                          cov_target,
+                          regress_target_score,
+                          alternatives,
+                          dispersion)
 
     def full_targets(self,
                      features,
                      dispersion=1):
         """
-        Entries of the mean of \Sigma[E,E]^{-1}Z_E
+        Entries of the mean of (\Sigma^{-1}Z)[E]
         """
-        score_linear = self.covariance[:, features].copy() / dispersion
-        Q = self.covariance / dispersion
-        cov_target = (np.linalg.inv(Q)[features])[:, features]
+
+        Q = self.covariance
+        Qinv = np.linalg.inv(Q)
+        cov_target = Qinv[features][:, features] * dispersion
         observed_target = -np.linalg.inv(Q).dot(self.observed_score_state)[features]
-        crosscov_target_score = -np.identity(Q.shape[0])[:, features]
+        regress_target_score = -Qinv[:, features]
         alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, dispersion, alternatives
+        return TargetSpec(observed_target,
+                          cov_target,
+                          regress_target_score.T,
+                          alternatives,
+                          dispersion)
 
     def marginal_targets(self,
                          features,
@@ -69,14 +75,17 @@ class screening(gaussian_query):
         """
         Entries of the mean of Z_E
         """
-        score_linear = self.covariance[:, features]
-        Q = score_linear[features]
-        cov_target = Q
+        Q = self.covariance[features][:,features] 
+        cov_target = Q * dispersion
         observed_target = -self.observed_score_state[features]
-        crosscov_target_score = -score_linear
+        regress_target_score = -np.identity(self.covariance.shape[0])[:,features]
         alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target, crosscov_target_score.T, dispersion, alternatives
+        return TargetSpec(observed_target,
+                          cov_target,
+                          regress_target_score.T,
+                          alternatives,
+                          dispersion)
 
 class marginal_screening(screening):
 

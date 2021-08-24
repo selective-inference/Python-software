@@ -65,29 +65,18 @@ def test_full_targets(n=200,
                 dispersion = None
 
             if n > p:
-                (observed_target,
-                 cov_target,
-                 regress_target_score,
-                 dispersion,
-                 alternatives) = full_targets(conv.loglike,
-                                              conv.observed_soln,
-                                              nonzero,
-                                              dispersion=dispersion)
+                target_spec = full_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           nonzero,
+                                           dispersion=dispersion)
             else:
-                (observed_target,
-                 cov_target,
-                 regress_target_score,
-                 dispersion,
-                 alternatives) = debiased_targets(conv.loglike,
-                                                  conv.observed_soln,
-                                                  nonzero,
-                                                  penalty=conv.penalty,
-                                                  dispersion=dispersion)
+                target_spec = debiased_targets(conv.loglike,
+                                               conv.observed_soln,
+                                               nonzero,
+                                               penalty=conv.penalty,
+                                               dispersion=dispersion)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        regress_target_score,
-                                        dispersion)[0]
+            result = conv.selective_MLE(target_spec)[0]
 
             pval = result['pvalue']
             estimate = result['MLE']
@@ -147,17 +136,11 @@ def test_selected_targets(n=2000,
             if full_dispersion:
                 dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
 
-            (observed_target,
-             cov_target,
-             regress_target_score,
-             dispersion,
-             alternatives) = selected_targets(conv.loglike,
-                                              conv.observed_soln,
-                                              dispersion=dispersion)
+            target_spec = selected_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           dispersion=dispersion)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        regress_target_score,
+            result = conv.selective_MLE(target_spec,
                                         dispersion)[0]
 
             pval = result['pvalue']
@@ -188,20 +171,14 @@ def test_instance():
     print("check ", M)
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
 
-    (observed_target,
-     cov_target,
-     regress_target_score,
-     dispersion,
-     alternatives) = selected_targets(L.loglike,
-                                      L.observed_soln,
-                                      features=M,
-                                      dispersion=dispersion)
+    target_spec = selected_targets(L.loglike,
+                                   L.observed_soln,
+                                   features=M,
+                                   dispersion=dispersion)
 
-    print("check shapes", observed_target.shape, E.sum())
+    print("check shapes", target_spec.observed_target.shape, E.sum())
 
-    result = L.selective_MLE(observed_target,
-                             cov_target,
-                             regress_target_score,
+    result = L.selective_MLE(target_spec,
                              dispersion)[0]
 
     intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
@@ -256,17 +233,11 @@ def test_selected_targets_disperse(n=500,
             if full_dispersion:
                 dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
 
-            (observed_target,
-             cov_target,
-             regress_target_score,
-             dispersion,
-             alternatives) = selected_targets(conv.loglike,
-                                              conv.observed_soln,
-                                              dispersion=dispersion)
+            target_spec = selected_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           dispersion=dispersion)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        regress_target_score,
+            result = conv.selective_MLE(target_spec,
                                         dispersion)[0]
 
             pval = result['pvalue']
@@ -317,17 +288,11 @@ def test_logistic(n=2000,
 
         if nonzero.sum() > 0:
 
-            (observed_target,
-             cov_target,
-             cov_target_score,
-             dispersion,
-             alternatives) = selected_targets(conv.loglike,
-                                              conv.observed_soln,
-                                              dispersion=1)
+            target_spec = selected_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           dispersion=1)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        cov_target_score)[0]
+            result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -373,17 +338,11 @@ def test_logistic_split(n=2000,
 
         if nonzero.sum() > 0:
 
-            (observed_target,
-             cov_target,
-             cov_target_score,
-             dispersion,
-             alternatives) = selected_targets(conv.loglike,
-                                              conv.observed_soln,
-                                              dispersion=1)
+            target_spec = selected_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           dispersion=1)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        cov_target_score)[0]
+            result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -429,17 +388,11 @@ def test_poisson(n=2000,
 
         if nonzero.sum() > 0:
 
-            (observed_target,
-             cov_target,
-             cov_target_score,
-             dispersion,
-             alternatives) = selected_targets(conv.loglike,
-                                              conv.observed_soln,
-                                              dispersion=1)
+            target_spec = selected_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           dispersion=1)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        cov_target_score)[0]
+            result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -485,17 +438,11 @@ def test_poisson_split(n=2000,
 
         if nonzero.sum() > 0:
 
-            (observed_target,
-             cov_target,
-             cov_target_score,
-             dispersion,
-             alternatives) = selected_targets(conv.loglike,
-                                              conv.observed_soln,
-                                              dispersion=1)
+            target_spec = selected_targets(conv.loglike,
+                                           conv.observed_soln,
+                                           dispersion=1)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        cov_target_score)[0]
+            result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -544,17 +491,11 @@ def test_cox(n=2000,
             cox_full = rr.glm.cox(X, T, S)
             full_hess = cox_full.hessian(conv.observed_soln)
 
-            (observed_target, 
-             cov_target, 
-             cov_target_score, 
-             dispersion,
-             alternatives) = selected_targets(conv.loglike, 
-                                              conv.observed_soln,
-                                              dispersion=1)
+            target_spec = selected_targets(conv.loglike, 
+                                           conv.observed_soln,
+                                           dispersion=1)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        cov_target_score)[0]
+            result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -603,17 +544,11 @@ def test_cox_split(n=2000,
             cox_full = rr.glm.cox(X, T, S)
             full_hess = cox_full.hessian(conv.observed_soln)
 
-            (observed_target, 
-             cov_target, 
-             cov_target_score, 
-             dispersion,
-             alternatives) = selected_targets(conv.loglike, 
-                                              conv.observed_soln,
-                                              dispersion=1)
+            target_spec = selected_targets(conv.loglike, 
+                                           conv.observed_soln,
+                                           dispersion=1)
 
-            result = conv.selective_MLE(observed_target,
-                                        cov_target,
-                                        cov_target_score)[0]
+            result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -669,22 +604,16 @@ def test_scale_invariant_split(n=200,
         print('feature_weights', conv.feature_weights[0] / scale)
         dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
 
-        (observed_target,
-         cov_target,
-         cov_target_score,
-         dispersion,
-         alternatives) = selected_targets(conv.loglike,
-                                          conv.observed_soln,
-                                          dispersion=dispersion)
+        target_spec = selected_targets(conv.loglike,
+                                       conv.observed_soln,
+                                       dispersion=dispersion)
 
-        print('dispersion', dispersion/scale**2)
-        print('target', observed_target[0]/scale)
-        print('cov_target', cov_target[0,0]/scale**2)
-        print('cov_target_score',  cov_target_score[0,0]/scale**2)
+        print('dispersion', target_spec.dispersion/scale**2)
+        print('target', target_spec.observed_target[0]/scale)
+        print('cov_target', target_spec.cov_target[0,0]/scale**2)
+        print('regress_target_score',  target_spec.regress_target_score[0,0]/scale**2)
         
-        result = conv.selective_MLE(observed_target,
-                                    cov_target,
-                                    cov_target_score)[0]
+        result = conv.selective_MLE(target_spec)[0]
 
         print(result['MLE'] / scale)
         results.append(result)
@@ -751,22 +680,16 @@ def test_scale_invariant(n=200,
         print('perturb', conv._initial_omega[0] / scale)
         dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
 
-        (observed_target,
-         cov_target,
-         cov_target_score,
-         dispersion,
-         alternatives) = selected_targets(conv.loglike,
-                                          conv.observed_soln,
-                                          dispersion=dispersion)
+        target_spec = selected_targets(conv.loglike,
+                                       conv.observed_soln,
+                                       dispersion=dispersion)
 
-        print('dispersion', dispersion/scale**2)
-        print('target', observed_target[0]/scale)
-        print('cov_target', cov_target[0,0]/scale**2)
-        print('cov_target_score',  cov_target_score[0,0]/scale**2)
+        print('dispersion', target_spec.dispersion/scale**2)
+        print('target', target_spec.observed_target[0]/scale)
+        print('cov_target', target_spec.cov_target[0,0]/scale**2)
+        print('regress_target_score',  target_spec.regress_target_score[0,0]/scale**2)
         
-        result = conv.selective_MLE(observed_target,
-                                    cov_target,
-                                    cov_target_score)[0]
+        result = conv.selective_MLE(target_spec)[0]
 
         print(result['MLE'] / scale)
         results.append(result)

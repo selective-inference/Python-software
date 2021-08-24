@@ -62,25 +62,15 @@ def test_multiple_queries(n=500,
     if nonzero.sum() == 0:
       return [], []
 
-    (observed_target1,
-     cov_target1,
-     cov_target_score1,
-     dispersion1,
-     alternatives1) = conv1.multivariate_targets(nonzero, sigma**2)
+    target_spec1 = conv1.multivariate_targets(nonzero, sigma**2)
 
-    (observed_target2, 
-     cov_target2, 
-     cov_target_score2, 
-     dispersion2,
-     alternatives2) = selected_targets(conv2.loglike, 
-                                       conv2.observed_soln,
-                                       features=nonzero)
+    target_spec2 = selected_targets(conv2.loglike, 
+                                    conv2.observed_soln,
+                                    features=nonzero)
 
     mq = multiple_queries([conv1, conv2])
 
-    results = mq.summary(observed_target1, 
-                         [(cov_target1, cov_target_score1), 
-                          (cov_target2, cov_target_score2)],
+    results = mq.summary([target_spec1, target_spec2],
                          compute_intervals=True)
     pval = np.asarray(results['pvalue'])
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]

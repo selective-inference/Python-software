@@ -152,21 +152,13 @@ def test_randomized_slope(n=2000,
         if nonzero.sum() > 0:
 
             if target == 'full':
-                (observed_target, 
-                 cov_target, 
-                 cov_target_score, 
-                 dispersion,
-                 alternatives) = full_targets(conv.loglike, 
-                                              conv.observed_soln,
-                                              dispersion=sigma_)
+                target_spec = full_targets(conv.loglike, 
+                                           conv.observed_soln,
+                                           dispersion=sigma_)
             elif target == 'selected':
-                (observed_target, 
-                 cov_target, 
-                 cov_target_score, 
-                 dispersion,
-                 alternatives) = selected_targets(conv.loglike, 
-                                                  conv.observed_soln,
-                                                  dispersion=sigma_)
+                target_spec = selected_targets(conv.loglike, 
+                                               conv.observed_soln,
+                                               dispersion=sigma_)
 
             if target == "selected":
                 beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
@@ -174,14 +166,9 @@ def test_randomized_slope(n=2000,
                 beta_target = beta[nonzero]
             if use_MLE:
 
-                result = conv.selective_MLE(observed_target, 
-                                            cov_target, 
-                                            cov_target_score)[0]
+                result = conv.selective_MLE(target_spec)[0]
             else:
-                result = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives, 
+                result = conv.summary(target_spec,
                                       compute_intervals=True,
                                       ndraw=150000)
             pval = np.asarray(result['pvalue'])

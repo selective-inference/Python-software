@@ -10,9 +10,7 @@ class exact_grid_inference(object):
 
     def __init__(self,
                  query,
-                 observed_target,
-                 cov_target,
-                 regress_target_score,
+                 target_spec,
                  solve_args={'tol': 1.e-12}):
 
         """
@@ -33,6 +31,10 @@ class exact_grid_inference(object):
             Arguments passed to solver.
         """
 
+        (observed_target,
+         cov_target,
+         regress_target_score) = target_spec[:3]
+        
         self.solve_args = solve_args
 
         linear_part = query.sampler.affine_con.linear_part
@@ -42,9 +44,7 @@ class exact_grid_inference(object):
 
         observed_score = query.observed_score_state + query.observed_subgrad
 
-        result, inverse_info, log_ref = query.selective_MLE(observed_target,
-                                                            cov_target,
-                                                            regress_target_score)
+        result, inverse_info, log_ref = query.selective_MLE(target_spec)
 
         cond_cov = query.cond_cov
         self.cond_precision = np.linalg.inv(cond_cov)

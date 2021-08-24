@@ -60,32 +60,17 @@ def test_highdim_lasso(n=500,
     nonzero = signs != 0
 
     if target == 'full':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = full_targets(conv.loglike, 
-                                      conv.observed_soln)
+        target_spec = full_targets(conv.loglike, 
+                                   conv.observed_soln)
     elif target == 'selected':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = selected_targets(conv.loglike, 
-                                          conv.observed_soln) 
+        target_spec = selected_targets(conv.loglike, 
+                                       conv.observed_soln) 
     elif target == 'debiased':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = debiased_targets(conv.loglike, 
-                                          conv.observed_soln,
-                                          penalty=conv.penalty)
+        target_spec = debiased_targets(conv.loglike, 
+                                       conv.observed_soln,
+                                       penalty=conv.penalty)
 
-    result = conv.summary(observed_target, 
-                          cov_target, 
-                          cov_target_score, 
-                          alternatives,
+    result = conv.summary(target_spec,
                           ndraw=ndraw,
                           burnin=burnin, 
                           compute_intervals=True)
@@ -150,32 +135,17 @@ def test_AR_randomization(n=300,
     nonzero = signs != 0
 
     if target == 'full':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = full_targets(conv.loglike, 
-                                      conv.observed_soln)
+        target_spec = full_targets(conv.loglike, 
+                                   conv.observed_soln)
     elif target == 'selected':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = selected_targets(conv.loglike, 
-                                          conv.observed_soln)
+        target_spec = selected_targets(conv.loglike, 
+                                       conv.observed_soln)
     elif target == 'debiased':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = debiased_targets(conv.loglike, 
-                                          conv.observed_soln,
-                                          penalty=conv.penalty)
+        target_spec = debiased_targets(conv.loglike, 
+                                       conv.observed_soln,
+                                       penalty=conv.penalty)
 
-    result = conv.summary(observed_target, 
-                          cov_target, 
-                          cov_target_score, 
-                          alternatives,
+    result = conv.summary(target_spec,
                           ndraw=ndraw,
                           burnin=burnin, 
                           compute_intervals=True)
@@ -275,24 +245,13 @@ def test_sqrt_highdim_lasso(n=500,
         np.testing.assert_allclose(soln, soln3)
 
     if full:
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = full_targets(conv.loglike, 
-                                      conv.observed_soln)
+        target_spec = full_targets(conv.loglike, 
+                                   conv.observed_soln)
     else:
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = selected_targets(conv.loglike, 
-                                          conv.observed_soln)
+        target_spec = selected_targets(conv.loglike, 
+                                       conv.observed_soln)
 
-    result = conv.summary(observed_target, 
-                          cov_target, 
-                          cov_target_score, 
-                          alternatives,
+    result = conv.summary(target_spec,
                           ndraw=ndraw,
                           burnin=burnin, 
                           compute_intervals=False)
@@ -427,23 +386,12 @@ def test_logistic_lasso(n=500,
     # sanity check
 
     if full:
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = full_targets(conv.loglike, 
-                                      conv.observed_soln)
+        target_spec = full_targets(conv.loglike, 
+                                   conv.observed_soln)
     else:
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         dispersion,
-         alternatives) = selected_targets(conv.loglike, 
+        target_spec = selected_targets(conv.loglike, 
                                           conv.observed_soln)
-    result = conv.summary(observed_target, 
-                          cov_target, 
-                          cov_target_score, 
-                          alternatives,
+    result = conv.summary(target_spec,
                           ndraw=ndraw,
                           burnin=burnin, 
                           compute_intervals=False)

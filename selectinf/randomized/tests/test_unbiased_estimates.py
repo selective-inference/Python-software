@@ -1,6 +1,7 @@
 import numpy as np
 
-from ..lasso import lasso, selected_targets
+from ..lasso import lasso
+from ...base import selected_targets
 from ...tests.instance import gaussian_instance
 
 def UMVU(query,
@@ -31,8 +32,8 @@ def UMVU(query,
     _prec = np.linalg.inv(implied_cov[:n][:, :n])
 
     linear_coef = (np.linalg.pinv(X[:, feat]).dot(_prec))
-    offset = -np.linalg.pinv(X[:, feat]).dot(X.dot(query.initial_subgrad)
-                                             - _prec.dot(implied_cov[:n][:, n:]).dot(query.opt_linear.T.dot(query.initial_subgrad))) * (randomizer_prec)
+    offset = -np.linalg.pinv(X[:, feat]).dot(X.dot(query.observed_subgrad)
+                                             - _prec.dot(implied_cov[:n][:, n:]).dot(query.opt_linear.T.dot(query.observed_subgrad))) * (randomizer_prec)
 
     linear_coef *= dispersion
     offset *= dispersion
@@ -47,24 +48,20 @@ def EST(query,
         feat,
         dispersion):
 
-    (observed_target,
-     cov_target,
-     cov_target_score,
-     alternatives) = selected_targets(query.loglike,
-                                      query._W,
-                                      feat,
-                                      dispersion=dispersion)
+    target_spec = selected_targets(query.loglike,
+                                   query.observed_soln,
+                                   dispersion=dispersion)
 
     _, randomizer_prec = query.randomizer.cov_prec
     cond_cov = query.cond_cov
     logdens_linear = query.sampler.logdens_transform[0]
     cond_mean = query.cond_mean
 
-    prec_target = np.linalg.inv(cov_target)
+    prec_target = np.linalg.inv(target_spec.cov_target)
     prec_opt = np.linalg.inv(cond_cov)
 
-    target_linear = cov_target_score.T.dot(prec_target)
-    target_offset = (-X.T.dot(Y) + query.initial_subgrad) - target_linear.dot(observed_target)
+    target_linear = target_spec.regress_target_score.T.dot(prec_target) #XXX problem here just switched cov_target_score to regress_target_score
+    target_offset = (-X.T.dot(Y) + query.observed_subgrad) - target_linear.dot(target_spec.observed_target)
 
     target_lin = - logdens_linear.dot(target_linear)
     target_off = cond_mean - target_lin.dot(observed_target)
@@ -141,10 +138,3 @@ def test_UMVU(n=500,
             print("check ", np.allclose(est-umvu, np.zeros(est.shape[0]), atol=1e-03), est-umvu)
 
             return umvu, est
-
-def main():
-
-    test_UMVU(n=100, p=400, s=5)
-
-if __name__ == "__main__":
-    main()
