@@ -5,7 +5,8 @@ from ..lasso import lasso
 from ...base import selected_targets
 from ..approx_reference import approximate_grid_inference
 
-def test_inf(n=500,
+def test_inf(seedn,
+             n=500,
              p=100,
              signal_fac=1.,
              s=5,
@@ -16,6 +17,7 @@ def test_inf(n=500,
              useIP=True,
              CI=False):
 
+    np.random.seed(seedn)
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 
@@ -65,9 +67,9 @@ def test_inf(n=500,
                                                               useIP=useIP)
 
             if CI is False:
-                pivot = approximate_grid_inf._approx_pivots(beta_target)
+                pivot, log_ref = approximate_grid_inf._approx_pivots(beta_target)
 
-                return pivot
+                return pivot, log_ref
             else:
                 lci, uci = approximate_grid_inf._approx_intervals(level=0.90)
                 beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
@@ -76,4 +78,58 @@ def test_inf(n=500,
 
                 return np.mean(coverage), np.mean(length)
 
+
+def main(nsim=300, CI = False):
+
+    import matplotlib as mpl
+    mpl.use('tkagg')
+    import matplotlib.pyplot as plt
+    from statsmodels.distributions.empirical_distribution import ECDF
+
+    if CI is False:
+        _pivot = []
+        for i in range(nsim):
+            _pivot.extend(test_inf(n=100,
+                                   p=400,
+                                   signal_fac=0.5,
+                                   s=0,
+                                   sigma=2.,
+                                   rho=0.30,
+                                   randomizer_scale=1.,
+                                   equicorrelated=True,
+                                   useIP=False,
+                                   CI=False))
+
+            print("iteration completed ", i)
+
+        plt.clf()
+        ecdf_MLE = ECDF(np.asarray(_pivot))
+        grid = np.linspace(0, 1, 101)
+        plt.plot(grid, ecdf_MLE(grid), c='blue', marker='^')
+        plt.plot(grid, grid, 'k--')
+        plt.show()
+
+    if CI is True:
+        coverage_ = 0.
+        length_ = 0.
+        for n in range(nsim):
+            cov, len = test_inf(n=100,
+                                p=400,
+                                signal_fac=0.5,
+                                s=5,
+                                sigma=2.,
+                                rho=0.30,
+                                randomizer_scale=1.,
+                                equicorrelated=True,
+                                useIP=True,
+                                CI=True)
+
+            coverage_ += cov
+            length_ += len
+            print("coverage so far ", coverage_ / (n + 1.))
+            print("lengths so far ", length_ / (n + 1.))
+            print("iteration completed ", n + 1)
+
+if __name__ == "__main__":
+    main(nsim=1, CI = False)
 
