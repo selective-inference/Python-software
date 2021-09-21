@@ -106,59 +106,59 @@ class gaussian_query(query):
 
     # Private methods
 
-        def _setup_sampler(self,
-                           linear_part,
-                           offset,
-                           opt_linear,
-                           observed_subgrad,
-                           dispersion=1):
+    def _setup_sampler(self,
+                       linear_part,
+                       offset,
+                       opt_linear,
+                       observed_subgrad,
+                       dispersion=1):
 
-            A, b = linear_part, offset
-            if not np.all(A.dot(self.observed_opt_state) - b <= 0):
-                raise ValueError('constraints not satisfied')
+        A, b = linear_part, offset
+        if not np.all(A.dot(self.observed_opt_state) - b <= 0):
+            raise ValueError('constraints not satisfied')
 
-            (cond_mean,
-             cond_cov,
-             cond_precision,
-             regress_opt,
-             M1,
-             M2,
-             M3) = self._setup_implied_gaussian(opt_linear,
-                                                observed_subgrad,
-                                                dispersion=dispersion)
-
-            def log_density(regress_opt, u, cond_prec, opt, score):  # u == subgrad
-                if score.ndim == 1:
-                    mean_term = regress_opt.dot(score.T + u).T
-                else:
-                    mean_term = regress_opt.dot(score.T + u[:, None]).T
-                arg = opt - mean_term
-                return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
-
-            log_density = functools.partial(log_density,
-                                            regress_opt,
+        (cond_mean,
+         cond_cov,
+         cond_precision,
+         regress_opt,
+         M1,
+         M2,
+         M3) = self._setup_implied_gaussian(opt_linear,
                                             observed_subgrad,
-                                            cond_precision)
+                                            dispersion=dispersion)
 
-            self.cond_mean, self.cond_cov = cond_mean, cond_cov
+        def log_density(regress_opt, u, cond_prec, opt, score):  # u == subgrad
+            if score.ndim == 1:
+                mean_term = regress_opt.dot(score.T + u).T
+            else:
+                mean_term = regress_opt.dot(score.T + u[:, None]).T
+            arg = opt - mean_term
+            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
 
-            affine_con = constraints(A,
-                                     b,
-                                     mean=cond_mean,
-                                     covariance=cond_cov)
+        log_density = functools.partial(log_density,
+                                        regress_opt,
+                                        observed_subgrad,
+                                        cond_precision)
 
-            self.sampler = affine_gaussian_sampler(affine_con,
-                                                   self.observed_opt_state,
-                                                   self.observed_score_state,
-                                                   log_density,
-                                                   regress_opt,  # not needed?
-                                                   observed_subgrad,
-                                                   opt_linear,  # L
-                                                   M1,
-                                                   M2,
-                                                   M3,
-                                                   selection_info=self.selection_variable,
-                                                   useC=self.useC)
+        self.cond_mean, self.cond_cov = cond_mean, cond_cov
+
+        affine_con = constraints(A,
+                                 b,
+                                 mean=cond_mean,
+                                 covariance=cond_cov)
+
+        self.sampler = affine_gaussian_sampler(affine_con,
+                                               self.observed_opt_state,
+                                               self.observed_score_state,
+                                               log_density,
+                                               regress_opt,  # not needed?
+                                               observed_subgrad,
+                                               opt_linear,  # L
+                                               M1,
+                                               M2,
+                                               M3,
+                                               selection_info=self.selection_variable,
+                                               useC=self.useC)
 
     def _setup_implied_gaussian(self,
                                 opt_linear,
