@@ -220,21 +220,29 @@ class lasso(gaussian_query):
         A_scaling = -np.identity(num_opt_var)
         b_scaling = np.zeros(num_opt_var)
 
-        self._setup_sampler_data = (A_scaling[:active.sum()],
-                                    b_scaling[:active.sum()],
-                                    opt_linear,
-                                    self.observed_subgrad)
-
         #### to be fixed -- set the cov_score here without dispersion
 
         self._unscaled_cov_score = _hessian
 
-        #####
-        
-        if num_opt_var > 0:
-            self._setup_sampler(*self._setup_sampler_data)
+        self.num_opt_var = num_opt_var
+
+        self.A_scaling = A_scaling
+        self.b_scaling = b_scaling
+        self.active = active
 
         return active_signs
+
+    def setup_inference(self,
+                        dispersion):
+
+        self._setup_sampler_data = (self.A_scaling[:self.active.sum()],
+                                    self.b_scaling[:self.active.sum()],
+                                    self.opt_linear,
+                                    self.observed_subgrad,
+                                    dispersion)
+
+        if self.num_opt_var > 0:
+            self._setup_sampler(*self._setup_sampler_data)
 
     def _solve_randomized_problem(self, 
                                   perturb=None, 
