@@ -131,17 +131,19 @@ def test_selected_targets(n=2000,
         nonzero = signs != 0
         print("dimensions", n, p, nonzero.sum())
 
+
         if nonzero.sum() > 0:
             dispersion = None
             if full_dispersion:
                 dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
 
+            conv.setup_inference(dispersion=dispersion)
+
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=dispersion)
 
-            result = conv.selective_MLE(target_spec,
-                                        dispersion)[0]
+            result = conv.selective_MLE(target_spec)[0]
 
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])

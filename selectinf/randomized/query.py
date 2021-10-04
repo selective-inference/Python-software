@@ -314,8 +314,8 @@ class gaussian_query(query):
 
         return self.sampler.selective_MLE(target_spec,
                                           self.observed_opt_state,
-                                          level=level,
-                                          solve_args=solve_args)
+                                          solve_args=solve_args,
+                                          level=level)
 
     def posterior(self,
                   target_spec,
@@ -1363,7 +1363,7 @@ def selective_MLE(target_spec,
     (observed_target,
      cov_target,
      regress_target_score) = target_spec[:3]
-    
+
     if np.asarray(observed_target).shape in [(), (0,)]:
         raise ValueError('no target specified')
 
@@ -1415,13 +1415,12 @@ def selective_MLE(target_spec,
 
     pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
 
-    alpha = 1 - level
+    alpha = 1. - level
+
     quantile = ndist.ppf(1 - alpha / 2.)
 
-    intervals = np.vstack([final_estimator -
-                           quantile * np.sqrt(np.diag(observed_info_mean)),
-                           final_estimator +
-                           quantile * np.sqrt(np.diag(observed_info_mean))]).T
+    intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
+                           final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
     log_ref = val + conjugate_arg.T.dot(cond_cov).dot(conjugate_arg) / 2.
 
