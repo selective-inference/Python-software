@@ -37,6 +37,7 @@ class posterior(object):
     def __init__(self,
                  query,
                  target_spec,
+                 dispersion,
                  prior,
                  solve_args={'tol': 1.e-12}):
 
@@ -44,9 +45,7 @@ class posterior(object):
 
         (observed_target,
          cov_target,
-         regress_target_score,
-         _,
-         dispersion) = target_spec
+         regress_target_score) = target_spec[:3]
 
         linear_part = query.sampler.affine_con.linear_part
         offset = query.sampler.affine_con.offset

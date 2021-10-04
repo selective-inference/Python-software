@@ -319,6 +319,7 @@ class gaussian_query(query):
 
     def posterior(self,
                   target_spec,
+                  dispersion=1,
                   prior=None,
                   solve_args={'tol': 1.e-12}):
         """
@@ -350,6 +351,7 @@ class gaussian_query(query):
 
         return posterior(self,
                          target_spec,
+                         dispersion,
                          prior,
                          solve_args=solve_args)
 
