@@ -56,6 +56,8 @@ def test_inf(seedn,
         if nonzero.sum() > 0:
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
+            conv.setup_inference(dispersion=dispersion)
+
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=dispersion)
@@ -97,7 +99,7 @@ def main(nsim=300, CI = False):
                                    rho=0.30,
                                    randomizer_scale=1.,
                                    equicorrelated=True,
-                                   useIP=False,
+                                   useIP=True,
                                    CI=False))
 
             print("iteration completed ", i)
