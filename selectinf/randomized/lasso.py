@@ -751,7 +751,7 @@ class split_lasso(lasso):
             if dispersion is None:
                 self._setup_sampler(*self._setup_sampler_data,
                                     dispersion=self.dispersion)
-                
+
             else:
                 self._setup_sampler(*self._setup_sampler_data,
                                     dispersion=dispersion)

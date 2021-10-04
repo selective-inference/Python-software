@@ -62,7 +62,7 @@ def test_full_targets(n=200,
             if full_dispersion:
                 dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
             else:
-                dispersion = None
+                dispersion = np.linalg.norm(Y - X[:,nonzero].dot(np.linalg.pinv(X[:,nonzero]).dot(Y))) ** 2 / (n - nonzero.sum())
 
             if n > p:
                 target_spec = full_targets(conv.loglike,
@@ -75,6 +75,8 @@ def test_full_targets(n=200,
                                                nonzero,
                                                penalty=conv.penalty,
                                                dispersion=dispersion)
+
+            conv.setup_inference(dispersion=dispersion)
 
             result = conv.selective_MLE(target_spec)[0]
 
@@ -133,9 +135,11 @@ def test_selected_targets(n=2000,
 
 
         if nonzero.sum() > 0:
-            dispersion = None
+
             if full_dispersion:
                 dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+            else:
+                dispersion = np.linalg.norm(Y - X[:,nonzero].dot(np.linalg.pinv(X[:,nonzero]).dot(Y))) ** 2 / (n - nonzero.sum())
 
             conv.setup_inference(dispersion=dispersion)
 
@@ -173,6 +177,8 @@ def test_instance():
     print("check ", M)
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
 
+    L.setup_inference(dispersion=dispersion)
+
     target_spec = selected_targets(L.loglike,
                                    L.observed_soln,
                                    features=M,
@@ -180,8 +186,7 @@ def test_instance():
 
     print("check shapes", target_spec.observed_target.shape, E.sum())
 
-    result = L.selective_MLE(target_spec,
-                             dispersion)[0]
+    result = L.selective_MLE(target_spec)[0]
 
     intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
 
@@ -231,16 +236,18 @@ def test_selected_targets_disperse(n=500,
         print("dimensions", n, p, nonzero.sum())
 
         if nonzero.sum() > 0:
-            dispersion = None
             if full_dispersion:
                 dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+            else:
+                dispersion = np.linalg.norm(Y - X[:,nonzero].dot(np.linalg.pinv(X[:,nonzero]).dot(Y))) ** 2 / (n - nonzero.sum())
+
+            conv.setup_inference(dispersion=dispersion)
 
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=dispersion)
 
-            result = conv.selective_MLE(target_spec,
-                                        dispersion)[0]
+            result = conv.selective_MLE(target_spec)[0]
 
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
@@ -289,6 +296,8 @@ def test_logistic(n=2000,
         print("dimensions", n, p, nonzero.sum())
 
         if nonzero.sum() > 0:
+
+            conv.setup_inference(dispersion=1)
 
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
@@ -340,6 +349,8 @@ def test_logistic_split(n=2000,
 
         if nonzero.sum() > 0:
 
+            conv.setup_inference(dispersion=1)
+
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=1)
@@ -389,6 +400,7 @@ def test_poisson(n=2000,
         print("dimensions", n, p, nonzero.sum())
 
         if nonzero.sum() > 0:
+            conv.setup_inference(dispersion=1)
 
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
@@ -439,6 +451,8 @@ def test_poisson_split(n=2000,
         print("dimensions", n, p, nonzero.sum())
 
         if nonzero.sum() > 0:
+
+            conv.setup_inference(dispersion=1)
 
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
@@ -493,6 +507,8 @@ def test_cox(n=2000,
             cox_full = rr.glm.cox(X, T, S)
             full_hess = cox_full.hessian(conv.observed_soln)
 
+            conv.setup_inference(dispersion=1)
+
             target_spec = selected_targets(conv.loglike, 
                                            conv.observed_soln,
                                            dispersion=1)
@@ -545,6 +561,8 @@ def test_cox_split(n=2000,
 
             cox_full = rr.glm.cox(X, T, S)
             full_hess = cox_full.hessian(conv.observed_soln)
+
+            conv.setup_inference(dispersion=1)
 
             target_spec = selected_targets(conv.loglike, 
                                            conv.observed_soln,
@@ -606,15 +624,18 @@ def test_scale_invariant_split(n=200,
         print('feature_weights', conv.feature_weights[0] / scale)
         dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
 
+        conv.setup_inference(dispersion=dispersion)
+
         target_spec = selected_targets(conv.loglike,
                                        conv.observed_soln,
                                        dispersion=dispersion)
 
-        print('dispersion', target_spec.dispersion/scale**2)
+        #print('dispersion', target_spec.dispersion/scale**2)
         print('target', target_spec.observed_target[0]/scale)
         print('cov_target', target_spec.cov_target[0,0]/scale**2)
         print('regress_target_score',  target_spec.regress_target_score[0,0]/scale**2)
-        
+
+
         result = conv.selective_MLE(target_spec)[0]
 
         print(result['MLE'] / scale)
@@ -681,6 +702,8 @@ def test_scale_invariant(n=200,
         print('feature_weights', conv.feature_weights[0] / scale)
         print('perturb', conv._initial_omega[0] / scale)
         dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+
+        conv.setup_inference(dispersion=dispersion)
 
         target_spec = selected_targets(conv.loglike,
                                        conv.observed_soln,
