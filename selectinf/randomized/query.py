@@ -358,7 +358,7 @@ class gaussian_query(query):
     def approximate_grid_inference(self,
                                    target_spec,
                                    solve_args={'tol': 1.e-12},
-                                   useIP=False):
+                                   useIP=True):
 
         """
         Parameters
