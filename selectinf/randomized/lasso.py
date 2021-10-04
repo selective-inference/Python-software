@@ -238,11 +238,11 @@ class lasso(gaussian_query):
         self._setup_sampler_data = (self.A_scaling[:self.active.sum()],
                                     self.b_scaling[:self.active.sum()],
                                     self.opt_linear,
-                                    self.observed_subgrad,
-                                    dispersion)
+                                    self.observed_subgrad)
 
         if self.num_opt_var > 0:
-            self._setup_sampler(*self._setup_sampler_data)
+            self._setup_sampler(*self._setup_sampler_data,
+                                dispersion=dispersion)
 
     def _solve_randomized_problem(self, 
                                   perturb=None, 
@@ -731,18 +731,30 @@ class split_lasso(lasso):
             n, p = X.shape
             df_fit = len(self.selection_variable['variables'])
 
-            dispersion = 2 * (self.loglike.smooth_objective(self._beta_full, 
+            dispersion = 2 * (self.loglike.smooth_objective(self._beta_full,
                                                             'func') /
-                          (n - df_fit))
+                              (n - df_fit))
 
-            # run setup again after 
-            # estimating dispersion 
-
-            if df_fit > 0:
-                self._setup_sampler(*self._setup_sampler_data, 
-                                     dispersion=dispersion)
+            self.df_fit = df_fit
+            self.dispersion = dispersion
+            # run setup again after
+            # estimating dispersion
 
         return signs
+
+
+    def setup_inference(self,
+                        dispersion=None):
+
+        if self.df_fit>0:
+
+            if dispersion is None:
+                self._setup_sampler(*self._setup_sampler_data,
+                                    dispersion=self.dispersion)
+                
+            else:
+                self._setup_sampler(*self._setup_sampler_data,
+                                    dispersion=dispersion)
 
     def _setup_implied_gaussian(self, 
                                 opt_linear, 
