@@ -55,7 +55,7 @@ def test_inf(n=500,
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
             conv.setup_inference(dispersion=dispersion)
-            
+
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=dispersion)

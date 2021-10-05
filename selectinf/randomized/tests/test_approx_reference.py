@@ -5,8 +5,7 @@ from ..lasso import lasso
 from ...base import selected_targets
 from ..approx_reference import approximate_grid_inference
 
-def test_inf(seedn,
-             n=500,
+def test_inf(n=500,
              p=100,
              signal_fac=1.,
              s=5,
@@ -17,7 +16,6 @@ def test_inf(seedn,
              useIP=True,
              CI=False):
 
-    np.random.seed(seedn)
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 

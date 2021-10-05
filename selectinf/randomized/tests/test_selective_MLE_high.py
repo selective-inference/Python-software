@@ -709,7 +709,7 @@ def test_scale_invariant(n=200,
                                        conv.observed_soln,
                                        dispersion=dispersion)
 
-        print('dispersion', target_spec.dispersion/scale**2)
+        #print('dispersion', target_spec.dispersion/scale**2)
         print('target', target_spec.observed_target[0]/scale)
         print('cov_target', target_spec.cov_target[0,0]/scale**2)
         print('regress_target_score',  target_spec.regress_target_score[0,0]/scale**2)

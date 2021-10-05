@@ -226,19 +226,15 @@ class lasso(gaussian_query):
 
         self.num_opt_var = num_opt_var
 
-        self.A_scaling = A_scaling
-        self.b_scaling = b_scaling
-        self.active = active
+        self._setup_sampler_data = (A_scaling[:active.sum()],
+                                    b_scaling[:active.sum()],
+                                    opt_linear,
+                                    self.observed_subgrad)
 
         return active_signs
 
     def setup_inference(self,
                         dispersion):
-
-        self._setup_sampler_data = (self.A_scaling[:self.active.sum()],
-                                    self.b_scaling[:self.active.sum()],
-                                    self.opt_linear,
-                                    self.observed_subgrad)
 
         if self.num_opt_var > 0:
             self._setup_sampler(*self._setup_sampler_data,
@@ -724,21 +720,22 @@ class split_lasso(lasso):
         # we need to estimate a dispersion parameter
 
         # we then setup up the sampler again
+        df_fit = len(self.selection_variable['variables'])
 
         if self.estimate_dispersion:
 
             X, y = self.loglike.data
             n, p = X.shape
-            df_fit = len(self.selection_variable['variables'])
 
             dispersion = 2 * (self.loglike.smooth_objective(self._beta_full,
                                                             'func') /
                               (n - df_fit))
 
-            self.df_fit = df_fit
             self.dispersion = dispersion
             # run setup again after
             # estimating dispersion
+
+        self.df_fit = df_fit
 
         return signs
 
@@ -746,7 +743,7 @@ class split_lasso(lasso):
     def setup_inference(self,
                         dispersion=None):
 
-        if self.df_fit>0:
+        if self.df_fit > 0:
 
             if dispersion is None:
                 self._setup_sampler(*self._setup_sampler_data,

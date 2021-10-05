@@ -127,8 +127,6 @@ def test_instance(nsample=100, nburnin=50):
                                    L.observed_soln,
                                    features=M,
                                    dispersion=dispersion)
-
-    print(target_spec.dispersion, dispersion)
     
     posterior_inf = L.posterior(target_spec,
                                 dispersion=dispersion)
@@ -297,10 +295,10 @@ def test_hiv_data(nsample=10000,
     signs = conv.fit()
     nonzero = signs != 0
 
-    conv.setup_inference(dispersion=dispersion)
+    conv.setup_inference()
 
     target_spec = selected_targets(conv.loglike,
-                                   conv._W,
+                                   conv.observed_soln,
                                    nonzero,
                                    dispersion=dispersion)
 
