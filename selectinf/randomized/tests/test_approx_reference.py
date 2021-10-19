@@ -54,6 +54,8 @@ def test_inf(n=500,
         if nonzero.sum() > 0:
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
+            conv.setup_inference(dispersion=dispersion)
+
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=dispersion)
@@ -65,9 +67,9 @@ def test_inf(n=500,
                                                               useIP=useIP)
 
             if CI is False:
-                pivot = approximate_grid_inf._approx_pivots(beta_target)
+                pivot, log_ref = approximate_grid_inf._approx_pivots(beta_target)
 
-                return pivot
+                return pivot, log_ref
             else:
                 lci, uci = approximate_grid_inf._approx_intervals(level=0.90)
                 beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
@@ -76,4 +78,58 @@ def test_inf(n=500,
 
                 return np.mean(coverage), np.mean(length)
 
+
+def main(nsim=300, CI = False):
+
+    import matplotlib as mpl
+    mpl.use('tkagg')
+    import matplotlib.pyplot as plt
+    from statsmodels.distributions.empirical_distribution import ECDF
+
+    if CI is False:
+        _pivot = []
+        for i in range(nsim):
+            _pivot.extend(test_inf(n=100,
+                                   p=400,
+                                   signal_fac=0.5,
+                                   s=0,
+                                   sigma=2.,
+                                   rho=0.30,
+                                   randomizer_scale=1.,
+                                   equicorrelated=True,
+                                   useIP=True,
+                                   CI=False))
+
+            print("iteration completed ", i)
+
+        plt.clf()
+        ecdf_MLE = ECDF(np.asarray(_pivot))
+        grid = np.linspace(0, 1, 101)
+        plt.plot(grid, ecdf_MLE(grid), c='blue', marker='^')
+        plt.plot(grid, grid, 'k--')
+        plt.show()
+
+    if CI is True:
+        coverage_ = 0.
+        length_ = 0.
+        for n in range(nsim):
+            cov, len = test_inf(n=100,
+                                p=400,
+                                signal_fac=0.5,
+                                s=5,
+                                sigma=2.,
+                                rho=0.30,
+                                randomizer_scale=1.,
+                                equicorrelated=True,
+                                useIP=True,
+                                CI=True)
+
+            coverage_ += cov
+            length_ += len
+            print("coverage so far ", coverage_ / (n + 1.))
+            print("lengths so far ", length_ / (n + 1.))
+            print("iteration completed ", n + 1)
+
+if __name__ == "__main__":
+    main(nsim=1, CI = False)
 

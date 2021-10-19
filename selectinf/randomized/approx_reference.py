@@ -172,7 +172,7 @@ class approximate_grid_inference(object):
         self._construct_density()
 
         self._families = []
-
+        _log_ref = np.zeros((self.ntarget, 1000))
         for m in range(self.ntarget):
 
             observed_target_uni = (self.observed_target[m]).reshape((1,))
@@ -189,6 +189,7 @@ class approximate_grid_inference(object):
 
                 logW = (approx_log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
                 logW -= logW.max()
+                _log_ref[m,:] = logW
                 self._families.append(discrete_family(self.stat_grid[m],
                                                       np.exp(logW)))
             else:
@@ -204,10 +205,11 @@ class approximate_grid_inference(object):
                         0.5 * (grid - self.observed_target[m]) ** 2 / var_target)
 
                 logW -= logW.max()
+                _log_ref[m, :] = logW
                 self._families.append(discrete_family(grid,
                                                       np.exp(logW)))
 
-
+        self._log_ref = _log_ref
             # construction of families follows `selectinf.learning.core`
 
             # logG = - 0.5 * grid**2 / var_target
@@ -253,7 +255,7 @@ class approximate_grid_inference(object):
                 pivot.append(_cdf)
             else:
                 raise ValueError('alternative should be in ["twosided", "less", "greater"]')
-        return pivot
+        return pivot, self._log_ref
 
     def _approx_intervals(self,
                           level=0.9):

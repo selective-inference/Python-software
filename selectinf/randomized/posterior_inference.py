@@ -1,11 +1,18 @@
 from __future__ import division, print_function
 
 import numpy as np
+import typing
+
 from scipy.stats import norm as ndist, invgamma
 from scipy.linalg import fractional_matrix_power
 
 from ..algorithms.barrier_affine import solve_barrier_affine_py
 
+
+class PosteriorAtt(typing.NamedTuple):
+
+    logPosterior: float
+    grad_logPosterior: np.ndarray
 
 class posterior(object):
     """
@@ -30,6 +37,7 @@ class posterior(object):
     def __init__(self,
                  query,
                  target_spec,
+                 dispersion,
                  prior,
                  solve_args={'tol': 1.e-12}):
 
@@ -37,9 +45,7 @@ class posterior(object):
 
         (observed_target,
          cov_target,
-         regress_target_score,
-         _,
-         dispersion) = target_spec
+         regress_target_score) = target_spec[:3]
 
         linear_part = query.sampler.affine_con.linear_part
         offset = query.sampler.affine_con.offset
@@ -124,8 +130,11 @@ class posterior(object):
 
         log_prior, grad_prior = self.prior(target_parameter)
 
-        return (self.dispersion * (log_lik - self.log_ref) / sigmasq + log_prior,
-                self.dispersion * grad_lik / sigmasq + grad_prior)
+        log_posterior = self.dispersion * (log_lik - self.log_ref) / sigmasq + log_prior
+        grad_log_posterior = self.dispersion * grad_lik / sigmasq + grad_prior
+
+        return PosteriorAtt(log_posterior,
+                            grad_log_posterior)
 
     ### Private method
 
@@ -228,7 +237,7 @@ def gibbs_sampler(selective_posterior,
         scale_update_sq = invgamma.rvs(a=(0.1 +
                                           selective_posterior.ntarget +
                                           selective_posterior.ntarget / 2),
-                                       scale=0.1 - ((scale_update ** 2) * sampler.posterior_[0]),
+                                       scale=0.1 - ((scale_update ** 2) * sampler.posterior_.logPosterior),
                                        size=1)
         scale_samples[i] = np.sqrt(scale_update_sq)
         sampler.scaling = np.sqrt(scale_update_sq)
@@ -269,7 +278,7 @@ class langevin(object):
         while True:
             self.posterior_ = self.gradient_map(self.state, self.scaling)
             _proposal = self.proposal_sqrt.dot(self._noise.rvs(self._shape))
-            candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_[1])
+            candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_.grad_logPosterior)
                          + np.sqrt(2.) * _proposal * self._sqrt_step)
 
             if not np.all(np.isfinite(self.gradient_map(candidate, self.scaling)[1])):

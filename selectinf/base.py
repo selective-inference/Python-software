@@ -53,7 +53,7 @@ class TargetSpec(typing.NamedTuple):
     cov_target : np.ndarray
     regress_target_score : np.ndarray
     alternatives : list
-    dispersion : float = 1
+    #dispersion : float = 1
     
 def selected_targets(loglike, 
                      solution,
@@ -99,8 +99,7 @@ def selected_targets(loglike,
     return TargetSpec(observed_target,
                       cov_target * dispersion,
                       regress_target_score,
-                      alternatives,
-                      dispersion)
+                      alternatives)
 
 def full_targets(loglike, 
                  solution,
@@ -143,8 +142,7 @@ def full_targets(loglike,
     return TargetSpec(observed_target,
                       cov_target * dispersion,
                       regress_target_score,
-                      alternatives,
-                      dispersion)
+                      alternatives)
 
 def debiased_targets(loglike, 
                      solution,
@@ -213,8 +211,7 @@ def debiased_targets(loglike,
     return TargetSpec(observed_target,
                       cov_target * dispersion,
                       Qinv_hat, 
-                      alternatives,
-                      dispersion)
+                      alternatives)
 
 def form_targets(target, 
                  loglike, 
