@@ -8,6 +8,7 @@ from ..algorithms.barrier_affine import solve_barrier_affine_py
 from .posterior_inference import posterior
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 from .approx_reference import approximate_grid_inference
+from .exact_reference import exact_grid_inference
 
 class query(object):
     r"""
@@ -226,8 +227,8 @@ class gaussian_query(query):
 
     def approximate_grid_inference(self,
                                    target_spec,
-                                   solve_args={'tol': 1.e-12},
-                                   useIP=True):
+                                   useIP=True,
+                                   solve_args={'tol': 1.e-12}):
 
         """
         Parameters
@@ -249,6 +250,32 @@ class gaussian_query(query):
                                        target_spec,
                                        solve_args=solve_args,
                                        useIP=useIP)
+
+        return G.summary(alternatives=target_spec.alternatives)
+
+    def exact_grid_inference(self,
+                             target_spec,
+                             solve_args={'tol': 1.e-12}):
+
+        """
+        Parameters
+        ----------
+        observed_target : ndarray
+            Observed estimate of target.
+        cov_target : ndarray
+            Estimated covaraince of target.
+        regress_target_score : ndarray
+            Estimated covariance of target and score of randomized query.
+        alternatives : [str], optional
+            Sequence of strings describing the alternatives,
+            should be values of ['twosided', 'less', 'greater']
+        solve_args : dict, optional
+            Arguments passed to solver.
+        """
+
+        G = exact_grid_inference(self,
+                                 target_spec,
+                                 solve_args=solve_args)
 
         return G.summary(alternatives=target_spec.alternatives)
 
@@ -540,9 +567,6 @@ def selective_MLE(target_spec,
         Conditional mean of optimization variables given target.
     cond_cov : ndarray
         Conditional covariance of optimization variables given target.
-    regress_opt : ndarray
-        Describes how conditional mean of optimization
-        variables varies with target.
     linear_part : ndarray
         Linear part of affine constraints: $\{o:Ao \leq b\}$
     offset : ndarray

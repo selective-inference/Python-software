@@ -174,7 +174,6 @@ def test_instance():
 
     M = E.copy()
     M[-3:] = 1
-    print("check ", M)
     dispersion = np.linalg.norm(Y - X[:, M].dot(np.linalg.pinv(X[:, M]).dot(Y))) ** 2 / (n - M.sum())
 
     L.setup_inference(dispersion=dispersion)
@@ -195,7 +194,6 @@ def test_instance():
     coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
 
     return coverage
-
 
 def test_selected_targets_disperse(n=500,
                                    p=100,

@@ -82,7 +82,7 @@ class posterior(object):
         self.offset = offset
 
         self.initial_estimate = np.asarray(result['MLE'])
-        self.dispersion = dispersion # why is this needed?
+        self.dispersion = dispersion
         self.log_ref = log_ref
 
         self._set_marginal_parameters()
@@ -159,12 +159,14 @@ class posterior(object):
         bias_target = self.cov_target.dot(T1.T.dot(-T4.dot(self.observed_target) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
 
         ###set parameters for the marginal distribution of optimization variables
+
         _Q = np.linalg.inv(prec_target_nosel + T3)
         self.prec_marginal = self.cond_precision - T5.T.dot(_Q).dot(T5)
         self.linear_coef = self.cond_cov.dot(T5.T)
         self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
 
         ###set parameters for the marginal distribution of target
+
         r = np.linalg.inv(prec_target_nosel).dot(self.prec_target.dot(bias_target))
         S = np.linalg.inv(prec_target_nosel).dot(self.prec_target)
 

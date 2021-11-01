@@ -27,6 +27,8 @@ class exact_grid_inference(object):
             Estimated covaraince of target.
         cov_target_score : ndarray
             Estimated covariance of target and score of randomized query.
+        level : float, optional
+            Confidence level.
         solve_args : dict, optional
             Arguments passed to solver.
         """
@@ -83,7 +85,7 @@ class exact_grid_inference(object):
     def summary(self,
                 alternatives=None,
                 parameter=None,
-                level=0.9):
+                level=0.90):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
