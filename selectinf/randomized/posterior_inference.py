@@ -47,8 +47,8 @@ class posterior(object):
          cov_target,
          regress_target_score) = target_spec[:3]
 
-        linear_part = query.sampler.affine_con.linear_part
-        offset = query.sampler.affine_con.offset
+        linear_part = query.affine_con.linear_part
+        offset = query.affine_con.offset
 
         opt_linear = query.opt_linear
 

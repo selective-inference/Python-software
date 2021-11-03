@@ -39,8 +39,8 @@ class approximate_grid_inference(object):
         
         self.solve_args = solve_args
 
-        linear_part = query.sampler.affine_con.linear_part
-        offset = query.sampler.affine_con.offset
+        linear_part = query.affine_con.linear_part
+        offset = query.affine_con.offset
 
         opt_linear = query.opt_linear
 
