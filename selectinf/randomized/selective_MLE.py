@@ -5,7 +5,7 @@ from scipy.stats import norm as ndist
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 from ..algorithms.barrier_affine import solve_barrier_affine_py
 
-class selective_MLE(object):
+class mle_inference(object):
 
     def __init__(self,
                  query,

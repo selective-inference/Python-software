@@ -1,13 +1,10 @@
 import numpy as np
-import pandas as pd
-from scipy.stats import norm as ndist
 
 from ..constraints.affine import constraints
-from ..algorithms.barrier_affine import solve_barrier_affine_py
-
 from .posterior_inference import posterior
 from .approx_reference import approximate_grid_inference
 from .exact_reference import exact_grid_inference
+from .selective_MLE import mle_inference
 
 class query(object):
     r"""
@@ -170,21 +167,31 @@ class gaussian_query(query):
                       level=0.90,
                       solve_args={'tol': 1.e-12}):
 
-        return selective_MLE(target_spec,
-                             self.observed_opt_state,
-                             self.affine_con.mean,
-                             self.affine_con.covariance,
-                             self.affine_con.linear_part,
-                             self.affine_con.offset,
-                             self.opt_linear,
-                             self.M1,
-                             self.M2,
-                             self.M3,
-                             self.observed_score_state + self.observed_subgrad,
-                             solve_args=solve_args,
-                             level=level,
-                             useC=False)
+        G = mle_inference(self,
+                          target_spec,
+                          solve_args=solve_args)
 
+        return G.mle_inference(level=level)
+
+    # def selective_MLE(self,
+    #                   target_spec,
+    #                   level=0.90,
+    #                   solve_args={'tol': 1.e-12}):
+    #
+    #     return selective_MLE(target_spec,
+    #                          self.observed_opt_state,
+    #                          self.affine_con.mean,
+    #                          self.affine_con.covariance,
+    #                          self.affine_con.linear_part,
+    #                          self.affine_con.offset,
+    #                          self.opt_linear,
+    #                          self.M1,
+    #                          self.M2,
+    #                          self.M3,
+    #                          self.observed_score_state + self.observed_subgrad,
+    #                          solve_args=solve_args,
+    #                          level=level,
+    #                          useC=False)
 
     def posterior(self,
                   target_spec,
@@ -279,126 +286,124 @@ class gaussian_query(query):
         return G.summary(alternatives=target_spec.alternatives)
 
 
-from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
-
-def selective_MLE(target_spec,
-                  observed_soln,  # initial (observed) value of
-                  # optimization variables -- used as a
-                  # feasible point.  precise value used
-                  # only for independent estimator
-                  cond_mean,
-                  cond_cov,
-                  linear_part,
-                  offset,
-                  opt_linear,
-                  M1,   
-                  M2,
-                  M3,
-                  observed_score,
-                  solve_args={'tol': 1.e-12},
-                  level=0.9,
-                  useC=False):
-
-    """
-    Selective MLE based on approximation of
-    CGF.
-    Parameters
-    ----------
-    observed_target : ndarray
-        Observed estimate of target.
-    cov_target : ndarray
-        Estimated covaraince of target.
-    regress_target_score : ndarray
-        Estimated regression coefficient of target on score.
-    observed_soln : ndarray
-        Feasible point for optimization problem.
-    cond_mean : ndarray
-        Conditional mean of optimization variables given target.
-    cond_cov : ndarray
-        Conditional covariance of optimization variables given target.
-    linear_part : ndarray
-        Linear part of affine constraints: $\{o:Ao \leq b\}$
-    offset : ndarray
-        Offset part of affine constraints: $\{o:Ao \leq b\}$
-    solve_args : dict, optional
-        Arguments passed to solver.
-    level : float, optional
-        Confidence level.
-    useC : bool, optional
-        Use python or C solver.
-    """
-
-    (observed_target,
-     cov_target,
-     regress_target_score) = target_spec[:3]
-
-    if np.asarray(observed_target).shape in [(), (0,)]:
-        raise ValueError('no target specified')
-
-    observed_target = np.atleast_1d(observed_target)
-    prec_target = np.linalg.inv(cov_target)
-
-    prec_opt = np.linalg.inv(cond_cov)
-
-    # this is specific to target
-    
-    T1 = regress_target_score.T.dot(prec_target)
-    T2 = T1.T.dot(M2.dot(T1))
-    T3 = T1.T.dot(M3.dot(T1)) 
-    T4 = M1.dot(opt_linear).dot(cond_cov).dot(opt_linear.T.dot(M1.T.dot(T1)))
-    T5 = T1.T.dot(M1.dot(opt_linear))
-
-    prec_target_nosel = prec_target + T2 - T3
-
-    _P = -(T1.T.dot(M1.dot(observed_score)) + T2.dot(observed_target)) ##flipped sign of second term here
-
-    bias_target = cov_target.dot(T1.T.dot(-T4.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))) - _P)
-
-    conjugate_arg = prec_opt.dot(cond_mean)
-
-    if useC:
-        solver = solve_barrier_affine_C
-    else:
-        solver = solve_barrier_affine_py
-
-    val, soln, hess = solver(conjugate_arg,
-                             prec_opt,
-                             observed_soln,
-                             linear_part,
-                             offset,
-                             **solve_args)
-
-    final_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) \
-                      + regress_target_score.dot(M1.dot(opt_linear)).dot(cond_mean - soln) - bias_target
-
-    observed_info_natural = prec_target_nosel + T3 - T5.dot(hess.dot(T5.T))
-
-    unbiased_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) - bias_target
-
-    observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
-
-    Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
-
-    pvalues = ndist.cdf(Z_scores)
-
-    pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
-
-    alpha = 1. - level
-
-    quantile = ndist.ppf(1 - alpha / 2.)
-
-    intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
-                           final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
-
-    log_ref = val + conjugate_arg.T.dot(cond_cov).dot(conjugate_arg) / 2.
-
-    result = pd.DataFrame({'MLE': final_estimator,
-                           'SE': np.sqrt(np.diag(observed_info_mean)),
-                           'Zvalue': Z_scores,
-                           'pvalue': pvalues,
-                           'lower_confidence': intervals[:, 0],
-                           'upper_confidence': intervals[:, 1],
-                           'unbiased': unbiased_estimator})
-
-    return result, observed_info_mean, log_ref
+# def selective_MLE(target_spec,
+#                   observed_soln,  # initial (observed) value of
+#                   # optimization variables -- used as a
+#                   # feasible point.  precise value used
+#                   # only for independent estimator
+#                   cond_mean,
+#                   cond_cov,
+#                   linear_part,
+#                   offset,
+#                   opt_linear,
+#                   M1,
+#                   M2,
+#                   M3,
+#                   observed_score,
+#                   solve_args={'tol': 1.e-12},
+#                   level=0.9,
+#                   useC=False):
+#
+#     """
+#     Selective MLE based on approximation of
+#     CGF.
+#     Parameters
+#     ----------
+#     observed_target : ndarray
+#         Observed estimate of target.
+#     cov_target : ndarray
+#         Estimated covaraince of target.
+#     regress_target_score : ndarray
+#         Estimated regression coefficient of target on score.
+#     observed_soln : ndarray
+#         Feasible point for optimization problem.
+#     cond_mean : ndarray
+#         Conditional mean of optimization variables given target.
+#     cond_cov : ndarray
+#         Conditional covariance of optimization variables given target.
+#     linear_part : ndarray
+#         Linear part of affine constraints: $\{o:Ao \leq b\}$
+#     offset : ndarray
+#         Offset part of affine constraints: $\{o:Ao \leq b\}$
+#     solve_args : dict, optional
+#         Arguments passed to solver.
+#     level : float, optional
+#         Confidence level.
+#     useC : bool, optional
+#         Use python or C solver.
+#     """
+#
+#     (observed_target,
+#      cov_target,
+#      regress_target_score) = target_spec[:3]
+#
+#     if np.asarray(observed_target).shape in [(), (0,)]:
+#         raise ValueError('no target specified')
+#
+#     observed_target = np.atleast_1d(observed_target)
+#     prec_target = np.linalg.inv(cov_target)
+#
+#     prec_opt = np.linalg.inv(cond_cov)
+#
+#     # this is specific to target
+#
+#     T1 = regress_target_score.T.dot(prec_target)
+#     T2 = T1.T.dot(M2.dot(T1))
+#     T3 = T1.T.dot(M3.dot(T1))
+#     T4 = M1.dot(opt_linear).dot(cond_cov).dot(opt_linear.T.dot(M1.T.dot(T1)))
+#     T5 = T1.T.dot(M1.dot(opt_linear))
+#
+#     prec_target_nosel = prec_target + T2 - T3
+#
+#     _P = -(T1.T.dot(M1.dot(observed_score)) + T2.dot(observed_target)) ##flipped sign of second term here
+#
+#     bias_target = cov_target.dot(T1.T.dot(-T4.dot(observed_target) + M1.dot(opt_linear.dot(cond_mean))) - _P)
+#
+#     conjugate_arg = prec_opt.dot(cond_mean)
+#
+#     if useC:
+#         solver = solve_barrier_affine_C
+#     else:
+#         solver = solve_barrier_affine_py
+#
+#     val, soln, hess = solver(conjugate_arg,
+#                              prec_opt,
+#                              observed_soln,
+#                              linear_part,
+#                              offset,
+#                              **solve_args)
+#
+#     final_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) \
+#                       + regress_target_score.dot(M1.dot(opt_linear)).dot(cond_mean - soln) - bias_target
+#
+#     observed_info_natural = prec_target_nosel + T3 - T5.dot(hess.dot(T5.T))
+#
+#     unbiased_estimator = cov_target.dot(prec_target_nosel).dot(observed_target) - bias_target
+#
+#     observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
+#
+#     Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
+#
+#     pvalues = ndist.cdf(Z_scores)
+#
+#     pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
+#
+#     alpha = 1. - level
+#
+#     quantile = ndist.ppf(1 - alpha / 2.)
+#
+#     intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
+#                            final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
+#
+#     log_ref = val + conjugate_arg.T.dot(cond_cov).dot(conjugate_arg) / 2.
+#
+#     result = pd.DataFrame({'MLE': final_estimator,
+#                            'SE': np.sqrt(np.diag(observed_info_mean)),
+#                            'Zvalue': Z_scores,
+#                            'pvalue': pvalues,
+#                            'lower_confidence': intervals[:, 0],
+#                            'upper_confidence': intervals[:, 1],
+#                            'unbiased': unbiased_estimator})
+#
+#     return result, observed_info_mean, log_ref
 
