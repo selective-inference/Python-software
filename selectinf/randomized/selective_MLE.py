@@ -25,7 +25,7 @@ class mle_inference(object):
 
         self.cond_mean = query.cond_mean
         self.cond_cov = query.cond_cov
-        self.prec_opt = np.linalg.inv(self.cond_cov)
+        self.cond_precision = np.linalg.inv(self.cond_cov)
         self.opt_linear = query.opt_linear
 
         self.linear_part = query.sampler.affine_con.linear_part
@@ -42,14 +42,14 @@ class mle_inference(object):
 
     def mle_inference(self, useC= False, level=0.90):
 
-        conjugate_arg = self.prec_opt.dot(self.cond_mean)
+        conjugate_arg = self.cond_precision.dot(self.cond_mean)
         if useC:
             solver = solve_barrier_affine_C
         else:
             solver = solve_barrier_affine_py
 
         val, soln, hess = solver(conjugate_arg,
-                                 self.prec_opt,
+                                 self.cond_precision,
                                  self.observed_soln,
                                  self.linear_part,
                                  self.offset,

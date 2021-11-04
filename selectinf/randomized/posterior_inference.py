@@ -54,7 +54,7 @@ class posterior(object):
 
         self.cond_mean = query.cond_mean
         self.cond_cov = query.cond_cov
-        self.prec_opt = np.linalg.inv(self.cond_cov)
+        self.cond_precision = np.linalg.inv(self.cond_cov)
         self.opt_linear = query.opt_linear
 
         self.linear_part = query.affine_con.linear_part
@@ -71,7 +71,7 @@ class posterior(object):
 
 
         self.ntarget = self.cov_target.shape[0]
-        self.nopt = self.prec_opt.shape[0]
+        self.nopt = self.cond_precision.shape[0]
 
 
         self.initial_estimate = np.asarray(result['MLE'])
@@ -155,7 +155,7 @@ class posterior(object):
         ###set parameters for the marginal distribution of optimization variables
 
         _Q = np.linalg.inv(prec_target_nosel + T3)
-        self.prec_marginal = self.prec_opt - T5.T.dot(_Q).dot(T5)
+        self.prec_marginal = self.cond_precision - T5.T.dot(_Q).dot(T5)
         self.linear_coef = self.cond_cov.dot(T5.T)
         self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
 

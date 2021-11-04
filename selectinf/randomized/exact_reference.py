@@ -32,42 +32,33 @@ class exact_grid_inference(object):
             Arguments passed to solver.
         """
 
+        self.solve_args = solve_args
+
         (observed_target,
          cov_target,
          regress_target_score) = target_spec[:3]
-        
-        self.solve_args = solve_args
-
-        linear_part = query.affine_con.linear_part
-        offset = query.affine_con.offset
-
-        opt_linear = query.opt_linear
-
-        observed_score = query.observed_score_state + query.observed_subgrad
-
-        result, inverse_info, log_ref = query.selective_MLE(target_spec)
-
-        cond_cov = query.cond_cov
-        self.cond_precision = np.linalg.inv(cond_cov)
-        self.cond_cov = cond_cov
-        self.cov_target = cov_target
-        self.prec_target = np.linalg.inv(cov_target)
 
         self.observed_target = observed_target
+        self.cov_target = cov_target
+        self.prec_target = np.linalg.inv(cov_target)
         self.regress_target_score = regress_target_score
-        self.opt_linear = opt_linear
-        self.observed_score = observed_score
+
+        self.cond_mean = query.cond_mean
+        self.cond_cov = query.cond_cov
+        self.cond_precision = np.linalg.inv(self.cond_cov)
+        self.opt_linear = query.opt_linear
+
+        self.linear_part = query.affine_con.linear_part
+        self.offset = query.affine_con.offset
 
         self.M1 = query.M1
         self.M2 = query.M2
         self.M3 = query.M3
-        self.feasible_point = query.observed_opt_state
+        self.observed_soln = query.observed_opt_state
 
-        self.cond_mean = query.cond_mean
-        self.linear_part = linear_part
-        self.offset = offset
+        self.observed_score = query.observed_score_state + query.observed_subgrad
 
-        self.feasible_point = query.observed_opt_state
+        result, inverse_info, log_ref = query.selective_MLE(target_spec)
 
         self.ntarget = ntarget = cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
@@ -156,7 +147,7 @@ class exact_grid_inference(object):
             R = np.identity(num_opt) - _A.dot(eta.T)
 
             A = self.linear_part.dot(_A).reshape((-1,))
-            b = -self.linear_part.dot(R).dot(self.feasible_point)
+            b = -self.linear_part.dot(R).dot(self.observed_soln)
 
             trunc_ = np.true_divide((self.offset + b), A)
 
