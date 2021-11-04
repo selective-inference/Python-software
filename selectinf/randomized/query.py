@@ -103,7 +103,6 @@ class gaussian_query(query):
         (cond_mean,
          cond_cov,
          cond_precision,
-         regress_opt,
          M1,
          M2,
          M3) = self._setup_implied_gaussian(opt_linear,
@@ -157,7 +156,6 @@ class gaussian_query(query):
         return (cond_mean,
                 cond_cov,
                 cond_precision,
-                regress_opt,
                 M1,
                 M2,
                 M3)
