@@ -47,47 +47,41 @@ class posterior(object):
          cov_target,
          regress_target_score) = target_spec[:3]
 
-        linear_part = query.affine_con.linear_part
-        offset = query.affine_con.offset
-
-        opt_linear = query.opt_linear
-
-        observed_score = query.observed_score_state + query.observed_subgrad
-
-        result, self.inverse_info, log_ref = query.selective_MLE(target_spec)
-
-        ### Note for an informative prior we might want to change this...
-
-        cond_cov = query.cond_cov
-        self.cond_precision = np.linalg.inv(cond_cov)
-        self.cond_cov = cond_cov
+        self.observed_target = observed_target
         self.cov_target = cov_target
         self.prec_target = np.linalg.inv(cov_target)
-
-        self.ntarget = self.cov_target.shape[0]
-        self.nopt = self.cond_precision.shape[0]
-
-        self.observed_target = observed_target
         self.regress_target_score = regress_target_score
-        self.opt_linear = opt_linear
-        self.observed_score = observed_score
+
+        self.cond_mean = query.cond_mean
+        self.cond_cov = query.cond_cov
+        self.prec_opt = np.linalg.inv(self.cond_cov)
+        self.opt_linear = query.opt_linear
+
+        self.linear_part = query.affine_con.linear_part
+        self.offset = query.affine_con.offset
 
         self.M1 = query.M1
         self.M2 = query.M2
         self.M3 = query.M3
-        self.feasible_point = query.observed_opt_state
+        self.observed_soln = query.observed_opt_state
 
-        self.cond_mean = query.cond_mean
-        self.linear_part = linear_part
-        self.offset = offset
+        self.observed_score = query.observed_score_state + query.observed_subgrad
+
+        result, self.inverse_info, log_ref = query.selective_MLE(target_spec)
+
+
+        self.ntarget = self.cov_target.shape[0]
+        self.nopt = self.prec_opt.shape[0]
+
 
         self.initial_estimate = np.asarray(result['MLE'])
         self.dispersion = dispersion
         self.log_ref = log_ref
 
-        self._set_marginal_parameters()
-
+        ### Note for an informative prior we might want to change this...
         self.prior = prior
+
+        self._set_marginal_parameters()
 
     def log_posterior(self,
                       target_parameter,
@@ -115,7 +109,7 @@ class posterior(object):
 
         val, soln, hess = solver(conjugate_marginal,
                                  prec_marginal,
-                                 self.feasible_point,
+                                 self.observed_soln,
                                  self.linear_part,
                                  self.offset,
                                  **self.solve_args)
@@ -161,7 +155,7 @@ class posterior(object):
         ###set parameters for the marginal distribution of optimization variables
 
         _Q = np.linalg.inv(prec_target_nosel + T3)
-        self.prec_marginal = self.cond_precision - T5.T.dot(_Q).dot(T5)
+        self.prec_marginal = self.prec_opt - T5.T.dot(_Q).dot(T5)
         self.linear_coef = self.cond_cov.dot(T5.T)
         self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
 
