@@ -26,8 +26,6 @@ class exact_grid_inference(object):
             Estimated covaraince of target.
         cov_target_score : ndarray
             Estimated covariance of target and score of randomized query.
-        level : float, optional
-            Confidence level.
         solve_args : dict, optional
             Arguments passed to solver.
         """
