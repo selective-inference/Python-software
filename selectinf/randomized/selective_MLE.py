@@ -28,8 +28,8 @@ class mle_inference(object):
         self.cond_precision = np.linalg.inv(self.cond_cov)
         self.opt_linear = query.opt_linear
 
-        self.linear_part = query.sampler.affine_con.linear_part
-        self.offset = query.sampler.affine_con.offset
+        self.linear_part = query.affine_con.linear_part
+        self.offset = query.affine_con.offset
 
         self.M1 = query.M1
         self.M2 = query.M2
@@ -40,7 +40,7 @@ class mle_inference(object):
 
         self._setup_estimating_eqn()
 
-    def mle_inference(self, useC= False, level=0.90):
+    def solve_estimating_eqn(self, useC= False, level=0.90):
 
         conjugate_arg = self.cond_precision.dot(self.cond_mean)
         if useC:
@@ -59,7 +59,7 @@ class mle_inference(object):
                           + self.regress_target_score.dot(self.M1.dot(self.opt_linear)).dot(self.cond_mean - soln) \
                           - self.bias_target
 
-        observed_info_natural = self.prec_target_nosel + self.T3 - self.T5.dot(self.hess.dot(self.T5.T))
+        observed_info_natural = self.prec_target_nosel + self.T3 - self.T5.dot(hess.dot(self.T5.T))
 
         unbiased_estimator = self.cov_target.dot(self.prec_target_nosel).dot(self.observed_target) - self.bias_target
 

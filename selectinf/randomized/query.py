@@ -185,7 +185,7 @@ class gaussian_query(query):
                           target_spec,
                           solve_args=solve_args)
 
-        return G.mle_inference(level=level)
+        return G.solve_estimating_eqn(level=level)
 
     def posterior(self,
                   target_spec,

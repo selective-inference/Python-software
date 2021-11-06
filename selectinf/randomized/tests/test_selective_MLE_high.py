@@ -347,11 +347,11 @@ def test_logistic_split(n=2000,
 
         if nonzero.sum() > 0:
 
-            conv.setup_inference(dispersion=1)
-
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=1)
+
+            conv.setup_inference(dispersion=None)
 
             result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
@@ -360,7 +360,7 @@ def test_logistic_split(n=2000,
                                            'upper_confidence']])
             
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], intervals
-        
+
 def test_poisson(n=2000, 
                  p=200, 
                  signal_fac=10.,
@@ -398,11 +398,12 @@ def test_poisson(n=2000,
         print("dimensions", n, p, nonzero.sum())
 
         if nonzero.sum() > 0:
-            conv.setup_inference(dispersion=1)
 
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=1)
+
+            conv.setup_inference(dispersion=1)
 
             result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
@@ -450,11 +451,11 @@ def test_poisson_split(n=2000,
 
         if nonzero.sum() > 0:
 
-            conv.setup_inference(dispersion=1)
-
             target_spec = selected_targets(conv.loglike,
                                            conv.observed_soln,
                                            dispersion=1)
+
+            conv.setup_inference(dispersion=1)
 
             result = conv.selective_MLE(target_spec)[0]
             estimate = result['MLE']
