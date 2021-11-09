@@ -693,7 +693,7 @@ class split_lasso(lasso):
                  proportion_select,
                  ridge_term=0,
                  perturb=None,
-                 estimate_dispersion=False):
+                 estimate_dispersion=True):
 
         (self.loglike,
          self.feature_weights,
@@ -731,7 +731,7 @@ class split_lasso(lasso):
                                                             'func') /
                               (n - df_fit))
 
-            self.dispersion = dispersion
+            self.dispersion_ = dispersion
             # run setup again after
             # estimating dispersion
 
@@ -741,13 +741,13 @@ class split_lasso(lasso):
 
 
     def setup_inference(self,
-                        dispersion=None):
+                        dispersion):
 
         if self.df_fit > 0:
 
             if dispersion is None:
                 self._setup_sampler(*self._setup_sampler_data,
-                                    dispersion=self.dispersion)
+                                    dispersion=self.dispersion_)
 
             else:
                 self._setup_sampler(*self._setup_sampler_data,
@@ -805,7 +805,6 @@ class split_lasso(lasso):
         return (cond_mean,
                 cond_cov,
                 cond_precision,
-                regress_opt,
                 M1,
                 M2,
                 M3)
@@ -1086,4 +1085,4 @@ class split_lasso(lasso):
                            np.asarray(feature_weights),
                            proportion)
 
-    
+
