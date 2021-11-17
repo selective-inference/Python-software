@@ -1,16 +1,11 @@
-from __future__ import division, print_function
-
 import numpy as np, pandas as pd
-from scipy.stats import norm as ndist
 
-from ..distributions.discrete_family import discrete_family
 from .selective_MLE import mle_inference
-from .base import grid_inference
 
-class exact_grid_inference(grid_inference):
+class grid_inference(object):
 
     def __init__(self,
-                 query,
+                 query_spec,
                  target_spec,
                  solve_args={'tol': 1.e-12}):
 
@@ -28,8 +23,15 @@ class exact_grid_inference(grid_inference):
             Estimated covaraince of target.
         cov_target_score : ndarray
             Estimated covariance of target and score of randomized query.
+        solve_args : dict, optional
+            Arguments passed to solver.
         """
 
+        self.query_spec = query_spec
+        self.target_spec = target_spec
+        query = query_spec
+
+        self.solve_args = solve_args
 
         (observed_target,
          cov_target,
@@ -63,6 +65,7 @@ class exact_grid_inference(grid_inference):
 
         self.ntarget = ntarget = cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
+        self.inverse_info = inverse_info
 
         ngrid = 1000
         self.stat_grid = np.zeros((ntarget, ngrid))
@@ -71,12 +74,10 @@ class exact_grid_inference(grid_inference):
                                                observed_target[j] + 1.5 * _scale[j],
                                                num=ngrid)
 
-        self.inverse_info = inverse_info
-
     def summary(self,
                 alternatives=None,
                 parameter=None,
-                level=0.90):
+                level=0.9):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
@@ -98,7 +99,7 @@ class exact_grid_inference(grid_inference):
             pivots = None
 
         pvalues = self._pivots(np.zeros_like(self.observed_target),
-                               alternatives=alternatives)
+                                      alternatives=alternatives) 
         lower, upper = self._intervals(level=level)
 
         result = pd.DataFrame({'target': self.observed_target,
@@ -113,16 +114,20 @@ class exact_grid_inference(grid_inference):
 
         return result
 
-    def log_reference(self,
-                      observed_target,
-                      cov_target,
-                      linear_coef,
-                      grid):
+    def _approx_log_reference(self,
+                              observed_target,
+                              cov_target,
+                              linear_coef,
+                              grid):
 
+        """
+        Approximate the log of the reference density on a grid.
+        """
         if np.asarray(observed_target).shape in [(), (0,)]:
             raise ValueError('no target specified')
 
         ref_hat = []
+        solver = solve_barrier_affine_py
 
         for k in range(grid.shape[0]):
             # in the usual D = N + Gamma theta.hat,
@@ -131,56 +136,17 @@ class exact_grid_inference(grid_inference):
             # cond_mean is "something" times D
             # Gamma is cov_target_score.T.dot(prec_target)
 
-            num_opt = self.cond_precision.shape[0]
-            num_con = self.linear_part.shape[0]
+            cond_mean_grid = (linear_coef.dot(np.atleast_1d(grid[k] - observed_target)) + self.cond_mean)
+            conjugate_arg = self.cond_precision.dot(cond_mean_grid)
 
-            cond_mean_grid = (linear_coef.dot(np.atleast_1d(grid[k] - observed_target)) +
-                              self.cond_mean)
+            val, _, _ = solver(conjugate_arg,
+                               self.cond_precision,
+                               self.observed_soln,
+                               self.linear_part,
+                               self.offset,
+                               **self.solve_args)
 
-            #direction for decomposing o
-
-            eta = self.cond_precision.dot(linear_coef).dot(cov_target)
-
-            implied_mean = np.asscalar(eta.T.dot(cond_mean_grid))
-            implied_cov = np.asscalar(eta.T.dot(self.cond_cov).dot(eta))
-            implied_prec = 1./implied_cov
-
-            _A = self.cond_cov.dot(eta) * implied_prec
-            R = np.identity(num_opt) - _A.dot(eta.T)
-
-            A = self.linear_part.dot(_A).reshape((-1,))
-            b = -self.linear_part.dot(R).dot(self.observed_soln)
-
-            trunc_ = np.true_divide((self.offset + b), A)
-
-            neg_indx = np.asarray([j for j in range(num_con) if A[j] < 0.])
-            pos_indx = np.asarray([j for j in range(num_con) if A[j] > 0.])
-
-            if pos_indx.shape[0]>0 and neg_indx.shape[0]>0:
-
-                trunc_lower = np.max(trunc_[neg_indx])
-                trunc_upper = np.min(trunc_[pos_indx])
-
-                lower_limit = (trunc_lower - implied_mean) * np.sqrt(implied_prec)
-                upper_limit = (trunc_upper - implied_mean) * np.sqrt(implied_prec)
-
-                ref_hat.append(np.log(ndist.cdf(upper_limit) - ndist.cdf(lower_limit)))
-
-            elif pos_indx.shape[0] == num_con:
-
-                trunc_upper = np.min(trunc_[pos_indx])
-
-                upper_limit = (trunc_upper - implied_mean) * np.sqrt(implied_prec)
-
-                ref_hat.append(np.log(ndist.cdf(upper_limit)))
-
-            else:
-
-                trunc_lower = np.max(trunc_[neg_indx])
-
-                lower_limit = (trunc_lower - implied_mean) * np.sqrt(implied_prec)
-
-                ref_hat.append(np.log(1. - ndist.cdf(lower_limit)))
+            ref_hat.append(-val - (conjugate_arg.T.dot(self.cond_cov).dot(conjugate_arg) / 2.))
 
         return np.asarray(ref_hat)
 
@@ -189,7 +155,7 @@ class exact_grid_inference(grid_inference):
         self._construct_density()
 
         self._families = []
-
+        _log_ref = np.zeros((self.ntarget, 1000))
         for m in range(self.ntarget):
 
             observed_target_uni = (self.observed_target[m]).reshape((1,))
@@ -197,15 +163,36 @@ class exact_grid_inference(grid_inference):
 
             var_target = 1. / ((self.precs[m])[0, 0])
 
-            log_ref = self.log_reference(observed_target_uni,
-                                         cov_target_uni,
-                                         self.T[m],
-                                         self.stat_grid[m])
+            approx_log_ref = self._approx_log_reference(observed_target_uni,
+                                                        cov_target_uni,
+                                                        self.T[m],
+                                                        self.stat_grid[m])
 
-            logW = (log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
-            logW -= logW.max()
-            self._families.append(discrete_family(self.stat_grid[m],
-                                                  np.exp(logW)))
+            if self.useIP == False:
+
+                logW = (approx_log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
+                logW -= logW.max()
+                _log_ref[m,:] = logW
+                self._families.append(discrete_family(self.stat_grid[m],
+                                                      np.exp(logW)))
+            else:
+
+                approx_fn = interp1d(self.stat_grid[m],
+                                     approx_log_ref,
+                                     kind='quadratic',
+                                     bounds_error=False,
+                                     fill_value='extrapolate')
+
+                grid = np.linspace(self.stat_grid[m].min(), self.stat_grid[m].max(), 1000)
+                logW = (approx_fn(grid) -
+                        0.5 * (grid - self.observed_target[m]) ** 2 / var_target)
+
+                logW -= logW.max()
+                _log_ref[m, :] = logW
+                self._families.append(discrete_family(grid,
+                                                      np.exp(logW)))
+
+        self._log_ref = _log_ref
 
     def _pivots(self,
                 mean_parameter,
@@ -225,6 +212,7 @@ class exact_grid_inference(grid_inference):
             var_target = 1. / ((self.precs[m])[0, 0])
 
             mean = self.S[m].dot(mean_parameter[m].reshape((1,))) + self.r[m]
+            # construction of pivot from families follows `selectinf.learning.core`
 
             _cdf = family.cdf((mean[0] - self.observed_target[m]) / var_target, x=self.observed_target[m])
 
@@ -236,7 +224,7 @@ class exact_grid_inference(grid_inference):
                 pivot.append(_cdf)
             else:
                 raise ValueError('alternative should be in ["twosided", "less", "greater"]')
-        return pivot
+        return pivot # , self._log_ref
 
     def _intervals(self,
                    level=0.9):
@@ -289,7 +277,8 @@ class exact_grid_inference(grid_inference):
 
             _P = -(T1.T.dot(self.M1.dot(self.observed_score)) + T2.dot(observed_target_uni))
 
-            bias_target = cov_target_uni.dot(T1.T.dot(-T4.dot(observed_target_uni) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
+            bias_target = cov_target_uni.dot(
+                T1.T.dot(-T4.dot(observed_target_uni) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
 
             _r = np.linalg.inv(prec_target_nosel).dot(prec_target.dot(bias_target))
             _S = np.linalg.inv(prec_target_nosel).dot(prec_target)
@@ -303,7 +292,3 @@ class exact_grid_inference(grid_inference):
         self.S = S
         self.r = r
         self.T = T
-
-
-
-

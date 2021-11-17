@@ -67,6 +67,23 @@ class query(object):
         self._randomized = False
         self._setup = False
 
+    @property
+    def specification(self):
+        return QuerySpec(cond_mean=self.cond_mean,
+                         cond_cov=self.cond_cov,
+                         opt_linear=self.opt_linear,
+                         linear_part=self.affine_con.linear_part,
+                         offset=self.affine_con.offset,
+                         M1=self.M1,
+                         M2=self.M2,
+                         M3=self.M3,
+                         observed_opt_state=self.observed_opt_state,
+                         observed_score_state=self.observed_score_state,
+                         observed_subgrad=self.observed_subgrad,
+                         observed_soln=self.observed_opt_state,
+                         observed_score=self.observed_score_state + self.observed_subgrad)
+   
+
     # Methods reused by subclasses
 
     def randomize(self, perturb=None):
@@ -216,19 +233,7 @@ class gaussian_query(query):
            Statistical summary for specified targets.
         """
 
-        query_spec = QuerySpec(cond_mean=self.cond_mean,
-                               cond_cov=self.cond_cov,
-                               opt_linear=self.opt_linear,
-                               linear_part=self.affine_con.linear_part,
-                               offset=self.affine_con.offset,
-                               M1=self.M1,
-                               M2=self.M2,
-                               M3=self.M3,
-                               observed_opt_state=self.observed_opt_state,
-                               observed_score_state=self.observed_score_state,
-                               observed_subgrad=self.observed_subgrad,
-                               observed_soln=self.observed_opt_state,
-                               observed_score=self.observed_score_state + self.observed_subgrad)
+        query_spec = self.specification
 
         if method == 'selective_MLE':
             G = mle_inference(query_spec,
