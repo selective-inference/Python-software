@@ -1,3 +1,4 @@
+from typing import NamedTuple
 import numpy as np, pandas as pd
 
 from ..constraints.affine import constraints
@@ -6,6 +7,36 @@ from .approx_reference import approximate_grid_inference
 from .exact_reference import exact_grid_inference
 from .selective_MLE import mle_inference
 
+class QuerySpec(NamedTuple):
+
+    # law of o|S,u
+
+    cond_mean : np.ndarray
+    cond_cov : np.ndarray
+
+    # how S enters into E[o|S,u]
+
+    opt_linear : np.ndarray
+
+    # constraints
+
+    linear_part : np.ndarray
+    offset : np.ndarray
+
+    # score / randomization relationship
+
+    M1 : np.ndarray
+    M2 : np.ndarray
+    M3 : np.ndarray
+
+    # observed values
+
+    observed_opt_state : np.ndarray
+    observed_score_state : np.ndarray
+    observed_subgrad : np.ndarray
+    observed_soln : np.ndarray
+    observed_score : np.ndarray
+    
 class query(object):
     r"""
     This class is the base of randomized selective inference
@@ -185,17 +216,43 @@ class gaussian_query(query):
            Statistical summary for specified targets.
         """
 
+        query_spec = QuerySpec(cond_mean=self.cond_mean,
+                               cond_cov=self.cond_cov,
+                               opt_linear=self.opt_linear,
+                               linear_part=self.affine_con.linear_part,
+                               offset=self.affine_con.offset,
+                               M1=self.M1,
+                               M2=self.M2,
+                               M3=self.M3,
+                               observed_opt_state=self.observed_opt_state,
+                               observed_score_state=self.observed_score_state,
+                               observed_subgrad=self.observed_subgrad,
+                               observed_soln=self.observed_opt_state,
+                               observed_score=self.observed_score_state + self.observed_subgrad)
+
         if method == 'selective_MLE':
-            return self._selective_MLE(target_spec,
-                                       level=level,
-                                       **method_args)[0]
+            G = mle_inference(query_spec,
+                              target_spec,
+                              **method_args)
+
+            return G.solve_estimating_eqn(alternatives=target_spec.alternatives,
+                                          level=level)[0]
+
         elif method == 'exact':
-            return self._exact_grid_inference(target_spec,
-                                              level=level) # has no additional args
+            G = exact_grid_inference(query_spec,
+                                     target_spec)
+
+            return G.summary(alternatives=target_spec.alternatives,
+                             level=level)
+
         elif method == 'approx':
-            return self._approximate_grid_inference(target_spec,
-                                                    level=level,
-                                                    **method_args)
+            G = approximate_grid_inference(query_spec,
+                                           target_spec,
+                                           **method_args)
+
+            return G.summary(alternatives=target_spec.alternatives,
+                             level=level)
+
         elif method == 'posterior':
             return self.posterior(target_spec,
                                   **method_args)[1]
@@ -255,79 +312,9 @@ class gaussian_query(query):
                                       'lower_credible':lower,
                                       'upper_credible':upper})
         
-    # private methods
-
-    def _selective_MLE(self,
-                       target_spec,
-                       level=0.90,
-                       solve_args={'tol': 1.e-12}):
-
-        """
-        Parameters
-        ----------
-        target_spec : TargetSpec
-           Information needed to specify the target.
-        level : float
-           Confidence level or posterior quantiles.
-        solve_args : dict
-           Dict of arguments to be optionally passed to solver.
-        """
-
-        G = mle_inference(self,
-                          target_spec,
-                          solve_args=solve_args)
-
-        return G.solve_estimating_eqn(level=level)
 
 
-    def _approximate_grid_inference(self,
-                                    target_spec,
-                                    level=0.90,
-                                    solve_args={'tol': 1.e-12},
-                                    useIP=True):
 
-        """
-        Parameters
-        ----------
-        target_spec : TargetSpec
-           Information needed to specify the target.
-        level : float
-           Confidence level or posterior quantiles.
-        solve_args : dict, optional
-            Arguments passed to solver.
-        useIP : bool
-           Use spline extrapolation.
-        """
-
-        G = approximate_grid_inference(self,
-                                       target_spec,
-                                       solve_args=solve_args,
-                                       useIP=useIP)
-
-        return G.summary(alternatives=target_spec.alternatives,
-                         level=level)
-
-    def _exact_grid_inference(self,
-                              target_spec,
-                              level=0.90,
-                              solve_args={'tol': 1.e-12}):
-
-        """
-        Parameters
-        ----------
-        target_spec : TargetSpec
-           Information needed to specify the target.
-        level : float
-           Confidence level or posterior quantiles.
-        solve_args : dict, optional
-            Arguments passed to solver.
-        """
-
-        G = exact_grid_inference(self,
-                                 target_spec)
-
-        return G.summary(alternatives=target_spec.alternatives,
-                         level=level)
 
 
 

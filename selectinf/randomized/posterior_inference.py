@@ -7,7 +7,7 @@ from scipy.stats import norm as ndist, invgamma
 from scipy.linalg import fractional_matrix_power
 
 from ..algorithms.barrier_affine import solve_barrier_affine_py
-
+from .selective_MLE import mle_inference
 
 class PosteriorAtt(typing.NamedTuple):
 
@@ -57,8 +57,8 @@ class posterior(object):
         self.cond_precision = np.linalg.inv(self.cond_cov)
         self.opt_linear = query.opt_linear
 
-        self.linear_part = query.affine_con.linear_part
-        self.offset = query.affine_con.offset
+        self.linear_part = query.linear_part
+        self.offset = query.offset
 
         self.M1 = query.M1
         self.M2 = query.M2
@@ -67,8 +67,11 @@ class posterior(object):
 
         self.observed_score = query.observed_score_state + query.observed_subgrad
 
-        result, self.inverse_info, log_ref = query._selective_MLE(target_spec,
-                                                                  solve_args=solve_args)
+        G = mle_inference(query,
+                          target_spec,
+                          solve_args=solve_args)
+
+        result, self.inverse_info, self.log_ref = G.solve_estimating_eqn()
 
         self.ntarget = self.cov_target.shape[0]
         self.nopt = self.cond_precision.shape[0]
@@ -76,7 +79,6 @@ class posterior(object):
 
         self.initial_estimate = np.asarray(result['MLE'])
         self.dispersion = dispersion
-        self.log_ref = log_ref
 
         ### Note for an informative prior we might want to change this...
         self.prior = prior

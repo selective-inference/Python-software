@@ -4,6 +4,7 @@ import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 
 from ..distributions.discrete_family import discrete_family
+from .selective_MLE import mle_inference
 
 class exact_grid_inference(object):
 
@@ -43,8 +44,8 @@ class exact_grid_inference(object):
         self.cond_precision = np.linalg.inv(self.cond_cov)
         self.opt_linear = query.opt_linear
 
-        self.linear_part = query.affine_con.linear_part
-        self.offset = query.affine_con.offset
+        self.linear_part = query.linear_part
+        self.offset = query.offset
 
         self.M1 = query.M1
         self.M2 = query.M2
@@ -53,8 +54,11 @@ class exact_grid_inference(object):
 
         self.observed_score = query.observed_score_state + query.observed_subgrad
 
-        result, inverse_info, log_ref = query._selective_MLE(target_spec,
-                                                             solve_args=solve_args)
+        G = mle_inference(query,
+                          target_spec,
+                          solve_args=solve_args)
+
+        _, inverse_info, log_ref = G.solve_estimating_eqn()
 
         self.ntarget = ntarget = cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
@@ -88,7 +92,7 @@ class exact_grid_inference(object):
 
         if parameter is not None:
             pivots = self._pivots(parameter,
-                                        alternatives=alternatives)
+                                  alternatives=alternatives)
         else:
             pivots = None
 
@@ -98,6 +102,7 @@ class exact_grid_inference(object):
 
         result = pd.DataFrame({'target': self.observed_target,
                                'pvalue': pvalues,
+                               'alternative': alternatives,
                                'lower_confidence': lower,
                                'upper_confidence': upper})
 
