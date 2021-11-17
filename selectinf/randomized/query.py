@@ -193,9 +193,9 @@ class gaussian_query(query):
             return self._exact_grid_inference(target_spec,
                                               level=level) # has no additional args
         elif method == 'approx':
-            return self._approx_grid_inference(target_spec,
-                                               level=level,
-                                               **method_args)
+            return self._approximate_grid_inference(target_spec,
+                                                    level=level,
+                                                    **method_args)
         elif method == 'posterior':
             return self.posterior(target_spec,
                                   **method_args)[1]
