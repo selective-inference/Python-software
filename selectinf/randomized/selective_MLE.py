@@ -12,27 +12,21 @@ class mle_inference(object):
                  target_spec,
                  solve_args={'tol': 1.e-12}):
 
-        self.solve_args = solve_args
-
-        (observed_target,
-         cov_target,
-         regress_target_score) = target_spec[:3]
-
-        self.observed_target = observed_target
-        self.cov_target = cov_target
-        self.prec_target = np.linalg.inv(cov_target)
-        self.regress_target_score = regress_target_score
-
         self.query_spec = query_spec
-
-        self._setup_estimating_eqn()
-
+        self.target_spec = target_spec
+        self.solve_args = solve_args
+        
     def solve_estimating_eqn(self,
                              alternatives=None,
                              useC=False,
                              level=0.90):
 
+        prec_target_nosel, bias_target, U3, U5 = _setup_estimating_eqn(self.query_spec,
+                                                                       self.target_spec)
+
         Q = self.query_spec
+        TS = self.target_spec
+        
         cond_precision = np.linalg.inv(Q.cond_cov)
         conjugate_arg = cond_precision.dot(Q.cond_mean)
 
@@ -48,15 +42,15 @@ class mle_inference(object):
                                  Q.offset,
                                  **self.solve_args)
 
-        final_estimator = self.cov_target.dot(self.prec_target_nosel).dot(self.observed_target) \
-                          + self.regress_target_score.dot(Q.M1.dot(Q.opt_linear)).dot(Q.cond_mean - soln) \
-                          - self.bias_target
+        final_estimator = TS.cov_target.dot(prec_target_nosel).dot(TS.observed_target) \
+                          + TS.regress_target_score.dot(Q.M1.dot(Q.opt_linear)).dot(Q.cond_mean - soln) \
+                          - bias_target
 
-        observed_info_natural = self.prec_target_nosel + self.T3 - self.T5.dot(hess.dot(self.T5.T))
+        observed_info_natural = prec_target_nosel + U3 - U5.dot(hess.dot(U5.T))
 
-        unbiased_estimator = self.cov_target.dot(self.prec_target_nosel).dot(self.observed_target) - self.bias_target
+        unbiased_estimator = TS.cov_target.dot(prec_target_nosel).dot(TS.observed_target) - bias_target
 
-        observed_info_mean = self.cov_target.dot(observed_info_natural.dot(self.cov_target))
+        observed_info_mean = TS.cov_target.dot(observed_info_natural.dot(TS.cov_target))
 
         Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
 
@@ -96,24 +90,27 @@ class mle_inference(object):
 
         return result, observed_info_mean, log_ref
 
-    def _setup_estimating_eqn(self):
+def _setup_estimating_eqn(query_spec,
+                          target_spec):
 
-        Q = self.query_spec
-        T1 = self.regress_target_score.T.dot(self.prec_target)
-        T2 = T1.T.dot(Q.M2.dot(T1))
-        T3 = T1.T.dot(Q.M3.dot(T1))
-        T4 = Q.M1.dot(Q.opt_linear).dot(Q.cond_cov).dot(Q.opt_linear.T.dot(Q.M1.T.dot(T1)))
-        T5 = T1.T.dot(Q.M1.dot(Q.opt_linear))
+        Q = query_spec
+        TS = target_spec
 
-        self.prec_target_nosel = self.prec_target + T2 - T3
+        prec_target = np.linalg.inv(TS.cov_target)
+        U1 = TS.regress_target_score.T.dot(prec_target)
+        U2 = U1.T.dot(Q.M2.dot(U1))
+        U3 = U1.T.dot(Q.M3.dot(U1))
+        U4 = Q.M1.dot(Q.opt_linear).dot(Q.cond_cov).dot(Q.opt_linear.T.dot(Q.M1.T.dot(U1)))
+        U5 = U1.T.dot(Q.M1.dot(Q.opt_linear))
 
-        _P = -(T1.T.dot(Q.M1.dot(Q.observed_score)) + T2.dot(self.observed_target))
+        prec_target_nosel = prec_target + U2 - U3
 
-        self.bias_target = self.cov_target.dot(T1.T.dot(-T4.dot(self.observed_target)
+        _P = -(U1.T.dot(Q.M1.dot(Q.observed_score)) + U2.dot(TS.observed_target))
+
+        bias_target = TS.cov_target.dot(U1.T.dot(-U4.dot(TS.observed_target)
                                                    + Q.M1.dot(Q.opt_linear.dot(Q.cond_mean))) - _P)
 
-        self.T3 = T3
-        self.T5 = T5
+        return prec_target_nosel, bias_target, U3, U5
 
 
 
