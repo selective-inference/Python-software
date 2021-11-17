@@ -1,7 +1,7 @@
-import numpy as np
+import numpy as np, pandas as pd
 
 from ..constraints.affine import constraints
-from .posterior_inference import posterior
+from .posterior_inference import (posterior, langevin_sampler)
 from .approx_reference import approximate_grid_inference
 from .exact_reference import exact_grid_inference
 from .selective_MLE import mle_inference
@@ -160,55 +160,72 @@ class gaussian_query(query):
                 M2,
                 M3)
 
-    def selective_MLE(self,
-                      target_spec,
-                      level=0.90,
-                      solve_args={'tol': 1.e-12}):
-
-        """
-        Parameters
-           ----------
-           observed_target : ndarray
-                Observed estimate of target.
-           cov_target : ndarray
-                Estimated covaraince of target.
-           regress_target_score : ndarray
-                Estimated covariance of target and score of randomized query.
-           alternatives : [str], optional
-                Sequence of strings describing the alternatives,
-                should be values of ['twosided', 'less', 'greater']
-           solve_args : dict, optional
-                Arguments passed to solver.
-        """
-
-        G = mle_inference(self,
-                          target_spec,
-                          solve_args=solve_args)
-
-        return G.solve_estimating_eqn(level=level)
-
-    def posterior(self,
+    def inference(self,
                   target_spec,
-                  dispersion=1,
-                  prior=None,
-                  solve_args={'tol': 1.e-12}):
+                  method,
+                  level=0.90,
+                  method_args={}):
+
         """
         Parameters
         ----------
-        observed_target : ndarray
-            Observed estimate of target.
-        cov_target : ndarray
-            Estimated covaraince of target.
-        regress_target_score : ndarray
-            Estimated covariance of target and score of randomized query.
+        target_spec : TargetSpec
+           Information needed to specify the target.
+        method : str
+           One of ['selective_MLE', 'approx', 'exact', 'posterior']
+        level : float
+           Confidence level or posterior quantiles.
+        method_args : dict
+           Dict of arguments to be optionally passed to the methods.
+
+        Returns
+        -------
+
+        summary : pd.DataFrame
+           Statistical summary for specified targets.
+        """
+
+        if method == 'selective_MLE':
+            return self._selective_MLE(target_spec,
+                                       level=level,
+                                       **method_args)[0]
+        elif method == 'exact':
+            return self._exact_grid_inference(target_spec,
+                                              level=level) # has no additional args
+        elif method == 'approx':
+            return self._approx_grid_inference(target_spec,
+                                               level=level,
+                                               **method_args)
+        elif method == 'posterior':
+            return self.posterior(target_spec,
+                                  **method_args)[1]
+
+                                              
+    def posterior(self,
+                  target_spec,
+                  level=0.90,
+                  dispersion=1,
+                  prior=None,
+                  solve_args={'tol': 1.e-12},
+                  nsample=2000,
+                  nburnin=500):
+        """
+
+        Parameters
+        ----------
+        target_spec : TargetSpec
+            Information needed to specify the target.
+        level : float
+            Level for credible interval.
+        dispersion : float, optional
+            Dispersion parameter for log-likelihood.
         prior : callable
             A callable object that takes a single argument
             `parameter` of the same shape as `observed_target`
             and returns (value of log prior, gradient of log prior)
-        dispersion : float, optional
-            Dispersion parameter for log-likelihood.
         solve_args : dict, optional
             Arguments passed to solver.
+
         """
 
         if prior is None:
@@ -219,31 +236,67 @@ class gaussian_query(query):
                 log_prior = -0.5 * np.sum(target_parameter ** 2 * Di)
                 return log_prior, grad_prior
 
-        return posterior(self,
-                         target_spec,
-                         dispersion,
-                         prior,
-                         solve_args=solve_args)
+        posterior_repr =  posterior(self,
+                                    target_spec,
+                                    dispersion,
+                                    prior,
+                                    solve_args=solve_args)
+        
+        samples = langevin_sampler(posterior_repr,
+                                   nsample=nsample,
+                                   nburnin=nburnin)
 
-    def approximate_grid_inference(self,
-                                   target_spec,
-                                   useIP=True,
-                                   solve_args={'tol': 1.e-12}):
+        delta = 0.5 * (1 - level) * 100
+        lower = np.percentile(samples, delta, axis=0)
+        upper = np.percentile(samples, 100 - delta, axis=0)
+        mean = np.mean(samples, axis=0)
+
+        return samples, pd.DataFrame({'estimate':mean,
+                                      'lower_credible':lower,
+                                      'upper_credible':upper})
+        
+    # private methods
+
+    def _selective_MLE(self,
+                       target_spec,
+                       level=0.90,
+                       solve_args={'tol': 1.e-12}):
 
         """
         Parameters
         ----------
-        observed_target : ndarray
-            Observed estimate of target.
-        cov_target : ndarray
-            Estimated covaraince of target.
-        regress_target_score : ndarray
-            Estimated covariance of target and score of randomized query.
-        alternatives : [str], optional
-            Sequence of strings describing the alternatives,
-            should be values of ['twosided', 'less', 'greater']
+        target_spec : TargetSpec
+           Information needed to specify the target.
+        level : float
+           Confidence level or posterior quantiles.
+        solve_args : dict
+           Dict of arguments to be optionally passed to solver.
+        """
+
+        G = mle_inference(self,
+                          target_spec,
+                          solve_args=solve_args)
+
+        return G.solve_estimating_eqn(level=level)
+
+
+    def _approximate_grid_inference(self,
+                                    target_spec,
+                                    level=0.90,
+                                    solve_args={'tol': 1.e-12},
+                                    useIP=True):
+
+        """
+        Parameters
+        ----------
+        target_spec : TargetSpec
+           Information needed to specify the target.
+        level : float
+           Confidence level or posterior quantiles.
         solve_args : dict, optional
             Arguments passed to solver.
+        useIP : bool
+           Use spline extrapolation.
         """
 
         G = approximate_grid_inference(self,
@@ -251,33 +304,30 @@ class gaussian_query(query):
                                        solve_args=solve_args,
                                        useIP=useIP)
 
-        return G.summary(alternatives=target_spec.alternatives)
+        return G.summary(alternatives=target_spec.alternatives,
+                         level=level)
 
-    def exact_grid_inference(self,
-                             target_spec,
-                             solve_args={'tol': 1.e-12}):
+    def _exact_grid_inference(self,
+                              target_spec,
+                              level=0.90,
+                              solve_args={'tol': 1.e-12}):
 
         """
         Parameters
         ----------
-        observed_target : ndarray
-            Observed estimate of target.
-        cov_target : ndarray
-            Estimated covaraince of target.
-        regress_target_score : ndarray
-            Estimated covariance of target and score of randomized query.
-        alternatives : [str], optional
-            Sequence of strings describing the alternatives,
-            should be values of ['twosided', 'less', 'greater']
+        target_spec : TargetSpec
+           Information needed to specify the target.
+        level : float
+           Confidence level or posterior quantiles.
         solve_args : dict, optional
             Arguments passed to solver.
         """
 
         G = exact_grid_inference(self,
-                                 target_spec,
-                                 solve_args=solve_args)
+                                 target_spec)
 
-        return G.summary(alternatives=target_spec.alternatives)
+        return G.summary(alternatives=target_spec.alternatives,
+                         level=level)
 
 
 

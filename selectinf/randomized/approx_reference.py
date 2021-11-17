@@ -59,7 +59,8 @@ class approximate_grid_inference(object):
 
         self.observed_score = query.observed_score_state + query.observed_subgrad
 
-        result, inverse_info, log_ref = query.selective_MLE(target_spec)
+        result, inverse_info, log_ref = query._selective_MLE(target_spec,
+                                                             solve_args=solve_args)
 
         self.ntarget = ntarget = cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
@@ -103,12 +104,12 @@ class approximate_grid_inference(object):
 
         if parameter is not None:
             pivots = self.approx_pivots(parameter,
-                                        alternatives=alternatives)
+                                        alternatives=alternatives)[0]
         else:
             pivots = None
 
         pvalues = self._approx_pivots(np.zeros_like(self.observed_target),
-                                      alternatives=alternatives)
+                                      alternatives=alternatives)[0]
         lower, upper = self._approx_intervals(level=level)
 
         result = pd.DataFrame({'target': self.observed_target,

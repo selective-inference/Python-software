@@ -67,8 +67,8 @@ class posterior(object):
 
         self.observed_score = query.observed_score_state + query.observed_subgrad
 
-        result, self.inverse_info, log_ref = query.selective_MLE(target_spec)
-
+        result, self.inverse_info, log_ref = query._selective_MLE(target_spec,
+                                                                  solve_args=solve_args)
 
         self.ntarget = self.cov_target.shape[0]
         self.nopt = self.cond_precision.shape[0]

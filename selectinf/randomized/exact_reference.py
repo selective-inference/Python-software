@@ -26,11 +26,8 @@ class exact_grid_inference(object):
             Estimated covaraince of target.
         cov_target_score : ndarray
             Estimated covariance of target and score of randomized query.
-        solve_args : dict, optional
-            Arguments passed to solver.
         """
 
-        self.solve_args = solve_args
 
         (observed_target,
          cov_target,
@@ -56,7 +53,8 @@ class exact_grid_inference(object):
 
         self.observed_score = query.observed_score_state + query.observed_subgrad
 
-        result, inverse_info, log_ref = query.selective_MLE(target_spec)
+        result, inverse_info, log_ref = query._selective_MLE(target_spec,
+                                                             solve_args=solve_args)
 
         self.ntarget = ntarget = cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))

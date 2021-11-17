@@ -78,7 +78,7 @@ def test_full_targets(n=200,
 
             conv.setup_inference(dispersion=dispersion)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
 
             pval = result['pvalue']
             estimate = result['MLE']
@@ -147,7 +147,7 @@ def test_selected_targets(n=2000,
                                            conv.observed_soln,
                                            dispersion=dispersion)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
 
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
@@ -245,7 +245,7 @@ def test_selected_targets_disperse(n=500,
                                            conv.observed_soln,
                                            dispersion=dispersion)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
 
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
@@ -301,7 +301,7 @@ def test_logistic(n=2000,
                                            conv.observed_soln,
                                            dispersion=1)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -353,7 +353,7 @@ def test_logistic_split(n=2000,
 
             conv.setup_inference(dispersion=None)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -405,7 +405,7 @@ def test_poisson(n=2000,
 
             conv.setup_inference(dispersion=1)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -457,7 +457,7 @@ def test_poisson_split(n=2000,
 
             conv.setup_inference(dispersion=1)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -512,7 +512,7 @@ def test_cox(n=2000,
                                            conv.observed_soln,
                                            dispersion=1)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -567,7 +567,7 @@ def test_cox_split(n=2000,
                                            conv.observed_soln,
                                            dispersion=1)
 
-            result = conv.selective_MLE(target_spec)[0]
+            result = conv._selective_MLE(target_spec)[0]
             estimate = result['MLE']
             pval = result['pvalue']
             intervals = np.asarray(result[['lower_confidence',
@@ -635,7 +635,7 @@ def test_scale_invariant_split(n=200,
         print('regress_target_score',  target_spec.regress_target_score[0,0]/scale**2)
 
 
-        result = conv.selective_MLE(target_spec)[0]
+        result = conv._selective_MLE(target_spec)[0]
 
         print(result['MLE'] / scale)
         results.append(result)
@@ -713,7 +713,7 @@ def test_scale_invariant(n=200,
         print('cov_target', target_spec.cov_target[0,0]/scale**2)
         print('regress_target_score',  target_spec.regress_target_score[0,0]/scale**2)
         
-        result = conv.selective_MLE(target_spec)[0]
+        result = conv._selective_MLE(target_spec)[0]
 
         print(result['MLE'] / scale)
         results.append(result)
