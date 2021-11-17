@@ -249,20 +249,20 @@ class grid_inference(object):
             prec_target = 1. / cov_target_uni
             regress_target_score_uni = TS.regress_target_score[m, :].reshape((1, p))
 
-            T1 = regress_target_score_uni.T.dot(prec_target)
-            T2 = T1.T.dot(QS.M2.dot(T1))
-            T3 = T1.T.dot(QS.M3.dot(T1))
-            T4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(T1)))
-            T5 = T1.T.dot(QS.M1.dot(QS.opt_linear))
+            U1 = regress_target_score_uni.T.dot(prec_target)
+            U2 = U1.T.dot(QS.M2.dot(U1))
+            U3 = U1.T.dot(QS.M3.dot(U1))
+            U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
+            U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
 
-            _T = QS.cond_cov.dot(T5.T)
+            _T = QS.cond_cov.dot(U5.T)
 
-            prec_target_nosel = prec_target + T2 - T3
+            prec_target_nosel = prec_target + U2 - U3
 
-            _P = -(T1.T.dot(QS.M1.dot(QS.observed_score)) + T2.dot(observed_target_uni))
+            _P = -(U1.T.dot(QS.M1.dot(QS.observed_score)) + U2.dot(observed_target_uni))
 
             bias_target = cov_target_uni.dot(
-                T1.T.dot(-T4.dot(observed_target_uni) + QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
+                U1.T.dot(-U4.dot(observed_target_uni) + QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
 
             _r = np.linalg.inv(prec_target_nosel).dot(prec_target.dot(bias_target))
             _S = np.linalg.inv(prec_target_nosel).dot(prec_target)
