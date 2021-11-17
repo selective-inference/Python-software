@@ -24,11 +24,11 @@ class mle_inference(object):
         prec_target_nosel, bias_target, U3, U5 = _setup_estimating_eqn(self.query_spec,
                                                                        self.target_spec)
 
-        Q = self.query_spec
+        QS = self.query_spec
         TS = self.target_spec
         
-        cond_precision = np.linalg.inv(Q.cond_cov)
-        conjugate_arg = cond_precision.dot(Q.cond_mean)
+        cond_precision = np.linalg.inv(QS.cond_cov)
+        conjugate_arg = cond_precision.dot(QS.cond_mean)
 
         if useC:
             solver = solve_barrier_affine_C
@@ -37,13 +37,13 @@ class mle_inference(object):
 
         val, soln, hess = solver(conjugate_arg,
                                  cond_precision,
-                                 Q.observed_soln,
-                                 Q.linear_part,
-                                 Q.offset,
+                                 QS.observed_soln,
+                                 QS.linear_part,
+                                 QS.offset,
                                  **self.solve_args)
 
         final_estimator = TS.cov_target.dot(prec_target_nosel).dot(TS.observed_target) \
-                          + TS.regress_target_score.dot(Q.M1.dot(Q.opt_linear)).dot(Q.cond_mean - soln) \
+                          + TS.regress_target_score.dot(QS.M1.dot(QS.opt_linear)).dot(QS.cond_mean - soln) \
                           - bias_target
 
         observed_info_natural = prec_target_nosel + U3 - U5.dot(hess.dot(U5.T))
@@ -77,7 +77,7 @@ class mle_inference(object):
         intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
                                final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
-        log_ref = val + conjugate_arg.T.dot(Q.cond_cov).dot(conjugate_arg) / 2.
+        log_ref = val + conjugate_arg.T.dot(QS.cond_cov).dot(conjugate_arg) / 2.
 
         result = pd.DataFrame({'MLE': final_estimator,
                                'SE': np.sqrt(np.diag(observed_info_mean)),
@@ -93,22 +93,22 @@ class mle_inference(object):
 def _setup_estimating_eqn(query_spec,
                           target_spec):
 
-        Q = query_spec
+        QS = query_spec
         TS = target_spec
 
         prec_target = np.linalg.inv(TS.cov_target)
         U1 = TS.regress_target_score.T.dot(prec_target)
-        U2 = U1.T.dot(Q.M2.dot(U1))
-        U3 = U1.T.dot(Q.M3.dot(U1))
-        U4 = Q.M1.dot(Q.opt_linear).dot(Q.cond_cov).dot(Q.opt_linear.T.dot(Q.M1.T.dot(U1)))
-        U5 = U1.T.dot(Q.M1.dot(Q.opt_linear))
+        U2 = U1.T.dot(QS.M2.dot(U1))
+        U3 = U1.T.dot(QS.M3.dot(U1))
+        U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
+        U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
 
         prec_target_nosel = prec_target + U2 - U3
 
-        _P = -(U1.T.dot(Q.M1.dot(Q.observed_score)) + U2.dot(TS.observed_target))
+        _P = -(U1.T.dot(QS.M1.dot(QS.observed_score)) + U2.dot(TS.observed_target))
 
         bias_target = TS.cov_target.dot(U1.T.dot(-U4.dot(TS.observed_target)
-                                                   + Q.M1.dot(Q.opt_linear.dot(Q.cond_mean))) - _P)
+                                                   + QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
 
         return prec_target_nosel, bias_target, U3, U5
 

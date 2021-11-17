@@ -29,49 +29,24 @@ class grid_inference(object):
 
         self.query_spec = query_spec
         self.target_spec = target_spec
-        query = query_spec
-
         self.solve_args = solve_args
 
-        (observed_target,
-         cov_target,
-         regress_target_score) = target_spec[:3]
-
-        self.observed_target = observed_target
-        self.cov_target = cov_target
-        self.prec_target = np.linalg.inv(cov_target)
-        self.regress_target_score = regress_target_score
-
-        self.cond_mean = query.cond_mean
-        self.cond_cov = query.cond_cov
-        self.cond_precision = np.linalg.inv(self.cond_cov)
-        self.opt_linear = query.opt_linear
-
-        self.linear_part = query.linear_part
-        self.offset = query.offset
-
-        self.M1 = query.M1
-        self.M2 = query.M2
-        self.M3 = query.M3
-        self.observed_soln = query.observed_opt_state
-
-        self.observed_score = query.observed_score_state + query.observed_subgrad
-
-        G = mle_inference(query,
+        G = mle_inference(query_spec,
                           target_spec,
                           solve_args=solve_args)
 
         _, inverse_info, log_ref = G.solve_estimating_eqn()
 
-        self.ntarget = ntarget = cov_target.shape[0]
+        TS = target_spec
+        self.ntarget = ntarget = TS.cov_target.shape[0]
         _scale = 4 * np.sqrt(np.diag(inverse_info))
         self.inverse_info = inverse_info
 
         ngrid = 1000
         self.stat_grid = np.zeros((ntarget, ngrid))
         for j in range(ntarget):
-            self.stat_grid[j, :] = np.linspace(observed_target[j] - 1.5 * _scale[j],
-                                               observed_target[j] + 1.5 * _scale[j],
+            self.stat_grid[j, :] = np.linspace(TS.observed_target[j] - 1.5 * _scale[j],
+                                               TS.observed_target[j] + 1.5 * _scale[j],
                                                num=ngrid)
 
     def summary(self,
@@ -92,17 +67,19 @@ class grid_inference(object):
             Confidence level.
         """
 
+        TS = self.target_spec
+
         if parameter is not None:
             pivots = self._pivots(parameter,
                                   alternatives=alternatives)
         else:
             pivots = None
 
-        pvalues = self._pivots(np.zeros_like(self.observed_target),
+        pvalues = self._pivots(np.zeros_like(TS.observed_target),
                                       alternatives=alternatives) 
         lower, upper = self._intervals(level=level)
 
-        result = pd.DataFrame({'target': self.observed_target,
+        result = pd.DataFrame({'target': TS.observed_target,
                                'pvalue': pvalues,
                                'alternative': alternatives,
                                'lower_confidence': lower,
@@ -198,6 +175,8 @@ class grid_inference(object):
                 mean_parameter,
                 alternatives=None):
 
+        TS = self.target_spec
+
         if not hasattr(self, "_families"):
             self._construct_families()
 
@@ -214,7 +193,7 @@ class grid_inference(object):
             mean = self.S[m].dot(mean_parameter[m].reshape((1,))) + self.r[m]
             # construction of pivot from families follows `selectinf.learning.core`
 
-            _cdf = family.cdf((mean[0] - self.observed_target[m]) / var_target, x=self.observed_target[m])
+            _cdf = family.cdf((mean[0] - TS.observed_target[m]) / var_target, x=TS.observed_target[m])
 
             if alternatives[m] == 'twosided':
                 pivot.append(2 * min(_cdf, 1 - _cdf))
@@ -229,6 +208,8 @@ class grid_inference(object):
     def _intervals(self,
                    level=0.9):
 
+        TS = self.target_spec
+        
         if not hasattr(self, "_families"):
             self._construct_families()
 
@@ -237,7 +218,7 @@ class grid_inference(object):
         for m in range(self.ntarget):
             # construction of intervals from families follows `selectinf.learning.core`
             family = self._families[m]
-            observed_target = self.observed_target[m]
+            observed_target = TS.observed_target[m]
 
             l, u = family.equal_tailed_interval(observed_target,
                                                 alpha=1 - level)
@@ -252,33 +233,36 @@ class grid_inference(object):
     ### Private method
     def _construct_density(self):
 
+        TS = self.target_spec
+        QS = self.query_spec
+
         precs = {}
         S = {}
         r = {}
         T = {}
 
-        p = self.regress_target_score.shape[1]
+        p = TS.regress_target_score.shape[1]
 
         for m in range(self.ntarget):
-            observed_target_uni = (self.observed_target[m]).reshape((1,))
-            cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
+            observed_target_uni = (TS.observed_target[m]).reshape((1,))
+            cov_target_uni = (np.diag(TS.cov_target)[m]).reshape((1, 1))
             prec_target = 1. / cov_target_uni
-            regress_target_score_uni = self.regress_target_score[m, :].reshape((1, p))
+            regress_target_score_uni = TS.regress_target_score[m, :].reshape((1, p))
 
             T1 = regress_target_score_uni.T.dot(prec_target)
-            T2 = T1.T.dot(self.M2.dot(T1))
-            T3 = T1.T.dot(self.M3.dot(T1))
-            T4 = self.M1.dot(self.opt_linear).dot(self.cond_cov).dot(self.opt_linear.T.dot(self.M1.T.dot(T1)))
-            T5 = T1.T.dot(self.M1.dot(self.opt_linear))
+            T2 = T1.T.dot(QS.M2.dot(T1))
+            T3 = T1.T.dot(QS.M3.dot(T1))
+            T4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(T1)))
+            T5 = T1.T.dot(QS.M1.dot(QS.opt_linear))
 
-            _T = self.cond_cov.dot(T5.T)
+            _T = QS.cond_cov.dot(T5.T)
 
             prec_target_nosel = prec_target + T2 - T3
 
-            _P = -(T1.T.dot(self.M1.dot(self.observed_score)) + T2.dot(observed_target_uni))
+            _P = -(T1.T.dot(QS.M1.dot(QS.observed_score)) + T2.dot(observed_target_uni))
 
             bias_target = cov_target_uni.dot(
-                T1.T.dot(-T4.dot(observed_target_uni) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
+                T1.T.dot(-T4.dot(observed_target_uni) + QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
 
             _r = np.linalg.inv(prec_target_nosel).dot(prec_target.dot(bias_target))
             _S = np.linalg.inv(prec_target_nosel).dot(prec_target)
