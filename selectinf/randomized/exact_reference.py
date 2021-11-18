@@ -89,7 +89,7 @@ class exact_grid_inference(grid_inference):
         QS = self.query_spec
         TS = self.target_spec
 
-        self._construct_density()
+        precs, S, r, T = self.conditional_spec
 
         self._families = []
 
@@ -98,11 +98,11 @@ class exact_grid_inference(grid_inference):
             observed_target_uni = (TS.observed_target[m]).reshape((1,))
             cov_target_uni = (np.diag(TS.cov_target)[m]).reshape((1, 1))
 
-            var_target = 1. / ((self.precs[m])[0, 0])
+            var_target = 1. / (precs[m][0, 0])
 
             log_ref = self.log_reference(observed_target_uni,
                                          cov_target_uni,
-                                         self.T[m],
+                                         T[m],
                                          self.stat_grid[m])
 
             logW = (log_ref - 0.5 * (self.stat_grid[m] - TS.observed_target[m]) ** 2 / var_target)

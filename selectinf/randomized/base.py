@@ -1,7 +1,22 @@
+from typing import NamedTuple
 import numpy as np, pandas as pd
 
 from .selective_MLE import mle_inference
 
+class ConditionalSpec(NamedTuple):
+
+    # description of (preselection) conditional law of
+    # targets \hat{\theta} | u, N
+    # if they were unbiased, then:
+    # 1) precision will agree with marginal variance
+    # 2) scalings will all be 1
+    # 3) shifts will be 0
+
+    precision : np.ndarray
+    scalings : np.ndarray
+    shifts : np.ndarray
+    T : np.ndarray  # what is T?
+    
 class grid_inference(object):
 
     def __init__(self,
@@ -127,58 +142,16 @@ class grid_inference(object):
 
         return np.asarray(ref_hat)
 
-    def _construct_families(self):
-
-        self._construct_density()
-
-        self._families = []
-        _log_ref = np.zeros((self.ntarget, 1000))
-        for m in range(self.ntarget):
-
-            observed_target_uni = (self.observed_target[m]).reshape((1,))
-            cov_target_uni = (np.diag(self.cov_target)[m]).reshape((1, 1))
-
-            var_target = 1. / ((self.precs[m])[0, 0])
-
-            approx_log_ref = self._approx_log_reference(observed_target_uni,
-                                                        cov_target_uni,
-                                                        self.T[m],
-                                                        self.stat_grid[m])
-
-            if self.useIP == False:
-
-                logW = (approx_log_ref - 0.5 * (self.stat_grid[m] - self.observed_target[m]) ** 2 / var_target)
-                logW -= logW.max()
-                _log_ref[m,:] = logW
-                self._families.append(discrete_family(self.stat_grid[m],
-                                                      np.exp(logW)))
-            else:
-
-                approx_fn = interp1d(self.stat_grid[m],
-                                     approx_log_ref,
-                                     kind='quadratic',
-                                     bounds_error=False,
-                                     fill_value='extrapolate')
-
-                grid = np.linspace(self.stat_grid[m].min(), self.stat_grid[m].max(), 1000)
-                logW = (approx_fn(grid) -
-                        0.5 * (grid - self.observed_target[m]) ** 2 / var_target)
-
-                logW -= logW.max()
-                _log_ref[m, :] = logW
-                self._families.append(discrete_family(grid,
-                                                      np.exp(logW)))
-
-        self._log_ref = _log_ref
-
     def _pivots(self,
                 mean_parameter,
                 alternatives=None):
 
         TS = self.target_spec
-
+        
         if not hasattr(self, "_families"):
-            self._construct_families()
+            self._construct_density() # generic
+            self._construct_families() # specific to the method
+        precs, S, r = self.conditional_spec
 
         if alternatives is None:
             alternatives = ['twosided'] * self.ntarget
@@ -188,9 +161,9 @@ class grid_inference(object):
         for m in range(self.ntarget):
 
             family = self._families[m]
-            var_target = 1. / ((self.precs[m])[0, 0])
+            var_target = 1. / (precs[m][0, 0])
 
-            mean = self.S[m].dot(mean_parameter[m].reshape((1,))) + self.r[m]
+            mean = S[m].dot(mean_parameter[m].reshape((1,))) + r[m]
             # construction of pivot from families follows `selectinf.learning.core`
 
             _cdf = family.cdf((mean[0] - TS.observed_target[m]) / var_target, x=TS.observed_target[m])
@@ -211,7 +184,10 @@ class grid_inference(object):
         TS = self.target_spec
         
         if not hasattr(self, "_families"):
-            self._construct_families()
+            self._construct_density() # generic
+            self._construct_families() # specific to the method
+
+        precs, S, r, _ = self.conditional_spec
 
         lower, upper = [], []
 
@@ -223,7 +199,9 @@ class grid_inference(object):
             l, u = family.equal_tailed_interval(observed_target,
                                                 alpha=1 - level)
 
-            var_target = 1. / ((self.precs[m])[0, 0])
+            var_target = 1. / (precs[m][0, 0])
+
+            # JT: I think these should cover S \theta^* + r not theta^*
 
             lower.append(l * var_target + observed_target)
             upper.append(u * var_target + observed_target)
@@ -231,15 +209,19 @@ class grid_inference(object):
         return np.asarray(lower), np.asarray(upper)
 
     ### Private method
+
     def _construct_density(self):
+        """
+        What is this method doing?
+        """
 
         TS = self.target_spec
         QS = self.query_spec
 
-        precs = {}
-        S = {}
-        r = {}
-        T = {}
+        precs = []
+        S = []
+        r = []
+        T = []
 
         p = TS.regress_target_score.shape[1]
 
@@ -255,6 +237,7 @@ class grid_inference(object):
             U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
             U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
 
+            # JT: what is _T?
             _T = QS.cond_cov.dot(U5.T)
 
             prec_target_nosel = prec_target + U2 - U3
@@ -267,12 +250,16 @@ class grid_inference(object):
             _r = np.linalg.inv(prec_target_nosel).dot(prec_target.dot(bias_target))
             _S = np.linalg.inv(prec_target_nosel).dot(prec_target)
 
-            S[m] = _S
-            r[m] = _r
-            precs[m] = prec_target_nosel
-            T[m] = _T
+            S.append(_S)
+            r.append(_r)
+            precs.append(prec_target_nosel)
+            T.append(_T)
 
-        self.precs = precs
-        self.S = S
-        self.r = r
-        self.T = T
+        self.conditional_spec = ConditionalSpec(np.array(precs),
+                                                np.array(S),
+                                                np.array(r),
+                                                np.array(T) # what is T here?
+                                                )
+
+        return self.conditional_spec
+

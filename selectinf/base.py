@@ -1,4 +1,4 @@
-import typing
+from typing import NamedTuple
 
 import numpy as np
 
@@ -47,13 +47,12 @@ def restricted_estimator(loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 # functions construct targets of inference
 # and covariance with score representation
 
-class TargetSpec(typing.NamedTuple):
+class TargetSpec(NamedTuple):
     
     observed_target : np.ndarray
     cov_target : np.ndarray
     regress_target_score : np.ndarray
     alternatives : list
-    #dispersion : float = 1
     
 def selected_targets(loglike, 
                      solution,

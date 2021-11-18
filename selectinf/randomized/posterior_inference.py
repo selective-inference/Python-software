@@ -35,47 +35,24 @@ class posterior(object):
     """
 
     def __init__(self,
-                 query,
+                 query_spec,
                  target_spec,
                  dispersion,
                  prior,
                  solve_args={'tol': 1.e-12}):
 
+        self.query_spec = QS = query_spec
+        self.target_spec = TS = target_spec
         self.solve_args = solve_args
 
-        (observed_target,
-         cov_target,
-         regress_target_score) = target_spec[:3]
-
-        self.observed_target = observed_target
-        self.cov_target = cov_target
-        self.prec_target = np.linalg.inv(cov_target)
-        self.regress_target_score = regress_target_score
-
-        self.cond_mean = query.cond_mean
-        self.cond_cov = query.cond_cov
-        self.cond_precision = np.linalg.inv(self.cond_cov)
-        self.opt_linear = query.opt_linear
-
-        self.linear_part = query.linear_part
-        self.offset = query.offset
-
-        self.M1 = query.M1
-        self.M2 = query.M2
-        self.M3 = query.M3
-        self.observed_soln = query.observed_opt_state
-
-        self.observed_score = query.observed_score_state + query.observed_subgrad
-
-        G = mle_inference(query,
+        G = mle_inference(query_spec,
                           target_spec,
                           solve_args=solve_args)
 
         result, self.inverse_info, self.log_ref = G.solve_estimating_eqn()
 
-        self.ntarget = self.cov_target.shape[0]
-        self.nopt = self.cond_precision.shape[0]
-
+        self.ntarget = TS.cov_target.shape[0]
+        self.nopt = QS.cond_cov.shape[0]
 
         self.initial_estimate = np.asarray(result['MLE'])
         self.dispersion = dispersion
@@ -83,7 +60,7 @@ class posterior(object):
         ### Note for an informative prior we might want to change this...
         self.prior = prior
 
-        self._set_marginal_parameters()
+        self._get_marginal_parameters()
 
     def log_posterior(self,
                       target_parameter,
@@ -99,30 +76,39 @@ class posterior(object):
             Noise standard deviation.
         """
 
+        QS = self.query_spec
+        TS = self.target_spec
+        
+        (prec_marginal,
+         linear_coef,
+         offset_coef,
+         r,
+         S,
+         prec_target_nosel) = self._get_marginal_parameters()
+        
         sigmasq = sigma ** 2
 
-        target = self.S.dot(target_parameter) + self.r
+        target = S.dot(target_parameter) + r
 
-        mean_marginal = self.linear_coef.dot(target) + self.offset_coef
-        prec_marginal = self.prec_marginal
+        mean_marginal = linear_coef.dot(target) + offset_coef
         conjugate_marginal = prec_marginal.dot(mean_marginal)
 
         solver = solve_barrier_affine_py
 
         val, soln, hess = solver(conjugate_marginal,
                                  prec_marginal,
-                                 self.observed_soln,
-                                 self.linear_part,
-                                 self.offset,
+                                 QS.observed_soln,
+                                 QS.linear_part,
+                                 QS.offset,
                                  **self.solve_args)
 
         log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal) / 2.
 
-        log_lik = -((self.observed_target - target).T.dot(self.prec_target_nosel).dot(self.observed_target - target)) / 2. \
+        log_lik = -((TS.observed_target - target).T.dot(prec_target_nosel).dot(TS.observed_target - target)) / 2. \
                   - log_normalizer
 
-        grad_lik = self.S.T.dot(self.prec_target_nosel.dot(self.observed_target) - self.prec_target_nosel.dot(target)
-                                - self.linear_coef.T.dot(prec_marginal.dot(soln) - conjugate_marginal))
+        grad_lik = S.T.dot(prec_target_nosel.dot(TS.observed_target) - prec_target_nosel.dot(target)
+                                - linear_coef.T.dot(prec_marginal.dot(soln) - conjugate_marginal))
 
         log_prior, grad_prior = self.prior(target_parameter)
 
@@ -134,7 +120,7 @@ class posterior(object):
 
     ### Private method
 
-    def _set_marginal_parameters(self):
+    def _get_marginal_parameters(self):
         """
         This works out the implied covariance
         of optimization varibles as a function
@@ -142,33 +128,43 @@ class posterior(object):
         implied mean as a function of the true parameters.
         """
 
-        T1 = self.regress_target_score.T.dot(self.prec_target)
-        T2 = T1.T.dot(self.M2.dot(T1))
-        T3 = T1.T.dot(self.M3.dot(T1))
-        T4 = self.M1.dot(self.opt_linear).dot(self.cond_cov).dot(self.opt_linear.T.dot(self.M1.T.dot(T1)))
-        T5 = T1.T.dot(self.M1.dot(self.opt_linear))
+        QS = self.query_spec
+        TS = self.target_spec
 
-        prec_target_nosel = self.prec_target + T2 - T3
+        prec_target = np.linalg.inv(TS.cov_target)
+        cond_precision = np.linalg.inv(QS.cond_cov)
+        
+        U1 = TS.regress_target_score.T.dot(prec_target)
+        U2 = U1.T.dot(QS.M2.dot(U1))
+        U3 = U1.T.dot(QS.M3.dot(U1))
+        U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
+        U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
 
-        _P = -(T1.T.dot(self.M1.dot(self.observed_score)) + T2.dot(self.observed_target))
+        prec_target_nosel = prec_target + U2 - U3
 
-        bias_target = self.cov_target.dot(T1.T.dot(-T4.dot(self.observed_target) + self.M1.dot(self.opt_linear.dot(self.cond_mean))) - _P)
+        _P = -(U1.T.dot(QS.M1.dot(QS.observed_score)) + U2.dot(TS.observed_target))
+
+        bias_target = TS.cov_target.dot(U1.T.dot(-U4.dot(TS.observed_target) +
+                                                 QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
 
         ###set parameters for the marginal distribution of optimization variables
 
-        _Q = np.linalg.inv(prec_target_nosel + T3)
-        self.prec_marginal = self.cond_precision - T5.T.dot(_Q).dot(T5)
-        self.linear_coef = self.cond_cov.dot(T5.T)
-        self.offset_coef = self.cond_mean - self.linear_coef.dot(self.observed_target)
+        _Q = np.linalg.inv(prec_target_nosel + U3)
+        prec_marginal = cond_precision - U5.T.dot(_Q).dot(U5)
+        linear_coef = QS.cond_cov.dot(U5.T)
+        offset_coef = QS.cond_mean - linear_coef.dot(TS.observed_target)
 
         ###set parameters for the marginal distribution of target
 
-        r = np.linalg.inv(prec_target_nosel).dot(self.prec_target.dot(bias_target))
-        S = np.linalg.inv(prec_target_nosel).dot(self.prec_target)
+        r = np.linalg.inv(prec_target_nosel).dot(prec_target.dot(bias_target))
+        S = np.linalg.inv(prec_target_nosel).dot(prec_target)
 
-        self.r = r
-        self.S = S
-        self.prec_target_nosel = prec_target_nosel
+        return (prec_marginal,
+                linear_coef,
+                offset_coef,
+                r,
+                S,
+                prec_target_nosel)
 
 ### sampling methods
 
