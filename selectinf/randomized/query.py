@@ -112,20 +112,6 @@ class gaussian_query(object):
 
     sampler = property(get_sampler, set_sampler, doc='Sampler of optimization (augmented) variables.')
 
-    # # implemented by subclasses
-
-    # def solve(self):
-
-    #     raise NotImplementedError('abstract method')
-
-
-# class gaussian_query(query):
-
-#     """
-#     A class with Gaussian perturbation to the objective -- 
-#     easy to apply CLT to such things
-#     """
-
     def fit(self, perturb=None):
 
         # take a new perturbation if supplied

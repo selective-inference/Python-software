@@ -1,10 +1,9 @@
 from __future__ import division, print_function
 
-import numpy as np, pandas as pd
+import numpy as np
 from scipy.stats import norm as ndist
 
 from ..distributions.discrete_family import discrete_family
-from .selective_MLE import mle_inference
 from .base import grid_inference
 
 class exact_grid_inference(grid_inference):
@@ -16,7 +15,7 @@ class exact_grid_inference(grid_inference):
                       grid):
 
         QS = self.query_spec
-        TS = self.target_spec
+        TS = self.target_spec ## we don't use this; it seems that we have already formed the target_specific elements which we input as arguments for this functions
 
         if np.asarray(observed_target).shape in [(), (0,)]:
             raise ValueError('no target specified')
