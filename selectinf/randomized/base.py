@@ -151,7 +151,7 @@ class grid_inference(object):
         if not hasattr(self, "_families"):
             self._construct_density() # generic
             self._construct_families() # specific to the method
-        precs, S, r = self.conditional_spec
+        precs, S, r, _ = self.conditional_spec
 
         if alternatives is None:
             alternatives = ['twosided'] * self.ntarget
