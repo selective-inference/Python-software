@@ -151,7 +151,7 @@ class grid_inference(object):
         if not hasattr(self, "_families"):
             self._construct_density() # generic
             self._construct_families() # specific to the method
-        precs, S, r = self.conditional_spec
+        precs, S, r, _ = self.conditional_spec
 
         if alternatives is None:
             alternatives = ['twosided'] * self.ntarget
@@ -195,16 +195,21 @@ class grid_inference(object):
             # construction of intervals from families follows `selectinf.learning.core`
             family = self._families[m]
             observed_target = TS.observed_target[m]
+            unbiased_est = (observed_target - r[m][0]) * (1./(S[m][0,0]))
 
-            l, u = family.equal_tailed_interval(observed_target,
-                                                alpha=1 - level)
+            _l, _u = family.equal_tailed_interval(observed_target,
+                                                  alpha=1 - level)
+            l = _l * (1./(S[m][0,0]))
+            u = _u * (1./(S[m][0,0]))
 
             var_target = 1. / (precs[m][0, 0])
 
             # JT: I think these should cover S \theta^* + r not theta^*
 
-            lower.append(l * var_target + observed_target)
-            upper.append(u * var_target + observed_target)
+            #lower.append(l * var_target + observed_target)
+            #upper.append(u * var_target + observed_target)
+            lower.append(l * var_target + unbiased_est)
+            upper.append(u * var_target + unbiased_est)
 
         return np.asarray(lower), np.asarray(upper)
 
