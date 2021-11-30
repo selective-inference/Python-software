@@ -22,7 +22,8 @@ class grid_inference(object):
     def __init__(self,
                  query_spec,
                  target_spec,
-                 solve_args={'tol': 1.e-12}):
+                 solve_args={'tol': 1.e-12},
+                 ngrid=1000):
 
         """
         Produce p-values and confidence intervals for targets
@@ -45,6 +46,7 @@ class grid_inference(object):
         self.query_spec = query_spec
         self.target_spec = target_spec
         self.solve_args = solve_args
+        self.ngrid = ngrid
 
         G = mle_inference(query_spec,
                           target_spec,
@@ -57,7 +59,6 @@ class grid_inference(object):
         _scale = 4 * np.sqrt(np.diag(inverse_info))
         self.inverse_info = inverse_info
 
-        ngrid = 1000
         self.stat_grid = np.zeros((ntarget, ngrid))
         for j in range(ntarget):
             self.stat_grid[j, :] = np.linspace(TS.observed_target[j] - 1.5 * _scale[j],
@@ -204,10 +205,6 @@ class grid_inference(object):
 
             var_target = 1. / (precs[m][0, 0])
 
-            # JT: I think these should cover S \theta^* + r not theta^*
-
-            #lower.append(l * var_target + observed_target)
-            #upper.append(u * var_target + observed_target)
             lower.append(l * var_target + unbiased_est)
             upper.append(u * var_target + unbiased_est)
 

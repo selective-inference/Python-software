@@ -1,3 +1,4 @@
+
 from __future__ import division, print_function
 
 import numpy as np, pandas as pd
@@ -13,7 +14,8 @@ class approximate_grid_inference(grid_inference):
                  query_spec,
                  target_spec,
                  solve_args={'tol': 1.e-12},
-                 useIP=False):
+                 ngrid=1000,
+                 ncoarse=40):
 
         """
         Produce p-values and confidence intervals for targets
@@ -38,16 +40,7 @@ class approximate_grid_inference(grid_inference):
                                 target_spec,
                                 solve_args=solve_args)
 
-        if useIP:
-            ngrid = 60
-            self.stat_grid = np.zeros((ntarget, ngrid))
-            for j in range(ntarget):
-                self.stat_grid[j, :] = np.linspace(observed_target[j] - 1.5 * _scale[j],
-                                                   observed_target[j] + 1.5 * _scale[j],
-                                                   num=ngrid)
-
-
-        self.useIP = useIP
+        self.ncoarse = ncoarse
 
     def _approx_log_reference(self,
                               observed_target,
@@ -98,7 +91,19 @@ class approximate_grid_inference(grid_inference):
         precs, S, r, T = self.conditional_spec
 
         self._families = []
-        _log_ref = np.zeros((self.ntarget, 1000))
+
+        if self.ncoarse is not None:
+            coarse_grid = np.zeros((self.stat_grid.shape[0], self.ncoarse))
+            for j in range(coarse_grid.shape[0]):
+                coarse_grid[j,:] = np.linspace(self.stat_grid[j].min(),
+                                               self.stat_grid[j].max(),
+                                               self.ncoarse)
+            eval_grid = coarse_grid
+        else:
+            eval_grid = self.stat_grid
+            
+        _log_ref = np.zeros((self.ntarget, self.stat_grid[0].shape[0]))
+
         for m in range(self.ntarget):
 
             observed_target_uni = (TS.observed_target[m]).reshape((1,))
@@ -109,9 +114,9 @@ class approximate_grid_inference(grid_inference):
             approx_log_ref = self._approx_log_reference(observed_target_uni,
                                                         cov_target_uni,
                                                         T[m],
-                                                        self.stat_grid[m])
-
-            if self.useIP == False:
+                                                        eval_grid[m])
+            
+            if self.ncoarse is None:
 
                 logW = (approx_log_ref - 0.5 * (self.stat_grid[m] - TS.observed_target[m]) ** 2 / var_target)
                 logW -= logW.max()
@@ -120,17 +125,41 @@ class approximate_grid_inference(grid_inference):
                                                       np.exp(logW)))
             else:
 
-                approx_fn = interp1d(self.stat_grid[m],
+                approx_fn = interp1d(eval_grid[m],
                                      approx_log_ref,
                                      kind='quadratic',
                                      bounds_error=False,
                                      fill_value='extrapolate')
 
-                grid = np.linspace(self.stat_grid[m].min(), self.stat_grid[m].max(), 1000)
+                grid = self.stat_grid[m]
                 logW = (approx_fn(grid) -
-                        0.5 * (grid - self.observed_target[m]) ** 2 / var_target)
+                        0.5 * (grid - TS.observed_target[m]) ** 2 / var_target)
 
                 logW -= logW.max()
+
+                DEBUG = False # JT: this can be removed 
+                if DEBUG:
+                    approx_log_ref2 = self._approx_log_reference(observed_target_uni,
+                                                                 cov_target_uni,
+                                                                 T[m],
+                                                                 grid)
+                    logW2 = (approx_log_ref2 - 0.5 * (grid - TS.observed_target[m]) ** 2 / var_target)
+                    logW2 -= logW2.max()
+                    import matplotlib.pyplot as plt
+                    plt.plot(grid, logW, label='extrapolated')
+
+                    plt.plot(grid, logW2, label='fine grid')
+                    plt.legend()
+
+                    plt.figure(num=2)
+                    plt.plot(eval_grid[m], approx_fn(eval_grid[m]), label='extrapolated coarse')
+                    plt.plot(grid, approx_fn(grid), label='extrapolated fine')
+                    plt.plot(grid, approx_log_ref2, label='fine grid')
+                    plt.legend()
+
+                    plt.show()
+                    stop
+
                 _log_ref[m, :] = logW
                 self._families.append(discrete_family(grid,
                                                       np.exp(logW)))
