@@ -2,6 +2,7 @@ from typing import NamedTuple
 import numpy as np, pandas as pd
 
 from .selective_MLE import mle_inference
+from ..base import target_query_Interactspec
 
 class ConditionalSpec(NamedTuple):
 
@@ -230,14 +231,13 @@ class grid_inference(object):
         for m in range(self.ntarget):
             observed_target_uni = (TS.observed_target[m]).reshape((1,))
             cov_target_uni = (np.diag(TS.cov_target)[m]).reshape((1, 1))
-            prec_target = 1. / cov_target_uni
             regress_target_score_uni = TS.regress_target_score[m, :].reshape((1, p))
 
-            U1 = regress_target_score_uni.T.dot(prec_target)
-            U2 = U1.T.dot(QS.M2.dot(U1))
-            U3 = U1.T.dot(QS.M3.dot(U1))
-            U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
-            U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
+            U1, U2, U3, U4, U5 = target_query_Interactspec(QS,
+                                                           regress_target_score_uni,
+                                                           cov_target_uni)
+
+            prec_target = 1. / cov_target_uni
 
             # JT: what is _T?
             _T = QS.cond_cov.dot(U5.T)
@@ -264,4 +264,8 @@ class grid_inference(object):
                                                 )
 
         return self.conditional_spec
+
+
+
+
 
