@@ -4,6 +4,7 @@ import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 from ..algorithms.barrier_affine import solve_barrier_affine_py
+from ..base import target_query_Interactspec
 
 class mle_inference(object):
 
@@ -21,11 +22,21 @@ class mle_inference(object):
                              useC=False,
                              level=0.90):
 
-        prec_target_nosel, bias_target, U3, U5 = _setup_estimating_eqn(self.query_spec,
-                                                                       self.target_spec)
-
         QS = self.query_spec
         TS = self.target_spec
+
+        U1, U2, U3, U4, U5= target_query_Interactspec(QS,
+                                                      TS.regress_target_score,
+                                                      TS.cov_target)
+
+        prec_target = np.linalg.inv(TS.cov_target)
+
+        prec_target_nosel = prec_target + U2 - U3
+
+        _P = -(U1.T.dot(QS.M1.dot(QS.observed_score)) + U2.dot(TS.observed_target))
+
+        bias_target = TS.cov_target.dot(U1.T.dot(-U4.dot(TS.observed_target)
+                                                 + QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
         
         cond_precision = np.linalg.inv(QS.cond_cov)
         conjugate_arg = cond_precision.dot(QS.cond_mean)
@@ -90,33 +101,17 @@ class mle_inference(object):
 
         return result, observed_info_mean, log_ref
 
-def _setup_estimating_eqn(query_spec,
-                          target_spec):
+def target_query_Interactspec(query_spec,
+                              regress_target_score,
+                              cov_target):
 
-        QS = query_spec
-        TS = target_spec
+    QS = query_spec
+    prec_target = np.linalg.inv(cov_target)
 
-        prec_target = np.linalg.inv(TS.cov_target)
-        U1 = TS.regress_target_score.T.dot(prec_target)
-        U2 = U1.T.dot(QS.M2.dot(U1))
-        U3 = U1.T.dot(QS.M3.dot(U1))
-        U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
-        U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
+    U1 = regress_target_score.T.dot(prec_target)
+    U2 = U1.T.dot(QS.M2.dot(U1))
+    U3 = U1.T.dot(QS.M3.dot(U1))
+    U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
+    U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
 
-        prec_target_nosel = prec_target + U2 - U3
-
-        _P = -(U1.T.dot(QS.M1.dot(QS.observed_score)) + U2.dot(TS.observed_target))
-
-        bias_target = TS.cov_target.dot(U1.T.dot(-U4.dot(TS.observed_target)
-                                                   + QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
-
-        return prec_target_nosel, bias_target, U3, U5
-
-
-
-
-
-
-
-
-
+    return U1, U2, U3, U4, U5
