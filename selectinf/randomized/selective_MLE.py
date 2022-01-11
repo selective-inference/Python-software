@@ -2,9 +2,10 @@ from __future__ import division, print_function
 
 import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
-from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 from ..algorithms.barrier_affine import solve_barrier_affine_py
-from ..base import target_query_Interactspec
+
+from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
+from .base import target_query_Interactspec
 
 class mle_inference(object):
 
@@ -25,18 +26,18 @@ class mle_inference(object):
         QS = self.query_spec
         TS = self.target_spec
 
-        U1, U2, U3, U4, U5= target_query_Interactspec(QS,
-                                                      TS.regress_target_score,
-                                                      TS.cov_target)
+        U1, U2, U3, U4, U5 = self._form_interaction_pieces(QS,
+                                                           TS.regress_target_score,
+                                                           TS.cov_target)
 
         prec_target = np.linalg.inv(TS.cov_target)
 
         prec_target_nosel = prec_target + U2 - U3
 
-        _P = -(U1.T.dot(QS.M1.dot(QS.observed_score)) + U2.dot(TS.observed_target))
+        _P = -(U1.T.dot(QS.M5) + U2.dot(TS.observed_target))
 
         bias_target = TS.cov_target.dot(U1.T.dot(-U4.dot(TS.observed_target)
-                                                 + QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
+                                                 + QS.M4.dot(QS.cond_mean)) - _P)
         
         cond_precision = np.linalg.inv(QS.cond_cov)
         conjugate_arg = cond_precision.dot(QS.cond_mean)
@@ -54,7 +55,7 @@ class mle_inference(object):
                                  **self.solve_args)
 
         final_estimator = TS.cov_target.dot(prec_target_nosel).dot(TS.observed_target) \
-                          + TS.regress_target_score.dot(QS.M1.dot(QS.opt_linear)).dot(QS.cond_mean - soln) \
+                          + TS.regress_target_score.dot(QS.M4).dot(QS.cond_mean - soln) \
                           - bias_target
 
         observed_info_natural = prec_target_nosel + U3 - U5.dot(hess.dot(U5.T))
@@ -101,17 +102,14 @@ class mle_inference(object):
 
         return result, observed_info_mean, log_ref
 
-def target_query_Interactspec(query_spec,
-                              regress_target_score,
-                              cov_target):
+    # Private
 
-    QS = query_spec
-    prec_target = np.linalg.inv(cov_target)
+    def _form_interaction_pieces(self,
+                                 QS,
+                                 regress_target_score,
+                                 cov_target):
 
-    U1 = regress_target_score.T.dot(prec_target)
-    U2 = U1.T.dot(QS.M2.dot(U1))
-    U3 = U1.T.dot(QS.M3.dot(U1))
-    U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
-    U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
+        return target_query_Interactspec(QS,
+                                         regress_target_score,
+                                         cov_target)
 
-    return U1, U2, U3, U4, U5

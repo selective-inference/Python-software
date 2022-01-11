@@ -243,14 +243,14 @@ def _compute_hessian(loglike,
             _right = np.zeros((n, bool_idx.sum()))
             for i, j in enumerate(np.nonzero(bool_idx)[0]):
                 _right[:,i] = loglike.saturated_loss.hessian_mult(linpred, 
-                                                                       X[:,j], 
-                                                                       case_weights=loglike.saturated_loss.case_weights)
+                                                                  X[:,j], 
+                                                                  case_weights=loglike.saturated_loss.case_weights)
             parts.append(X.T.dot(_right))
         _hessian = np.zeros_like(X)
         for i in range(X.shape[1]):
             _hessian[:,i] = loglike.saturated_loss.hessian_mult(linpred, 
-                                                                     X[:,i], 
-                                                                     case_weights=loglike.saturated_loss.case_weights)
+                                                                X[:,i], 
+                                                                case_weights=loglike.saturated_loss.case_weights)
         _hessian = X.T.dot(_hessian)
     else:
         raise ValueError('saturated_loss has no hessian or hessian_mult method')
@@ -270,17 +270,3 @@ def _pearsonX2(y,
     resid = y - loglike.saturated_loss.mean_function(linpred)
     return (resid ** 2 / W).sum() / (n - df_fit)
 
-def target_query_Interactspec(query_spec,
-                              regress_target_score,
-                              cov_target):
-
-    QS = query_spec
-    prec_target = np.linalg.inv(cov_target)
-
-    U1 = regress_target_score.T.dot(prec_target)
-    U2 = U1.T.dot(QS.M2.dot(U1))
-    U3 = U1.T.dot(QS.M3.dot(U1))
-    U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
-    U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
-
-    return U1, U2, U3, U4, U5

@@ -8,7 +8,7 @@ from scipy.linalg import fractional_matrix_power
 
 from ..algorithms.barrier_affine import solve_barrier_affine_py
 from .selective_MLE import mle_inference
-from ..base import target_query_Interactspec
+from .base import target_query_Interactspec
 
 class PosteriorAtt(typing.NamedTuple):
 
@@ -132,19 +132,19 @@ class posterior(object):
         QS = self.query_spec
         TS = self.target_spec
 
-        U1, U2, U3, U4, U5 = target_query_Interactspec(QS,
-                                                       TS.regress_target_score,
-                                                       TS.cov_target)
+        U1, U2, U3, U4, U5 = self._form_interaction_pieces(QS,
+                                                           TS.regress_target_score,
+                                                           TS.cov_target)
 
         prec_target = np.linalg.inv(TS.cov_target)
         cond_precision = np.linalg.inv(QS.cond_cov)
 
         prec_target_nosel = prec_target + U2 - U3
 
-        _P = -(U1.T.dot(QS.M1.dot(QS.observed_score)) + U2.dot(TS.observed_target))
+        _P = -(U1.T.dot(QS.M5) + U2.dot(TS.observed_target))
 
         bias_target = TS.cov_target.dot(U1.T.dot(-U4.dot(TS.observed_target) +
-                                                 QS.M1.dot(QS.opt_linear.dot(QS.cond_mean))) - _P)
+                                                 QS.M4.dot(QS.cond_mean)) - _P)
 
         ###set parameters for the marginal distribution of optimization variables
 
@@ -165,6 +165,14 @@ class posterior(object):
                 S,
                 prec_target_nosel)
 
+    def _form_interaction_pieces(self,
+                                 QS,
+                                 regress_target_score,
+                                 cov_target):
+
+        return target_query_Interactspec(QS,
+                                         regress_target_score,
+                                         cov_target)
 ### sampling methods
 
 def langevin_sampler(selective_posterior,
@@ -283,17 +291,3 @@ class langevin(object):
         return self.state
 
 
-def target_query_Interactspec(query_spec,
-                              regress_target_score,
-                              cov_target):
-
-    QS = query_spec
-    prec_target = np.linalg.inv(cov_target)
-
-    U1 = regress_target_score.T.dot(prec_target)
-    U2 = U1.T.dot(QS.M2.dot(U1))
-    U3 = U1.T.dot(QS.M3.dot(U1))
-    U4 = QS.M1.dot(QS.opt_linear).dot(QS.cond_cov).dot(QS.opt_linear.T.dot(QS.M1.T.dot(U1)))
-    U5 = U1.T.dot(QS.M1.dot(QS.opt_linear))
-
-    return U1, U2, U3, U4, U5

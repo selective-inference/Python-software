@@ -4,7 +4,7 @@ import numpy as np
 from scipy.stats import norm as ndist
 
 from ..distributions.discrete_family import discrete_family
-from .base import grid_inference
+from .approx_reference import grid_inference
 
 class exact_grid_inference(grid_inference):
 

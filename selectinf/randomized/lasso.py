@@ -789,27 +789,33 @@ class split_lasso(lasso):
         cond_mean = regress_opt.dot(self.observed_score_state + observed_subgrad)
 
         ## probably missing a dispersion in the denominator
+        # this might be too big -- use a linear_transform instead
         prod_score_prec_unnorm = np.identity(self.nfeature) / (dispersion * ratio)
 
         ## probably missing a multiplicative factor of ratio
         cov_rand = self._unscaled_cov_score * (dispersion * ratio)
 
         M1 = prod_score_prec_unnorm * dispersion
+        M4 = M1.dot(opt_linear)
         M2 = M1.dot(cov_rand).dot(M1.T)
-        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T) 
+        M3 = M4.dot(cond_cov).dot(M4.T)
     
         # would be nice to not store these?
         
         self.M1 = M1  
         self.M2 = M2
         self.M3 = M3
-
+        self.M4 = M4
+        self.M5 = M1.dot(self.observed_score_state + observed_subgrad)
+        
         return (cond_mean,
                 cond_cov,
                 cond_precision,
                 M1,
                 M2,
-                M3)
+                M3,
+                self.M4,
+                self.M5)
 
     def _solve_randomized_problem(self, 
                                   # optional binary vector 

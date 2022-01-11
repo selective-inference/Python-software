@@ -25,10 +25,11 @@ class QuerySpec(NamedTuple):
 
     # score / randomization relationship
 
-    M1 : np.ndarray
     M2 : np.ndarray
     M3 : np.ndarray
-
+    M4 : np.ndarray
+    M5 : np.ndarray
+    
     # observed values
 
     observed_opt_state : np.ndarray
@@ -74,9 +75,10 @@ class gaussian_query(object):
                          opt_linear=self.opt_linear,
                          linear_part=self.affine_con.linear_part,
                          offset=self.affine_con.offset,
-                         M1=self.M1,
                          M2=self.M2,
                          M3=self.M3,
+                         M4=self.M4,
+                         M5=self.M5,
                          observed_opt_state=self.observed_opt_state,
                          observed_score_state=self.observed_score_state,
                          observed_subgrad=self.observed_subgrad,
@@ -136,12 +138,9 @@ class gaussian_query(object):
 
         (cond_mean,
          cond_cov,
-         cond_precision,
-         M1,
-         M2,
-         M3) = self._setup_implied_gaussian(opt_linear,
+         cond_precision) = self._setup_implied_gaussian(opt_linear,
                                             observed_subgrad,
-                                            dispersion=dispersion)
+                                            dispersion=dispersion)[:3]
 
         self.cond_mean, self.cond_cov = cond_mean, cond_cov
 
@@ -181,18 +180,23 @@ class gaussian_query(object):
 
         M1 = prod_score_prec_unnorm * dispersion
         M2 = M1.dot(cov_rand).dot(M1.T)
-        M3 = M1.dot(opt_linear.dot(cond_cov).dot(opt_linear.T)).dot(M1.T)
+        M4 = M1.dot(opt_linear)
+        M3 = M4.dot(cond_cov).dot(M4.T)
 
         self.M1 = M1
         self.M2 = M2
         self.M3 = M3
-
+        self.M4 = M4
+        self.M5 = M1.dot(self.observed_score_state + observed_subgrad)
+        
         return (cond_mean,
                 cond_cov,
                 cond_precision,
                 M1,
                 M2,
-                M3)
+                M3,
+                self.M4,
+                self.M5)
 
     def inference(self,
                   target_spec,
