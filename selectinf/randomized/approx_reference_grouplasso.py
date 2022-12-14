@@ -546,8 +546,8 @@ class approximate_grid_inference(object):
 
             eta = self.prec_opt.dot(self.regress_opt.dot(cov_target_score.T))
 
-            implied_mean = np.asscalar(eta.T.dot(cond_mean_grid))
-            implied_cov = np.asscalar(eta.T.dot(self.cond_cov).dot(eta))
+            implied_mean = (eta.T.dot(cond_mean_grid)).item()
+            implied_cov = (eta.T.dot(self.cond_cov).dot(eta)).item()
             implied_prec = 1./implied_cov
 
             _A = self.cond_cov.dot(eta) * implied_prec

@@ -16,7 +16,7 @@ class QuerySpec(NamedTuple):
 
     # how S enters into E[o|S,u]
 
-    opt_linear : np.ndarray
+    opt_linear : np.ndarray # not sure if needed -- absorbed into M4,M5?
 
     # constraints
 
@@ -139,8 +139,8 @@ class gaussian_query(object):
         (cond_mean,
          cond_cov,
          cond_precision) = self._setup_implied_gaussian(opt_linear,
-                                            observed_subgrad,
-                                            dispersion=dispersion)[:3]
+                                                        observed_subgrad,
+                                                        dispersion=dispersion)[:3]
 
         self.cond_mean, self.cond_cov = cond_mean, cond_cov
 

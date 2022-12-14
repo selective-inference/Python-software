@@ -343,7 +343,8 @@ class approximate_grid_inference(grid_inference):
             # cond_mean is "something" times D
             # Gamma is cov_target_score.T.dot(prec_target)
 
-            cond_mean_grid = (linear_coef.dot(np.atleast_1d(grid[k] - observed_target)) + QS.cond_mean)
+            cond_mean_grid = (linear_coef.dot(np.atleast_1d(grid[k] - observed_target)) +
+                              QS.cond_mean)
             conjugate_arg = cond_precision.dot(cond_mean_grid)
 
             val, _, _ = solver(conjugate_arg,

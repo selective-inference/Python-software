@@ -40,8 +40,8 @@ class exact_grid_inference(grid_inference):
 
             eta = cond_precision.dot(linear_coef).dot(cov_target)
 
-            implied_mean = np.asscalar(eta.T.dot(cond_mean_grid))
-            implied_cov = np.asscalar(eta.T.dot(QS.cond_cov).dot(eta))
+            implied_mean = (eta.T.dot(cond_mean_grid)).item()
+            implied_cov = (eta.T.dot(QS.cond_cov).dot(eta)).item()
             implied_prec = 1./implied_cov
 
             _A = QS.cond_cov.dot(eta) * implied_prec

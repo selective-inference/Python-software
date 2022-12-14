@@ -265,6 +265,89 @@ class lasso(gaussian_query):
         return observed_soln, observed_subgrad
 
     @staticmethod
+    def fromsample(samples,
+                   feature_weights,
+                   proportion_select=0.5,
+                   estimator=None,
+                   covariance=None):
+        r"""
+        Squared-error LASSO with feature weights.
+        Objective function is (before randomization)
+
+        .. math::
+
+            \beta \mapsto \frac{1}{2} (\beta-\hat{\beta})'\hat{\Sigma}^{-1}(\beta-\hat{\beta}) + \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\lambda$ is `feature_weights`, $\hat{\beta}$` is the row mean
+        of `samples` and $\hat{\Sigma}$ is its sample covariance.
+
+        Parameters
+        ----------
+
+        samples : ndarray
+            Shape (B,p) -- the sample data matrix (e.g. bootstrap samples)
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        ridge_term : float
+            How big a ridge term to add?
+
+        randomizer_scale : float
+            Scale for IID components of randomizer.
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+
+        samples = np.asarray(samples)
+        B, p = samples.shape
+
+        if estimator is None:
+            estimator = samples.mean(0)
+        if covariance is None:
+            covariance = np.cov(samples.T)
+
+        U, D, V = np.linalg.svd(covariance)
+        
+        sqrt_prec = U / np.sqrt(D)[None,:] 
+        sqrt_prec = sqrt_prec.dot(U.T)
+        prec = sqrt_prec.dot(sqrt_prec.T)
+        np.testing.assert_allclose(prec, np.linalg.inv(covariance))
+        Y = prec.dot(estimator)
+        
+        loglike = rr.glm.gaussian(sqrt_prec, 
+                                  Y, 
+                                  coef=1.,
+                                  quadratic=None)
+
+        # proportion should be used somewhere here...
+
+        multiplier = 1 / proportion_select - 1
+        randomizer = randomization.gaussian(prec * multiplier)
+
+        idx = np.random.choice(B, 1)[0]
+        perturb = (samples[idx] - estimator) * np.sqrt(multiplier)
+        return (lasso(loglike, 
+                      np.asarray(feature_weights),
+                      0,
+                      randomizer,
+                      perturb=perturb),
+                perturb)
+
+
+    @staticmethod
     def gaussian(X,
                  Y,
                  feature_weights,
