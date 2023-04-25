@@ -22,6 +22,9 @@ sphinx:
 python:
   version: 3.8
   install:
+    - requirements: https://raw.githubusercontent.com/jonathan-taylor/regreg/master/requirements.txt
+    - method: pip
+      path: https://github.com/jonathan-taylor/regreg.git
     - requirements: requirements.txt
     - requirements: doc/requirements.txt
     - method: setuptools
