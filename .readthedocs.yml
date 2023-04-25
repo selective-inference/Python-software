@@ -22,8 +22,6 @@ sphinx:
 python:
   version: 3.8
   install:
-    - method: pip
-      path: ./regreg
     - requirements: requirements.txt
     - requirements: doc/requirements.txt
     - method: setuptools
