@@ -7,12 +7,13 @@ import regreg.api as rr
 
 from .query import gaussian_query
 from .randomization import randomization
+from ..base import TargetSpec
 
 class screening(gaussian_query):
 
     def __init__(self,
                  observed_data,
-                 covariance, 
+                 covariance, # unscaled
                  randomizer,
                  perturb=None):
 
@@ -21,6 +22,7 @@ class screening(gaussian_query):
         self.covariance = covariance
         self.randomizer = randomizer
         self._initial_omega = perturb
+        self._unscaled_cov_score = covariance
 
     def fit(self, perturb=None):
 
@@ -28,44 +30,62 @@ class screening(gaussian_query):
         self._randomized_score = self.observed_score_state - self._initial_omega
         return self._randomized_score, self._randomized_score.shape[0]
 
-    def multivariate_targets(self, features, dispersion=1.):
+    def multivariate_targets(self,
+                             features,
+                             dispersion=1):
         """
         Entries of the mean of \Sigma[E,E]^{-1}Z_E
         """
-        score_linear = self.covariance[:, features].copy() / dispersion
-        Q = score_linear[features]
-        cov_target = np.linalg.inv(Q)
+        Q = self.covariance[features][:,features] 
+        Qinv = np.linalg.inv(Q)
+        cov_target = np.linalg.inv(Q) * dispersion
         observed_target = -np.linalg.inv(Q).dot(self.observed_score_state[features])
-        crosscov_target_score = -score_linear.dot(cov_target)
+        regress_target_score = -Qinv.dot(np.identity(self.covariance.shape[0])[features])
         alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+        return TargetSpec(observed_target, 
+                          cov_target,
+                          regress_target_score,
+                          alternatives,
+                          dispersion)
 
-    def full_targets(self, features, dispersion=1.):
+    def full_targets(self,
+                     features,
+                     dispersion=1):
         """
-        Entries of the mean of \Sigma[E,E]^{-1}Z_E
+        Entries of the mean of (\Sigma^{-1}Z)[E]
         """
-        score_linear = self.covariance[:, features].copy() / dispersion
-        Q = self.covariance / dispersion
-        cov_target = (np.linalg.inv(Q)[features])[:, features]
+
+        Q = self.covariance
+        Qinv = np.linalg.inv(Q)
+        cov_target = Qinv[features][:, features] * dispersion
         observed_target = -np.linalg.inv(Q).dot(self.observed_score_state)[features]
-        crosscov_target_score = -np.identity(Q.shape[0])[:, features]
+        regress_target_score = -Qinv[:, features]
         alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+        return TargetSpec(observed_target,
+                          cov_target,
+                          regress_target_score.T,
+                          alternatives,
+                          dispersion)
 
-    def marginal_targets(self, features):
+    def marginal_targets(self,
+                         features,
+                         dispersion=1):
         """
         Entries of the mean of Z_E
         """
-        score_linear = self.covariance[:, features]
-        Q = score_linear[features]
-        cov_target = Q
+        Q = self.covariance[features][:,features] 
+        cov_target = Q * dispersion
         observed_target = -self.observed_score_state[features]
-        crosscov_target_score = -score_linear
+        regress_target_score = -np.identity(self.covariance.shape[0])[:,features]
         alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target, crosscov_target_score.T, alternatives
+        return TargetSpec(observed_target,
+                          cov_target,
+                          regress_target_score.T,
+                          alternatives,
+                          dispersion)
 
 class marginal_screening(screening):
 
@@ -104,20 +124,20 @@ class marginal_screening(screening):
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
-        opt_linear[self._selected,:] = np.diag(active_signs)
-        opt_offset = np.zeros(p)
-        opt_offset[self._selected] = active_signs * self.threshold[self._selected]
-        opt_offset[self._not_selected] = _randomized_score[self._not_selected]
+        opt_linear[self._selected] = np.diag(active_signs)
+        observed_subgrad = np.zeros(p)
+        observed_subgrad[self._selected] = active_signs * self.threshold[self._selected]
+        observed_subgrad[self._not_selected] = _randomized_score[self._not_selected]
 
         self._setup = True
 
         A_scaling = -np.identity(len(active_signs))
         b_scaling = np.zeros(self.num_opt_var)
 
-        self._setup_sampler(A_scaling,
-                            b_scaling,
-                            opt_linear,
-                            opt_offset)
+        self._setup_sampler_data = (A_scaling,
+                                    b_scaling,
+                                    opt_linear,
+                                    observed_subgrad)
 
         return self._selected
 
@@ -208,19 +228,19 @@ class stepup(screening):
             for j in range(self.num_opt_var):
                 opt_linear[selected_idx[j], j] = active_signs[j]
 
-            opt_offset = np.zeros(p)
-            opt_offset[self._selected] = active_signs * last_cutoff
-            opt_offset[self._not_selected] = _randomized_score[self._not_selected]
+            observed_subgrad = np.zeros(p)
+            observed_subgrad[self._selected] = active_signs * last_cutoff
+            observed_subgrad[self._not_selected] = _randomized_score[self._not_selected]
 
             self._setup = True
 
             A_scaling = -np.identity(self.num_opt_var)
             b_scaling = np.zeros(self.num_opt_var)
 
-            self._setup_sampler(A_scaling,
-                                b_scaling,
-                                opt_linear,
-                                opt_offset)
+            self._setup_sampler_data = (A_scaling,
+                                        b_scaling,
+                                        opt_linear,
+                                        observed_subgrad)
         else:
             self._selected = np.zeros(p, np.bool)
         return self._selected
@@ -324,8 +344,8 @@ class topK(screening):
             self.num_opt_var = self.observed_opt_state.shape[0]
 
             opt_linear = np.zeros((p, self.num_opt_var))
-            opt_linear[self._selected,:] = np.diag(topK_signs)
-            opt_offset = np.zeros(p)  
+            opt_linear[self._selected] = np.diag(topK_signs)
+            observed_subgrad = np.zeros(p)  
 
         else:
 
@@ -342,8 +362,8 @@ class topK(screening):
             self.num_opt_var = self.observed_opt_state.shape[0]
 
             opt_linear = np.zeros((p, self.num_opt_var))
-            opt_linear[self._selected,:] = np.identity(self.num_opt_var)
-            opt_offset = np.zeros(p)  
+            opt_linear[self._selected] = np.identity(self.num_opt_var)
+            observed_subgrad = np.zeros(p)  
 
         # in both cases, this conditioning means we just need to compute
         # the observed lower bound
@@ -354,10 +374,10 @@ class topK(screening):
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = -np.ones(self.num_opt_var) * lower_bound
 
-        self._setup_sampler(A_scaling,
-                            b_scaling,
-                            opt_linear,
-                            opt_offset)
+        self._setup_sampler_data = (A_scaling,
+                                    b_scaling,
+                                    opt_linear,
+                                    observed_subgrad)
 
         return self._selected
 

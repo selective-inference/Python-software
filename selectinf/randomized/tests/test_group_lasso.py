@@ -268,7 +268,7 @@ def test_mixed(n=400,
         which += which_group
     return pval[beta[which] == 0], pval[beta[which] != 0]
 
-@set_seed_iftrue(SET_SEED)
+@set_seed_iftrue(True)
 def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
     for target in ['full', 'selected', 'debiased']:
         test_group_lasso(n=n, 

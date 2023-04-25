@@ -1,7 +1,7 @@
 import numpy as np
 
-from selection.learning.core import cross_inference
-from selection.learning.keras_fit import keras_fit
+from selectinf.learning.core import cross_inference
+from selectinf.learning.core import keras_fit
 
 data = np.load('lasso_multi_learning.npz')
 learning_data = (data['T'][:2000], data['Y'][:2000])

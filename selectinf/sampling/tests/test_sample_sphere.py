@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 import nose
 import nose.tools as nt
 import numpy as np
-import numpy.testing.decorators as dec
+from numpy.testing import dec
 
 from scipy.stats import chi
 import nose.tools as nt
@@ -90,7 +90,7 @@ def test_sample_sphere(burnin=1000,
     s2 = AC.sample_from_sphere(con, initial, ndraw=ndraw, burnin=burnin)
     return s1, s2
 
-@dec.slow
+@np.testing.dec.slow
 @set_seed_iftrue(SET_SEED, 20)
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10, ndraw=10, burnin=10)
 def test_distribution_sphere(n=15, p=10, sigma=1.,

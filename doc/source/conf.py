@@ -44,7 +44,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx_rtd_theme',
               'texext.math_dollar',
               'numpydoc',
-              'nbsphinx'
+              'myst_nb'
               ]
 
 # Current version (as of 11/2010) of numpydoc is only compatible with sphinx >
@@ -118,16 +118,27 @@ html_theme = 'sphinx_rtd_theme'
 # must exist either in Sphinx' static/ path, or in one of the custom paths
 # given in html_static_path.
 
+# -- Options for HTML output
+
+html_theme = "sphinx_book_theme" 
 html_theme_options = {
-    'logo_only': True
+    "repository_url": "https://github.com/jonathan-taylor/selectinf.git",
+    "use_repository_button": True,
 }
-html_theme_path = ["../.."]
-html_logo = "_static/logo.png"
+html_title = "Introduction to Statistical Learning (Python)"
+html_logo = "logo.png"
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.ipynb': 'myst-nb',
+    '.myst': 'myst-nb',
+}
+
 html_show_sourcelink = True
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = 'Selection Documentation'
+html_title = 'Selection Inference Documentation'
 
 # The name of an image file (within the static path) to place at the top of
 # the sidebar.

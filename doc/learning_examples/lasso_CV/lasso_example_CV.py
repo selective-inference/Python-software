@@ -5,11 +5,11 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.instance import gaussian_instance
+from selectinf.tests.instance import gaussian_instance
 
-from selection.learning.utils import full_model_inference, pivot_plot
-from selection.learning.core import split_sampler, probit_fit
-from selection.learning.Rutils import lasso_glmnet
+from selectinf.learning.utils import full_model_inference, pivot_plot
+from selectinf.learning.core import split_sampler, probit_fit
+from selectinf.learning.Rutils import lasso_glmnet
 
 def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 

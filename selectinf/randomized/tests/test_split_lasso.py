@@ -7,10 +7,10 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from ..lasso import (split_lasso, 
-                     selected_targets, 
+from ..lasso import split_lasso 
+from ...base import (selected_targets, 
                      full_targets, 
-                     debiased_targets)
+                     debiased_targets)                     
 from ...tests.instance import gaussian_instance
 from ...tests.flags import SET_SEED
 from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
@@ -66,44 +66,29 @@ def test_split_lasso(n=100,
     if nonzero.sum() > 0:
 
         if target == 'full':
-            (observed_target, 
-             cov_target, 
-             cov_target_score, 
-             alternatives) = full_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero,
-                                          dispersion=sigma**2)
+            target_spec = full_targets(conv.loglike, 
+                                       conv.observed_soln,
+                                       dispersion=sigma**2)
         elif target == 'selected':
-            (observed_target, 
-             cov_target, 
-             cov_target_score, 
-             alternatives) = selected_targets(conv.loglike, 
-                                              conv._W, 
-                                              nonzero) #,
-                                              #dispersion=sigma**2)
+            target_spec = selected_targets(conv.loglike, 
+                                           conv.observed_soln,
+                                           dispersion=sigma**2)
 
         elif target == 'debiased':
-            (observed_target, 
-             cov_target, 
-             cov_target_score, 
-             alternatives) = debiased_targets(conv.loglike, 
-                                              conv._W, 
-                                              nonzero,
-                                              penalty=conv.penalty,
-                                              dispersion=sigma**2)
+            target_spec = debiased_targets(conv.loglike, 
+                                           conv.observed_soln,
+                                           penalty=conv.penalty,
+                                           dispersion=sigma**2)
 
-        _, pval, intervals = conv.summary(observed_target, 
-                                          cov_target, 
-                                          cov_target_score, 
-                                          alternatives,
-                                          ndraw=ndraw,
-                                          burnin=burnin, 
-                                          compute_intervals=False)
+        result = conv.summary(target_spec,
+                              ndraw=ndraw,
+                              burnin=burnin, 
+                              compute_intervals=False)
 
-        final_estimator, observed_info_mean = conv.selective_MLE(
-                                                 observed_target,
-                                                 cov_target,
-                                                 cov_target_score)[:2]
+        MLE_result, observed_info_mean, _ = conv.selective_MLE(target_spec)
+
+        final_estimator = np.asarray(MLE_result['MLE'])
+        pval = np.asarray(result['pvalue'])
         
         if target == 'selected':
             true_target = np.linalg.pinv(X[:,nonzero]).dot(X.dot(beta))
@@ -130,34 +115,4 @@ def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
                          sigma=sigma, 
                          rho=rho, 
                          target=target)
-
-def main(nsim=500, n=100, p=200, target='selected', sigma=3, s=3):
-
-    import matplotlib.pyplot as plt
-    P0, PA = [], []
-    from statsmodels.distributions import ECDF
-
-    for i in range(nsim):
-        p0, pA = test_split_lasso(n=n, p=p, target=target, sigma=sigma, s=s)
-        print(len(p0), len(pA))
-        if not (len(pA) < s and target=='selected'):
-            P0.extend(p0)
-            PA.extend(pA)
-
-        P0_clean = np.array(P0)
-        
-        P0_clean = P0_clean[P0_clean > 1.e-5] # 
-        print(np.mean(P0_clean), np.std(P0_clean), np.mean(np.array(PA) < 0.05), np.sum(np.array(PA) < 0.05) / (i+1), np.mean(np.array(P0) < 0.05), np.mean(P0_clean < 0.05), np.mean(np.array(P0) < 1e-5), 'null pvalue + power + failure')
-    
-        if i % 3 == 0 and i > 0:
-            U = np.linspace(0, 1, 101)
-            plt.clf()
-            if len(P0_clean) > 0:
-                plt.plot(U, ECDF(P0_clean)(U))
-            if len(PA) > 0:
-                plt.plot(U, ECDF(PA)(U), 'r')
-            plt.plot([0, 1], [0, 1], 'k--')
-            plt.savefig("plot.pdf")
-    plt.show()
-
 

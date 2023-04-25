@@ -5,13 +5,13 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.instance import gaussian_instance
+from selectinf.tests.instance import gaussian_instance
 
-from selection.learning.utils import full_model_inference, pivot_plot
-from selection.learning.core import split_sampler, keras_fit
-from selection.learning.Rutils import lasso_glmnet
+from selectinf.learning.utils import full_model_inference, pivot_plot
+from selectinf.learning.core import normal_sampler, keras_fit, gbm_fit_sk
+from selectinf.learning.Rutils import lasso_glmnet
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
+def simulate(n=2000, p=1000, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=4000):
 
     # description of statistical problem
 
@@ -29,7 +29,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
-    splitting_sampler = split_sampler(X * y[:, None], covS)
+    smooth_sampler = normal_sampler(S, covS)
 
     def meta_algorithm(X, XTXi, resid, sampler):
 
@@ -37,6 +37,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
         ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
         G = lasso_glmnet(X, ynew, *[None]*4)
         select = G.select()
+        print(select)
         return set(list(select[0]))
 
     XTX = X.T.dot(X)
@@ -52,11 +53,12 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
                                 y,
                                 truth,
                                 selection_algorithm,
-                                splitting_sampler,
+                                smooth_sampler,
                                 success_params=(1, 1),
                                 B=B,
                                 fit_probability=keras_fit,
                                 fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
+
 
 if __name__ == "__main__":
     import statsmodels.api as sm
@@ -66,14 +68,14 @@ if __name__ == "__main__":
     U = np.linspace(0, 1, 101)
     plt.clf()
 
-    for i in range(500):
-        df = simulate()
-        csvfile = 'lasso_multi_CV.csv'
+    for i in range(2000):
+        df = simulate(B=3000)
+        csvfile = __file__[:-3] + '.csv'
         outbase = csvfile[:-4]
 
-        if df is not None:
+        if df is not None and i > 0:
 
-            try:
+            try: # concatenate to disk
                 df = pd.concat([df, pd.read_csv(csvfile)])
             except FileNotFoundError:
                 pass
@@ -81,4 +83,3 @@ if __name__ == "__main__":
 
             if len(df['pivot']) > 0:
                 pivot_plot(df, outbase)
-

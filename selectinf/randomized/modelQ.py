@@ -114,9 +114,9 @@ class modelQ(gaussian_query):
         quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
         quad_data = rr.identity_quadratic(0, 0, -self.X.T.dot(self.y), 0)
         problem = rr.simple_problem(self.loss, self.penalty)
-        self.initial_soln = problem.solve(quad + quad_data, **solve_args)
+        self.observed_soln = problem.solve(quad + quad_data, **solve_args)
 
-        active_signs = np.sign(self.initial_soln)
+        active_signs = np.sign(self.observed_soln)
         active = self._active = active_signs != 0
 
         self._lagrange = self.penalty.weights
@@ -135,13 +135,13 @@ class modelQ(gaussian_query):
 
         # initial state for opt variables
 
-        initial_subgrad = -(self.loss.smooth_objective(self.initial_soln, 'grad') + 
-                            quad_data.objective(self.initial_soln, 'grad') +
-                            quad.objective(self.initial_soln, 'grad')) 
-        self.initial_subgrad = initial_subgrad
+        observed_subgrad = -(self.loss.smooth_objective(self.observed_soln, 'grad') + 
+                            quad_data.objective(self.observed_soln, 'grad') +
+                            quad.objective(self.observed_soln, 'grad')) 
+        self.observed_subgrad = observed_subgrad
 
-        initial_scalings = np.fabs(self.initial_soln[active])
-        initial_unpenalized = self.initial_soln[self._unpenalized]
+        initial_scalings = np.fabs(self.observed_soln[active])
+        initial_unpenalized = self.observed_soln[self._unpenalized]
 
         self.observed_opt_state = np.concatenate([initial_scalings,
                                                   initial_unpenalized])
@@ -177,6 +177,8 @@ class modelQ(gaussian_query):
         _hessian_active = self.Q[:, active]
         _hessian_unpen = self.Q[:, unpenalized]
 
+        self._unscaled_cov_score = self.Q
+        
         _score_linear_term = -np.hstack([_hessian_active, _hessian_unpen])
 
         # set the observed score (data dependent) state
@@ -210,7 +212,7 @@ class modelQ(gaussian_query):
         # two transforms that encode score and optimization
         # variable roles 
 
-        self.opt_transform = (_opt_linear_term, self.initial_subgrad)
+        self.opt_transform = (_opt_linear_term, self.observed_subgrad)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
         # now store everything needed for the projections
@@ -224,7 +226,7 @@ class modelQ(gaussian_query):
 
         # compute implied mean and covariance
 
-        opt_linear, opt_offset = self.opt_transform
+        opt_linear, observed_subgrad = self.opt_transform
 
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = np.zeros(self.num_opt_var)
@@ -232,7 +234,7 @@ class modelQ(gaussian_query):
         self._setup_sampler(A_scaling,
                             b_scaling,
                             opt_linear,
-                            opt_offset)
+                            observed_subgrad)
         
         return active_signs
 
@@ -417,9 +419,9 @@ class modelQ(gaussian_query):
 
             Xfeat = X[:,features]
             Qfeat = self.Q[features][:,features]
-            Gfeat = self.loss.smooth_objective(self.initial_soln, 'grad')[features] - Xfeat.T.dot(y)
+            Gfeat = self.loss.smooth_objective(self.observed_soln, 'grad')[features] - Xfeat.T.dot(y)
             Qfeat_inv = np.linalg.inv(Qfeat)
-            one_step = self.initial_soln[features] - Qfeat_inv.dot(Gfeat)
+            one_step = self.observed_soln[features] - Qfeat_inv.dot(Gfeat)
             cov_target = Qfeat_inv.dot(Xfeat.T.dot(Xfeat)).dot(Qfeat_inv)
             _score_linear = -self.Q[features]
             crosscov_target_score = _score_linear.dot(cov_target)
@@ -447,9 +449,9 @@ class modelQ(gaussian_query):
         # target is one-step estimator
 
         Qfull = self.Q
-        G = self.loss.smooth_objective(self.initial_soln, 'grad') - X.T.dot(y)
+        G = self.loss.smooth_objective(self.observed_soln, 'grad') - X.T.dot(y)
         Qfull_inv = np.linalg.inv(Qfull)
-        one_step = self.initial_soln - Qfull_inv.dot(G)
+        one_step = self.observed_soln - Qfull_inv.dot(G)
         cov_target = Qfull_inv[features][:,features]
         observed_target = one_step[features]
         crosscov_target_score = np.zeros((p, cov_target.shape[0]))

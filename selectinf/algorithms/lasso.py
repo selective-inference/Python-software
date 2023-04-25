@@ -21,7 +21,6 @@ from scipy.linalg import block_diag
 from regreg.api import (glm,
                         weighted_l1norm,
                         simple_problem,
-                        coxph as coxph_obj,
                         smooth_sum,
                         squared_error,
                         identity_quadratic,
@@ -243,6 +242,7 @@ class lasso(object):
                 alternative='twosided',
                 level=0.95,
                 compute_intervals=False,
+                dispersion=None,
                 truth=None):
         """
         Summary table for inference adjusted for selection.
@@ -258,6 +258,9 @@ class lasso(object):
 
         compute_intervals : bool
             Should we compute confidence intervals?
+
+        dispersion : float
+            Scalar to multiply `self.constraints.covaraince`
 
         truth : np.array
             True values of each beta for selected variables. If not None, a column 'pval' are p-values
@@ -276,9 +279,14 @@ class lasso(object):
         if truth is None:
             truth = np.zeros_like(self.active_signs)
 
+        if dispersion is None:
+            dispersion = 1.
+            
         result = []
-        C = self._constraints
+        C = self.constraints
         if C is not None:
+            _cov = C.covariance.copy()
+            C.covariance = _cov * dispersion
             one_step = self.onestep_estimator
             for i in range(one_step.shape[0]):
                 eta = np.zeros_like(one_step)
@@ -297,7 +305,8 @@ class lasso(object):
                 if compute_intervals:
                     if C.linear_part.shape[0] > 0:  # there were some constraints
                         try:
-                            _interval = C.interval(eta, one_step,
+                            _interval = C.interval(eta,
+                                                   one_step,
                                                    alpha=alpha)
                         except OverflowError:
                             _interval = (-np.inf, np.inf)
@@ -321,10 +330,11 @@ class lasso(object):
                                lower_trunc,
                                upper_trunc,
                                sd))
-
+            C.covariance = _cov
+            
         df = pd.DataFrame(index=self.active,
                           data=dict([(n, d) for n, d in zip(['variable',
-                                                             'pval',
+                                                             'pvalue',
                                                              'lasso',
                                                              'onestep',
                                                              'lower_confidence',
@@ -470,13 +480,13 @@ class lasso(object):
                      covariance_estimator=covariance_estimator)
 
     @classmethod
-    def coxph(klass,
-              X,
-              times,
-              status,
-              feature_weights,
-              covariance_estimator=None,
-              quadratic=None):
+    def cox(klass,
+            X,
+            times,
+            status,
+            feature_weights,
+            covariance_estimator=None,
+            quadratic=None):
         r"""
         Cox proportional hazards LASSO with feature weights.
         Objective function is
@@ -521,7 +531,7 @@ class lasso(object):
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
         """
-        loglike = coxph_obj(X, times, status, quadratic=quadratic)
+        loglike = glm.cox(X, times, status, quadratic=quadratic)
         return klass(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
@@ -1003,14 +1013,14 @@ class data_carving(lasso):
         return klass(loglike1, loglike2, loglike, feature_weights)
 
     @classmethod
-    def coxph(klass,
-              X,
-              times,
-              status,
-              feature_weights,
-              split_frac=0.9,
-              sigma=1.,
-              stage_one=None):
+    def cox(klass,
+            X,
+            times,
+            status,
+            feature_weights,
+            split_frac=0.9,
+            sigma=1.,
+            stage_one=None):
 
         n, p = X.shape
         if stage_one is None:
@@ -1025,9 +1035,9 @@ class data_carving(lasso):
         times1, X1, status1 = times[stage_one], X[stage_one], status[stage_one]
         times2, X2, status2 = times[stage_two], X[stage_two], status[stage_two]
 
-        loglike = coxph_obj(X, times, status)
-        loglike1 = coxph_obj(X1, times1, status1)
-        loglike2 = coxph_obj(X2, times2, status2)
+        loglike = glm.cox(X, times, status)
+        loglike1 = glm.cox(X1, times1, status1)
+        loglike2 = glm.cox(X2, times2, status2)
 
         return klass(loglike1, loglike2, loglike, feature_weights)
 
@@ -1488,7 +1498,7 @@ def _data_carving_deprec(X, y,
                        splitting_pvalues,
                        splitting_intervals), L
     else:
-        pvalues = [p for _, p in L.summary("twosided")['pval']]
+        pvalues = [p for _, p in L.summary("twosided")['pvalue']]
         intervals = np.array([L.intervals['lower'], L.intervals['upper']]).T
         if splitting:
             splitting_pvalues = np.random.sample(len(pvalues))
@@ -1878,7 +1888,8 @@ class ROSI(lasso):
 
             # Needed for finding truncation intervals
 
-            self._Qbeta_bar = X.T.dot(W * X.dot(lasso_solution)) - self.loglike.smooth_objective(lasso_solution, 'grad')
+            self._Qbeta_bar = (X.T.dot(W * X.dot(lasso_solution)) - 
+                               self.loglike.smooth_objective(lasso_solution, 'grad'))
             self._W = W
 
             if n > p and self.approximate_inverse is None:
@@ -1957,14 +1968,14 @@ class ROSI(lasso):
             Estimate of dispersion. Defaults to a Pearson's X^2 estimate in the relaxed model.
 
         truth : np.array
-            True values of each beta for selected variables. If not None, a column 'pval' are p-values
+            True values of each beta for selected variables. If not None, a column 'pvalue' are p-values
             computed under these corresponding null hypotheses.
 
         Returns
         -------
         pval_summary : np.recarray
             Array with one entry per active variable.
-            Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
+            Columns are 'variable', 'pvalue', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
         """
 
         if len(self.active) > 0:
@@ -2009,7 +2020,7 @@ class ROSI(lasso):
 
             df = pd.DataFrame(index=self.active,
                               data=dict([(n, d) for n, d in zip(['variable',
-                                                                 'pval',
+                                                                 'pvalue',
                                                                  'lasso',
                                                                  'onestep',
                                                                  'sd',
@@ -2311,7 +2322,8 @@ class ROSI_modelQ(lasso):
             self.inactive = np.arange(lasso_solution.shape[0])
         return self.lasso_solution
 
-    def summary(self, level=0.05,
+    def summary(self,
+                level=0.95,
                 compute_intervals=False,
                 dispersion=None):
         """
@@ -2328,7 +2340,7 @@ class ROSI_modelQ(lasso):
         -------
         pval_summary : np.recarray
             Array with one entry per active variable.
-            Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
+            Columns are 'variable', 'pvalue', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
         """
 
         if len(self.active) > 0:
@@ -2366,7 +2378,7 @@ class ROSI_modelQ(lasso):
 
             df = pd.DataFrame(index=self.active,
                               data=dict([(n, d) for n, d in zip(['variable',
-                                                                 'pval',
+                                                                 'pvalue',
                                                                  'lasso',
                                                                  'onestep',
                                                                  'sd',

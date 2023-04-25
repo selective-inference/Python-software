@@ -4,10 +4,11 @@ import numpy as np
 from scipy.stats import norm as ndist
 import nose.tools as nt
 
-from ..lasso import lasso, full_targets
+from ..lasso import lasso
+from ...base import full_targets, TargetSpec
 from ...tests.instance import gaussian_instance
 
-def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=1, randomizer_scale=1):
+def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=2, randomizer_scale=1):
 
     beta = np.array([signal])
     while True:
@@ -28,24 +29,33 @@ def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=1, randomizer_scale=1):
 
             # this is current code where we estimate sigma
 
-            (observed_target, 
-             cov_target, 
-             cov_target_score, 
-             alternatives) = full_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero)
+            target_spec = full_targets(conv.loglike, 
+                                       conv.observed_soln,
+                                       features=nonzero)
             
-            estimate_cur, I_cur, Z_cur, pv_cur = conv.selective_MLE(observed_target, 
-                                                                    cov_target, 
-                                                                    cov_target_score)[:4]
+            result = conv.selective_MLE(target_spec)
+
+            estimate_cur = float(result[0]['MLE'])
+            Z_cur = float(result[0]['Zvalue'])
+            pv_cur = float(result[0]['pvalue'])
+            I_cur = result[1]
 
             # this matches exactly with old code
 
             target_Z = X.T.dot(Y) / np.sqrt((X**2).sum(0))
 
-            estimate, I, Z, pv = conv.sampler.selective_MLE(target_Z, sigma**2 * np.ones((1,1)), 
-                                                            -sigma**2 * np.ones((1,1)), np.ones((1,)),
-                                                            solve_args={'tol':1.e-12})[:4]
+            target = TargetSpec(target_Z,
+                                sigma**2 * np.ones((1,1)),
+                                -np.ones((1,1)) / np.sqrt((X**2).sum(0)), 
+                                ['greater'],
+                                sigma**2)
+            result2 = conv.sampler.selective_MLE(target,
+                                                 np.ones((1,)) * signs[0],
+                                                 solve_args={'tol':1.e-12})
+            estimate, I, Z, pv = (float(result2[0]['MLE']),
+                                  result2[1],
+                                  float(result2[0]['Zvalue']),
+                                  float(result2[0]['pvalue']))
 
             target_transform = (-np.identity(1), np.zeros(1))
             s = signs
@@ -59,13 +69,16 @@ def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=1, randomizer_scale=1):
                                     (sigma ** 2.) * np.identity(1),
                                     (1. / (sigma ** 2.)) * np.identity(1), tol=1.e-12)
 
-            print(estimate, approx_MLE, 'selective MLE')
-            print(beta[nonzero], 'truth')
-            print(np.linalg.pinv(X[:, nonzero]).dot(Y), 'relaxed')
-            print(pv, 'pv')
-
             pivot = ndist.cdf((estimate_cur - signal) / np.sqrt(I_cur[0,0]))
-            print(pivot, 'pivot')
+
+            debug = False
+            if debug:
+                print(estimate, approx_MLE, 'selective MLE')
+                print(beta[nonzero], 'truth')
+                print(np.linalg.pinv(X[:, nonzero]).dot(Y), 'relaxed')
+                print(pv, 'pv')
+                print(pivot, 'pivot')
+
             return estimate, estimate_cur, np.atleast_1d(approx_MLE), pivot
 
 def test_agreement(seed=0):
@@ -94,24 +107,6 @@ def test_agreement(seed=0):
     nt.assert_true(np.linalg.norm(MLE_cur - MLE_prev) / np.linalg.norm(MLE_prev) < 1.e-2)
 
     return beta_seq, MLE_cur, MLE_prev, pivot
-
-def main():
-
-    beta_seq, MLE_cur, MLE_prev, pivot = test_agreement()
-
-    import matplotlib.pyplot as plt
-    from statsmodels.distributions import ECDF
-
-    plt.figure(num=1)
-
-    plt.plot(beta_seq, np.array(MLE_cur), label='MLE now')
-    plt.plot(beta_seq, np.array(MLE_prev), 'r--', label='MLE prev')
-    plt.legend()
-
-    plt.figure(num=2)
-    U = np.linspace(0, 1, 101)
-    plt.plot(U, ECDF(pivot)(U))
-    plt.plot([0,1],[0,1], 'k--')
 
 #####################################################
 

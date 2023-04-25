@@ -1,6 +1,5 @@
 import numpy as np
 import nose.tools as nt
-import numpy.testing.decorators as dec
 
 from ...tests.instance import gaussian_instance as instance
 

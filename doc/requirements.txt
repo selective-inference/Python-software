@@ -1,14 +1,16 @@
 # Requirements for building docs
 # Check these dependencies against doc/conf.py
--r dev-requirements.txt
+-r ../dev-requirements.txt
 sphinx>=1.4
 numpydoc
 matplotlib
 texext
 nb2plots
-rpy2
 seaborn
 statsmodels
-tensorflow
+#tensorflow
 keras
 nbsphinx
+jupytext
+sphinx-book-theme
+myst_nb

@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np, pandas as pd
 import regreg.api as rr
 import nose.tools as nt
+from numpy.testing import dec
 
 try:
     import rpy2.robjects as rpy
@@ -22,7 +23,7 @@ from ..forward_step import forward_step
 from ...randomized.lasso import lasso as rlasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance, logistic_instance
 
-@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
+@dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_fixed_lambda():
     """
     Check that Gaussian LASSO results agree with R
@@ -86,7 +87,7 @@ def test_fixed_lambda():
 
         yield np.testing.assert_allclose, L.fit()[1:], beta_hat, 1.e-2, 1.e-2, False, 'fixed lambda, sigma=%f coef' % s
         yield np.testing.assert_equal, L.active, selected_vars
-        yield np.testing.assert_allclose, S['pval'], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
+        yield np.testing.assert_allclose, S['pvalue'], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
         yield np.testing.assert_allclose, S['sd'], sdvar, tol, tol, False, 'fixed lambda, sigma=%f sd ' % s
         yield np.testing.assert_allclose, S['onestep'], coef, tol, tol, False, 'fixed lambda, sigma=%f estimator' % s
 
@@ -240,7 +241,7 @@ def test_coxph():
     beta_hat = np.asarray(rpy.r('beta_hat'))
     x = np.asarray(rpy.r('x'))
 
-    L = lasso.coxph(x, tim, status, 1.5)
+    L = lasso.cox(x, tim, status, 1.5)
     beta2 = L.fit()
 
     G1 = L.loglike.gradient(beta_hat)
@@ -251,7 +252,7 @@ def test_coxph():
 
     yield np.testing.assert_equal, np.array(L.active) + 1, selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'cox coeff'
-    yield np.testing.assert_allclose, L.summary('onesided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
+    yield np.testing.assert_allclose, L.summary('onesided')['pvalue'], R_pvals, tol, tol, False, 'cox pvalues'
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_logistic():
@@ -310,7 +311,7 @@ def test_logistic():
 
     yield np.testing.assert_equal, L.active[1:], selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'logistic coef'
-    yield np.testing.assert_allclose, L.summary('onesided')['pval'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
+    yield np.testing.assert_allclose, L.summary('onesided')['pvalue'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
 
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
@@ -553,8 +554,8 @@ def test_liu_gaussian():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(S['pval'])
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            print(S['pvalue'])
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
 
             numpy2ri.deactivate()
             break
@@ -609,8 +610,8 @@ def test_liu_logistic():
             pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
             print(pvalues)
-            print(S['pval'])
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            print(S['pvalue'])
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
 
             numpy2ri.deactivate()
             break 
@@ -668,9 +669,9 @@ def test_ROSI_gaussian_JM():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(np.asarray(S['pval']))
+            print(np.asarray(S['pvalue']))
 
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
 
@@ -723,9 +724,9 @@ def test_ROSI_logistic_JM():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(np.asarray(S['pval']))
+            print(np.asarray(S['pvalue']))
 
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
 
@@ -789,9 +790,9 @@ def test_ROSI_gaussian_BN():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(np.asarray(S['pval']))
+            print(np.asarray(S['pvalue']))
 
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
 
@@ -845,9 +846,9 @@ def test_ROSI_logistic_BN():
             active_set = rpy.r('active_vars')
 
             print(pvalues)
-            print(np.asarray(S['pval']))
+            print(np.asarray(S['pvalue']))
 
-            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            nt.assert_true(np.corrcoef(pvalues, S['pvalue'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
 
@@ -874,7 +875,7 @@ def test_rlasso_gaussian():
                                                          random_signs=True)
 
         sigma_ = np.std(y)
-        if target is not 'debiased':
+        if target != 'debiased':
             lam = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
         else:
             lam = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
@@ -971,21 +972,45 @@ def test_rlasso_gaussian():
                                                   nonzero,
                                                   penalty=L.penalty)
 
-            _, pval, intervals = L.summary(observed_target, 
-                                           cov_target, 
-                                           cov_target_score, 
-                                           alternatives,
-                                           opt_sample=(np.asarray(R_opt_samples),),
-                                           target_sample=np.asarray(R_target_samples),
-                                           ndraw=8000,#ndraw,
-                                           burnin=burnin, 
-                                           compute_intervals=True)
+            result = L.summary(observed_target, 
+                               cov_target, 
+                               cov_target_score, 
+                               alternatives,
+                               opt_sample=(np.asarray(R_opt_samples),),
+                               target_sample=np.asarray(R_target_samples),
+                               ndraw=8000,#ndraw,
+                               burnin=burnin, 
+                               compute_intervals=True)
+            pval = np.asarray(result['pvalue'])
 
             tol = 1.e-5
-            yield np.testing.assert_allclose, initial_soln, R_soln, tol, tol, False, 'checking initial rlasso solution'
-            yield np.testing.assert_allclose, cond_mean, R_cond_mean, tol, tol, False, 'checking conditional mean'
-            yield np.testing.assert_allclose, cond_cov, R_cond_cov, tol, tol, False, 'checking conditional covariance'
-            yield np.testing.assert_allclose, pval, R_pvalues, tol, tol, False, 'checking pvalues'
+            yield (np.testing.assert_allclose, 
+                   initial_soln, 
+                   R_soln, 
+                   tol, 
+                   tol, 
+                   False, 'checking initial rlasso solution')
+            yield (np.testing.assert_allclose, 
+                   cond_mean, 
+                   R_cond_mean, 
+                   tol, 
+                   tol, 
+                   False, 
+                   'checking conditional mean')
+            yield (np.testing.assert_allclose, 
+                   cond_cov, 
+                   R_cond_cov, 
+                   tol, 
+                   tol, 
+                   False, 
+                   'checking conditional covariance')
+            yield (np.testing.assert_allclose, 
+                   pval, 
+                   R_pvalues, 
+                   tol, 
+                   tol, 
+                   False, 
+                   'checking pvalues')
 
             break
 

@@ -1,15 +1,52 @@
 import numpy as np
 import regreg.api as rr
-import pandas as pd
 from scipy.stats import norm as ndist
-from scipy.optimize import bisect
+
 
 from ...tests.instance import gaussian_instance
 from ...algorithms.lasso import lasso
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 from ..cv_view import CV_view, have_glmnet
-from ..query import (naive_pvalues, naive_confidence_intervals)
+
+
+def naive_confidence_intervals(diag_cov, observed, level=0.9):
+    """
+    Compute naive Gaussian based confidence
+    intervals for target.
+    Parameters
+    ----------
+    diag_cov : diagonal of a covariance matrix
+    observed : np.float
+        A vector of observed data of shape `target.shape`
+    alpha : float (optional)
+        1 - confidence level.
+    Returns
+    -------
+    intervals : np.float
+        Gaussian based confidence intervals.
+    """
+    alpha = 1 - level
+    diag_cov = np.asarray(diag_cov)
+    p = diag_cov.shape[0]
+    quantile = - ndist.ppf(alpha / 2)
+    LU = np.zeros((2, p))
+    for j in range(p):
+        sigma = np.sqrt(diag_cov[j])
+        LU[0, j] = observed[j] - sigma * quantile
+        LU[1, j] = observed[j] + sigma * quantile
+    return LU.T
+
+
+def naive_pvalues(diag_cov, observed, parameter):
+    diag_cov = np.asarray(diag_cov)
+    p = diag_cov.shape[0]
+    pvalues = np.zeros(p)
+    for j in range(p):
+        sigma = np.sqrt(diag_cov[j])
+        pval = ndist.cdf((observed[j] - parameter[j]) / sigma)
+        pvalues[j] = 2 * min(pval, 1 - pval)
+    return pvalues
 
 def compute_projection_parameters(n, p, s, signal, rho, sigma, active):
     multiple = 10**2

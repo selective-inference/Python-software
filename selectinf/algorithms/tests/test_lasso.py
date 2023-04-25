@@ -1,6 +1,5 @@
 import numpy as np, pandas as pd
 import nose.tools as nt
-import numpy.testing.decorators as dec
 from itertools import product
 
 from ...tests.flags import SMALL_SAMPLES
@@ -30,6 +29,7 @@ try:
 except ImportError:
     statsmodels_available = False
 
+@set_seed_iftrue(True)
 def test_gaussian(n=100, p=20):
 
     y = np.random.standard_normal(n)
@@ -64,6 +64,7 @@ def test_gaussian(n=100, p=20):
                np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
 
+@set_seed_iftrue(True)
 def test_sqrt_lasso(n=100, p=20):
 
     y = np.random.standard_normal(n)
@@ -91,7 +92,7 @@ def test_sqrt_lasso(n=100, p=20):
                np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
 
-
+@set_seed_iftrue(True)
 def test_logistic():
 
     for Y, T in [(np.random.binomial(1,0.5,size=(10,)),
@@ -114,10 +115,11 @@ def test_logistic():
             np.dot(L.constraints.linear_part, L.onestep_estimator),
             L.constraints.offset)
 
-        P = L.summary()['pval']
+        P = L.summary()['pvalue']
 
         return L, C, P
 
+@set_seed_iftrue(True)
 def test_poisson():
 
     X = np.random.standard_normal((10,5))
@@ -135,11 +137,12 @@ def test_poisson():
         np.dot(L.constraints.linear_part, L.onestep_estimator),
         L.constraints.offset)
 
-    P = L.summary()['pval']
+    P = L.summary()['pvalue']
 
     return L, C, P
 
-@dec.skipif(not statsmodels_available, "needs statsmodels")
+@set_seed_iftrue(True)
+@np.testing.dec.skipif(not statsmodels_available, "needs statsmodels")
 def test_coxph():
 
     Q = rr.identity_quadratic(0.01, 0, np.ones(5), 0)
@@ -147,10 +150,10 @@ def test_coxph():
     T = np.random.standard_exponential(100)
     S = np.random.binomial(1, 0.5, size=(100,))
 
-    L = lasso.coxph(X, T, S, 0.1, quadratic=Q)
+    L = lasso.cox(X, T, S, 0.1, quadratic=Q)
     L.fit()
 
-    L = lasso.coxph(X, T, S, 0.1, quadratic=Q)
+    L = lasso.cox(X, T, S, 0.1, quadratic=Q)
     L.fit()
 
     C = L.constraints
@@ -159,7 +162,7 @@ def test_coxph():
         np.dot(L.constraints.linear_part, L.onestep_estimator),
         L.constraints.offset)
 
-    P = L.summary()['pval']
+    P = L.summary()['pvalue']
 
     return L, C, P
 
@@ -446,7 +449,7 @@ def test_data_carving_poisson(n=500,
        
 @wait_for_return_value()
 @set_seed_iftrue(True)
-@dec.skipif(not statsmodels_available, "needs statsmodels")
+@np.testing.dec.skipif(not statsmodels_available, "needs statsmodels")
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_coxph(n=400,
                             p=20,
@@ -474,14 +477,14 @@ def test_data_carving_coxph(n=400,
 
     lam_theor = 10. * np.ones(p)
     lam_theor[0] = 0.
-    DC = data_carving.coxph(X, T, S, feature_weights=lam_theor,
-                            stage_one=stage_one)
+    DC = data_carving.cox(X, T, S, feature_weights=lam_theor,
+                          stage_one=stage_one)
 
     DC.fit()
 
     if len(DC.active) < n - int(n*split_frac):
-        DS = data_splitting.coxph(X, T, S, feature_weights=lam_theor,
-                                     stage_one=stage_one)
+        DS = data_splitting.cox(X, T, S, feature_weights=lam_theor,
+                                stage_one=stage_one)
         DS.fit(use_full_cov=True)
         data_split = True
     else:
@@ -540,7 +543,7 @@ def test_gaussian_pvals(n=100,
     if set(true_active).issubset(L.active):
         S = L.summary('onesided')
         S = L.summary('twosided')
-        return S['pval'], [v in true_active for v in S['variable']]
+        return S['pvalue'], [v in true_active for v in S['variable']]
 
 @wait_for_return_value()
 def test_sqrt_lasso_pvals(n=100,
@@ -569,7 +572,7 @@ def test_sqrt_lasso_pvals(n=100,
     if set(true_active).issubset(L.active):
         S = L.summary('onesided')
         S = L.summary('twosided')
-        return S['pval'], [v in true_active for v in S['variable']]
+        return S['pvalue'], [v in true_active for v in S['variable']]
 
 
 @wait_for_return_value()
@@ -601,7 +604,7 @@ def test_sqrt_lasso_sandwich_pvals(n=200,
 
     if set(true_active).issubset(L_SQ.active):
         S = L_SQ.summary('twosided')
-        return S['pval'], [v in true_active for v in S['variable']]
+        return S['pvalue'], [v in true_active for v in S['variable']]
 
 @wait_for_return_value()
 def test_gaussian_sandwich_pvals(n=200,
@@ -651,13 +654,13 @@ def test_gaussian_sandwich_pvals(n=200,
     if set(true_active).issubset(L_P.active):
 
         S = L_P.summary('twosided')
-        P_P = [p for p, v in zip(S['pval'], S['variable']) if v not in true_active]
+        P_P = [p for p, v in zip(S['pvalue'], S['variable']) if v not in true_active]
 
         L_S = lasso.gaussian(X, y, feature_weights, covariance_estimator=sandwich)
         L_S.fit()
 
         S = L_S.summary('twosided')
-        P_S = [p for p, v in zip(S['pval'], S['variable']) if v not in true_active]
+        P_S = [p for p, v in zip(S['pvalue'], S['variable']) if v not in true_active]
 
         return P_P, P_S, [v in true_active for v in S['variable']]
 
@@ -690,7 +693,7 @@ def test_logistic_pvals(n=500,
 
     print(true_active, L.active)
     if set(true_active).issubset(L.active):
-        return S['pval'], [v in true_active for v in S['variable']]
+        return S['pvalue'], [v in true_active for v in S['variable']]
 
 @set_seed_iftrue(True)
 def test_adding_quadratic_lasso():

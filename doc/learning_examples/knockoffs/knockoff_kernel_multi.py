@@ -5,16 +5,13 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.instance import gaussian_instance
+from selectinf.tests.instance import gaussian_instance
 
-from selection.learning.utils import full_model_inference, pivot_plot
-from selection.learning.core import normal_sampler, keras_fit
+from selectinf.learning.utils import full_model_inference, pivot_plot
+from selectinf.learning.core import normal_sampler, keras_fit
 
-def simulate(n=1000, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0, B=5000):
+def generate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, **ignored):
 
-    # description of statistical problem
-
-    np.random.seed(seed)
     X, y, truth = gaussian_instance(n=n,
                                     p=p, 
                                     s=s,
@@ -23,8 +20,23 @@ def simulate(n=1000, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0, B
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=False,
-                                    center=False)[:3]
+                                    scale=False)[:3]
+
+    return X, y, truth
+
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
+
+    # description of statistical problem
+
+    X, y, truth = generate(n=n,
+                           p=p, 
+                           s=s,
+                           equicorrelated=False,
+                           rho=0.5, 
+                           sigma=sigma,
+                           signal=signal,
+                           random_signs=True,
+                           scale=False)[:3]
 
     dispersion = sigma**2
 
@@ -71,10 +83,23 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
+    opts = dict(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000)
+
+    R2 = []
+    for _ in range(100):
+
+        X, y, truth = generate(**opts)
+        R2.append((np.linalg.norm(y-X.dot(truth))**2, np.linalg.norm(y)**2))
+
+    R2 = np.array(R2)
+    R2mean = 1 - np.mean(R2[:,0]) / np.mean(R2[:,1])
+    print('R2', R2mean)
+
+
     iseed = int(np.fabs(np.random.standard_normal() * 50000))
-    for i in range(500):
-        df = simulate(seed=i + iseed, B=3000)
-        csvfile = 'knockoff_kernel_multi.csv'
+    for i in range(2000):
+        df = simulate(**opts)
+        csvfile = __file__[:-3] + '_200.csv'
         outbase = csvfile[:-4]
 
         if df is not None and i > 0:
@@ -86,6 +111,6 @@ if __name__ == "__main__":
             df.to_csv(csvfile, index=False)
 
             if len(df['pivot']) > 0:
-                pivot_ax, length_ax = pivot_plot(df, outbase)
-
+                f = pivot_plot(df, outbase)[1]
+                plt.close(f)
 

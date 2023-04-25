@@ -15,9 +15,9 @@ This module has a code to sample from a truncated normal distribution
 specified by a set of affine constraints.
 """
 
-DTYPE_float = np.float
+DTYPE_float = float
 ctypedef cnp.float_t DTYPE_float_t
-DTYPE_int = np.int
+DTYPE_int = int
 ctypedef cnp.int_t DTYPE_int_t
 ctypedef cnp.intp_t DTYPE_intp_t
 

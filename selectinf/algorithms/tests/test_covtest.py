@@ -1,7 +1,6 @@
 import itertools
 
 import numpy as np
-import numpy.testing.decorators as dec
 
 from ...tests.instance import gaussian_instance
 from ...tests.flags import SET_SEED, SMALL_SAMPLES

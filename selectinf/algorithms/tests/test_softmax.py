@@ -1,9 +1,8 @@
 import numpy as np
-import numpy.testing.decorators as dec
 
 from itertools import product
 from ..softmax import softmax_objective
 
-@dec.skipif(True, "need some tests for softmax objective")
+@np.testing.dec.skipif(True, "need some tests for softmax objective")
 def test_softmax():
     raise ValueError('need some tests for softmax objective')

@@ -8,5 +8,5 @@ case considered above.
 .. toctree:: 
    :maxdepth: 2
 
-   Learning1.ipynb
-   Learning2.ipynb
+   Basic_example.ipynb
+   Full_model_LASSO.ipynb

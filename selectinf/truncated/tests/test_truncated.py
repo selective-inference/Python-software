@@ -1,7 +1,6 @@
 from __future__ import print_function
 import nose.tools as nt
 import numpy as np
-import numpy.testing.decorators as dec
 
 from ..gaussian import truncated_gaussian, truncated_gaussian_old
 from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
@@ -25,7 +24,7 @@ def test_sigma():
                             np.around(np.array(tg2.equal_tailed_interval(Z,0.05)), 4))
 
 @set_seed_iftrue(SET_SEED)
-@dec.skipif(True, 'checking coverage: this is random with highish failure rate')
+@np.testing.dec.skipif(True, 'checking coverage: this is random with highish failure rate')
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=100)
 def test_equal_tailed_coverage(nsim=1000):
 
@@ -44,7 +43,7 @@ def test_equal_tailed_coverage(nsim=1000):
     nt.assert_true(np.fabs(coverage - (1-alpha)*nsim) < 2*SE)
 
 @set_seed_iftrue(SET_SEED)
-@dec.skipif(True, 'really slow')
+@np.testing.dec.skipif(True, 'really slow')
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=100)
 def test_UMAU_coverage(nsim=1000):
 

@@ -1,0 +1,169 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.10.2
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+## KKT conditions
+
+$$
+\omega = \nabla \ell(o) + u + \epsilon o.
+$$
+
+## Current terms used in selective MLE
+
+- `observed_score_state`: for LASSO this is $S=-X^TY$ (and for any linear regression), in general it should be
+$\nabla \ell(\beta^*) - Q(\beta^*)\beta^*$, call this $A$
+
+- `opt_offset`: this is $\hat{u}$ or (changed everywhere to `observed_subgrad`)
+
+- `opt_linear`: this is $\nabla^2 \ell(\hat{\beta}) + \epsilon I$ restricted to "selected" subspace, call this $L$
+
+## Rewrite of KKT
+
+$$
+\omega = Lo + S + u.
+$$
+
+## More terms in the code
+
+- Randomization precision `randomizer_prec` call this $\Theta_{\omega}=\Sigma_{\omega}^{-1}$ so $\omega \sim N(0, \Theta^{-1})$.
+
+- `cond_cov`= $\Sigma_{o|S,u}$, `cond_mean`, `cond_precision`=$\Sigma_{o|S,u}^{-1}=\Theta_{o|S,u}$:
+describe implied law of $o|S,u$. These are computed in `_setup_implied_gaussian`. Specifically, we have
+
+$$
+\begin{aligned}
+\Sigma_{o|S,u} = (L^T\Theta L)^{-1}
+\end{aligned}
+$$
+
+- `regress_opt` (formerly `logdens_linear`) call this $A$: this is the regression of $o$ onto $S+u$, in the implied
+Gaussian given $u,S$ i.e.
+
+$$
+E[o|S,u] = A(S+u) = -\Sigma_{o|S,u} L^T \Theta_{\omega}(S+u).
+$$
+
+- `cond_mean` is the conditional mean of $o|S,u$ evaluated at observed $S,u$: $A(S+u)_{obs}$. Or, `regress_opt_score(observed_score_state + observed_subgrad)`
+
+
+## Target related
+
+- `observed_target, target_cov, target_prec`: not much explanation needed $\hat{\theta}, \Sigma_{\hat{\theta}}, \Theta_{\hat{\theta}} = \Sigma_{\hat{\theta}}^{-1}$
+
+- `target_score_cov`: $\Sigma_{\hat{\theta},S}$
+
+- `regress_target`: regression of target onto score, formally this would be $\Sigma_{\hat{\theta},S}\Theta_S $ (transpose of usual way of writing regression, not in code yet), let's call it $B$ for now
+
+- `cov_product`: $\Sigma_S \Theta_{\omega}$: product of score covariance and randomization precision.
+
+- `cov_score`: $\Sigma_S$
+
+- `score_offset = observed_score_state + observed_subgrad`=$S+u$
+
+### In `selective_MLE`
+
+- `target_linear`: $\Sigma_{S,\hat{\theta}}\Theta_{\hat{\theta}}= \Sigma_S B^T\Theta_{\hat{\theta}}$ (changed name to `regress_score_target`)
+
+- `target_offset`: $S+u-\Sigma_S B^T \Theta_{\hat{\theta}} \hat{\theta} = S+u - \Sigma_{S,\hat{\theta}} \Theta_{\hat{\theta}} \hat{\theta}$ (changed name to `resid_score_target`)
+
+- `target_lin`: $A\Sigma_S B^T \Theta_{\hat{\theta}} = -(L^T\Theta_{\omega}L)^{-1} L^T\Theta_{\omega} \Sigma_S B^T \Theta_{\hat{\theta}}$ (changed name to `regress_opt_target`
+
+- `target_off`: $A(S+u - \Sigma_S B^T \Theta_{\hat{\theta}} \hat{\theta})$ `resid_opt_target`
+
+- `_P`: $\Theta_{\hat{\theta}} B\Sigma_S \Theta_{\omega} (S+u-\Sigma_S B^T \Theta_{\hat{\theta}} \hat{\theta}) = \Theta_{\hat{\theta}} B\Sigma_S \Theta_{\omega} (S+u) - \Theta_{\hat{\theta}} B\Sigma_S \Theta_{\omega} \Sigma_S B^T \Theta_{\hat{\theta}} \hat{\theta} = \Theta_{\hat{\theta}} B\Sigma_S \Theta_{\omega} (S+u) - \Theta_{\hat{\theta}} B\Sigma_S \Theta_{\omega} \Sigma_{\omega} \Theta_{\omega} \Sigma_S B^T \Theta_{\hat{\theta}} \hat{\theta} $.
+Let's call `_P` $\xi$
+
+- `_prec`: $\Theta_{\hat{\theta}} + \Theta_{\hat{\theta}} B\Sigma_S \Theta_{\omega} \Sigma_S B^T \Theta_{\hat{\theta}}
+- \Theta_{\hat{\theta}} B \Sigma_S A^T \Theta_{o|S,u} A \Sigma_S B^T \Theta_{\hat{\theta}}$
+
+- `C`: something that can be computed with all of the above... I guess (but am not sure) that `_prec` is 
+the precision of the (best case, no-selection) unbiased estimate of our target when we condition on $N,u$ 
+
+- More precisely,
+
+$$
+\begin{aligned}
+\Theta_{\hat{\theta}} C &= \xi + (A\Sigma_S B^T \Theta_{\hat{\theta}})^T L^T \Theta_{\omega} L (A\Sigma_S B^T \Theta_{\hat{\theta}})^T \hat{\theta} - (A\Sigma_S B^T \Theta_{\hat{\theta}})^T L^T \Theta_{\omega} L A(S+u) \\
+&= \xi + \Theta_{\hat{\theta}}B \left(\Sigma_S A^T L^T\Theta_{\omega} L A \Sigma_S B^T \Theta_{\hat{\theta}} \hat{\theta} - \Sigma_S A^T L^T\Theta_{\omega} L A(S+u) \right)  \\
+&= \xi + \Theta_{\hat{\theta}}B \left(\Sigma_S \Theta_{\omega} L (L^T\Theta_{\omega} L)^{-1} L^T \Theta_{\omega} \Sigma_S B^T \Theta_{\hat{\theta}} \hat{\theta} + \Sigma_S \Theta_{\omega}L  A(S+u) \right)  \\
+\end{aligned}
+$$
+
+The expression $A(S+u)$ is `cond_mean` and the other term can be computed straightforwardly. We've used the fact
+$$
+A\Sigma_S = -\Sigma_{o|S,u}L^T\Theta_{\omega} \Sigma_S =- (L^T\Theta_{\omega}L)^{-1}L^T\Theta_{\omega}\Sigma_S
+$$
+
+<!-- #region -->
+
+
+
+- Don't know what to sensibly call the last three things... but `_P` and `_prec` are the arguments to the
+optimization problem so these are what needs computing. I did change `_prec` to `prec_target_nosel`
+
+- `cov_target.dot(regress_opt_target.T.dot(prec_opt))`. This is
+
+$$-\Sigma_{\hat{\theta}} \Theta_{\hat{\theta}}B \Sigma_S\Theta_{\omega} L (L^T\Theta_{\omega}L)^{-1} (L^T\Theta_{\omega} L) = B \Sigma_S\Theta_{\omega} L$$
+
+- `regress_opt_target.T.dot(prec_opt)`. This is
+
+$$-\Theta_{\hat{\theta}}B \Sigma_S\Theta_{\omega} L (L^T\Theta_{\omega}L)^{-1} (L^T\Theta_{\omega} L) = \Theta_{\hat{\theta}} B \Sigma_S\Theta_{\omega} L$$
+
+- `regress_opt_target.T.dot(prec_opt).dot(regress_opt_target)`: This is
+
+$$
+\Theta_{\hat{\theta}}B \Sigma_S\Theta_{\omega} L (L^T\Theta_{\omega}L)^{-1} L^T\Theta_{\omega} \Sigma_S B^T \Theta_{\hat{\theta}}
+$$
+<!-- #endregion -->
+
+### Computational considerations?
+
+
+#### Case 1: $\Theta_{\omega}^{1/2}$ is known
+
+
+Another potential downside to all this is that these matrices will generally be $p \times p$. I think in `price_of_selection` I had written some way of doing part of this without having to form all of these matrices
+explicitly.  However, the difference of the last two matrices in `_prec` can be computed (if we know $\Sigma_{\omega}^{\pm 1/2}$ as identity minus rank $E$ matrix I think and
+$$
+A^T\Sigma_{o|S,u}A = \Theta_{\omega} L^T \Sigma_{o|S,u} L \Theta_{\omega}
+$$
+so we want to compute
+$$
+\Theta_{\omega} - \Theta_{\omega} L^T \Sigma_{o|S,u} L \Theta_{\omega} = \Theta_{\omega}^{1/2}(P - \Theta_{\omega}^{1/2}L^T (L^T\Theta_{\omega} L)^{-1} L\Theta_{\omega}^{1/2}) \Theta_{\omega}^{1/2}
+$$
+with $P$ projection onto $\text{row}(\Sigma_{\omega})$. So we need to compute projection on to a $E$-dimensional
+subspace of $\text{row}(\Sigma_{\omega})$. Morally, this makes sense even if $\Sigma_{\omega}$ is not full rank but seems a little sketchy.
+
+We might also try computing
+$$
+\begin{aligned}
+\Sigma_S\Theta_{\omega}\Sigma_S -  \Sigma_S\Theta_{\omega} L^T \Sigma_{o|S,u} L \Theta_{\omega} \Sigma_S &= \Sigma_S \Theta_{\omega}^{1/2}(P - \Theta_{\omega}^{1/2}L^T (L^T\Theta_{\omega} L)^{-1} L\Theta_{\omega}^{1/2}) \Theta_{\omega}^{1/2} \Sigma_S \\
+&= \Sigma_S \Theta_{\omega} \Theta_{\omega}^{-1/2}(P - \Theta_{\omega}^{1/2}L^T (L^T\Theta_{\omega} L)^{-1} L\Theta_{\omega}^{1/2}) \Theta_{\omega}^{-1/2} \Theta_{\omega} \Sigma_S \\
+&= \Sigma_S \Theta_{\omega} \Sigma_{\omega}^{1/2}(P - \Theta_{\omega}^{1/2}L^T (L^T\Theta_{\omega} L)^{-1} L\Theta_{\omega}^{1/2}) \Sigma_{\omega}^{1/2} \Theta_{\omega} \Sigma_S \\
+&= \Sigma_S \Theta_{\omega} (\Sigma_{\omega} - PL^T (L^T\Theta_{\omega} L)^{-1} LP)  \Theta_{\omega} \Sigma_S \\
+&= \Sigma_S \Theta_{\omega} (\Sigma_{\omega} - L^T (L^T\Theta_{\omega} L)^{-1} L)  \Theta_{\omega} \Sigma_S \\
+\end{aligned}
+$$
+
+## Three matrices
+
+- All the computations above can be expressed of some target specific info like $B, \Theta_{\hat{\theta}}, \Sigma_{\hat{\theta}}, \hat{\theta}$ and
+
+$$
+\begin{aligned}
+M_1 &= \Sigma_S \Theta_{\omega} \\
+M_2 &= M_1 \Sigma_{\omega} M_1^T \\
+M_3 &= M_1 L (L^T\Sigma_{\omega}L)^{-1} L M_1^T
+\end{aligned}
+$$

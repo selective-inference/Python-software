@@ -1,0 +1,106 @@
+---
+jupyter:
+  jupytext:
+    cell_metadata_filter: all,-slideshow
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.1.1
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+# Simple example
+
+Here we run a simple linear regression model (even without intercept) 
+and make a selection when the $Z$ score is larger than 2.
+
+The functions `partial_model_inference` and `pivot_plot` below are just simulation utilities
+used to simulate results in least squares regression. The underlying functionality
+is contained in the function `selectinf.learning.core.infer_general_target`.
+
+
+```{python collapsed=TRUE}
+import functools
+
+import numpy as np, pandas as pd
+import matplotlib.pyplot as plt
+# %matplotlib inline
+
+from selectinf.tests.instance import gaussian_instance
+
+from selectinf.learning.utils import partial_model_inference, pivot_plot
+from selectinf.learning.core import normal_sampler
+from selectinf.learning.Rfitters import logit_fit
+```
+
+```{python}
+np.random.seed(0) # for replicability
+def simulate(n=20, p=1, s=1, signal=1, sigma=2, alpha=0.1, B=2000):
+
+    # description of statistical problem
+
+    X, y, truth = gaussian_instance(n=n,
+                                    p=p, 
+                                    s=s,
+                                    equicorrelated=False,
+                                    rho=0.5, 
+                                    sigma=sigma,
+                                    signal=signal,
+                                    random_signs=True,
+                                    scale=False)[:3]
+
+    dispersion = sigma**2
+
+    S = X.T.dot(y)
+    covS = dispersion * X.T.dot(X)
+    sampler = normal_sampler(S, covS)
+
+    def base_algorithm(X, dispersion, sampler):
+
+        success = np.zeros(p)
+
+        scale = 0.
+        noisy_S = sampler(scale=scale)
+        
+        Z = noisy_S / np.sqrt(np.linalg.norm(X)**2 * dispersion)
+        if Z > 2:
+            return set([0])
+        else:
+            return set([])
+
+    selection_algorithm = functools.partial(base_algorithm, X, dispersion)
+
+    # run selection algorithm
+
+    return partial_model_inference(X,
+                                   y,
+                                   truth,
+                                   selection_algorithm,
+                                   sampler,
+                                   B=B,
+                                   fit_probability=logit_fit,
+                                   fit_args={'df':20})
+```
+
+```{python}
+dfs = []
+for i in range(1000):
+    df = simulate()
+    if df is not None:
+        dfs.append(df)
+```
+
+```{python}
+fig = plt.figure(figsize=(8, 8))
+results = pd.concat(dfs)
+pivot_plot(results, fig=fig);
+```
+
+```{python collapsed=TRUE}
+
+```

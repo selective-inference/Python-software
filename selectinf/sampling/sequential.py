@@ -10,7 +10,7 @@ import numpy as np
 def sample(white_constraint,
            nsample,
            proposal_sigma=0.2,
-           temps=np.linspace(0, 50, 51.)):
+           temps=np.linspace(0, 50., 51)):
     """
     Build up an approximately constrained Gaussian
     based on relaxations of the constraint.

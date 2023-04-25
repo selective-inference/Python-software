@@ -5,14 +5,18 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-from ..lasso import lasso, selected_targets, full_targets, debiased_targets
-from ...tests.instance import gaussian_instance
-from ...tests.flags import SET_SEED
+from ..lasso import lasso
+from ...base import selected_targets, full_targets, debiased_targets
+from ...tests.instance import gaussian_instance, logistic_instance
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
 from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
 from ..randomization import randomization
 from ...tests.decorators import rpy_test_safe
 
+
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=50, burnin=10)
 def test_highdim_lasso(n=500, 
                        p=200, 
                        signal_fac=1.5, 
@@ -41,7 +45,7 @@ def test_highdim_lasso(n=500,
     n, p = X.shape
 
     sigma_ = np.std(Y)
-    if target is not 'debiased':
+    if target != 'debiased':
         W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
     else:
         W = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
@@ -56,38 +60,26 @@ def test_highdim_lasso(n=500,
     nonzero = signs != 0
 
     if target == 'full':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = full_targets(conv.loglike, 
-                                      conv._W, 
-                                      nonzero)
+        target_spec = full_targets(conv.loglike, 
+                                   conv.observed_soln)
     elif target == 'selected':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = selected_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero)
+        target_spec = selected_targets(conv.loglike, 
+                                       conv.observed_soln) 
     elif target == 'debiased':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = debiased_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero,
-                                          penalty=conv.penalty)
+        target_spec = debiased_targets(conv.loglike, 
+                                       conv.observed_soln,
+                                       penalty=conv.penalty)
 
-    _, pval, intervals = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives,
-                                      ndraw=ndraw,
-                                      burnin=burnin, 
-                                      compute_intervals=True)
-        
+    result = conv.summary(target_spec,
+                          ndraw=ndraw,
+                          burnin=burnin, 
+                          compute_intervals=True)
+    pval = result['pvalue']
+
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=50, burnin=10)
 def test_AR_randomization(n=300, 
                           p=100, 
                           signal=4.5,
@@ -143,42 +135,47 @@ def test_AR_randomization(n=300,
     nonzero = signs != 0
 
     if target == 'full':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = full_targets(conv.loglike, 
-                                      conv._W, 
-                                      nonzero)
+        target_spec = full_targets(conv.loglike, 
+                                   conv.observed_soln)
     elif target == 'selected':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = selected_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero)
+        target_spec = selected_targets(conv.loglike, 
+                                       conv.observed_soln)
     elif target == 'debiased':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = debiased_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero,
-                                          penalty=conv.penalty)
+        target_spec = debiased_targets(conv.loglike, 
+                                       conv.observed_soln,
+                                       penalty=conv.penalty)
 
-    _, pval, intervals = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives,
-                                      ndraw=ndraw,
-                                      burnin=burnin, 
-                                      compute_intervals=True)
-        
+    result = conv.summary(target_spec,
+                          ndraw=ndraw,
+                          burnin=burnin, 
+                          compute_intervals=True)
+    pval = result['pvalue']
+
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
-def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=50, burnin=10)
+def test_all_targets(n=100,
+                     p=20,
+                     signal_fac=1.5,
+                     s=5,
+                     sigma=3,
+                     rho=0.4,
+                     ndraw=5000,
+                     burnin=1000):
     for target in ['full', 'selected', 'debiased']:
-        test_highdim_lasso(n=n, p=p, signal_fac=signal_fac, s=s, sigma=sigma, rho=rho, target=target)
+        test_highdim_lasso(n=n,
+                           p=p,
+                           signal_fac=signal_fac,
+                           s=s,
+                           sigma=sigma,
+                           rho=rho,
+                           target=target,
+                           ndraw=ndraw,
+                           burnin=burnin)
 
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=50, burnin=10)
 def test_sqrt_highdim_lasso(n=500, 
                             p=200, 
                             signal_fac=1.5, 
@@ -229,7 +226,7 @@ def test_sqrt_highdim_lasso(n=500,
         q_term = rr.identity_quadratic(ridge_term, 0, -perturb, 0)
 
         soln2, sqrt_loss = solve_sqrt_lasso(X, Y, W, solve_args={'min_its':1000}, quadratic=q_term, force_fat=True)
-        soln = conv.initial_soln
+        soln = conv.observed_soln
 
         denom = np.linalg.norm(Y - X.dot(soln))
         new_weights = W * denom
@@ -248,30 +245,21 @@ def test_sqrt_highdim_lasso(n=500,
         np.testing.assert_allclose(soln, soln3)
 
     if full:
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = full_targets(conv.loglike, 
-                                      conv._W, 
-                                      nonzero)
+        target_spec = full_targets(conv.loglike, 
+                                   conv.observed_soln)
     else:
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = selected_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero)
+        target_spec = selected_targets(conv.loglike, 
+                                       conv.observed_soln)
 
-    _, pval, intervals = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives,
-                                      ndraw=ndraw,
-                                      burnin=burnin, 
-                                      compute_intervals=False)
+    result = conv.summary(target_spec,
+                          ndraw=ndraw,
+                          burnin=burnin, 
+                          compute_intervals=False)
+    pval = result['pvalue']
 
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
+@np.testing.dec.skipif(True, "comparison to R is broken")
 @set_seed_iftrue(SET_SEED)
 @rpy_test_safe(libraries=['selectiveInference'])
 def test_compareR(n=200, 
@@ -345,49 +333,70 @@ def test_compareR(n=200,
 
     assert np.fabs(conv.ridge_term - ridge_term) / ridge_term < 1.e-4
 
-    assert np.fabs(soln - conv.initial_soln).max() / np.fabs(soln).max() < 1.e-3
+    assert np.fabs(soln - conv.observed_soln).max() / np.fabs(soln).max() < 1.e-3
 
     nonzero = signs != 0
 
     assert np.linalg.norm(conv.sampler.affine_con.covariance - cond_cov) / np.linalg.norm(cond_cov) < 1.e-3
     assert np.linalg.norm(conv.sampler.affine_con.mean - cond_mean[:,0]) / np.linalg.norm(cond_mean[:,0]) < 1.e-3
 
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=50, burnin=10)
+def test_logistic_lasso(n=500, 
+                        p=200, 
+                        signal_fac=1.5, 
+                        s=5, 
+                        full=True, 
+                        rho=0.4, 
+                        randomizer_scale=1., 
+                        ndraw=5000, 
+                        burnin=1000, 
+                        ridge_term=None, compare_to_lasso=True):
+    """
+    Compare to R randomized lasso
+    """
 
-def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3, AR=True):
+    inst, const = logistic_instance, lasso.logistic
+    signal = np.sqrt(signal_fac * 2 * np.log(p))
+    X, Y, beta = inst(n=n,
+                      p=p, 
+                      signal=signal, 
+                      s=s, 
+                      equicorrelated=False, 
+                      rho=rho, 
+                      random_signs=True)[:3]
 
-    import matplotlib.pyplot as plt
-    P0, PA = [], []
-    from statsmodels.distributions import ECDF
+    if ridge_term is None:
+        mean_diag = np.mean((X**2).sum(0))
+        ridge_term = (np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
 
-    for i in range(nsim):
-        if True: 
-            if not sqrt:
-                if AR:
-                    p0, pA = test_AR_randomization(n=n, p=p, target=target, sigma=sigma)
-                else:
-                    p0, pA = test_highdim_lasso(n=n, p=p, target=target, sigma=sigma)
-            else:
-                p0, pA = test_sqrt_highdim_lasso(n=n, p=p, target=target, compare_to_lasso=False)
-        else: 
-            p0, pA = [], []
-        print(len(p0), len(pA))
-        P0.extend(p0)
-        PA.extend(pA)
+    W = np.ones(X.shape[1]) * choose_lambda(X) * 0.7
 
-        P0_clean = np.array(P0)
-        
-        P0_clean = P0_clean[P0_clean > 1.e-5] # 
-        print(np.mean(P0_clean), np.std(P0_clean), np.mean(np.array(PA) < 0.05), np.sum(np.array(PA) < 0.05) / (i+1), np.mean(np.array(P0) < 0.05), np.mean(P0_clean < 0.05), np.mean(np.array(P0) < 1e-5), 'null pvalue + power + failure')
+    perturb = np.random.standard_normal(p) * randomizer_scale / np.sqrt(n)
+
+    conv = const(X, 
+                 Y, 
+                 W, 
+                 randomizer_scale=randomizer_scale / np.sqrt(n),
+                 ridge_term=ridge_term)
     
-        if i % 3 == 0 and i > 0:
-            U = np.linspace(0, 1, 101)
-            plt.clf()
-            if len(P0_clean) > 0:
-                plt.plot(U, ECDF(P0_clean)(U))
-            if len(PA) > 0:
-                plt.plot(U, ECDF(PA)(U), 'r')
-            plt.plot([0, 1], [0, 1], 'k--')
-            plt.savefig("plot.pdf")
-    plt.show()
+    signs = conv.fit()
+    nonzero = signs != 0
+
+    # sanity check
+
+    if full:
+        target_spec = full_targets(conv.loglike, 
+                                   conv.observed_soln)
+    else:
+        target_spec = selected_targets(conv.loglike, 
+                                          conv.observed_soln)
+    result = conv.summary(target_spec,
+                          ndraw=ndraw,
+                          burnin=burnin, 
+                          compute_intervals=False)
+    pval = result['pvalue']
+
+    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
 

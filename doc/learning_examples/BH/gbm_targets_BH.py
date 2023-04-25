@@ -5,11 +5,11 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.instance import gaussian_instance
+from selectinf.tests.instance import gaussian_instance
 
-from selection.learning.utils import full_model_inference, pivot_plot
-from selection.learning.core import normal_sampler, gbm_fit_sk
-from selection.learning.learners import mixture_learner
+from selectinf.learning.utils import full_model_inference, pivot_plot
+from selectinf.learning.core import normal_sampler, gbm_fit_sk
+from selectinf.learning.learners import mixture_learner
 mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
 
 def BHfilter(pval, q=0.2):
@@ -22,9 +22,7 @@ def BHfilter(pval, q=0.2):
         return np.nonzero(pval <= thresh)[0]
     return []
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
-
-    # description of statistical problem
+def generate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, **ignored):
 
     X, y, truth = gaussian_instance(n=n,
                                     p=p, 
@@ -35,6 +33,23 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     signal=signal,
                                     random_signs=True,
                                     scale=False)[:3]
+
+    return X, y, truth
+
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
+
+    # description of statistical problem
+
+    X, y, truth = generate(n=n,
+                           p=p, 
+                           s=s,
+                           equicorrelated=False,
+                           rho=0.5, 
+                           sigma=sigma,
+                           signal=signal,
+                           random_signs=True,
+                           scale=False)[:3]
+
 
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
@@ -81,19 +96,35 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    for i in range(500):
-        df = simulate(B=40000)
-        csvfile = 'gbm_targets_BH.csv'
+    U = np.linspace(0, 1, 101)
+    plt.clf()
+
+    opts = dict(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=20000)
+
+    R2 = []
+    for _ in range(100):
+
+        X, y, truth = generate(**opts)
+        R2.append((np.linalg.norm(y-X.dot(truth))**2, np.linalg.norm(y)**2))
+
+    R2 = np.array(R2)
+    R2mean = 1 - np.mean(R2[:,0]) / np.mean(R2[:,1])
+    print('R2', R2mean)
+
+    for i in range(5000):
+        df = simulate(**opts)
+        csvfile = __file__[:-3] + '.csv'
         outbase = csvfile[:-4]
 
-        if df is not None and i > 0:
+        if df is not None:
 
-            try: # concatenate to disk
+            try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
             except FileNotFoundError:
                 pass
             df.to_csv(csvfile, index=False)
 
             if len(df['pivot']) > 0:
-                pivot_ax, length_ax = pivot_plot(df, outbase)
+                f = pivot_plot(df, outbase)[1]
+                plt.close(f)
 

@@ -364,21 +364,7 @@ def _inference(observed_target,
     else:
         weight_val = np.squeeze(weight_fn(target_val))
 
-    if DEBUG:
-        import matplotlib.pyplot as plt, uuid
-        plt.plot(target_val, weight_val)
-        id_ = 'inference_' + str(uuid.uuid1())
-        plt.savefig(id_+'_prob.png')
-        plt.clf()
-
     weight_val *= ndist.pdf((target_val - observed_target) / target_sd)
-
-    plt.plot(target_val, weight_val)
-    plt.plot(target_val, ndist.pdf((target_val - observed_target) / target_sd), label='gaussian')
-    plt.plot([hypothesis], [0], '+', color='orange')
-    plt.legend()
-    plt.savefig(id_+'_dens.png')
-    plt.clf()
 
     exp_family = discrete_family(target_val, weight_val)
 
@@ -474,7 +460,13 @@ def repeat_selection(base_algorithm, sampler, min_success, num_tries):
     return set(final_value)
 
 
-def cross_inference(learning_data, nuisance, direction, fit_probability, nref=200, fit_args={}):
+def cross_inference(learning_data, 
+                    nuisance, 
+                    direction, 
+                    fit_probability, 
+                    nref=200, 
+                    fit_args={},
+                    verbose=False):
 
     T, Y = learning_data
 
@@ -514,7 +506,8 @@ def cross_inference(learning_data, nuisance, direction, fit_probability, nref=20
 
         weight_val = new_weight_fn(d_T)
         exp_family = discrete_family(d_T, weight_val)
-        print(ref_Y)
+        if verbose:
+            print(ref_Y)
         pval = [exp_family.cdf(0, x=t) for t, y in zip(ref_T, ref_Y) if y == 1]
         pvalues.append(pval)
 

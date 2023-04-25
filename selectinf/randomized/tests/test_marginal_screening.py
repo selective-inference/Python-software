@@ -46,28 +46,19 @@ def test_marginal(n=500,
 
 
             if marginal:
-                (observed_target, 
-                 cov_target, 
-                 crosscov_target_score, 
-                 alternatives) = marginal_select.marginal_targets(nonzero)
+                target_spec = marginal_select.marginal_targets(nonzero)
             else:
-                (observed_target, 
-                 cov_target, 
-                 crosscov_target_score, 
-                 alternatives) = marginal_select.multivariate_targets(nonzero, dispersion=sigma**2)
+                target_spec = marginal_select.multivariate_targets(nonzero, dispersion=sigma**2)
 
             if use_MLE:
-                estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
-                                                                                   cov_target,
-                                                                                   crosscov_target_score)
+                result = marginal_select.selective_MLE(target_spec)[0]
             # run summary
             else:
-                _, pval, intervals = marginal_select.summary(observed_target, 
-                                                             cov_target, 
-                                                             crosscov_target_score, 
-                                                             alternatives,
-                                                             compute_intervals=True)
+                result = marginal_select.summary(target_spec,
+                                                 compute_intervals=True)
 
+            intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
+            pval = result['pvalue']
             print(pval)
             if marginal:
                 beta_target = true_mean[nonzero]
@@ -132,25 +123,19 @@ def test_simple(n=100,
 
         if nonzero.sum() > 0:
 
-            (observed_target, 
-             cov_target, 
-             crosscov_target_score, 
-             alternatives) = marginal_select.marginal_targets(nonzero)
+            target_spec = marginal_select.marginal_targets(nonzero)
 
             if use_MLE:
-                estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
-                                                                                   cov_target,
-                                                                                   crosscov_target_score)
+                result = marginal_select.selective_MLE(target_spec)
             # run summary
             else:
-                _, pval, intervals = marginal_select.summary(observed_target, 
-                                                             cov_target, 
-                                                             crosscov_target_score, 
-                                                             alternatives,
-                                                             compute_intervals=True)
+                result = marginal_select.summary(target_spec,
+                                                 compute_intervals=True)
 
+            pval = result['pvalue']
+            intervals = np.asarray(result[['lower_confidence', 'upper_confidence']])
             print(pval)
-            beta_target = cov_target.dot(true_mean[nonzero])
+            beta_target = target_spec.cov_target.dot(true_mean[nonzero])
             print("beta_target and intervals", beta_target, intervals)
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
             print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
@@ -159,25 +144,3 @@ def test_simple(n=100,
 def test_both():
     test_marginal(marginal=True)
     test_marginal(marginal=False)
-
-def main(nsim=1000, test_fn=test_marginal, use_MLE=False):
-
-    import matplotlib.pyplot as plt
-    import statsmodels.api as sm
-    U = np.linspace(0, 1, 101)
-    P0, PA, cover, length_int = [], [], [], []
-    for i in range(nsim):
-        p0, pA, cover_, intervals = test_fn(use_MLE=use_MLE)
-
-        cover.extend(cover_)
-        P0.extend(p0)
-        PA.extend(pA)
-        print(np.mean(cover),'coverage so far')
-
-        if i % 50 == 0 and i > 0:
-            plt.clf()
-            plt.plot(U, sm.distributions.ECDF(P0)(U), 'b', label='null')
-            plt.plot(U, sm.distributions.ECDF(PA)(U), 'r', label='alt')
-            plt.plot([0, 1], [0, 1], 'k--')
-            plt.savefig('marginal_screening_pvals.pdf')
-

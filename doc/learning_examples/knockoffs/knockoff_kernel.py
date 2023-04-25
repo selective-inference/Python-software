@@ -14,7 +14,6 @@ def simulate(n=1000, p=50, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0, B=
 
     # description of statistical problem
 
-    np.random.seed(seed)
     X, y, truth = gaussian_instance(n=n,
                                     p=p, 
                                     s=s,

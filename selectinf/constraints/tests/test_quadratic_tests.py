@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.stats import chi
 import nose.tools as nt
-import numpy.testing.decorators as dec
 
 from ...distributions import chisq 
 from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue, rpy_test_safe

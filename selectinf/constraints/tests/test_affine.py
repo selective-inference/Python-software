@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 import nose
 import numpy as np
+from numpy.testing import dec
 from scipy.stats import chi
 import nose.tools as nt
 
@@ -168,7 +169,7 @@ def test_sampling():
                                   np.outer(V.mean(0), V.mean(0)) - S) < 0.01)
 
 @set_seed_iftrue(SET_SEED)
-@np.testing.decorators.skipif(True, msg="optimal tilt undefined -- need to implement softmax version")
+@dec.skipif(True, msg="optimal tilt undefined -- need to implement softmax version")
 def test_optimal_tilt():
 
     A = np.vstack(-np.identity(4))

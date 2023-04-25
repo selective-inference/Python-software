@@ -59,9 +59,16 @@ EXTS.append(Extension('selectinf.algorithms.debiased_lasso_utils',
                       libraries=[],
                       include_dirs=['C-software/src']))
 
+EXTS.append(Extension('selectinf.algorithms.cox_utils',
+                      ['selectinf/algorithms/cox_utils.pyx',
+                       'C-software/src/cox_fns.c'],
+                      libraries=[],
+                      include_dirs=['C-software/src']))
+
 EXTS.append(Extension('selectinf.randomized.selective_MLE_utils',
                       ['selectinf/randomized/selective_MLE_utils.pyx',
-                       'C-software/src/selective_mle.c'],
+                       'C-software/src/selective_mle.c',
+                       'C-software/src/cox_fns.c'],
                       libraries=[],
                       include_dirs=['C-software/src']))
 

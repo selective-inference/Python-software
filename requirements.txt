@@ -5,7 +5,8 @@ pandas
 mpmath
 pyinter
 sklearn
-regreg
+git+https://github.com/jonathan-taylor/regreg
 # keras
 # tensorflow
 traitlets
+scikit-learn
