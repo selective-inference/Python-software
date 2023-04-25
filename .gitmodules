@@ -5,6 +5,3 @@
 	path = C-software
 	url = https://github.com/selective-inference/C-software.git
 
-[submodule "regreg"]
-	path = regreg
-	url = https://github.com/jonathan-taylor/regreg.git
