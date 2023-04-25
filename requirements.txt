@@ -9,3 +9,4 @@ regreg
 # keras
 # tensorflow
 traitlets
+scikit-learn

@@ -25,7 +25,7 @@ def crit_func(test_statistic, left_cut, right_cut):
     Parameters
     ----------
 
-    test_statistic : np.float
+    test_statistic : float
         Observed value of test statistic.
 
     left_cut : (float, float)
@@ -37,7 +37,7 @@ def crit_func(test_statistic, left_cut, right_cut):
     Returns
     -------
 
-    decision : np.float
+    decision : float
 
     """
     CL, gammaL = left_cut
@@ -80,7 +80,7 @@ class discrete_family(object):
 
         The weights are normalized to sum to 1.
         """
-        xw = np.array(sorted(zip(sufficient_stat, weights)), np.float)
+        xw = np.array(sorted(zip(sufficient_stat, weights)), float)
         self._x = xw[:,0]
         self._w = xw[:,1]
         self._lw = np.log(xw[:,1])
