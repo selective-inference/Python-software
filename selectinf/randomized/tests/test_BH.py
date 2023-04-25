@@ -61,16 +61,13 @@ def test_independent_estimator(n=100, n1=50, q=0.2, signal=3, p=100):
     cov_target = np.identity(selected.sum()) / n
     cross_cov = -np.identity(p)[selected] / n
 
-    (observed_target1, 
-     cov_target1, 
-     cross_cov1,
-     _) = BH_select.marginal_targets(selected)
+    target_spec = BH_select.marginal_targets(selected)
 
-    assert(np.linalg.norm(observed_target - observed_target1) / 
+    assert(np.linalg.norm(observed_target - target_spec.observed_target) / 
            np.linalg.norm(observed_target) < 1.e-7)
-    assert(np.linalg.norm(cov_target - cov_target1) / 
+    assert(np.linalg.norm(cov_target - target_spec.cov_target) / 
            np.linalg.norm(cov_target) < 1.e-7)
-    assert(np.linalg.norm(cross_cov - cross_cov1) / np.linalg.norm(cross_cov) 
+    assert(np.linalg.norm(regress_target_score - target_spec.regress_target_score) / np.linalg.norm(regress_target_score)
            < 1.e-7)
 
     result = BH_select.selective_MLE(observed_target, cov_target, cross_cov)[0]
@@ -121,15 +118,9 @@ def test_BH(n=500,
         if nonzero is not None:
 
             if marginal:
-                (observed_target, 
-                 cov_target, 
-                 crosscov_target_score, 
-                 alternatives) = BH_select.marginal_targets(nonzero)
+                target_spec = BH_select.marginal_targets(nonzero)
             else:
-                (observed_target, 
-                 cov_target, 
-                 crosscov_target_score, 
-                 alternatives) = BH_select.full_targets(nonzero, dispersion=sigma**2)
+                target_spec = BH_select.full_targets(nonzero, dispersion=sigma**2)
                
             if marginal:
                 beta_target = true_mean[nonzero]
@@ -137,20 +128,14 @@ def test_BH(n=500,
                 beta_target = beta[nonzero]
 
             if use_MLE:
-                print('huh')
-                result = BH_select.selective_MLE(observed_target,
-                                                 cov_target,
-                                                 crosscov_target_score,
+                result = BH_select.selective_MLE(target_spec,
                                                  level=level)[0]
                 estimate = result['MLE']
                 pivots = ndist.cdf((estimate - beta_target) / result['SE'])
                 pivots = 2 * np.minimum(pivots, 1 - pivots)
                 # run summary
             else:
-                result = BH_select.summary(observed_target, 
-                                           cov_target, 
-                                           crosscov_target_score, 
-                                           alternatives,
+                result = BH_select.summary(target_spec,
                                            compute_intervals=True,
                                            level=level,
                                            ndraw=20000,
@@ -174,33 +159,5 @@ def test_both():
     test_BH(marginal=True)
     test_BH(marginal=False)
 
-def main(nsim=500, use_MLE=True, marginal=False):
-
-    import matplotlib.pyplot as plt
-    import statsmodels.api as sm
-    U = np.linspace(0, 1, 101)
-    P0, PA, cover, length_int = [], [], [], []
-    Ps = []
-    for i in range(nsim):
-        p0, pA, cover_, intervals, pivots = test_BH(use_MLE=use_MLE, 
-                                                    marginal=marginal)
-        Ps.extend(pivots)
-        cover.extend(cover_)
-        P0.extend(p0)
-        PA.extend(pA)
-        print(np.mean(cover),'coverage so far')
-
-        period = 10
-        if use_MLE:
-            period = 50
-        if i % period == 0 and i > 0:
-            plt.clf()
-            if len(P0) > 0:
-                plt.plot(U, sm.distributions.ECDF(P0)(U), 'b', label='null')
-            plt.plot(U, sm.distributions.ECDF(PA)(U), 'r', label='alt')
-            plt.plot(U, sm.distributions.ECDF(Ps)(U), 'tab:orange', label='pivot')
-            plt.plot([0, 1], [0, 1], 'k--')
-            plt.legend()
-            plt.savefig('BH_pvals.pdf')
 
 

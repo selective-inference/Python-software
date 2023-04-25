@@ -6,6 +6,7 @@ import pandas as pd
 from .query import gaussian_query
 
 from .randomization import randomization
+from ..base import TargetSpec
 
 class drop_losers(gaussian_query):
 
@@ -41,7 +42,7 @@ class drop_losers(gaussian_query):
         A = -np.identity(K)
         b = -np.ones(K) * best_loser
         linear = np.identity(K)
-        offset = np.zeros(K)
+        observed_subgrad = np.zeros(K)
         
         # Work out the implied randomization variance
         # Let X1=X[stage1].mean(), X2=X[stage2].mean() and Xf = X.mean()
@@ -60,11 +61,12 @@ class drop_losers(gaussian_query):
         # needed for gaussian_query api
 
         self.randomizer = randomization.gaussian(np.diag(std_win**2) * mult)
-        self.observed_opt_state = stage1_means['data'].iloc[:K]
-        self.observed_score_state = -self.means[self._winners] # problem is a minimization
+        self.observed_opt_state = np.asarray(stage1_means['data'].iloc[:K])
+        self.observed_score_state = -np.asarray(self.means[self._winners]) # problem is a minimization
         self.selection_variable = {'winners':self._winners}
 
-        self._setup_sampler(A, b, linear, offset)
+        self._unscaled_cov_score = np.diag(std_win**2) * (1/n1_win + 1/n2_win)
+        self._setup_sampler(A, b, linear, observed_subgrad)
 
     def MLE_inference(self,
                       level=0.9,
@@ -82,15 +84,19 @@ class drop_losers(gaussian_query):
 
         """
         
-        observed_target = self.means[self._winners]
-        std_win = self.std.loc[self._winners]
-        target_cov = np.diag(std_win**2 / (self._n1_win + self._n2_win))
-        target_score_cov = -target_cov
+        observed_target = np.asarray(self.means[self._winners])
+        std_win = np.asarray(self.std.loc[self._winners])
+        cov_target = np.diag(std_win**2 / (self._n1_win + self._n2_win))
+        regress_target_score = -np.identity(observed_target.shape[0])
+        
+        target_spec = TargetSpec(observed_target,
+                                 cov_target,
+                                 regress_target_score,
+                                 dispersion=1,
+                                 alternatives=['greater']*observed_target.shape[0])
         
         result = gaussian_query.selective_MLE(self,
-                                              observed_target,
-                                              target_cov,
-                                              target_score_cov,
+                                              target_spec,
                                               level=level,
                                               solve_args=solve_args)
         result[0].insert(0, 'arm', self._winners)
@@ -118,16 +124,19 @@ class drop_losers(gaussian_query):
             Defaults to 1000.
 
         """
-        observed_target = self.means[self._winners]
+        observed_target = np.asarray(self.means[self._winners])
         std_win = self.std.loc[self._winners]
-        target_cov = np.diag(std_win**2 / (self._n1_win + self._n2_win))
-        target_score_cov = -target_cov
+        cov_target = np.diag(std_win**2 / (self._n1_win + self._n2_win))
+        regress_target_score = -np.identity(observed_target.shape[0])
+        
+        target_spec = TargetSpec(observed_target,
+                                 cov_target,
+                                 regress_target_score,
+                                 dispersion=1,
+                                 alternatives=['greater']*observed_target.shape[0])
 
         result = gaussian_query.summary(self,
-                                        observed_target,
-                                        target_cov,
-                                        target_score_cov,
-                                        alternatives=['twosided']*self.K,
+                                        target_spec,
                                         ndraw=ndraw,
                                         level=level,
                                         burnin=burnin,

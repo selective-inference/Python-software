@@ -5,9 +5,10 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-from selectinf.randomized.lasso import split_lasso, selected_targets
-from selectinf.randomized.query import selective_MLE
-from selectinf.randomized.approx_reference import approximate_grid_inference
+from ..lasso import split_lasso
+from ...base import selected_targets, TargetSpec
+from ..query import selective_MLE
+from ..approx_reference import approximate_grid_inference
 
 def test_standalone_inference(n=2000, 
                               p=100, 
@@ -46,20 +47,14 @@ def test_standalone_inference(n=2000,
     full_hess = cox_full.hessian(padded_soln)
     selected_hess = full_hess[nonzero][:,nonzero]
 
-    (observed_target, 
-     cov_target, 
-     cov_target_score, 
-     alternatives) = selected_targets(cox_lasso.loglike, 
-                                      None,
-                                      nonzero,
-                                      hessian=full_hess,
-                                      dispersion=1)
+    target_spec = selected_targets(cox_lasso.loglike, 
+                                   cox_lasso.observed_soln,
+                                   hessian=full_hess,
+                                   dispersion=1)
 
     if nonzero.sum(): 
         if approx:
-            approx_result = cox_lasso.approximate_grid_inference(observed_target, 
-                                                                 cov_target, 
-                                                                 cov_target_score)
+            approx_result = cox_lasso.approximate_grid_inference(target_spec)
             approx_pval = approx_result['pvalue']
 
             testval = approximate_normalizer_inference(proportion,
@@ -75,9 +70,7 @@ def test_standalone_inference(n=2000,
             approx_pval = np.empty(nonzero.sum())*np.nan
 
         if MLE:
-            MLE_result = cox_lasso.selective_MLE(observed_target, 
-                                                 cov_target, 
-                                                 cov_target_score)[0]
+            MLE_result = cox_lasso.selective_MLE(target_spec)[0]
             MLE_pval = MLE_result['pvalue']
         else:
             MLE_pval = np.empty(nonzero.sum())*np.nan
@@ -125,9 +118,12 @@ def approximate_mle_inference(training_proportion,
     target_score_cov = -np.identity(nselect)
     observed_target = selected_beta_refit
     
-    result = selective_MLE(observed_target, 
-                           target_cov,
-                           target_score_cov, 
+    target_spec = selected_targets(cox_lasso.loglike, 
+                                   cox_lasso.observed_soln,
+                                   hessian=full_hess,
+                                   dispersion=1)
+
+    result = selective_MLE(target_spec,
                            training_betahat * selected_signs,
                            cond_mean,
                            cond_cov,
@@ -168,9 +164,12 @@ def approximate_normalizer_inference(training_proportion,
     target_score_cov = -np.identity(nselect)
     observed_target = selected_beta_refit
     
-    inverse_info = selective_MLE(observed_target, 
-                                 target_cov,
-                                 target_score_cov, 
+    target = TargetSpec(observed_target,
+                        target_cov,
+                        target_score_cov,
+                        None)
+
+    inverse_info = selective_MLE(target_spec,
                                  training_betahat * selected_signs,
                                  cond_mean,
                                  cond_cov,
@@ -180,9 +179,7 @@ def approximate_normalizer_inference(training_proportion,
                                  level=level,
                                  useC=True)[1]
 
-    G = approximate_grid_inference(observed_target,
-                                   target_cov,
-                                   target_score_cov,
+    G = approximate_grid_inference(target_spec,
                                    inverse_info,
                                    training_betahat * selected_signs,
                                    cond_mean,

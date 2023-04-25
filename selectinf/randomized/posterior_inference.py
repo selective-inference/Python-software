@@ -1,11 +1,19 @@
 from __future__ import division, print_function
 
 import numpy as np
+import typing
+
 from scipy.stats import norm as ndist, invgamma
 from scipy.linalg import fractional_matrix_power
 
 from ..algorithms.barrier_affine import solve_barrier_affine_py
+from .selective_MLE import mle_inference
+from .base import target_query_Interactspec
 
+class PosteriorAtt(typing.NamedTuple):
+
+    logPosterior: float
+    grad_logPosterior: np.ndarray
 
 class posterior(object):
     """
@@ -28,53 +36,32 @@ class posterior(object):
     """
 
     def __init__(self,
-                 query,
-                 observed_target,
-                 cov_target,
-                 cov_target_score,
+                 query_spec,
+                 target_spec,
+                 dispersion,
                  prior,
-                 dispersion=1,
                  solve_args={'tol': 1.e-12}):
 
+        self.query_spec = QS = query_spec
+        self.target_spec = TS = target_spec
         self.solve_args = solve_args
 
-        linear_part = query.sampler.affine_con.linear_part
-        offset = query.sampler.affine_con.offset
-        logdens_linear = query.sampler.logdens_transform[0]
-        _, randomizer_prec = query.randomizer.cov_prec
-        score_offset = query.observed_score_state + query.sampler.logdens_transform[1]
+        G = mle_inference(query_spec,
+                          target_spec,
+                          solve_args=solve_args)
 
-        result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
-                                                                 cov_target,
-                                                                 cov_target_score)
+        result, self.inverse_info, self.log_ref = G.solve_estimating_eqn()
 
-        ### Note for an informative prior we might want to change this...
-
-        self.ntarget = cov_target.shape[0]
-        self.nopt = query.cond_cov.shape[0]
-
-        self.cond_precision = np.linalg.inv(query.cond_cov)
-        self.cov_target = cov_target
-        self.prec_target = np.linalg.inv(cov_target)
-
-        self.observed_target = observed_target
-        self.cov_target_score = cov_target_score
-        self.logdens_linear = logdens_linear
-        self.randomizer_prec = randomizer_prec
-        self.score_offset = score_offset
-
-        self.feasible_point = query.observed_opt_state
-        self.cond_mean = query.cond_mean
-        self.linear_part = linear_part
-        self.offset = offset
+        self.ntarget = TS.cov_target.shape[0]
+        self.nopt = QS.cond_cov.shape[0]
 
         self.initial_estimate = np.asarray(result['MLE'])
         self.dispersion = dispersion
-        self.log_ref = log_ref
 
-        self._set_marginal_parameters()
-
+        ### Note for an informative prior we might want to change this...
         self.prior = prior
+
+        self._get_marginal_parameters()
 
     def log_posterior(self,
                       target_parameter,
@@ -90,39 +77,51 @@ class posterior(object):
             Noise standard deviation.
         """
 
+        QS = self.query_spec
+        TS = self.target_spec
+        
+        (prec_marginal,
+         linear_coef,
+         offset_coef,
+         r,
+         S,
+         prec_target_nosel) = self._get_marginal_parameters()
+        
         sigmasq = sigma ** 2
 
-        target = self.S.dot(target_parameter) + self.r
+        target = S.dot(target_parameter) + r
 
-        mean_marginal = self.linear_coef.dot(target) + self.offset_coef
-        prec_marginal = self.prec_marginal
+        mean_marginal = linear_coef.dot(target) + offset_coef
         conjugate_marginal = prec_marginal.dot(mean_marginal)
 
         solver = solve_barrier_affine_py
 
         val, soln, hess = solver(conjugate_marginal,
                                  prec_marginal,
-                                 self.feasible_point,
-                                 self.linear_part,
-                                 self.offset,
+                                 QS.observed_soln,
+                                 QS.linear_part,
+                                 QS.offset,
                                  **self.solve_args)
 
         log_normalizer = -val - mean_marginal.T.dot(prec_marginal).dot(mean_marginal) / 2.
 
-        log_lik = -((self.observed_target - target).T.dot(self._prec).dot(self.observed_target - target)) / 2. \
+        log_lik = -((TS.observed_target - target).T.dot(prec_target_nosel).dot(TS.observed_target - target)) / 2. \
                   - log_normalizer
 
-        grad_lik = self.S.T.dot(self._prec.dot(self.observed_target) - self._prec.dot(target) - self.linear_coef.T.dot(
-            prec_marginal.dot(soln) - conjugate_marginal))
+        grad_lik = S.T.dot(prec_target_nosel.dot(TS.observed_target) - prec_target_nosel.dot(target)
+                                - linear_coef.T.dot(prec_marginal.dot(soln) - conjugate_marginal))
 
         log_prior, grad_prior = self.prior(target_parameter)
 
-        return (self.dispersion * (log_lik - self.log_ref) / sigmasq + log_prior,
-                self.dispersion * grad_lik / sigmasq + grad_prior)
+        log_posterior = self.dispersion * (log_lik - self.log_ref) / sigmasq + log_prior
+        grad_log_posterior = self.dispersion * grad_lik / sigmasq + grad_prior
+
+        return PosteriorAtt(log_posterior,
+                            grad_log_posterior)
 
     ### Private method
 
-    def _set_marginal_parameters(self):
+    def _get_marginal_parameters(self):
         """
         This works out the implied covariance
         of optimization varibles as a function
@@ -130,36 +129,50 @@ class posterior(object):
         implied mean as a function of the true parameters.
         """
 
-        target_linear = self.cov_target_score.T.dot(self.prec_target)
-        target_offset = self.score_offset - target_linear.dot(self.observed_target)
+        QS = self.query_spec
+        TS = self.target_spec
 
-        target_lin = -self.logdens_linear.dot(target_linear)
-        target_off = self.cond_mean - target_lin.dot(self.observed_target)
+        U1, U2, U3, U4, U5 = self._form_interaction_pieces(QS,
+                                                           TS.regress_target_score,
+                                                           TS.cov_target)
 
-        self.linear_coef = target_lin
-        self.offset_coef = target_off
+        prec_target = np.linalg.inv(TS.cov_target)
+        cond_precision = np.linalg.inv(QS.cond_cov)
 
-        if np.asarray(self.randomizer_prec).shape in [(), (0,)]:
-            _prec = self.prec_target + (target_linear.T.dot(target_linear) * self.randomizer_prec) \
-                    - target_lin.T.dot(self.cond_precision).dot(target_lin)
-            _P = target_linear.T.dot(target_offset) * self.randomizer_prec
-        else:
-            _prec = self.prec_target + (target_linear.T.dot(self.randomizer_prec).dot(target_linear)) \
-                    - target_lin.T.dot(self.cond_precision).dot(target_lin)
-            _P = target_linear.T.dot(self.randomizer_prec).dot(target_offset)
+        prec_target_nosel = prec_target + U2 - U3
 
-        _Q = np.linalg.inv(_prec + target_lin.T.dot(self.cond_precision).dot(target_lin))
-        self.prec_marginal = self.cond_precision - self.cond_precision.dot(target_lin).dot(_Q).dot(target_lin.T).dot(self.cond_precision)
+        _P = -(U1.T.dot(QS.M5) + U2.dot(TS.observed_target))
 
-        r = np.linalg.inv(_prec).dot(target_lin.T.dot(self.cond_precision).dot(target_off) - _P)
-        S = np.linalg.inv(_prec).dot(self.prec_target)
+        bias_target = TS.cov_target.dot(U1.T.dot(-U4.dot(TS.observed_target) +
+                                                 QS.M4.dot(QS.cond_mean)) - _P)
 
-        self.r = r
-        self.S = S
-        #print("check parameters for selected+lasso ", np.allclose(np.diag(S), np.ones(S.shape[0])), np.allclose(r, np.zeros(r.shape[0])))
-        self._prec = _prec
+        ###set parameters for the marginal distribution of optimization variables
 
+        _Q = np.linalg.inv(prec_target_nosel + U3)
+        prec_marginal = cond_precision - U5.T.dot(_Q).dot(U5)
+        linear_coef = QS.cond_cov.dot(U5.T)
+        offset_coef = QS.cond_mean - linear_coef.dot(TS.observed_target)
 
+        ###set parameters for the marginal distribution of target
+
+        r = np.linalg.inv(prec_target_nosel).dot(prec_target.dot(bias_target))
+        S = np.linalg.inv(prec_target_nosel).dot(prec_target)
+
+        return (prec_marginal,
+                linear_coef,
+                offset_coef,
+                r,
+                S,
+                prec_target_nosel)
+
+    def _form_interaction_pieces(self,
+                                 QS,
+                                 regress_target_score,
+                                 cov_target):
+
+        return target_query_Interactspec(QS,
+                                         regress_target_score,
+                                         cov_target)
 ### sampling methods
 
 def langevin_sampler(selective_posterior,
@@ -167,6 +180,7 @@ def langevin_sampler(selective_posterior,
                      nburnin=100,
                      proposal_scale=None,
                      step=1.):
+
     state = selective_posterior.initial_estimate
     stepsize = 1. / (step * selective_posterior.ntarget)
 
@@ -214,10 +228,17 @@ def gibbs_sampler(selective_posterior,
         sample = sampler.__next__()
         samples[i, :] = sample
 
+        import sys
+        sys.stderr.write('a: ' + str(0.1 +
+                          selective_posterior.ntarget +
+                          selective_posterior.ntarget / 2)+'\n')
+        sys.stderr.write('scale: ' + str(0.1 - ((scale_update ** 2) * sampler.posterior_[0])) + '\n')
+        sys.stderr.write('scale_update: ' + str(scale_update) + '\n')
+        sys.stderr.write('initpoint: ' + str(sampler.posterior_[0]) + '\n')
         scale_update_sq = invgamma.rvs(a=(0.1 +
                                           selective_posterior.ntarget +
                                           selective_posterior.ntarget / 2),
-                                       scale=0.1 - ((scale_update ** 2) * sampler.posterior_[0]),
+                                       scale=0.1 - ((scale_update ** 2) * sampler.posterior_.logPosterior),
                                        size=1)
         scale_samples[i] = np.sqrt(scale_update_sq)
         sampler.scaling = np.sqrt(scale_update_sq)
@@ -257,8 +278,9 @@ class langevin(object):
     def __next__(self):
         while True:
             self.posterior_ = self.gradient_map(self.state, self.scaling)
-            candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_[1])
-                         + np.sqrt(2.) * (self.proposal_sqrt.dot(self._noise.rvs(self._shape))) * self._sqrt_step)
+            _proposal = self.proposal_sqrt.dot(self._noise.rvs(self._shape))
+            candidate = (self.state + self.stepsize * self.proposal_scale.dot(self.posterior_.grad_logPosterior)
+                         + np.sqrt(2.) * _proposal * self._sqrt_step)
 
             if not np.all(np.isfinite(self.gradient_map(candidate, self.scaling)[1])):
                 self.stepsize *= 0.5
@@ -267,3 +289,5 @@ class langevin(object):
                 self.state[:] = candidate
                 break
         return self.state
+
+

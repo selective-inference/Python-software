@@ -6,7 +6,7 @@ from regreg.atoms.slope import slope as slope_atom
 import regreg.api as rr
 
 from ..slope import slope
-from ..lasso import full_targets, selected_targets
+from ...base import full_targets, selected_targets
 from ...tests.decorators import rpy_test_safe
 
 try:
@@ -152,19 +152,13 @@ def test_randomized_slope(n=2000,
         if nonzero.sum() > 0:
 
             if target == 'full':
-                (observed_target, 
-                 cov_target, 
-                 cov_target_score, 
-                 alternatives) = full_targets(conv.loglike, 
-                                              conv._W, 
-                                              nonzero, dispersion=sigma_)
+                target_spec = full_targets(conv.loglike, 
+                                           conv.observed_soln,
+                                           dispersion=sigma_)
             elif target == 'selected':
-                (observed_target, 
-                 cov_target, 
-                 cov_target_score, 
-                 alternatives) = selected_targets(conv.loglike, 
-                                                  conv._W, 
-                                                  nonzero, dispersion=sigma_)
+                target_spec = selected_targets(conv.loglike, 
+                                               conv.observed_soln,
+                                               dispersion=sigma_)
 
             if target == "selected":
                 beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
@@ -172,14 +166,9 @@ def test_randomized_slope(n=2000,
                 beta_target = beta[nonzero]
             if use_MLE:
 
-                result = conv.selective_MLE(observed_target, 
-                                            cov_target, 
-                                            cov_target_score)[0]
+                result = conv.selective_MLE(target_spec)[0]
             else:
-                result = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives, 
+                result = conv.summary(target_spec,
                                       compute_intervals=True,
                                       ndraw=150000)
             pval = np.asarray(result['pvalue'])
@@ -196,17 +185,6 @@ def test_randomized_slope(n=2000,
     if True:
         return pval[beta_target == 0], pval[beta_target != 0], coverage, lower, upper
 
-def main(nsim=100, use_MLE=True):
-
-    P0, PA, cover, length_int = [], [], [], []
-    
-    for i in range(nsim):
-        p0, pA, cover_, _, _ = test_randomized_slope(use_MLE=use_MLE)
-
-        cover.extend(cover_)
-        P0.extend(p0)
-        PA.extend(pA)
-        print('coverage', np.mean(cover))
 
 
 
